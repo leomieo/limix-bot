@@ -951,6 +951,7 @@ def no_analytics(s):
     b = s.index("\n}\n", a) + 3
     return s[:a] + "export function analyticsEnabled(): boolean {\n  void choice; // never on: Limix Bot sends no usage analytics\n  return false;\n}\n" + s[b:]
 edit("src/lib/analytics.ts", no_analytics)
+edit("src/components/AnalyticsRow.tsx", lambda s: s.replace("https://github.com/milind-soni/OpenMausBot/blob/main/docs/analytics.md", f"{REPO_URL}/blob/main/docs/analytics.md"))
 edit("src/components/AnalyticsRow.tsx", lambda s: s if "no usage analytics row" in s else must(s, "export function AnalyticsRow({ simple = false }: { simple?: boolean }) {\n", "export function AnalyticsRow({ simple = false }: { simple?: boolean }) {\n  const off: boolean = true; // Limix Bot: no usage analytics row\n  if (off) return null;\n"))
 _doc = ROOT / "docs/analytics.md"
 if _doc.exists():
