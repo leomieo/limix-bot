@@ -755,6 +755,17 @@ def gold_card(s):
     return s
 edit("src/components/ApprovalCard.tsx", gold_card)
 
+# 9g. Help menu: no "Help center" row; "Send feedback" gets a Zalo icon and opens the owner's Zalo chat.
+def help_menu(s):
+    if "ZaloIcon" in s:
+        return s
+    s = must(s, 'import { DiscordIcon } from "./DiscordIcon";', 'import { ZaloIcon } from "./ZaloIcon";')
+    s = must(s, "  HelpCircle,\n", "")
+    s = must(s, '    { key: "help", label: t("sidebar.menu.help"), icon: <HelpCircle size={18} />, onSelect: onHelp },\n', "")
+    return must(s, 'icon: <DiscordIcon size={17} />', 'icon: <ZaloIcon size={17} />')
+edit("src/components/SidebarProfileMenu.tsx", help_menu)
+edit("src/lib/app-links.ts", lambda s: s.replace('export const FEEDBACK_URL = "https://discord.gg/9Wb8MEpXRs";', 'export const FEEDBACK_URL = "https://zalo.me/0977242439";'))
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):
