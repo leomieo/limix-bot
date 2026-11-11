@@ -17,7 +17,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: e2c5f1d87da45803ba77f9eb676ec3ed
     defaults:
       run:
-        working-directory: ${{ runner.temp }}/cp
+        working-directory: /tmp/cp
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@v4
@@ -28,9 +28,9 @@ jobs:
       - name: copy the control plane out of the repository (its root package would confuse npm)
         working-directory: ${{ github.workspace }}
         run: |
-          mkdir -p "$RUNNER_TEMP/cp"
-          cp -r cloudflare/control-plane/. "$RUNNER_TEMP/cp/"
-          printf '{"name":"limix-control-plane","private":true,"type":"module"}' > "$RUNNER_TEMP/cp/package.json"
+          mkdir -p "/tmp/cp"
+          cp -r cloudflare/control-plane/. "/tmp/cp/"
+          printf '{"name":"limix-control-plane","private":true,"type":"module"}' > "/tmp/cp/package.json"
       - name: install
         run: npm install --no-audit --no-fund --no-save --no-package-lock better-auth@1.7.7 zod@4.6.7 wrangler@4.125.0 @cloudflare/workers-types@5.20260825.1 typescript@5
       - name: create the database if it is missing, write its id into the config
