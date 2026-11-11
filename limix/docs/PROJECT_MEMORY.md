@@ -9,10 +9,10 @@
 
 - **Hướng chính (đổi 2026-11-11 18:41):** Limix Bot = **bản fork đổi thương hiệu của OpenMausBot** (giao diện như mausbot.com), phát hành file cài Windows `.exe` qua GitHub Actions của repo `leomieo/limix-bot`. `limix-gateway` (cổng Telegram/Zalo) là module sẽ gộp vào app ở mốc sau.
 - **Mốc đang làm:** F1 — đẩy mã fork lên GitHub và build bản Windows đầu tiên
-- **Việc dở dang:** báo cáo lỗi về email (commit 698e46d chưa đẩy, chờ secret LIMIX_REPORT_ALIAS). Bản mới nhất: https://github.com/leomieo/limix-bot/releases/tag/v0.2.1 (sửa lỗi kẹt trang ghép cặp; build run 43029716881 thành công)
-- **Đã làm được:** script `limix/rebrand.py` (chạy lại được, ổn định); logo + linh vật "Limi" (bong bóng chat tím); kiểm tra: 0 lỗi cú pháp, so token trước/sau chỉ chuỗi chữ thay đổi (trừ 2 chỗ chủ ý)
+- **Việc dở dang:** 0.2.5 đổi bộ nhận diện sang đen trắng (phương án F "Giao thoa ánh sáng", Codex thiết kế, chủ dự án chọn): biểu tượng app mọi cỡ, linh vật Limi thân mới, bỏ ảnh chrome con trỏ MausBot. Bản đã phát hành trước đó: v0.2.4 (ẩn Limix Cloud, run 43033302953 thành công)
+- **Đã làm được:** script `limix/rebrand.py` (chạy lại được, ổn định); logo đen trắng + linh vật "Limi" (hai khối bo tròn chồng nhau); báo lỗi về hộp thư chủ dự án; Cloud là mô-đun ẩn; kiểm tra: 0 lỗi cú pháp, chạy từ bản sạch 6f226f15 → trùng khớp (trừ số phiên bản)
 - **Đã kiểm trên GitHub Actions (run 43018860396, thành công):** cài thư viện, typecheck + build, cấu trúc gói, `Limix Bot.exe`, kênh cập nhật leomieo/limix-bot, máy chủ đóng gói trả lời /api/health
-- **CHƯA kiểm:** cài và mở app thật trên máy Windows của chủ dự án; giao diện hiển thị tên/linh vật mới
+- **CHƯA kiểm:** cài và mở app thật 0.2.4+/0.2.5 trên máy Windows; linh vật chrome vẽ (không còn ảnh) trông thế nào trong app; thử gửi báo lỗi @devs thật
 - **Đang bị chặn:** không
 - **Bước tiếp theo:** chủ dự án cài thử → báo lỗi/ảnh chụp → F2 gộp Telegram/Zalo vào app. (Cũ:) chờ workflow "Limix Bot Windows" → sửa lỗi build nếu có → tải `LimixBot-setup.exe` từ Releases
 
@@ -69,6 +69,7 @@
 
 Định dạng: `- YYYY-MM-DD HH:MM | Ai | Làm gì | File | Kiểm chứng`
 
+- 2026-11-11 21:20 | Claude + Codex + Chủ dự án | 0.2.5: logo đen trắng phương án F (hai khối chồng nhau, chỗ giao đảo màu = Li ánh sáng/vô hạn + Mix pha trộn); D11 cập nhật; icon app 16→1024 + .ico/.icns; thân linh vật Limi mới; xóa 6 ảnh chrome con trỏ MausBot (`src/assets/mausbot-steel/cursor-*.webp`, trước đây sót) | `limix/rebrand.py` bước 6/6b/6c, `limix/make-brand.ts`, `limix/brand-assets/*`, bản thiết kế gốc ở `F:\Tool tu build\Limix Bot\brand-bw\` | bộ sinh linh vật chạy qua (mặt vừa thân); chạy từ bản sạch → trùng khớp
 - 2026-11-11 21:00 | Claude | 0.2.4: Limix Cloud thành mô-đun ẩn (công tắc LIMIX_CLOUD_ENABLED=false: nút/menu Add Cloud, mục Settings Cloud); tài liệu MODULE_CLOUD.md | `limix/overlay/*/limix-features.*`, `electron/main.mjs`, `src/components/SettingsModal.tsx`, `limix/docs/MODULE_CLOUD.md` | 0 lỗi cú pháp; script ổn định
 - 2026-11-11 20:55 | Chủ dự án | Quyết định D12: bỏ phần Cloud, giữ làm mô-đun ẩn, phát triển khi có dàn VPS | — | tin nhắn
 - 2026-11-11 20:50 | Claude | 0.2.3: Limix là "branded build" → ẩn bảng giá MausBot Cloud, popup What's new, thẻ tài trợ/thông báo upstream | `server/brand.ts` (rebrand bước 8b) | commit c62deac

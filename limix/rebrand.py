@@ -255,33 +255,26 @@ if iconset.exists():
                 png.write_bytes(data)
                 changed.append(png.relative_to(ROOT).as_posix())
 
-# 6b. Mascot: the trademark cursor outline becomes Limix Bot's "Limi" chat bubble. The body keeps the internal id
-# "cursor" so every caller, stored bot and native client keeps working; only its outline and name change.
-BUBBLE = """
-/** Limix Bot's own mascot body: a rounded chat bubble whose tail sits at the bottom left. */
-function buildBubble(): string {
-  const x = 6, y = 8, w = 188, h = 164, k = 60
-  return new Path()
-    .moveTo(x + k, y)
-    .lineTo(x + w - k, y)
-    .quarterTo(x + w, y, x + w, y + k)
-    .lineTo(x + w, y + h - k)
-    .quarterTo(x + w, y + h, x + w - k, y + h)
-    .lineTo(x + 84, y + h)
-    .curveTo([x + 62, y + h, x + 40, y + h + 14, x + 16, y + h + 22])
-    .curveTo([x + 8, y + h + 25, x + 4, y + h + 20, x + 6, y + h + 12])
-    .curveTo([x + 8, y + h + 2, x, y + h - 20, x, y + h - 54])
-    .lineTo(x, y + k)
-    .quarterTo(x, y, x + k, y)
-    .close()
-}
+# 6b. Mascot: the trademark cursor outline becomes Limix Bot's "Limi" body: two overlapping rounded blocks (the
+# "giao thoa anh sang" mark, owner's choice 2026-11-11: Li = light/limitless, mix = blend). The body keeps the internal
+# id "cursor" so every caller, stored bot and native client keeps working; only its outline and name change.
+LIMI_D = ("M62 51C70 51 75 51 83 51C88 36 101 27 122 27C134 27 145 27 156 27C178 27 190 41 190 64C190 82 190 99 190 117"
+          "C190 141 176 154 153 154C143 154 132 154 121 154C116 168 104 176 84 176C71 176 58 176 44 176C21 176 10 161 10 139"
+          "C10 122 10 105 10 87C10 63 26 51 49 51C53 51 58 51 62 51Z")
+LIMI = f"""
+/** Limix Bot's own mascot body "Limi": two overlapping rounded blocks, the blend in the Limix mark. */
+const LIMI_D = "{LIMI_D}"
 """
+OLD_BUBBLE = re.compile(r"/\*\* Limix Bot's own mascot body: a rounded chat bubble.*?\n}\n\n?", re.S)
 def builders(s):
-    if "function buildBubble" not in s:
+    s = OLD_BUBBLE.sub("", s)
+    if "const LIMI_D" not in s:
         i = s.index("export const BODY_DEFS")
-        s = s[:i] + BUBBLE.lstrip("\n") + "\n" + s[i:]
-    return s.replace('{ id: "cursor", name: "Cursor", d: CURSOR_D, viewBox: [0, 0, 512, 512] },',
-                     '{ id: "cursor", name: "Limi", d: buildBubble(), viewBox: [0, 0, 200, 200] },')
+        s = s[:i] + LIMI.lstrip("\n") + "\n" + s[i:]
+    for old in ('{ id: "cursor", name: "Cursor", d: CURSOR_D, viewBox: [0, 0, 512, 512] },',
+                '{ id: "cursor", name: "Limi", d: buildBubble(), viewBox: [0, 0, 200, 200] },'):
+        s = s.replace(old, '{ id: "cursor", name: "Limi", d: LIMI_D, viewBox: [0, 0, 200, 200] },')
+    return s
 edit("scripts/mascot-bodies/builders.ts", builders)
 edit("scripts/gen-mascot-bodies.ts", lambda s: s if "const CAP = 0.83" in s else must(s, "const CAP = 1\n",
      "// Limix Bot: its bubble body holds a full-size face, so the catalog cap sits just under what the star body can hold.\nconst CAP = 0.83\n"))
@@ -289,6 +282,14 @@ before = (ROOT / "shared/mascot-bodies.ts").read_text(encoding="utf-8")
 subprocess.run(["node", "--experimental-strip-types", "--no-warnings", "scripts/gen-mascot-bodies.ts"], cwd=ROOT, check=True, stdout=subprocess.DEVNULL)
 if (ROOT / "shared/mascot-bodies.ts").read_text(encoding="utf-8") != before:
     changed.append("shared/mascot-bodies.ts")
+
+# 6c. MausBot's finished chrome pictures of the trademark cursor (face included) go: with no pictures for a body the
+# avatar keeps its drawn steel finish over the Limi outline (src/lib/steel-body.ts).
+steel = ROOT / "src/assets/mausbot-steel"
+if steel.exists():
+    for pic in sorted(steel.glob("cursor-*.*")):
+        pic.unlink()
+        changed.append(pic.relative_to(ROOT).as_posix())
 
 # 8. Limix Bot features layered on the fork (sources under limix/overlay, copied to the same path).
 OVERLAY = ROOT / "limix/overlay"
