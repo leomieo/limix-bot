@@ -161,7 +161,7 @@ let organizationEntryReady = false;
 let mainWindow = null;
 const serverUnavailableWindows = new WeakSet();
 let unreadCount = 0;
-let unreadOverlayIcon = null;
+const unreadBadgeIcons = {};
 
 const windowStateFile = createWindowStateFile({ file: () => path.join(app.getPath("userData"), "window-state.json"), log: message => slog(message) });
 
@@ -169,9 +169,11 @@ function applyUnreadBadge(win = mainWindow) {
   const count = normalizeUnreadCount(unreadCount);
   if (process.platform === "win32") {
     if (!win || win.isDestroyed()) return;
-    unreadOverlayIcon ??= nativeImage.createFromPath(APP_ICON).resize({ width: 16, height: 16 });
+    // Limix Bot: a red count dot, not a second copy of the logo.
+    const badgeName = count > 9 ? "9plus" : String(count);
+    const badge = count > 0 ? (unreadBadgeIcons[badgeName] ??= nativeImage.createFromPath(path.join(__dirname, `resources/unread-badge-${badgeName}.png`))) : null;
     win.setOverlayIcon(
-      count > 0 && !unreadOverlayIcon.isEmpty() ? unreadOverlayIcon : null,
+      badge && !badge.isEmpty() ? badge : null,
       count > 0 ? nativeT(count === 1 ? "native.badge.one" : "native.badge.many", { count }) : nativeT("native.badge.none"),
     );
     return;

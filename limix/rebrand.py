@@ -381,6 +381,19 @@ edit("src/styles.css", lambda s: re.sub(r"--identity-chrome: #[0-9A-Fa-f]{6};",
 edit("src/locales/en.json", lambda s: must(must(s, '"mascot.body.cursor": "Cursor",', '"mascot.body.cursor": "Limi",'),
      '"mascot.body.star": "Star",', '"mascot.body.star": "Blend",'))
 
+# 6e. Windows taskbar unread badge: upstream overlays a 16 px copy of the app icon, which reads as a second logo on
+# the Limix mark. Limix Bot overlays a red count dot instead (limix/overlay/electron/resources/unread-badge-*.png).
+def unread_badge(s):
+    s = must(s, "let unreadOverlayIcon = null;\n", "const unreadBadgeIcons = {};\n")
+    return must(s, """    unreadOverlayIcon ??= nativeImage.createFromPath(APP_ICON).resize({ width: 16, height: 16 });
+    win.setOverlayIcon(
+      count > 0 && !unreadOverlayIcon.isEmpty() ? unreadOverlayIcon : null,""", """    // Limix Bot: a red count dot, not a second copy of the logo.
+    const badgeName = count > 9 ? "9plus" : String(count);
+    const badge = count > 0 ? (unreadBadgeIcons[badgeName] ??= nativeImage.createFromPath(path.join(__dirname, `resources/unread-badge-${badgeName}.png`))) : null;
+    win.setOverlayIcon(
+      badge && !badge.isEmpty() ? badge : null,""")
+edit("electron/main.mjs", unread_badge)
+
 # 6c. MausBot's finished chrome pictures of the trademark cursor (face included) go: with no pictures for a body the
 # avatar keeps its drawn steel finish over the Limi outline (src/lib/steel-body.ts).
 steel = ROOT / "src/assets/mausbot-steel"
