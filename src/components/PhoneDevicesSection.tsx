@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { t } from "@/lib/i18n";
+import { intlLocale, t } from "@/lib/i18n";
 import { Loader2, ShieldCheck } from "lucide-react";
 import type { CompanionAccountState } from "../types/ogb";
 import {
@@ -320,7 +320,7 @@ export function reachLine(state: Pick<CompanionState, "routes">): string {
     on("relay") && t("devices.reach.relay", { app: productName() }),
   ].filter((way): way is string => Boolean(way));
   if (ways.length === 0) return t("devices.reach.none");
-  return t("devices.reach.line", { ways: new Intl.ListFormat(undefined, { type: "conjunction" }).format(ways) });
+  return t("devices.reach.line", { ways: new Intl.ListFormat(intlLocale(), { type: "conjunction" }).format(ways) });
 }
 
 export function PhoneDevicesSection({ profileEmail = "", focusRequest = 0, simple = false }: { profileEmail?: string; focusRequest?: number; simple?: boolean }) {
