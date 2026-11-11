@@ -34,3 +34,9 @@
 - Mỗi khách có một địa chỉ công khai trỏ vào máy: an toàn nhờ bước ghép nối + xác thực cổng; cần soát/thử riêng trước khi bán.
 - Zone `limixmedia.com` đang chạy Limix Studio: thêm bản ghi DNS tự động của đường hầm vào CÙNG zone → token phải hẹp quyền, và Worker không được xóa bản ghi không do nó tạo.
 - Ước lượng: vài ngày làm việc; chưa thử được trên Cloudflare thật từ máy Claude.
+
+## Kết quả soát bước 1 (cổng vào)
+- `companion-origin-gateway.mjs` (cổng 8812) chỉ chuyển tiếp HTTP/WebSocket, KHÔNG tự xác thực.
+- Bảo vệ nằm ở máy chủ nội bộ (server/index.ts): `/api/pair` đổi mã ghép nối dùng 1 lần (có khoá khi nhập sai), mọi route khác qua `resolveRequestAuth` (cookie/token phiên). Chưa có phiên → bị từ chối 401.
+- Chưa thử xâm nhập thực tế; làm khi bắt đầu R1.
+- Cloudflare Account ID: e2c5f1d87da45803ba77f9eb676ec3ed · Zone ID (limixmedia.com): b6ded94cfef973f6dbb5e480d7dde361 (không phải bí mật).
