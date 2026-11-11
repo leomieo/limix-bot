@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="Leox ৹ Limix AI">
+<title>Limix Bot</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+:root {
+  --bg:#0b0b0c; --sidebar:#121213; --card:#1b1b1d; --card-2:#232326; --hover:#2a2a2e; --line:#2c2c30;
+  --ink:#ededee; --muted:#a1a1a8; --faint:#75757d;
+  --accent:#22c55e; --accent-ink:#052e16; --accent-text:#4ade80; --accent-soft:rgba(34,197,94,.14);
+  --warn:#fbbf24; --warn-soft:rgba(251,191,36,.12); --bad:#f87171; --bad-soft:rgba(248,113,113,.12);
+  --ring:#86efac; --shadow:0 24px 64px rgba(0,0,0,.55);
+  --font:Inter, "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono:"Cascadia Code", Consolas, ui-monospace, monospace;
+  --r-sm:8px; --r-md:12px; --r-lg:16px;
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  --bg:#fafaf9; --sidebar:#f1f1ef; --card:#ffffff; --card-2:#f4f4f2; --hover:#e9e9e6; --line:#e2e2de;
+  --ink:#18181b; --muted:#56565e; --faint:#73737b;
+  --accent:#15803d; --accent-ink:#ffffff; --accent-text:#15803d; --accent-soft:rgba(21,128,61,.10);
+  --warn:#b45309; --warn-soft:rgba(180,83,9,.10); --bad:#dc2626; --bad-soft:rgba(220,38,38,.08);
+  --ring:#15803d; --shadow:0 24px 64px rgba(0,0,0,.18);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg:#fafaf9; --sidebar:#f1f1ef; --card:#ffffff; --card-2:#f4f4f2; --hover:#e9e9e6; --line:#e2e2de;
+    --ink:#18181b; --muted:#56565e; --faint:#73737b;
+    --accent:#15803d; --accent-ink:#ffffff; --accent-text:#15803d; --accent-soft:rgba(21,128,61,.10);
+    --warn:#b45309; --warn-soft:rgba(180,83,9,.10); --bad:#dc2626; --bad-soft:rgba(220,38,38,.08);
+    --ring:#15803d; --shadow:0 24px 64px rgba(0,0,0,.18);
+    color-scheme: light;
+  }
+}
+* { box-sizing:border-box; }
+html, body { height:100%; }
+body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 var(--font); -webkit-font-smoothing:antialiased; }
+button, input, select { font:inherit; color:inherit; }
+button { cursor:pointer; }
+:focus-visible { outline:2px solid var(--ring); outline-offset:2px; border-radius:6px; }
+svg.i { width:18px; height:18px; flex:none; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+.app { display:grid; grid-template-columns:288px minmax(0,1fr); height:100vh; }
+aside { background:var(--sidebar); border-right:1px solid var(--line); display:flex; flex-direction:column; min-height:0; }
+.brand { display:flex; align-items:center; gap:10px; padding:16px 14px 12px 16px; }
+.brand b { font-size:16px; letter-spacing:-.01em; flex:1; }
+.icon-btn { display:inline-grid; place-items:center; width:36px; height:36px; border-radius:10px; border:0; background:transparent; color:var(--muted); transition:background .15s, color .15s; }
+.icon-btn:hover { background:var(--hover); color:var(--ink); }
+.search { margin:0 12px 10px; position:relative; }
+.search svg { position:absolute; left:12px; top:50%; translate:0 -50%; color:var(--faint); width:16px; height:16px; }
+.search input { width:100%; height:38px; border-radius:10px; border:1px solid transparent; background:var(--card-2); padding:0 12px 0 36px; }
+.search input::placeholder { color:var(--faint); }
+.list { flex:1; overflow:auto; padding:2px 8px 8px; }
+.list-label { font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); padding:8px 10px 6px; }
+.item { width:100%; display:flex; gap:12px; align-items:center; padding:10px; border-radius:12px; border:0; background:transparent; text-align:left; transition:background .15s; }
+.item:hover { background:var(--hover); }
+.item[aria-current="page"] { background:var(--card-2); }
+.item .meta { min-width:0; flex:1; }
+.item .t { display:flex; justify-content:space-between; gap:8px; font-weight:600; }
+.item .t span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.item .s { color:var(--muted); font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.avatar { position:relative; width:42px; height:42px; border-radius:13px; display:grid; place-items:center; font-weight:700; font-size:17px; flex:none; }
+.avatar.telegram { background:linear-gradient(140deg,#3aa8e8,#1f78c6); color:#fff; }
+.avatar.zalo { background:linear-gradient(140deg,#2f7cf6,#1a4fd0); color:#fff; }
+.avatar .dot { position:absolute; right:-2px; bottom:-2px; width:13px; height:13px; border-radius:50%; border:2.5px solid var(--sidebar); background:var(--faint); }
+.dot.running { background:var(--accent); } .dot.degraded, .dot.starting { background:var(--warn); } .dot.conflict, .dot.credential_invalid, .dot.error { background:var(--bad); }
+.nav { padding:8px; border-top:1px solid var(--line); display:grid; gap:2px; }
+.nav button { display:flex; align-items:center; gap:12px; padding:9px 10px; border-radius:10px; border:0; background:transparent; color:var(--ink); text-align:left; }
+.nav button:hover { background:var(--hover); }
+.nav button[aria-current="page"] { background:var(--card-2); }
+.badge { margin-left:auto; min-width:22px; padding:0 7px; height:22px; border-radius:11px; background:var(--accent); color:var(--accent-ink); font-size:12px; font-weight:700; display:grid; place-items:center; }
+.author { padding:10px 18px 14px; font-size:12px; color:var(--faint); }
+
+main { min-width:0; overflow:auto; display:flex; flex-direction:column; }
+.top { position:sticky; top:0; z-index:2; display:flex; align-items:center; gap:12px; padding:14px 28px; background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); min-height:64px; }
+.top h1 { font-size:17px; margin:0; letter-spacing:-.01em; }
+.top .grow { flex:1; }
+.pill { display:inline-flex; align-items:center; gap:6px; height:28px; padding:0 11px; border-radius:999px; border:1px solid var(--line); font-size:13px; color:var(--muted); white-space:nowrap; }
+.pill .dot { width:8px; height:8px; border-radius:50%; border:0; position:static; }
+.content { padding:24px 28px 48px; max-width:980px; width:100%; display:grid; gap:16px; }
+
+.btn { display:inline-flex; align-items:center; gap:8px; height:38px; padding:0 15px; border-radius:10px; border:1px solid var(--line); background:var(--card-2); font-size:14px; font-weight:500; transition:background .15s, border-color .15s, opacity .15s; }
+.btn:hover { background:var(--hover); }
+.btn.primary { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:600; }
+.btn.primary:hover { filter:brightness(1.07); }
+.btn.danger { color:var(--bad); background:transparent; }
+.btn.danger:hover { background:var(--bad-soft); }
+.btn.ghost { background:transparent; }
+.btn[disabled] { opacity:.55; cursor:progress; }
+.btn svg.i { width:16px; height:16px; }
+
+.card { background:var(--card); border:1px solid var(--line); border-radius:var(--r-lg); padding:20px; }
+.card h2 { margin:0 0 4px; font-size:16px; letter-spacing:-.01em; display:flex; align-items:center; gap:8px; }
+.card .sub { margin:0 0 16px; color:var(--muted); font-size:14px; }
+.grid2 { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:16px; }
+.grid3 { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:16px; }
+.row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.kv { display:grid; grid-template-columns:140px minmax(0,1fr); gap:8px 16px; font-size:14px; }
+.kv dt { color:var(--muted); } .kv dd { margin:0; overflow-wrap:anywhere; }
+.mono { font-family:var(--mono); font-size:13px; }
+.note { border-radius:var(--r-md); padding:12px 14px; font-size:14px; display:flex; gap:10px; align-items:flex-start; }
+.note.warn { background:var(--warn-soft); color:var(--warn); }
+.note.bad { background:var(--bad-soft); color:var(--bad); }
+.note.ok { background:var(--accent-soft); color:var(--accent-text); }
+.note svg.i { margin-top:2px; }
+
+.hero { padding:36px 32px; display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:24px; align-items:center; background:radial-gradient(120% 140% at 100% 0%, var(--accent-soft), transparent 60%), var(--card); }
+.hero h2 { font-size:30px; line-height:1.15; margin:0 0 10px; letter-spacing:-.02em; }
+.hero p { color:var(--muted); margin:0 0 20px; font-size:15px; max-width:46ch; }
+.steps { display:grid; gap:10px; counter-reset:s; }
+.step { display:flex; gap:12px; padding:12px 14px; border-radius:var(--r-md); background:var(--card-2); }
+.step::before { counter-increment:s; content:counter(s); width:26px; height:26px; border-radius:8px; background:var(--accent-soft); color:var(--accent-text); display:grid; place-items:center; font-weight:700; font-size:13px; flex:none; }
+.step b { display:block; font-size:14px; } .step span { color:var(--muted); font-size:13px; }
+.stat { padding:18px 20px; }
+.stat .n { font-size:30px; font-weight:700; letter-spacing:-.02em; line-height:1.1; }
+.stat .l { color:var(--muted); font-size:13px; margin-top:4px; }
+
+.seg { display:grid; gap:8px; }
+.seg label { display:flex; gap:12px; align-items:flex-start; padding:12px 14px; border:1px solid var(--line); border-radius:var(--r-md); cursor:pointer; transition:border-color .15s, background .15s; }
+.seg label:hover { background:var(--card-2); }
+.seg input { margin:3px 0 0; accent-color:var(--accent); width:16px; height:16px; }
+.seg label:has(input:checked) { border-color:var(--accent); background:var(--accent-soft); }
+.seg b { display:block; font-size:14px; } .seg span { color:var(--muted); font-size:13px; }
+.choice { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.choice label { display:flex; gap:12px; align-items:center; padding:14px; border:1px solid var(--line); border-radius:var(--r-md); cursor:pointer; }
+.choice label:has(input:checked) { border-color:var(--accent); background:var(--accent-soft); }
+.choice input { position:absolute; opacity:0; }
+.choice label:has(input:focus-visible) { outline:2px solid var(--ring); outline-offset:2px; }
+
+.field { display:grid; gap:6px; margin-bottom:14px; }
+.field > span { font-size:13px; font-weight:500; color:var(--muted); }
+.field input, .field select { height:42px; border-radius:10px; border:1px solid var(--line); background:var(--card-2); padding:0 12px; width:100%; }
+.field input:focus { border-color:var(--accent); outline:none; box-shadow:0 0 0 3px var(--accent-soft); }
+.help { font-size:12.5px; color:var(--faint); }
+.form-error { color:var(--bad); font-size:14px; min-height:20px; margin:4px 0 0; }
+
+.people { display:grid; gap:6px; }
+.person { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; background:var(--card-2); font-size:14px; }
+.person .role { font-size:12px; padding:1px 8px; border-radius:999px; background:var(--accent-soft); color:var(--accent-text); }
+.person .grow { flex:1; }
+.code { font:700 24px/1 var(--mono); letter-spacing:.14em; padding:14px 16px; background:var(--card-2); border-radius:var(--r-md); display:inline-flex; gap:14px; align-items:center; }
+
+.log { display:grid; }
+.log .e { display:grid; grid-template-columns:118px 120px minmax(0,1fr); gap:12px; padding:9px 0; border-top:1px solid var(--line); font-size:13.5px; }
+.log .e:first-child { border-top:0; }
+.log time { color:var(--faint); font-variant-numeric:tabular-nums; }
+.log .who { color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.empty { color:var(--muted); font-size:14px; padding:6px 0; }
+
+dialog { width:min(560px, calc(100vw - 32px)); max-height:calc(100vh - 48px); border:1px solid var(--line); border-radius:20px; background:var(--card); color:var(--ink); padding:0; box-shadow:var(--shadow); }
+dialog::backdrop { background:rgba(0,0,0,.55); backdrop-filter:blur(2px); }
+dialog header { display:flex; align-items:center; justify-content:space-between; padding:18px 20px 6px; }
+dialog header h2 { margin:0; font-size:18px; }
+dialog form { padding:8px 20px 20px; overflow:auto; }
+dialog .actions { display:flex; justify-content:flex-end; gap:10px; margin-top:8px; }
+
+.toast { position:fixed; right:20px; bottom:20px; z-index:20; max-width:420px; padding:12px 16px; border-radius:12px; background:var(--card-2); border:1px solid var(--line); box-shadow:var(--shadow); font-size:14px; opacity:0; translate:0 8px; transition:opacity .2s, translate .2s; pointer-events:none; }
+.toast.show { opacity:1; translate:0 0; }
+.toast.bad { border-color:var(--bad); }
+
+@media (max-width: 860px) {
+  .app { grid-template-columns:1fr; height:auto; min-height:100vh; }
+  aside { border-right:0; border-bottom:1px solid var(--line); }
+  .list { max-height:240px; }
+  .hero, .grid2, .grid3 { grid-template-columns:1fr; }
+  .top, .content { padding-left:16px; padding-right:16px; }
+  .log .e { grid-template-columns:1fr; gap:2px; }
+  .kv { grid-template-columns:1fr; gap:2px; } .kv dd { margin-bottom:8px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4ade80"/><stop offset="1" stop-color="#15803d"/></linearGradient>
+  </defs>
+  <symbol id="logo" viewBox="0 0 32 32"><rect width="32" height="32" rx="9" fill="url(#lg)"/><path d="M10.5 9v10.5a3 3 0 0 0 3 3H22" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="22" cy="10.5" r="3" fill="#fff"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
+  <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M7 4v16M17 4v16"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+  <symbol id="i-power" viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></symbol>
+</svg>
+
+<div class="app">
+  <aside aria-label="Danh sách bot">
+    <div class="brand">
+      <svg width="30" height="30" aria-hidden="true"><use href="#logo"/></svg>
+      <b>Limix Bot</b>
+      <button class="icon-btn" id="addBtn" aria-label="Thêm bot" title="Thêm bot"><svg class="i"><use href="#i-plus"/></svg></button>
+    </div>
+    <div class="search">
+      <svg class="i" aria-hidden="true"><use href="#i-search"/></svg>
+      <label class="sr" for="q">Tìm bot</label>
+      <input id="q" type="search" placeholder="Tìm bot" autocomplete="off">
+    </div>
+    <div class="list" id="list"></div>
+    <nav class="nav" aria-label="Điều hướng">
+      <button data-go="home"><svg class="i" aria-hidden="true"><use href="#i-home"/></svg>Tổng quan</button>
+      <button data-go="pairing"><svg class="i" aria-hidden="true"><use href="#i-inbox"/></svg>Chờ duyệt<span class="badge" id="pendingBadge" hidden></span></button>
+      <button data-go="activity"><svg class="i" aria-hidden="true"><use href="#i-pulse"/></svg>Nhật ký</button>
+      <button data-go="settings"><svg class="i" aria-hidden="true"><use href="#i-sliders"/></svg>Cài đặt</button>
+    </nav>
+    <div class="author">Leox ৹ Limix AI</div>
+  </aside>
+  <main id="main" tabindex="-1"></main>
+</div>
+
+<dialog id="addDialog" aria-labelledby="addTitle">
+  <header><h2 id="addTitle">Kết nối bot mới</h2><button class="icon-btn" type="button" data-close aria-label="Đóng"><svg class="i"><use href="#i-x"/></svg></button></header>
+  <form id="addForm" novalidate>
+    <div class="field"><span>Nền tảng</span>
+      <div class="choice" role="radiogroup" aria-label="Nền tảng">
+        <label><input type="radio" name="platform" value="telegram" checked><span class="avatar telegram" style="width:36px;height:36px;border-radius:11px"><svg class="i" aria-hidden="true"><use href="#i-send"/></svg></span><span><b>Telegram</b><br><span class="help">Token từ @BotFather</span></span></label>
+        <label><input type="radio" name="platform" value="zalo"><span class="avatar zalo" style="width:36px;height:36px;border-radius:11px"><svg class="i" aria-hidden="true"><use href="#i-chat"/></svg></span><span><b>Zalo</b><br><span class="help">Token từ bot.zaloplatforms.com</span></span></label>
+      </div>
+    </div>
+    <label class="field"><span>Token của bot</span><input name="token" type="password" autocomplete="off" required placeholder="Dán token vào đây"><span class="help" id="tokenHelp">Telegram: nhắn @BotFather → /newbot → copy token.</span></label>
+    <label class="field"><span>Tên hiển thị (không bắt buộc)</span><input name="name" maxlength="60" placeholder="Ví dụ: Trợ lý bán hàng"></label>
+    <div class="field"><span>Bộ não AI</span>
+      <div class="seg">
+        <label><input type="radio" name="engineKind" value="openmausbot" checked><span><b>Bot trong OpenMausBot</b><span>Câu trả lời do bot AI trong OpenMausBot viết.</span></span></label>
+        <label><input type="radio" name="engineKind" value="echo"><span><b>Chế độ thử</b><span>Bot nhắc lại tin bạn gửi, để kiểm tra kết nối.</span></span></label>
+      </div>
+    </div>
+    <div id="ombFields">
+      <label class="field"><span>Địa chỉ Bot API</span><input name="endpoint" class="mono" autocomplete="off" placeholder="http://127.0.0.1:…/hooks/api/bots/…/messages"></label>
+      <label class="field"><span>Khóa Bot API</span><input name="apiKey" type="password" autocomplete="off" placeholder="bak_…"><span class="help">OpenMausBot: mở bot → bánh răng → Advanced: Access → Bot API → bật “Let apps talk to this bot”, copy địa chỉ và khóa.</span></label>
+    </div>
+    <label class="field"><span>Ai được nhắn cho bot</span>
+      <select name="accessPolicy">
+        <option value="pairing">Người lạ xin mã, bạn duyệt (khuyên dùng)</option>
+        <option value="owner_only">Chỉ mình tôi</option>
+        <option value="open">Mọi người</option>
+      </select>
+    </label>
+    <p class="form-error" id="addError" role="alert"></p>
+    <div class="actions"><button class="btn ghost" type="button" data-close>Hủy</button><button class="btn primary" type="submit"><svg class="i" aria-hidden="true"><use href="#i-link"/></svg>Kết nối</button></div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const ADMIN = "__ADMIN_TOKEN__";
+const APP = { version: "0.2.0", author: "Leox ৹ Limix AI" };
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const icon = (n, cls = "i") => `<svg class="${cls}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const STATUS = { running:"Đang chạy", stopped:"Đã dừng", starting:"Đang khởi động", degraded:"Mất kết nối, đang thử lại", conflict:"Xung đột", credential_invalid:"Token sai", error:"Lỗi" };
+const POLICY = {
+  pairing: ["Người lạ xin mã, bạn duyệt", "Ai nhắn lần đầu sẽ nhận mã 8 ký tự; bạn duyệt trong mục Chờ duyệt."],
+  owner_only: ["Chỉ chủ bot", "Chỉ người đã liên kết bằng /link mới dùng được bot."],
+  open: ["Mọi người", "Ai cũng nhắn được và dùng chung hạn mức AI của bạn."],
+};
+const PLATFORM = { telegram:"Telegram", zalo:"Zalo" };
+let S = { connections: [], pairing: [], activity: [] };
+let view = { name: "home" };
+let lastMain = "";
+
+function prefTheme() { try { return localStorage.getItem("limix.theme") || "system"; } catch { return "system"; } }
+function applyTheme(t) {
+  if (t === "system") document.documentElement.removeAttribute("data-theme"); else document.documentElement.dataset.theme = t;
+  try { localStorage.setItem("limix.theme", t); } catch {}
+}
+applyTheme(prefTheme());
+
+async function api(path, body) {
+  const res = await fetch(path, { method: body === undefined ? "GET" : "POST", headers: { "X-Limix-Admin": ADMIN, "Content-Type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Lỗi ${res.status}`);
+  return data;
+}
+let toastTimer;
+function toast(text, bad) {
+  const t = $("#toast"); t.textContent = text; t.className = `toast show${bad ? " bad" : ""}`;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.className = "toast", 3800);
+}
+const fmtTime = (ms) => new Date(ms).toLocaleString("vi-VN", { hour:"2-digit", minute:"2-digit", day:"2-digit", month:"2-digit" });
+const initial = (c) => (c.name || "?").trim().charAt(0).toUpperCase();
+const conn = (id) => S.connections.find((c) => c.id === id);
+const lastActivity = (id) => S.activity.find((a) => a.connectionId === id);
+
+function avatar(c, size) {
+  const st = size ? `style="width:${size}px;height:${size}px;border-radius:${Math.round(size * .31)}px;font-size:${Math.round(size * .42)}px"` : "";
+  return `<span class="avatar ${c.platform}" ${st} aria-hidden="true">${esc(initial(c))}<span class="dot ${c.status}"></span></span>`;
+}
+
+function renderList() {
+  const q = $("#q").value.trim().toLowerCase();
+  const items = S.connections.filter((c) => !q || c.name.toLowerCase().includes(q) || (c.botIdentity?.username || "").toLowerCase().includes(q));
+  $("#list").innerHTML = `<div class="list-label">Bot của bạn</div>` + (items.length ? items.map((c) => {
+    const last = lastActivity(c.id);
+    return `<button class="item" data-bot="${c.id}" ${view.name === "bot" && view.id === c.id ? 'aria-current="page"' : ""}>
+      ${avatar(c)}
+      <span class="meta"><span class="t"><span>${esc(c.name)}</span><span class="help">${last ? esc(fmtTime(last.at).split(" ")[0]) : ""}</span></span>
+      <span class="s">${esc(PLATFORM[c.platform])} · ${esc(STATUS[c.status] || c.status)}</span></span>
+    </button>`;
+  }).join("") : `<div class="empty" style="padding:6px 10px">${q ? "Không tìm thấy bot." : "Chưa có bot nào."}</div>`);
+  const n = S.pairing.length; const b = $("#pendingBadge"); b.hidden = !n; b.textContent = n;
+  document.querySelectorAll(".nav button").forEach((btn) => {
+    if (btn.dataset.go === view.name) btn.setAttribute("aria-current", "page"); else btn.removeAttribute("aria-current");
+  });
+}
+
+function top(title, extra = "") { return `<div class="top"><h1>${title}</h1><span class="grow"></span>${extra}</div>`; }
+
+function homeView() {
+  const running = S.connections.filter((c) => c.status === "running").length;
+  const problems = S.connections.filter((c) => ["conflict", "credential_invalid", "error", "degraded"].includes(c.status)).length;
+  const dayAgo = Date.now() - 86400000;
+  const events = S.activity.filter((a) => a.at > dayAgo).length;
+  const hero = `<section class="card hero">
+    <div><h2>Bot AI của bạn, có mặt trên Telegram và Zalo.</h2>
+      <p>Kết nối bot với bộ não AI trong OpenMausBot. Limix nhận tin, kiểm soát ai được nhắn và gửi câu trả lời về đúng người.</p>
+      <div class="row"><button class="btn primary" data-act="add">${icon("plus")}Kết nối bot ${S.connections.length ? "mới" : "đầu tiên"}</button></div></div>
+    <div class="steps">
+      <div class="step"><div><b>Tạo bot trên nền tảng</b><span>@BotFather (Telegram) hoặc bot.zaloplatforms.com</span></div></div>
+      <div class="step"><div><b>Bật Bot API trong OpenMausBot</b><span>Copy địa chỉ và khóa của bot AI</span></div></div>
+      <div class="step"><div><b>Kết nối và xác nhận chủ bot</b><span>Gửi /link MÃ từ điện thoại</span></div></div>
+    </div></section>`;
+  const stats = S.connections.length ? `<div class="grid3">
+    <div class="card stat"><div class="n">${running}<span class="help" style="font-size:16px"> / ${S.connections.length}</span></div><div class="l">Bot đang chạy</div></div>
+    <div class="card stat"><div class="n">${S.pairing.length}</div><div class="l">Yêu cầu chờ duyệt</div></div>
+    <div class="card stat"><div class="n" style="color:${problems ? "var(--bad)" : "inherit"}">${problems}</div><div class="l">Bot cần chú ý · ${events} sự kiện trong 24 giờ</div></div>
+  </div>` : "";
+  return top("Tổng quan") + `<div class="content">${hero}${stats}${S.connections.length ? logCard(S.activity.slice(0, 8), "Hoạt động gần đây") : ""}</div>`;
+}
+
+function logCard(rows, title, showBot = true) {
+  return `<section class="card"><h2>${icon("pulse")}${title}</h2><p class="sub">Mọi token và khóa đã được che trước khi ghi.</p>
+    <div class="log">${rows.length ? rows.map((a) => `<div class="e"><time>${esc(fmtTime(a.at))}</time><span class="who">${showBot ? esc(conn(a.connectionId)?.name || "") : esc(a.kind)}</span><span>${esc(a.text)}</span></div>`).join("") : `<div class="empty">Chưa có hoạt động.</div>`}</div></section>`;
+}
+
+function botView(c) {
+  if (!c) return top("Không tìm thấy") + `<div class="content"><div class="card">Bot này không còn.</div></div>`;
+  const who = c.botIdentity?.username ? "@" + c.botIdentity.username : c.botIdentity?.id;
+  const bad = ["conflict", "credential_invalid", "error"].includes(c.status);
+  const actions = `<span class="pill"><span class="dot ${c.status}"></span>${esc(STATUS[c.status] || c.status)}</span>
+    ${c.running ? `<button class="btn" data-act="stop" data-id="${c.id}">${icon("pause")}Dừng</button>` : `<button class="btn primary" data-act="start" data-id="${c.id}">${icon("play")}Chạy</button>`}`;
+  const people = [...c.ownerIds.map((id) => [id, "Chủ bot"]), ...c.allowedIds.map((id) => [id, "Đã duyệt"])];
+  return `<div class="top">${avatar(c, 36)}<div><h1>${esc(c.name)}</h1><div class="help">${esc(PLATFORM[c.platform])} · ${esc(who)}</div></div><span class="grow"></span>${actions}</div>
+  <div class="content">
+    ${c.statusDetail ? `<div class="note ${bad ? "bad" : "warn"}">${icon("alert")}<span>${esc(c.statusDetail)}</span></div>` : ""}
+    ${c.ownerIds.length ? "" : `<div class="note warn">${icon("shield")}<span>Bot chưa có chủ. Tạo mã liên kết bên dưới rồi gửi từ điện thoại để xác nhận bạn là chủ bot.</span></div>`}
+    <div class="grid2">
+      <section class="card"><h2>${icon("link")}Liên kết chủ bot</h2><p class="sub">Mở bot trên điện thoại và gửi mã. Mã dùng một lần, hết hạn sau 15 phút.</p>
+        <div id="codeBox"></div>
+        <button class="btn" data-act="link-code" data-id="${c.id}">${icon("plus")}Tạo mã liên kết</button></section>
+      <section class="card"><h2>${icon("cpu")}Bộ não AI</h2><p class="sub">${c.engine.kind === "echo" ? "Đang ở chế độ thử: bot nhắc lại tin nhắn." : "Bot AI trong OpenMausBot trả lời qua Bot API."}</p>
+        <dl class="kv"><dt>Loại</dt><dd>${c.engine.kind === "echo" ? "Chế độ thử" : "OpenMausBot"}</dd>
+        ${c.engine.kind === "openmausbot" ? `<dt>Địa chỉ</dt><dd class="mono">${esc(c.engine.endpoint)}</dd><dt>Khóa</dt><dd class="mono">${esc(c.engine.keyMasked)}</dd>` : ""}
+        <dt>Token bot</dt><dd class="mono">${esc(c.tokenMasked)}</dd></dl>
+        <details style="margin-top:14px"><summary class="btn ghost" style="display:inline-flex">Đổi bộ não AI</summary>
+          <form class="engineForm" data-id="${c.id}" style="margin-top:12px">
+            <label class="field"><span>Địa chỉ Bot API</span><input name="endpoint" class="mono" required autocomplete="off"></label>
+            <label class="field"><span>Khóa Bot API</span><input name="apiKey" type="password" required autocomplete="off"></label>
+            <button class="btn primary" type="submit">${icon("check")}Lưu</button></form></details></section>
+    </div>
+    <section class="card"><h2>${icon("shield")}Ai được nhắn cho bot</h2><p class="sub">Áp dụng ngay, không cần chạy lại.</p>
+      <div class="seg" role="radiogroup" aria-label="Quyền truy cập">${Object.entries(POLICY).map(([k, [t, d]]) => `<label><input type="radio" name="policy-${c.id}" value="${k}" data-policy="${c.id}" ${k === c.accessPolicy ? "checked" : ""}><span><b>${t}</b><span>${d}</span></span></label>`).join("")}</div></section>
+    <section class="card"><h2>${icon("users")}Người dùng có quyền</h2><p class="sub">Gỡ quyền thì người đó phải xin mã lại.</p>
+      <div class="people">${people.length ? people.map(([id, r]) => `<div class="person"><span class="mono grow">${esc(id)}</span><span class="role">${r}</span><button class="btn danger" style="height:30px" data-act="remove-person" data-id="${c.id}" data-person="${esc(id)}" aria-label="Gỡ quyền ${esc(id)}">${icon("x")}Gỡ</button></div>`).join("") : `<div class="empty">Chưa có ai.</div>`}</div></section>
+    ${logCard(S.activity.filter((a) => a.connectionId === c.id).slice(0, 12), "Hoạt động của bot", false)}
+    <section class="card"><h2>${icon("trash")}Ngắt kết nối</h2><p class="sub">Xóa bot khỏi Limix kèm token đã lưu. Bot trên ${esc(PLATFORM[c.platform])} vẫn còn.</p>
+      <button class="btn danger" data-act="delete" data-id="${c.id}">${icon("trash")}Ngắt kết nối bot này</button></section>
+  </div>`;
+}
+
+function pairingView() {
+  return top("Chờ duyệt") + `<div class="content"><section class="card"><h2>${icon("inbox")}Yêu cầu dùng bot</h2>
+    <p class="sub">Người lạ nhắn cho bot sẽ nhận mã và xuất hiện ở đây. Yêu cầu tự hết hạn sau 1 giờ.</p>
+    <div class="people">${S.pairing.length ? S.pairing.map((p) => `<div class="person"><span class="grow"><b>${esc(p.senderName || p.senderId)}</b><br><span class="help">ID ${esc(p.senderId)} · ${esc(conn(p.connectionId)?.name || "")} · ${esc(fmtTime(p.createdAt))}</span></span>
+      <button class="btn primary" data-act="approve" data-id="${p.id}">${icon("check")}Duyệt</button><button class="btn ghost" data-act="deny" data-id="${p.id}">Từ chối</button></div>`).join("") : `<div class="empty">Không có yêu cầu nào.</div>`}</div></section></div>`;
+}
+
+function activityView() { return top("Nhật ký") + `<div class="content">${logCard(S.activity, "Toàn bộ hoạt động")}</div>`; }
+
+function settingsView() {
+  const t = prefTheme();
+  return top("Cài đặt") + `<div class="content">
+    <section class="card"><h2>Giao diện</h2><p class="sub">Chọn màu nền cho ứng dụng.</p>
+      <div class="seg" role="radiogroup" aria-label="Giao diện">${[["system", "Theo Windows"], ["dark", "Tối"], ["light", "Sáng"]].map(([k, l]) => `<label><input type="radio" name="theme" value="${k}" data-theme-pick ${k === t ? "checked" : ""}><span><b>${l}</b></span></label>`).join("")}</div></section>
+    <section class="card"><h2>Giới thiệu</h2>
+      <dl class="kv"><dt>Ứng dụng</dt><dd>Limix Bot ${APP.version}</dd><dt>Tác giả</dt><dd>${esc(APP.author)}</dd>
+      <dt>Dữ liệu</dt><dd>Thư mục <span class="mono">limix-gateway\\data</span> (token đã mã hóa, đừng chia sẻ)</dd>
+      <dt>Nền tảng AI</dt><dd>OpenMausBot qua Bot API</dd></dl></section>
+    <section class="card"><h2>${icon("power")}Thoát Limix</h2><p class="sub">Dừng mọi bot. Bot sẽ không trả lời cho tới khi mở lại Limix Bot.</p>
+      <button class="btn danger" data-act="shutdown">${icon("power")}Thoát</button></section>
+  </div>`;
+}
+
+function renderMain(force) {
+  const html = view.name === "bot" ? botView(conn(view.id)) : view.name === "pairing" ? pairingView() : view.name === "activity" ? activityView() : view.name === "settings" ? settingsView() : homeView();
+  const main = $("#main");
+  const busy = main.contains(document.activeElement) && document.activeElement.matches("input, select, textarea, summary") || main.querySelector("details[open]");
+  if (!force && (html === lastMain || busy)) return;
+  lastMain = html; main.innerHTML = html;
+}
+
+function go(name, id) { view = { name, id }; renderList(); renderMain(true); $("#main").scrollTop = 0; $("#main").focus({ preventScroll: true }); }
+
+async function refresh(force) {
+  try { S = await api("/api/state"); renderList(); renderMain(force); }
+  catch (e) { toast(e.message, true); }
+}
+
+document.addEventListener("click", async (ev) => {
+  const nav = ev.target.closest("[data-go]"); if (nav) return go(nav.dataset.go);
+  const item = ev.target.closest("[data-bot]"); if (item) return go("bot", item.dataset.bot);
+  if (ev.target.closest("#addBtn")) return openAdd();
+  if (ev.target.closest("[data-close]")) return $("#addDialog").close();
+  const b = ev.target.closest("[data-act]"); if (!b) return;
+  const { act, id } = b.dataset;
+  try {
+    if (act === "add") return openAdd();
+    if (act === "delete") { if (!confirm("Ngắt kết nối bot này khỏi Limix? Bot trên nền tảng vẫn còn.")) return; await api(`/api/connections/${id}/delete`, {}); toast("Đã ngắt kết nối."); return go("home"); }
+    if (act === "shutdown") { if (!confirm("Thoát Limix? Mọi bot sẽ ngừng trả lời.")) return; await api("/api/shutdown", {}); document.body.innerHTML = `<div style="display:grid;place-items:center;height:100vh;color:var(--muted)">Limix đã dừng. Bạn có thể đóng cửa sổ này.</div>`; return; }
+    b.disabled = true;
+    if (act === "approve" || act === "deny") { await api(`/api/pairing/${id}/${act}`, {}); toast(act === "approve" ? "Đã duyệt." : "Đã từ chối."); }
+    else if (act === "remove-person") { await api(`/api/connections/${id}/remove-person`, { personId: b.dataset.person }); toast("Đã gỡ quyền."); }
+    else if (act === "link-code") {
+      const r = await api(`/api/connections/${id}/link-code`, {});
+      const box = $("#codeBox");
+      box.innerHTML = `<div class="code" style="margin-bottom:12px"><span>/link ${esc(r.code)}</span><button class="icon-btn" data-act="copy" data-text="/link ${esc(r.code)}" aria-label="Sao chép">${icon("copy")}</button></div>`;
+      b.disabled = false; return;
+    }
+    else if (act === "copy") { await navigator.clipboard.writeText(b.dataset.text).catch(() => {}); toast("Đã sao chép."); b.disabled = false; return; }
+    else await api(`/api/connections/${id}/${act}`, {});
+    await refresh(true);
+  } catch (e) { toast(e.message, true); }
+  finally { b.disabled = false; }
+});
+
+document.addEventListener("change", async (ev) => {
+  const p = ev.target.closest("[data-policy]");
+  if (p) { try { await api(`/api/connections/${p.dataset.policy}/policy`, { accessPolicy: p.value }); toast("Đã cập nhật quyền."); p.blur(); await refresh(true); } catch (e) { toast(e.message, true); } }
+  const t = ev.target.closest("[data-theme-pick]"); if (t) { applyTheme(t.value); }
+});
+
+document.addEventListener("submit", async (ev) => {
+  const f = ev.target.closest(".engineForm"); if (!f) return;
+  ev.preventDefault();
+  try { await api(`/api/connections/${f.dataset.id}/engine`, { engineKind: "openmausbot", ...Object.fromEntries(new FormData(f)) }); toast("Đã đổi bộ não AI."); document.activeElement.blur(); await refresh(true); }
+  catch (e) { toast(e.message, true); }
+});
+
+$("#q").addEventListener("input", renderList);
+
+const dlg = $("#addDialog"), form = $("#addForm");
+function syncForm() {
+  $("#ombFields").hidden = form.engineKind.value !== "openmausbot";
+  $("#tokenHelp").textContent = form.platform.value === "zalo" ? "Zalo: đăng nhập bot.zaloplatforms.com → tạo bot → copy token." : "Telegram: nhắn @BotFather → /newbot → copy token.";
+}
+function openAdd() { form.reset(); $("#addError").textContent = ""; syncForm(); dlg.showModal(); form.token.focus(); }
+form.addEventListener("change", syncForm);
+form.addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const err = $("#addError"); err.textContent = "";
+  if (!form.token.value.trim()) { err.textContent = "Chưa nhập token của bot."; form.token.focus(); return; }
+  if (form.engineKind.value === "openmausbot" && (!form.endpoint.value.trim() || !form.apiKey.value.trim())) { err.textContent = "Cần địa chỉ và khóa Bot API của OpenMausBot (hoặc chọn Chế độ thử)."; return; }
+  const btn = form.querySelector("[type=submit]"); btn.disabled = true; btn.lastChild.textContent = "Đang kiểm tra…";
+  try {
+    const r = await api("/api/connections", Object.fromEntries(new FormData(form)));
+    dlg.close();
+    toast(r.engineCheck && !r.engineCheck.ok ? `Đã kết nối, nhưng AI báo: ${r.engineCheck.message}` : "Đã kết nối. Tạo mã liên kết để xác nhận bạn là chủ bot.", r.engineCheck && !r.engineCheck.ok);
+    await refresh(true); go("bot", r.connection.id);
+  } catch (e) { err.textContent = e.message; }
+  finally { btn.disabled = false; btn.lastChild.textContent = "Kết nối"; }
+});
+
+refresh(true);
+setInterval(() => refresh(false), 4000);
+</script>
+</body>
+</html>

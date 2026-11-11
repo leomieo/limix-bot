@@ -1,0 +1,16 @@
+{
+  "name": "limix-gateway",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Limix Bot: connects Telegram and Zalo bots to OpenMausBot bots through the OpenMausBot Bot API.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/main.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "author": "Leox ৹ Limix AI"
+}
