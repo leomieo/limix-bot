@@ -766,6 +766,104 @@ def help_menu(s):
 edit("src/components/SidebarProfileMenu.tsx", help_menu)
 edit("src/lib/app-links.ts", lambda s: s.replace('export const FEEDBACK_URL = "https://discord.gg/9Wb8MEpXRs";', 'export const FEEDBACK_URL = "https://zalo.me/0977242439";'))
 
+# 9h. Learned skills are added at once, no question asked (owner's choice 2026-11-12). Settings > Experimental has a switch
+# (features.skillAutoApply, on unless false); when it is off, a skill the background review learns waits in the chat as
+# a card asking whether to learn it (the same card a bot's own skill proposal uses).
+def auto_apply_flag(s):
+    s = s.replace("skillReview?: boolean; skillReviewSteps", "skillReview?: boolean; skillAutoApply?: boolean; skillReviewSteps")
+    if "skillAutoApply: z.boolean()" not in s and "  skillReview: z.boolean().optional(),\n" in s:
+        s = s.replace("  skillReview: z.boolean().optional(),\n",
+                      "  skillReview: z.boolean().optional(),\n  /** A skill the review learns is added at once. On unless false; off, the owner is asked first. */\n  skillAutoApply: z.boolean().optional(),\n", 1)
+    return s
+for rel in ("server/config.ts", "src/lib/feature-flags.ts", "src/state/config-status.ts"):
+    edit(rel, auto_apply_flag)
+edit("server/config.ts", lambda s: s if "export function skillAutoApplyEnabled" in s else must(s,
+     "export function skillReviewEnabled(cfg: AppConfig): boolean {",
+     "export function skillAutoApplyEnabled(cfg: AppConfig): boolean {\n  return cfg.features?.skillAutoApply !== false;\n}\n\nexport function skillReviewEnabled(cfg: AppConfig): boolean {"))
+edit("src/lib/feature-flags.ts", lambda s: s if "export function skillAutoApplyEnabled" in s else must(s,
+     "export function skillReviewSteps(",
+     "export function skillAutoApplyEnabled(config: FeatureFlagConfig | null | undefined): boolean {\n  return config?.features?.skillAutoApply !== false;\n}\n\nexport function skillReviewSteps("))
+def auto_apply_server(s):
+    if "skillAutoApplyEnabled" not in s:
+        s = must(s, "  skillReviewEnabled,\n  skillReviewSteps,\n", "  skillAutoApplyEnabled,\n  skillReviewEnabled,\n  skillReviewSteps,\n")
+        s = must(s, "      skillReview: cfg.features?.skillReview !== false,\n",
+                 "      skillReview: cfg.features?.skillReview !== false,\n      skillAutoApply: skillAutoApplyEnabled(cfg),\n")
+    if "Limix Bot: owner asked first" in s:
+        return s
+    old = """    const direct = appliesDirectly(botId, threadId);
+    if (!direct) return { ok: false, error: "this conversation cannot apply skill changes without review" };
+    if (change.action === "update" && skillsHost.editable(botId, change.name)) return skillsHost.applyReviewUpdate(bot, threadId, change, direct);
+    const staged = stageSkillWrite(botId, {"""
+    new = """    const direct = appliesDirectly(botId, threadId);
+    if (!direct) return { ok: false, error: "this conversation cannot apply skill changes without review" };
+    const askFirst = !skillAutoApplyEnabled(cfg); // Limix Bot: owner asked first
+    if (change.action === "update" && skillsHost.editable(botId, change.name)) {
+      if (askFirst) return { ok: false, error: "a team-shared skill is not changed while learning asks first" };
+      return skillsHost.applyReviewUpdate(bot, threadId, change, direct);
+    }
+    const staged = stageSkillWrite(botId, {"""
+    s = must(s, old, new)
+    old2 = """    if ("error" in staged) return { ok: false, error: staged.error };
+    const applied = applyOwnStagedSkill(bot, threadId, staged, direct);"""
+    new2 = """    if ("error" in staged) return { ok: false, error: staged.error };
+    if (askFirst) {
+      try {
+        const card = appendSkillRequestCard({ botId, threadId, staged });
+        appendDecision(DATA_DIR, { threadId, requestId: card.requestId, botId, botName: bot.name, tool: "stage_skill",
+          summary: card.summary, decision: "card-shown", source: "skill" });
+        return { ok: true };
+      } catch (error) {
+        rejectStagedSkillWrite(botId, staged.id);
+        return { ok: false, error: error instanceof Error ? error.message : String(error) };
+      }
+    }
+    const applied = applyOwnStagedSkill(bot, threadId, staged, direct);"""
+    return must(s, old2, new2)
+edit("server/index.ts", auto_apply_server)
+
+def auto_apply_ui(s):
+    if "skillAutoApply" in s:
+        return s
+    s = must(s, "  skillReviewEnabled,\n", "  skillAutoApplyEnabled,\n  skillReviewEnabled,\n")
+    s = must(s, "  const enabled = skillReviewEnabled(state.config);\n", "  const enabled = skillReviewEnabled(state.config);\n  const autoApply = skillAutoApplyEnabled(state.config);\n")
+    s = must(s, "features: { skillReview?: boolean; skillReviewSteps?: number }", "features: { skillReview?: boolean; skillAutoApply?: boolean; skillReviewSteps?: number }")
+    return must(s, "      {enabled ? (\n        <div className=\"mt-3 flex items-center gap-3\">",
+"""      {enabled ? (
+        <div className="mt-3 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-[13px] text-ink">{t("settings.experimental.skillAutoApply")}</div>
+            <div className="mt-0.5 text-[12px] leading-relaxed text-ink-secondary">{t("settings.experimental.skillAutoApplyDetail")}</div>
+          </div>
+          <Switch
+            checked={autoApply}
+            aria-label={t("settings.experimental.skillAutoApplyAria")}
+            disabled={saving}
+            onClick={() => void save({ skillAutoApply: !autoApply })}
+            className="disabled:cursor-not-allowed disabled:opacity-50"
+          />
+        </div>
+      ) : null}
+      {enabled ? (
+        <div className="mt-3 flex items-center gap-3">""")
+edit("src/components/SkillReviewSettings.tsx", auto_apply_ui)
+
+AUTO_KEYS_EN = {
+    "settings.experimental.skillAutoApply": "Learn new skills without asking",
+    "settings.experimental.skillAutoApplyDetail": "On: a skill a bot learns is added at once, with Undo. Off: the bot asks “Learn this new skill?” first.",
+    "settings.experimental.skillAutoApplyAria": "Learn new skills without asking",
+}
+def auto_keys(s):
+    d = json.loads(s)
+    if "settings.experimental.skillAutoApply" in d:
+        return s
+    out = {}
+    for k, v in d.items():
+        out[k] = v
+        if k == "settings.experimental.skillReviewAria":
+            out.update(AUTO_KEYS_EN)
+    return json.dumps(out, indent=2, ensure_ascii=False) + "\n"
+edit("src/locales/en.json", auto_keys)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):

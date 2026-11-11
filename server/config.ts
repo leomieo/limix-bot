@@ -220,6 +220,8 @@ const featureConfigSchema = z.object({
   skillAuthoring: z.boolean().optional(),
   /** The bot's engine reviews long conversations and updates its learned skills. Off unless true; needs skillAuthoring. */
   skillReview: z.boolean().optional(),
+  /** A skill the review learns is added at once. On unless false; off, the owner is asked first. */
+  skillAutoApply: z.boolean().optional(),
   /** Tool steps in one conversation between automatic reviews. */
   skillReviewSteps: z.number().int().min(3).max(100).optional(),
   /** Show each tool run in the transcript. Off unless explicitly enabled. */
@@ -483,7 +485,7 @@ export interface AppConfig extends HelperConfig {
   context?: { rebuildBytes?: number; compactAt?: number; autoCompact?: boolean; roomCompactAt?: number; roomSessions?: boolean; replayToolHistory?: boolean };
   memory?: { captureQuietMs?: number; tidyHour?: number };
   localVm?: { mode?: "shared" | "per-bot" | "pool"; maxInstances?: number; idleTimeoutMinutes?: number; preserveInstalledApps?: boolean; memoryGb?: number; cpus?: number };
-  features?: { skillAuthoring?: boolean; skillReview?: boolean; skillReviewSteps?: number; showToolCalls?: boolean; browser?: boolean; sharedComputers?: boolean; claudeUserMcp?: boolean; claudeUserSkills?: boolean; llmThreadTitles?: boolean; smartSetupChoices?: boolean; autoRecall?: boolean; skillsLibrary?: boolean; shareLearnedSkills?: "off" | "ask" | "auto"; roomMemoryCapture?: boolean; parallelRoomJobs?: boolean; acpPlanLines?: boolean; agentsToolBridge?: boolean; savedSteps?: boolean };
+  features?: { skillAuthoring?: boolean; skillReview?: boolean; skillAutoApply?: boolean; skillReviewSteps?: number; showToolCalls?: boolean; browser?: boolean; sharedComputers?: boolean; claudeUserMcp?: boolean; claudeUserSkills?: boolean; llmThreadTitles?: boolean; smartSetupChoices?: boolean; autoRecall?: boolean; skillsLibrary?: boolean; shareLearnedSkills?: "off" | "ask" | "auto"; roomMemoryCapture?: boolean; parallelRoomJobs?: boolean; acpPlanLines?: boolean; agentsToolBridge?: boolean; savedSteps?: boolean };
   onboarding?: { completedAt?: string; version?: number; reelSeen?: boolean; hintsSeen?: string[]; firstTurnAt?: string };
   browserProfiles?: BrowserProfile[];
   browserEngine?: BrowserEngineConfig;
@@ -619,6 +621,10 @@ export function skillAuthoringEnabled(cfg: AppConfig): boolean {
 export const DEFAULT_SKILL_REVIEW_STEPS = 10;
 export const MIN_SKILL_REVIEW_STEPS = 3;
 export const MAX_SKILL_REVIEW_STEPS = 100;
+
+export function skillAutoApplyEnabled(cfg: AppConfig): boolean {
+  return cfg.features?.skillAutoApply !== false;
+}
 
 export function skillReviewEnabled(cfg: AppConfig): boolean {
   return skillAuthoringEnabled(cfg) && cfg.features?.skillReview !== false;
