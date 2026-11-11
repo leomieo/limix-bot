@@ -81,6 +81,7 @@ def builder(s):
     return s
 edit("electron-builder.yml", builder)
 edit(".gitignore", lambda s: s if "/limix-runtime/" in s else s.rstrip("\n") + "\n# Limix Bot: Python and uv fetched by the Windows workflow\n/limix-runtime/\n")
+edit(".gitignore", lambda s: s if "limix/__pycache__/" in s else s.rstrip("\n") + "\nlimix/__pycache__/\n")
 
 # 2b. Build on GitHub: only Limix Bot's own Windows workflow runs in the fork.
 wf = ROOT / ".github/workflows"
@@ -261,33 +262,124 @@ if iconset.exists():
                 png.write_bytes(data)
                 changed.append(png.relative_to(ROOT).as_posix())
 
-# 6b. Mascot: the trademark cursor outline becomes Limix Bot's "Limi" body: two overlapping rounded blocks (the
-# "giao thoa anh sang" mark, owner's choice 2026-11-11: Li = light/limitless, mix = blend). The body keeps the internal
-# id "cursor" so every caller, stored bot and native client keeps working; only its outline and name change.
+# 6a. Face: the trademark cursor eyes become Limix Bot's glowing pill eyes behind a dark visor (owner's reference
+# picture, 2026-11-12). limix/face.py builds the 25 expressions in the engine's index order; the mouth folds away.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import face  # noqa: E402
+
+def face_data(s):
+    s = re.sub(r"const ENCODED: string\[\] = \[\n.*?\n\]", lambda m: face.face_data_block(), s, count=1, flags=re.S)
+    s = re.sub(r"export const MOUTHS: number\[\]\[\] = \[\n.*?\n\]", lambda m: face.MOUTHS_BLOCK, s, count=1, flags=re.S)
+    if "export const VISOR" not in s:
+        s = s.rstrip("\n") + "\n" + face.VISOR_TS
+    return s
+edit("src/components/cursor-face-data.ts", face_data)
+
+def solve(s):
+    s = must(s, "  MOUTHS,\n  MOUTH_STROKE,\n  mouthFrame,\n} from", "  MOUTHS,\n  MOUTH_STROKE,\n  VISOR,\n  mouthFrame,\n} from")
+    if "Limix Bot: the visor stays put" in s:
+        return s
+    return must(s, "    // Sample the mouth curve; it is stroked, so it needs extra room.\n",
+                "    // Limix Bot: the visor stays put while the eyes look around inside it, so it must fit as well.\n"
+                "    for (let i = 0; i < 64; i++) {\n"
+                "      const a = (i / 64) * Math.PI * 2\n"
+                "      const c = Math.cos(a), s = Math.sin(a)\n"
+                "      const hx = VISOR.w / 2 - VISOR.r, hy = VISOR.h / 2 - VISOR.r\n"
+                "      xs.push(Math.sign(c) * hx + c * VISOR.r, Math.sign(s) * hy + s * VISOR.r)\n"
+                "      needs.push(PAD)\n"
+                "    }\n\n"
+                "    // Sample the mouth curve; it is stroked, so it needs extra room.\n")
+edit("scripts/mascot-bodies/solve.ts", solve)
+
+# 6b. Mascot: the trademark cursor outline becomes Limix Bot's "Limi": a chubby round-tipped star (owner's reference
+# picture, 2026-11-12). The body keeps the internal id "cursor" so every caller, stored bot and native client keeps
+# working; only its outline and name change. The "star" slot carries the two overlapping blocks of the Limix mark
+# ("giao thoa anh sang") so that shape stays on offer, and the polygons get softer corners to match.
 LIMI_D = ("M62 51C70 51 75 51 83 51C88 36 101 27 122 27C134 27 145 27 156 27C178 27 190 41 190 64C190 82 190 99 190 117"
           "C190 141 176 154 153 154C143 154 132 154 121 154C116 168 104 176 84 176C71 176 58 176 44 176C21 176 10 161 10 139"
           "C10 122 10 105 10 87C10 63 26 51 49 51C53 51 58 51 62 51Z")
+LIMI_STAR_D = face.puffy_star()
 LIMI = f"""
-/** Limix Bot's own mascot body "Limi": two overlapping rounded blocks, the blend in the Limix mark. */
+/** Limix Bot's own mascot body "Limi": a chubby five-point star with round tips. */
+const LIMI_STAR_D = "{LIMI_STAR_D}"
+/** The blend in the Limix mark: two overlapping rounded blocks. */
 const LIMI_D = "{LIMI_D}"
 """
+OLD_LIMI = re.compile(r"/\*\* Limix Bot's own mascot body.*?\nconst LIMI_D = \"[^\"]*\"\n\n?", re.S)
 OLD_BUBBLE = re.compile(r"/\*\* Limix Bot's own mascot body: a rounded chat bubble.*?\n}\n\n?", re.S)
 def builders(s):
     s = OLD_BUBBLE.sub("", s)
-    if "const LIMI_D" not in s:
-        i = s.index("export const BODY_DEFS")
-        s = s[:i] + LIMI.lstrip("\n") + "\n" + s[i:]
+    s = OLD_LIMI.sub("", s)
+    i = s.index("export const BODY_DEFS")
+    s = s[:i] + LIMI.lstrip("\n") + "\n" + s[i:]
     for old in ('{ id: "cursor", name: "Cursor", d: CURSOR_D, viewBox: [0, 0, 512, 512] },',
-                '{ id: "cursor", name: "Limi", d: buildBubble(), viewBox: [0, 0, 200, 200] },'):
-        s = s.replace(old, '{ id: "cursor", name: "Limi", d: LIMI_D, viewBox: [0, 0, 200, 200] },')
+                '{ id: "cursor", name: "Limi", d: buildBubble(), viewBox: [0, 0, 200, 200] },',
+                '{ id: "cursor", name: "Limi", d: LIMI_D, viewBox: [0, 0, 200, 200] },'):
+        s = s.replace(old, '{ id: "cursor", name: "Limi", d: LIMI_STAR_D, viewBox: [0, 0, 200, 200] },')
+    s = s.replace('{ id: "star", name: "Star", d: buildStar(196, 196, 5, 0.55), viewBox: [0, 0, 200, 200] },',
+                  '{ id: "star", name: "Blend", d: LIMI_D, viewBox: [0, 0, 200, 200] },')
+    s = s.replace("buildPolygon(196, 196, 6, 0.12)", "buildPolygon(196, 196, 6, 0.22)")
+    s = s.replace("buildPolygon(196, 196, 4, 0.12)", "buildPolygon(196, 196, 4, 0.22)")
     return s
 edit("scripts/mascot-bodies/builders.ts", builders)
-edit("scripts/gen-mascot-bodies.ts", lambda s: s if "const CAP = 0.83" in s else must(s, "const CAP = 1\n",
-     "// Limix Bot: its bubble body holds a full-size face, so the catalog cap sits just under what the star body can hold.\nconst CAP = 0.83\n"))
+# The visor face fills the star snugly at the upstream cap, so the catalog keeps CAP = 1 (an earlier Limix body
+# lowered it to 0.83; put back if found).
+edit("scripts/gen-mascot-bodies.ts", lambda s: s.replace(
+    "// Limix Bot: its bubble body holds a full-size face, so the catalog cap sits just under what the star body can hold.\nconst CAP = 0.83\n",
+    "const CAP = 1\n"))
 before = (ROOT / "shared/mascot-bodies.ts").read_text(encoding="utf-8")
 subprocess.run(["node", "--experimental-strip-types", "--no-warnings", "scripts/gen-mascot-bodies.ts"], cwd=ROOT, check=True, stdout=subprocess.DEVNULL)
 if (ROOT / "shared/mascot-bodies.ts").read_text(encoding="utf-8") != before:
     changed.append("shared/mascot-bodies.ts")
+
+# 6d. Mascot finish: a soft 3D sheen instead of the flat diagonal ramp, the dark visor, and eyes that glow in a light
+# tint of the body colour. The default colour ("chrome", a steel grey upstream) becomes Limix cyan.
+def avatar_render(s):
+    s = must(s, "  MOUTH_STROKE,\n  mouthFrame,\n  type Ring,\n} from \"./cursor-face-data\"",
+             "  MOUTH_STROKE,\n  VISOR,\n  mouthFrame,\n  type Ring,\n} from \"./cursor-face-data\"")
+    s = must(s, "      showMouth = true,\n", "      showMouth = false,\n")
+    s = must(s, """          <linearGradient id={`${uid}-grad`} x1="1" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={gradient[0]} />
+            <stop offset="55%" stopColor={gradient[1]} />
+            <stop offset="100%" stopColor={gradient[2]} />
+          </linearGradient>""", """          <radialGradient id={`${uid}-grad`} cx="0.36" cy="0.3" r="0.82" fx="0.32" fy="0.22">
+            <stop offset="0%" stopColor={gradient[0]} />
+            <stop offset="45%" stopColor={gradient[1]} />
+            <stop offset="100%" stopColor={gradient[2]} />
+          </radialGradient>
+          <linearGradient id={`${uid}-visor`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#24333F" />
+            <stop offset="100%" stopColor="#05090D" />
+          </linearGradient>
+          <clipPath id={`${uid}-vclip`}>
+            <rect x={VISOR.x} y={VISOR.y} width={VISOR.w} height={VISOR.h} rx={VISOR.r} />
+          </clipPath>""")
+    s = must(s, """            <g transform={anchorTransform(silhouette.anchor)}>
+              <path ref={eye0} fill={eyeColor} />
+              <path ref={eye1} fill={eyeColor} />""", """            <g transform={anchorTransform(silhouette.anchor)}>
+              <rect x={VISOR.x} y={VISOR.y} width={VISOR.w} height={VISOR.h} rx={VISOR.r} fill={`url(#${uid}-visor)`} stroke="#ffffff" strokeOpacity={0.12} strokeWidth={2} />
+              <g clipPath={`url(#${uid}-vclip)`}>
+              <use href={`#${uid}-eye0`} stroke={eyeColor} strokeWidth={12} strokeOpacity={0.16} strokeLinejoin="round" />
+              <use href={`#${uid}-eye1`} stroke={eyeColor} strokeWidth={12} strokeOpacity={0.16} strokeLinejoin="round" />
+              <path id={`${uid}-eye0`} ref={eye0} fill={eyeColor} />
+              <path id={`${uid}-eye1`} ref={eye1} fill={eyeColor} />
+              </g>""")
+    return s
+edit("src/components/CursorAvatar.tsx", avatar_render)
+edit("src/lib/mascot.ts", lambda s: must(must(s,
+     'export const CHROME_GRADIENT: [string, string, string] = ["#F1F4F7", "#AEB8C3", "#66717E"];',
+     'export const CHROME_GRADIENT: [string, string, string] = ["#C4FAFF", "#45D6EE", "#137F9E"];'),
+     'export const CHROME_EYES = "#1E2833";', 'export const CHROME_EYES = "#9CF7FF";').replace(
+     '  chrome: "#B3BAC4",\n} satisfies Record<MausColor, string>;', '  chrome: "#45D6EE",\n} satisfies Record<MausColor, string>;'))
+edit("src/components/Avatar.tsx", lambda s: must(s,
+     "        eyeColor={faceInk ?? (chrome ? CHROME_EYES : undefined)}",
+     "        eyeColor={faceInk ?? (chrome ? CHROME_EYES : mix(MAUS_COLORS[color] ?? MAUS_COLORS.green, \"#ffffff\", 0.62))}"))
+
+edit("src/styles.css", lambda s: re.sub(r"--identity-chrome: #[0-9A-Fa-f]{6};",
+     lambda m: "--identity-chrome: #3CCFEA;" if m.group(0).upper().endswith("B3BAC4;") or m.group(0).endswith("#3CCFEA;") else "--identity-chrome: #1590AE;", s))
+
+edit("src/locales/en.json", lambda s: must(must(s, '"mascot.body.cursor": "Cursor",', '"mascot.body.cursor": "Limi",'),
+     '"mascot.body.star": "Star",', '"mascot.body.star": "Blend",'))
 
 # 6c. MausBot's finished chrome pictures of the trademark cursor (face included) go: with no pictures for a body the
 # avatar keeps its drawn steel finish over the Limi outline (src/lib/steel-body.ts).

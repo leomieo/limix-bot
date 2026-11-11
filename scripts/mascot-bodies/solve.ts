@@ -11,6 +11,7 @@ import {
   GAZE_TRAVEL,
   MOUTHS,
   MOUTH_STROKE,
+  VISOR,
   mouthFrame,
 } from "../../src/components/cursor-face-data.ts"
 import { sampleSdf, type Sdf } from "./sdf.ts"
@@ -55,6 +56,15 @@ export function buildClouds(
         xs.push(p[0] - FACE_CENTRE[0], p[1] - FACE_CENTRE[1])
         needs.push(eyePad)
       }
+    }
+
+    // Limix Bot: the visor stays put while the eyes look around inside it, so it must fit as well.
+    for (let i = 0; i < 64; i++) {
+      const a = (i / 64) * Math.PI * 2
+      const c = Math.cos(a), s = Math.sin(a)
+      const hx = VISOR.w / 2 - VISOR.r, hy = VISOR.h / 2 - VISOR.r
+      xs.push(Math.sign(c) * hx + c * VISOR.r, Math.sign(s) * hy + s * VISOR.r)
+      needs.push(PAD)
     }
 
     // Sample the mouth curve; it is stroked, so it needs extra room.

@@ -12,6 +12,7 @@ import {
   GAZE_TRAVEL,
   MOUTHS,
   MOUTH_STROKE,
+  VISOR,
   mouthFrame,
   type Ring,
 } from "./cursor-face-data"
@@ -928,7 +929,7 @@ export const CursorAvatar = React.forwardRef<CursorAvatarHandle, CursorAvatarPro
       flip = false,
       spring = 7,
       eyeScale = 1,
-      showMouth = true,
+      showMouth = false,
       mouthStroke = MOUTH_STROKE,
       motion,
       effects = true,
@@ -1254,11 +1255,18 @@ export const CursorAvatar = React.forwardRef<CursorAvatarHandle, CursorAvatarPro
         aria-hidden={label ? undefined : true}
       >
         <defs>
-          <linearGradient id={`${uid}-grad`} x1="1" y1="0" x2="0" y2="1">
+          <radialGradient id={`${uid}-grad`} cx="0.36" cy="0.3" r="0.82" fx="0.32" fy="0.22">
             <stop offset="0%" stopColor={gradient[0]} />
-            <stop offset="55%" stopColor={gradient[1]} />
+            <stop offset="45%" stopColor={gradient[1]} />
             <stop offset="100%" stopColor={gradient[2]} />
+          </radialGradient>
+          <linearGradient id={`${uid}-visor`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#24333F" />
+            <stop offset="100%" stopColor="#05090D" />
           </linearGradient>
+          <clipPath id={`${uid}-vclip`}>
+            <rect x={VISOR.x} y={VISOR.y} width={VISOR.w} height={VISOR.h} rx={VISOR.r} />
+          </clipPath>
           {/* The fit goes on the clipPath itself: browsers ignore a <g> inside one, which is also why silhouette.clip is pre-flattened. */}
           <clipPath
             id={`${uid}-clip`}
@@ -1273,8 +1281,13 @@ export const CursorAvatar = React.forwardRef<CursorAvatarHandle, CursorAvatarPro
           {picture ? <image href={picture} x="-15" y="-15" width={VIEW_SPAN} height={VIEW_SPAN} preserveAspectRatio="none" /> : <g transform={silhouette.fit || undefined} dangerouslySetInnerHTML={{ __html: body }} />}
           <g clipPath={`url(#${uid}-clip)`} visibility={picture ? 'hidden' : undefined}>
             <g transform={anchorTransform(silhouette.anchor)}>
-              <path ref={eye0} fill={eyeColor} />
-              <path ref={eye1} fill={eyeColor} />
+              <rect x={VISOR.x} y={VISOR.y} width={VISOR.w} height={VISOR.h} rx={VISOR.r} fill={`url(#${uid}-visor)`} stroke="#ffffff" strokeOpacity={0.12} strokeWidth={2} />
+              <g clipPath={`url(#${uid}-vclip)`}>
+              <use href={`#${uid}-eye0`} stroke={eyeColor} strokeWidth={12} strokeOpacity={0.16} strokeLinejoin="round" />
+              <use href={`#${uid}-eye1`} stroke={eyeColor} strokeWidth={12} strokeOpacity={0.16} strokeLinejoin="round" />
+              <path id={`${uid}-eye0`} ref={eye0} fill={eyeColor} />
+              <path id={`${uid}-eye1`} ref={eye1} fill={eyeColor} />
+              </g>
               {showMouth && (
                 <path
                   ref={mouth}
