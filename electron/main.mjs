@@ -4,6 +4,7 @@ import { LIMIX_CLOUD_ENABLED, LIMIX_ORGANIZATION_ENABLED } from "./limix-feature
 import { createRequire } from "node:module";
 import { randomBytes, randomUUID } from "node:crypto";
 import fs from "node:fs";
+import { execFileSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -3179,4 +3180,15 @@ function releaseDesktopDataDirLease() {
 // before-quit is too early (this app defers it); will-quit is Electron's last boundary, and the process hook covers app.exit().
 app.on("will-quit", releaseDesktopDataDirLease);
 app.on("will-quit", () => { desktopTray?.destroy(); void tailnetShare.stop(); });
+// Limix Bot: Quit ends every helper process the app started. The orderly stop above runs first; this clears any
+// process still running from the install folder (packaged Windows builds only).
+app.on("will-quit", () => {
+  if (process.platform !== "win32" || !app.isPackaged) return;
+  try {
+    const dir = path.dirname(process.execPath).replace(/'/g, "''") + "\\";
+    execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command",
+      `$dir='${dir}'; Get-Process | Where-Object { $_.Id -ne ${process.pid} -and $_.Path -and $_.Path.StartsWith($dir, [StringComparison]::OrdinalIgnoreCase) } | Stop-Process -Force -ErrorAction SilentlyContinue`],
+      { windowsHide: true, timeout: 6000, stdio: "ignore" });
+  } catch {}
+});
 process.once("exit", releaseDesktopDataDirLease);

@@ -37,7 +37,7 @@ export function systemdUnit(spec: ServiceSpec): string {
   const lines = [
     "# Written by `openmausbot service install`. Re-run it to change the options.",
     "[Unit]",
-    `Description=OpenMausBot${spec.label ? ` (${spec.label})` : ""}`,
+    `Description=Limix Bot${spec.label ? ` (${spec.label})` : ""}`,
     "After=network-online.target",
     "Wants=network-online.target",
     "",

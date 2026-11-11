@@ -14,7 +14,7 @@ import { isSkillName, parseSkillMd, SKILL_FILE_MAX_BYTES } from "../shared/skill
 import type { SkillPackageStamp } from "./skills.ts";
 
 export function skillsLibraryEnabled(cfg: AppConfig): boolean {
-  return cfg.features?.skillsLibrary === true;
+  return cfg.features?.skillsLibrary !== false;
 }
 
 export interface SkillManifest {

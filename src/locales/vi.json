@@ -3668,7 +3668,7 @@
   "settings.experimental.skillAuthoringDetail": "Mặc định bật. Lưu lần chạy xác minh của bot dưới dạng một kỹ năng từ thẻ Xác minh, hoặc yêu cầu bot được hỗ trợ chạy /create-verification-skill. Mỗi kỹ năng mới hoặc thay đổi sẽ hiển thị trong cuộc trò chuyện kèm nút Hoàn tác.",
   "settings.experimental.skillAuthoringAria": "Cho phép bot phác thảo kỹ năng",
   "settings.experimental.skillReview": "Tự động học kỹ năng",
-  "settings.experimental.skillReviewDetail": "Mặc định tắt. Sau khi bot đã chạy đủ số bước công cụ trong một cuộc trò chuyện, nó sẽ xem lại cuộc trò chuyện đó ở chế độ nền và có thể tạo hoặc cải thiện kỹ năng của chính mình. Việc xem lại dùng AI của bot và được tính vào giới hạn chi tiêu. Mỗi thay đổi hiện trong cuộc trò chuyện kèm nút Hoàn tác.",
+  "settings.experimental.skillReviewDetail": "Mặc định bật. Sau khi bot đã chạy đủ số bước công cụ trong một cuộc trò chuyện, nó sẽ xem lại cuộc trò chuyện đó ở chế độ nền và có thể tạo hoặc cải thiện kỹ năng của chính mình. Việc xem lại dùng AI của bot và được tính vào giới hạn chi tiêu. Mỗi thay đổi hiện trong cuộc trò chuyện kèm nút Hoàn tác.",
   "settings.experimental.skillReviewNeedsAuthoring": "Bật “Bot có thể tự viết kỹ năng” trước.",
   "settings.experimental.skillReviewAria": "Để bot tự động học kỹ năng",
   "settings.experimental.skillReviewSteps": "Xem lại sau số bước công cụ này",
