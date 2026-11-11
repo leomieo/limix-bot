@@ -120,8 +120,8 @@ async function newCredential(createdAt: number) {
   };
 }
 
-async function requireAccount(request: Request, auth: ControlPlaneAuth) {
-  const session = await accountSession(request, auth);
+async function requireAccount(request: Request, auth: ControlPlaneAuth, env: Env) {
+  const session = await accountSession(request, auth, env);
   if (!session) throw new HTTPError(401, "unauthorized");
   return session;
 }
@@ -157,7 +157,7 @@ async function enforceCreationRateLimit(ownerUserId: string, env: Env): Promise<
 }
 
 export async function listInstallations(request: Request, env: Env, auth: ControlPlaneAuth): Promise<Response> {
-  const session = await requireAccount(request, auth);
+  const session = await requireAccount(request, auth, env);
   const result = await env.DB.prepare(
     `SELECT id, client_instance_id, display_name, platform, app_version,
             created_at, updated_at, last_seen_at
@@ -170,7 +170,7 @@ export async function listInstallations(request: Request, env: Env, auth: Contro
 }
 
 export async function createInstallation(request: Request, env: Env, auth: ControlPlaneAuth): Promise<Response> {
-  const session = await requireAccount(request, auth);
+  const session = await requireAccount(request, auth, env);
   await enforceCreationRateLimit(session.user.id, env);
   const parsed = createInstallationSchema.safeParse(await readBoundedJSON(request));
   if (!parsed.success) throw new HTTPError(400, "invalid_request");
@@ -255,7 +255,7 @@ export async function rotateInstallationCredential(
   env: Env,
   auth: ControlPlaneAuth,
 ): Promise<Response> {
-  const session = await requireAccount(request, auth);
+  const session = await requireAccount(request, auth, env);
   const installation = await ownedActiveInstallation(installationId, session.user.id, env);
   if (!installation) throw new HTTPError(404, "not_found");
 
@@ -304,7 +304,7 @@ export async function revokeInstallation(
   env: Env,
   auth: ControlPlaneAuth,
 ): Promise<Response> {
-  const session = await requireAccount(request, auth);
+  const session = await requireAccount(request, auth, env);
   const installation = await ownedInstallation(installationId, session.user.id, env);
   if (!installation) throw new HTTPError(404, "not_found");
 

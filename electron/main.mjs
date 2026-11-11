@@ -1,6 +1,6 @@
 import { app, autoUpdater as nativeAutoUpdater, BrowserWindow, Tray, WebContentsView, clipboard, desktopCapturer, dialog, globalShortcut, ipcMain, Menu, nativeImage, Notification, net, powerMonitor, powerSaveBlocker, safeStorage, screen, session, shell, systemPreferences, utilityProcess, nativeTheme } from "electron";
 import { LIMIX_ACCOUNT_URL, LIMIX_CLOUD_ENABLED, LIMIX_ORGANIZATION_ENABLED } from "./limix-features.mjs";
-import { limixAccountGate } from "./limix-account.mjs";
+import { limixAccountGate, limixRemoteCredential } from "./limix-account.mjs";
 import { limixRuntimeEnv } from "./limix-runtime.mjs";
 import { createRequire } from "node:module";
 import { randomBytes, randomUUID } from "node:crypto";
@@ -2468,7 +2468,18 @@ ipcMain.handle("desktop-remote:disconnect", localOnly("desktop-remote:disconnect
 }));
 
 // Auth and connector credentials never cross this boundary.
-ipcMain.handle("companion-account:state", localOnly("companion-account:state", () => ensureCompanionAccountService().state()));
+// Signed in to Limix: remote access signs in by itself with that account, no e-mail code.
+let limixConnectAt = 0;
+async function limixAutoConnect() {
+  const credential = limixRemoteCredential();
+  if (!credential || Date.now() - limixConnectAt < 60_000) return;
+  const service = ensureCompanionAccountService();
+  const current = await service.state();
+  if (current?.status !== "signed-out" || managedRemoteAccessRefusal()) return;
+  limixConnectAt = Date.now();
+  service.connectLimix(credential).catch(() => {});
+}
+ipcMain.handle("companion-account:state", localOnly("companion-account:state", async () => { await limixAutoConnect().catch(() => {}); return ensureCompanionAccountService().state(); }));
 ipcMain.handle("companion-account:request-code", localOnly("companion-account:request-code", (_event, email) =>
   ensureCompanionAccountService().requestCode(email),
 ));

@@ -87,11 +87,12 @@ edit(".gitignore", lambda s: s if "limix/__pycache__/" in s else s.rstrip("\n") 
 wf = ROOT / ".github/workflows"
 if wf.exists():
     for f in wf.glob("*.yml"):
-        if f.name not in ("limix-windows.yml", "limix-npm.yml"):
+        if f.name not in ("limix-windows.yml", "limix-npm.yml", "limix-cloudflare.yml"):
             f.unlink()
             changed.append(f".github/workflows/{f.name} (removed)")
 shutil.copy(ASSETS / "limix-windows.yml", wf / "limix-windows.yml")
 shutil.copy(ASSETS / "limix-npm.yml", wf / "limix-npm.yml")
+shutil.copy(ASSETS / "limix-cloudflare.yml", wf / "limix-cloudflare.yml")
 
 # 2c. The command-line package is published as `limixbot` (npx limixbot pair). The bundle keeps its file name.
 def npm_package(s):
@@ -874,6 +875,58 @@ def auto_keys(s):
             out.update(AUTO_KEYS_EN)
     return json.dumps(out, indent=2, ensure_ascii=False) + "\n"
 edit("src/locales/en.json", auto_keys)
+
+# 10a. Remote access with the Limix Studio account: the control plane accepts `Bearer limix.<machine>.<token>` (checked
+# against the account server) before it tries the e-mail-code session. limix-auth.ts and wrangler.limix.jsonc come from the overlay.
+def cp_auth(s):
+    if 'from "./limix-auth"' not in s:
+        s = must(s, 'import { sendOTPEmail } from "./email";', 'import { sendOTPEmail } from "./email";\nimport { limixSession } from "./limix-auth";')
+    s = must(s, 'export async function accountSession(request: Request, auth: ControlPlaneAuth) {\n',
+             'export async function accountSession(request: Request, auth: ControlPlaneAuth, env?: Env) {\n  if (env) { const limix = await limixSession(request, env); if (limix) return limix; }\n')
+    return s
+edit("cloudflare/control-plane/src/auth.ts", cp_auth)
+edit("cloudflare/control-plane/src/index.ts", lambda s: must(s, 'await accountSession(request, auth);', 'await accountSession(request, auth, env);'))
+def cp_inst(s):
+    s = must(s, 'async function requireAccount(request: Request, auth: ControlPlaneAuth) {\n  const session = await accountSession(request, auth);',
+             'async function requireAccount(request: Request, auth: ControlPlaneAuth, env: Env) {\n  const session = await accountSession(request, auth, env);')
+    return must(s, 'await requireAccount(request, auth);', 'await requireAccount(request, auth, env);')
+edit("cloudflare/control-plane/src/installations.ts", cp_inst)
+
+# 10b. The app signs in to remote access with the Limix account (no e-mail code), reaches limixmedia.com addresses, and
+# talks to accounts.limixmedia.com. connectLimix() reuses the whole sign-in tail of verifyCode().
+def svc_limix(s):
+    if "signInFlow" in s:
+        return s
+    s = must(s, "  const verifyCode = (rawEmail, rawCode) => serialize(async () => {", "  const signInFlow = (rawEmail, obtain) => serialize(async () => {")
+    s = must(s, "      verified = await client.verifyOTP(email, rawCode);", "      verified = await obtain(email);")
+    s = must(s, "\n  const retryWork = async () => {",
+             "\n  const verifyCode = (rawEmail, rawCode) => signInFlow(rawEmail, (email) => client.verifyOTP(email, rawCode));\n"
+             "  // Limix account: its bearer is `limix.<machine>.<token>`; the control plane checks it with the account server.\n"
+             "  const connectLimix = (credential) => signInFlow(credential.email, async () => ({\n"
+             "    accountToken: credential.bearer,\n    user: { id: credential.userId, email: credential.email },\n  }));\n\n  const retryWork = async () => {")
+    return must(s, "    verifyCode,\n", "    verifyCode,\n    connectLimix,\n")
+edit("electron/companion-account-service.mjs", svc_limix)
+edit("electron/companion-account-service.mjs", lambda s: must(s, 'DEFAULT_COMPANION_CONTROL_PLANE_URL = "https://accounts.openmausbot.com"', 'DEFAULT_COMPANION_CONTROL_PLANE_URL = "https://accounts.limixmedia.com"'))
+edit("electron/desktop-companion-client.mjs", lambda s: must(s, '["openmausbot.com", "mausbot.si", NEXT_MANAGED_COMPANION_HOST_SUFFIX]', '["limixmedia.com", "openmausbot.com", "mausbot.si", NEXT_MANAGED_COMPANION_HOST_SUFFIX]'))
+def main_limix(s):
+    if "limixAutoConnect" in s:
+        return s
+    s = must(s, 'import { limixAccountGate } from "./limix-account.mjs";', 'import { limixAccountGate, limixRemoteCredential } from "./limix-account.mjs";')
+    s = must(s, 'ipcMain.handle("companion-account:state", localOnly("companion-account:state", () => ensureCompanionAccountService().state()));',
+        "// Signed in to Limix: remote access signs in by itself with that account, no e-mail code.\n"
+        "let limixConnectAt = 0;\n"
+        "async function limixAutoConnect() {\n"
+        "  const credential = limixRemoteCredential();\n"
+        "  if (!credential || Date.now() - limixConnectAt < 60_000) return;\n"
+        "  const service = ensureCompanionAccountService();\n"
+        "  const current = await service.state();\n"
+        '  if (current?.status !== "signed-out" || managedRemoteAccessRefusal()) return;\n'
+        "  limixConnectAt = Date.now();\n"
+        "  service.connectLimix(credential).catch(() => {});\n"
+        "}\n"
+        'ipcMain.handle("companion-account:state", localOnly("companion-account:state", async () => { await limixAutoConnect().catch(() => {}); return ensureCompanionAccountService().state(); }));')
+    return s
+edit("electron/main.mjs", main_limix)
 
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"

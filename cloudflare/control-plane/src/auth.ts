@@ -3,6 +3,7 @@ import { bearer, emailOTP } from "better-auth/plugins";
 
 import type { ControlPlaneConfig } from "./config";
 import { sendOTPEmail } from "./email";
+import { limixSession } from "./limix-auth";
 
 export function createAuth(
   env: Env,
@@ -87,7 +88,8 @@ export async function deleteExpiredVerifications(auth: ControlPlaneAuth): Promis
   });
 }
 
-export async function accountSession(request: Request, auth: ControlPlaneAuth) {
+export async function accountSession(request: Request, auth: ControlPlaneAuth, env?: Env) {
+  if (env) { const limix = await limixSession(request, env); if (limix) return limix; }
   const authorization = request.headers.get("authorization");
   const match = authorization?.match(/^Bearer\s+([^\s]+)$/i);
   if (!match || match[1].startsWith("omb_install_")) return null;
