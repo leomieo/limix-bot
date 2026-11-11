@@ -279,6 +279,58 @@ subprocess.run(["node", "--experimental-strip-types", "--no-warnings", "scripts/
 if (ROOT / "shared/mascot-bodies.ts").read_text(encoding="utf-8") != before:
     changed.append("shared/mascot-bodies.ts")
 
+# 8. Limix Bot features layered on the fork (sources under limix/overlay, copied to the same path).
+OVERLAY = ROOT / "limix/overlay"
+if OVERLAY.exists():
+    for src in sorted(OVERLAY.rglob("*")):
+        if src.is_file():
+            rel = src.relative_to(OVERLAY).as_posix()
+            dest = ROOT / rel
+            if not dest.exists() or dest.read_bytes() != src.read_bytes():
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(src, dest)
+                changed.append(rel)
+
+# 8a. @devs bug reports go to the Limix owner's inbox (limix-report-mail.ts), never to the OpenMausBot team.
+OLD_IMPORT = 'import { bugReportEndpoint, devsReportSender, devsStatusAsker } from "./devs-report-send.ts";'
+NEW_IMPORT = 'import { limixReportAlias, limixReportSender, limixStatusAsker } from "./limix-report-mail.ts";'
+OLD_WIRING = "send: devsReportSender(bugReportEndpoint(process.env, CLOUD_HOME?.adminOrigin)), askStatus: devsStatusAsker(bugReportEndpoint(process.env, CLOUD_HOME?.adminOrigin), CLOUD_HOME),"
+NEW_WIRING = "send: limixReportSender(limixReportAlias()), askStatus: limixStatusAsker(),"
+def report_wiring(s):
+    return must(must(s, OLD_IMPORT, NEW_IMPORT), OLD_WIRING, NEW_WIRING)
+edit("server/index.ts", report_wiring)
+
+REPORT_LINES = {
+    "en": {
+        "server.reports.sent": "Sent to the Limix Bot team (report {report}).",
+        "server.reports.sentReply": "Sent to the Limix Bot team (report {report}). We'll reply to {contact}.",
+        "server.reports.sentLater": "Sent to the Limix Bot team (report {report}) after an earlier try did not go through.",
+        "server.reports.sentLaterReply": "Sent to the Limix Bot team (report {report}) after an earlier try did not go through. We'll reply to {contact}.",
+    },
+    "vi": {
+        "server.reports.sent": "Đã gửi cho đội Limix Bot (báo cáo {report}).",
+        "server.reports.sentReply": "Đã gửi cho đội Limix Bot (báo cáo {report}). Chúng tôi sẽ trả lời tới {contact}.",
+        "server.reports.sentLater": "Đã gửi cho đội Limix Bot (báo cáo {report}) sau khi một lần thử trước đó không thành công.",
+        "server.reports.sentLaterReply": "Đã gửi cho đội Limix Bot (báo cáo {report}) sau khi một lần thử trước đó không thành công. Chúng tôi sẽ trả lời tới {contact}.",
+    },
+}
+UPSTREAM_TEAM = re.compile(r"\s*[^.!?。！？।]*(?:Milind|Omkar|ミリンド|밀린드|米林德|मिलिंद)[^.!?。！？।]*[.!?。！？।]")
+def report_lines(lang):
+    def fix(s):
+        d = json.loads(s)
+        for key in ("server.reports.sent", "server.reports.sentReply", "server.reports.sentLater", "server.reports.sentLaterReply"):
+            if key not in d:
+                continue
+            if lang in REPORT_LINES:
+                d[key] = REPORT_LINES[lang][key]
+            else:
+                d[key] = UPSTREAM_TEAM.sub("", d[key]).strip()
+        return json.dumps(d, indent=2, ensure_ascii=False) + "\n"
+    return fix
+for p in sorted((ROOT / "src/locales").glob("*.json")):
+    if p.name != "source-hashes.json":
+        edit(p.relative_to(ROOT).as_posix(), report_lines(p.stem))
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):

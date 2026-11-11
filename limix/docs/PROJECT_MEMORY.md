@@ -9,7 +9,7 @@
 
 - **Hướng chính (đổi 2026-11-11 18:41):** Limix Bot = **bản fork đổi thương hiệu của OpenMausBot** (giao diện như mausbot.com), phát hành file cài Windows `.exe` qua GitHub Actions của repo `leomieo/limix-bot`. `limix-gateway` (cổng Telegram/Zalo) là module sẽ gộp vào app ở mốc sau.
 - **Mốc đang làm:** F1 — đẩy mã fork lên GitHub và build bản Windows đầu tiên
-- **Việc dở dang:** build 0.2.0 (đổi hết chữ OpenMaus còn sót) đang chạy: https://github.com/leomieo/limix-bot/actions/runs/43021503580. Bản trước: v0.1.153
+- **Việc dở dang:** không. Bản mới nhất: https://github.com/leomieo/limix-bot/releases/tag/v0.2.0 (build run 43021503580 thành công)
 - **Đã làm được:** script `limix/rebrand.py` (chạy lại được, ổn định); logo + linh vật "Limi" (bong bóng chat tím); kiểm tra: 0 lỗi cú pháp, so token trước/sau chỉ chuỗi chữ thay đổi (trừ 2 chỗ chủ ý)
 - **Đã kiểm trên GitHub Actions (run 43018860396, thành công):** cài thư viện, typecheck + build, cấu trúc gói, `Limix Bot.exe`, kênh cập nhật leomieo/limix-bot, máy chủ đóng gói trả lời /api/health
 - **CHƯA kiểm:** cài và mở app thật trên máy Windows của chủ dự án; giao diện hiển thị tên/linh vật mới
@@ -59,13 +59,22 @@
 | R7 | Giao thức liên kết `openmausbot://` giữ nguyên (mã chạy dùng đúng tên này) | Cài cả OpenMausBot gốc thì link cài gói có thể mở nhầm app | Mở, nhỏ |
 | R8 | Bản cài chưa ký số | SmartScreen báo "Unknown publisher" | Mở |
 | R9 | Không chạy được typecheck ở máy chủ Claude | Lỗi build chỉ lộ ra trên GitHub Actions | Mở |
-| R11 | Hướng dẫn dòng lệnh giờ ghi `limixbot pair/serve/browser install`, nhưng chưa có gói dòng lệnh tên `limixbot` (gói npm `openmausbot` là của upstream) | Chỉ ảnh hưởng chế độ máy chủ/từ xa, không ảnh hưởng app desktop | Mở |
+| R11 | Gói dòng lệnh `limixbot`: đã đăng 0.2.0 qua GitHub Actions (run 43027575052, có provenance); npm đang tự rà soát gói mới ("Validating", tạm hiện 0.0.0-stage). Token đầu thiếu bypass 2FA → lỗi E403, đã tạo lại. Việc tiếp: bật Trusted Publishing rồi xóa token (token bypass-2FA bị npm ngừng hỗ trợ từ 01/2027) | `npx limixbot pair` chạy được khi rà soát xong | Mở |
 | R12 | Lần đổi tên 1 sót chữ "OpenMaus Bot" (có dấu cách), "OpenMaus", "Maus" và câu có dấu "/" | Màn hình khởi động/khay còn tên cũ ở v0.1.153 | Đã sửa ở 0.2.0 |
+| R13 | Tính năng "gửi báo cáo lỗi" của app gửi báo cáo về đội OpenMausBot gốc (Milind, Omkar) — dữ liệu người dùng Limix đi ra ngoài | Quyền riêng tư | Mở — hỏi chủ dự án: tắt hay chuyển về email của Limix |
+| R14 | Bài học: đổi tên bằng regex có thể dán tên sản phẩm vào tên kỹ thuật (header `X-Limix Bot-Desktop-Owner` làm app hiện trang ghép cặp ở 0.1.153–0.2.0). Script nay có bảng TECH + kiểm tra LEFTOVER, và phải so khớp chạy-từ-bản-sạch trước khi đẩy | | Đã sửa ở 0.2.1 |
 | R10 | Máy chủ Claude không đẩy được tag git (chỉ đẩy nhánh) | Build kích hoạt bằng push lên `main`; tag phát hành do workflow tự tạo | Đã xử lý |
 
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
 
 Định dạng: `- YYYY-MM-DD HH:MM | Ai | Làm gì | File | Kiểm chứng`
+
+- 2026-11-11 20:40 | Claude | 0.2.1: sửa lỗi cửa sổ app hiện trang ghép cặp (header chủ nhân bị đổi tên sai), sửa 3 user-agent + tên tệp sao lưu, sửa mẫu "Open MausBot" trong script, thêm kiểm tra chặn tên dính vào tên kỹ thuật | commit 804cc9d, `limix/rebrand.py` | chạy từ bản sạch 6f226f15 → trùng khớp; 0 lỗi cú pháp; build đang chạy
+- 2026-11-11 20:27 | Chủ dự án | Báo Limix Bot 0.2.0 mở ra trang "Connect to Leo" đòi mã ghép cặp; ảnh MausBot trước đó là app OpenMausBot gốc cài theo README cũ | — | ảnh chụp
+
+- 2026-11-11 20:20 | Claude + Chủ dự án | Chủ dự án tạo npm token + secret NPM_TOKEN; Claude chạy workflow npm: lần 1 E403 (thiếu bypass 2FA), lần 2 thành công; npm đang rà soát 0.2.0 | GitHub Actions run 43026667384 (fail), 43027575052 (success) | trang npm: 0.2.0 Validating
+
+- 2026-11-11 20:10 | Claude | Gói dòng lệnh đổi thành `limixbot` + workflow đăng npm tự động | `scripts/build-npm-package.mjs`, `.github/workflows/limix-npm.yml`, `limix/rebrand.py` (bước 2c) | commit a699a78; script ổn định; chờ secret NPM_TOKEN
 
 - 2026-11-11 19:45 | Claude | 0.2.0: đổi mọi biến thể OpenMaus/MausBot/Maus hiển thị → Limix; thư mục `.openmausbot*` → `.limixbot*` đồng bộ mọi nơi (sửa lỗi tiềm ẩn ở lưu tệp/xóa môi trường); lệnh hiển thị → `limixbot`; version 0.2.0 | `limix/rebrand.py`, 119 file | 0 lỗi cú pháp, so token: chỉ chuỗi đổi; script chạy lại → 0 thay đổi; build run 43021503580
 - 2026-11-11 19:31 | Chủ dự án | Báo màn hình khởi động ghi "OpenMaus Bot" và trang ghép cặp ghi `openmausbot pair`; yêu cầu đổi hết sang Limix | — | ảnh chụp
