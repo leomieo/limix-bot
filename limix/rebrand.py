@@ -134,9 +134,9 @@ edit("src/components/AboutDialog.tsx", about)
 # Brand words in string literals, JSX text and locale values. A word touching a URL, path, file name or
 # identifier stays (the lookarounds), so links, domains and internal ids keep working.
 EDGE_L = r"(?<![\w./@:\\-])"
-EDGE_R = r"(?![\w/\\])(?!-(?![a-z]))(?!\.[A-Za-z])(?! Speech)"
+EDGE_R = r"(?![\w/\\])(?!\.[A-Za-z])(?! Speech)"
 BRAND = [(re.compile(EDGE_L + pat + EDGE_R), to) for pat, to in (
-    (r"Open ?Maus ?[Bb]ot", NAME),
+    (r"OpenMaus ?[Bb]ot", NAME),
     (r"Maus ?Bot", NAME),
     (r"OpenMaus", "Limix"),
     (r"Maus", "Limix"),
@@ -188,6 +188,32 @@ for p in sorted((ROOT / "src/locales").glob("*.json")):
     if p.name == "source-hashes.json":
         continue
     edit(p.relative_to(ROOT).as_posix(), fix_locale)
+
+# 5b. Technical names the first passes broke: header names and markers must stay byte-identical to what the other
+# side compares (the server reads x-openmausbot-desktop-owner), and user agents must not carry a space.
+TECH = {
+    '"X-Limix Bot-Desktop-Owner"': '"X-OpenMausBot-Desktop-Owner"',
+    '"X-Limix Bot-Lending=true"': '"X-OpenMausBot-Lending=true"',
+    '"Limix Bot-domain-check"': '"LimixBot-domain-check"',
+    '"Limix Bot-skills"': '"LimixBot-skills"',
+    '"Limix Bot-wait"': '"LimixBot-wait"',
+    "`Limix Bot-${": "`LimixBot-${",
+    'filename="Limix Bot-${': 'filename="LimixBot-${',
+}
+TECH_FILES = ["electron/desktop-server-auth.cjs", "electron/open-at-login.mjs", "server/custom-domain.ts", "server/skill-fetch.ts", "server/wait-probes.ts", "server/workspace-backup-http.ts"]
+def tech(s):
+    for old, new in TECH.items():
+        s = s.replace(old, new)
+    return s
+for rel in TECH_FILES:
+    edit(rel, tech)
+LEFTOVER = re.compile(r"[\w-]Limix Bot|Limix Bot-[A-Z]")
+for folder in ("src", "server", "shared", "electron", "companion"):
+    for p in sorted((ROOT / folder).rglob("*")):
+        if p.is_file() and p.suffix in (".ts", ".tsx", ".mjs", ".cjs", ".js") and not TEST.search(p.as_posix()) and "/locales/" not in p.as_posix():
+            for line in p.read_text(encoding="utf-8").splitlines():
+                if LEFTOVER.search(line) and "Limix-managed" not in line:
+                    raise SystemExit(f"rebrand: brand glued into a technical name in {p.relative_to(ROOT)}: {line.strip()[:120]}")
 
 # 6. Icons: the Limi mascot everywhere the cursor mascot was the app icon.
 ICONS = {

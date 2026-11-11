@@ -1972,7 +1972,7 @@
   "computer.linux.hyprlandPlugin": "Um Dieser Computer unter Omarchy zu nutzen, installiere und aktiviere das Hyprland-Plugin von Cua (cua-hyprland-plugin), lade Hyprland neu und versuche es dann erneut.",
   "computer.linux.omarchyGuide": "Omarchy-Anleitung von Cua",
   "computer.linux.enableBefore": "Wenn du das aktivierst, dürfen Bots, die du ausdrücklich auf",
-  "computer.linux.enableAfter": "gesetzt hast, den aktiven Desktop ansehen und Maus- oder Tastaturaktionen anfragen. Jede lokale Aktion fragt dich zuerst.",
+  "computer.linux.enableAfter": "gesetzt hast, den aktiven Desktop ansehen und Limix- oder Tastaturaktionen anfragen. Jede lokale Aktion fragt dich zuerst.",
   "computer.linux.waylandInput": "GNOME fragt dich eventuell auch, ob du Eingaben im Vordergrund für diese Desktop-Sitzung erlaubst.",
   "computer.linux.readyMsg": "Bereit für Bots, die ausdrücklich diesem Computer zugewiesen sind. Bot-Aktionen nutzen einen eigenen Cursor, dein Zeiger bleibt also unter deiner Kontrolle.",
   "computer.linux.hyprlandReady": "Bereit für Bots, die ausdrücklich diesem Computer zugewiesen sind. Bots arbeiten über einen eigenen Sitz in Hyprland, deine Limix und Tastatur bleiben also deine, außer du erlaubst eine Aktion im Vordergrund. Webseiten öffnen sich im eigenen Browser des Bots.",
