@@ -4,7 +4,25 @@
 // Server routes (tiktok-checker gui_server.py, /api/limixbot/*): login, validate, logout, machines, remove-machine.
 // One account may be signed in on at most `max` computers; the next is refused with error "device_limit".
 
+import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+
 const HOUR = 3_600_000;
+
+/** The owner's master account: after one successful sign-in on this computer, the app keeps a salted scrypt hash of the
+ * password (never the password) in the same encrypted file, so the master account signs in with no server and no
+ * internet, and is not cut off after the offline grace period. */
+function masterHash(password) {
+  const salt = randomBytes(16);
+  return { salt: salt.toString("hex"), hash: scryptSync(String(password), salt, 32, { N: 1 << 15, maxmem: 64 * 1024 * 1024 }).toString("hex") };
+}
+function masterMatches(record, password) {
+  if (!record?.salt || !record?.hash) return false;
+  try {
+    const given = scryptSync(String(password), Buffer.from(record.salt, "hex"), 32, { N: 1 << 15, maxmem: 64 * 1024 * 1024 });
+    const want = Buffer.from(record.hash, "hex");
+    return want.length === given.length && timingSafeEqual(want, given);
+  } catch { return false; }
+}
 
 /** @typedef {{ token?: string, username?: string, email?: string, lastOk?: number }} SavedAccount */
 
@@ -52,7 +70,8 @@ export function createAccountClient({
         store.write({ username: s.username });
         return { status: "login", reason: out.data.error || "signed_out", detail: out.data.reason || "" };
       }
-      // Server unreachable or failing: keep working for a while after the last good check.
+      // Server unreachable or failing: the master account keeps working; others for a while after the last good check.
+      if (s.master) return { status: "ok", offline: true };
       if (s.lastOk && now() - s.lastOk < graceMs) return { status: "ok", offline: true };
       return { status: "login", reason: "offline" };
     },
@@ -60,8 +79,16 @@ export function createAccountClient({
     async login(username, password) {
       const out = await post("login", { username, password, machine_id: machineId, machine_name: machineName });
       if (out.status === 200 && out.data.token) {
-        store.write({ token: out.data.token, username: out.data.username, email: out.data.email, lastOk: now() });
+        store.write({ token: out.data.token, username: out.data.username, email: out.data.email, lastOk: now(),
+          ...(out.data.master ? { master: masterHash(password) } : {}) });
         return { ok: true, username: out.data.username };
+      }
+      // No server reachable: the master account still signs in on a computer where it signed in before.
+      const s = saved();
+      if (out.status === 0 && s.master && String(username).trim().toLowerCase() === String(s.username ?? "").toLowerCase()
+          && masterMatches(s.master, password)) {
+        store.write({ ...s, token: s.token || "master-offline", lastOk: now() });
+        return { ok: true, username: s.username, offline: true };
       }
       return failure(out);
     },
@@ -80,7 +107,7 @@ export function createAccountClient({
     async logout() {
       const s = saved();
       if (s.token) await post("logout", { token: s.token });
-      store.write({ username: s.username });
+      store.write({ username: s.username, ...(s.master ? { master: s.master } : {}) });
       return { ok: true };
     },
   };
