@@ -5,11 +5,12 @@
 import { ChannelError } from "./telegram.mjs";
 
 export class ZaloChannel {
-  constructor({ token, apiBase = "https://bot-api.zaloplatforms.com", fetchImpl = fetch, pollTimeoutSec = 25 }) {
+  constructor({ token, apiBase = "https://bot-api.zaloplatforms.com", fetchImpl = fetch, pollTimeoutSec = 25, emptyPollDelayMs = 3000 }) {
     this.token = token;
     this.apiBase = apiBase.replace(/\/+$/, "");
     this.fetch = fetchImpl;
     this.pollTimeoutSec = pollTimeoutSec;
+    this.emptyPollDelayMs = emptyPollDelayMs;
     this.platform = "zalo";
     this.maxLength = 2000;
     this.capabilities = { text: true, attachments: false, groups: false, typing: true, provisioning: "token" };
@@ -57,7 +58,15 @@ export class ZaloChannel {
   }
 
   async fetchUpdates(cursor) {
-    const result = await this.api("getUpdates", { timeout: String(this.pollTimeoutSec) }, (this.pollTimeoutSec + 15) * 1000);
+    let result;
+    try {
+      result = await this.api("getUpdates", { timeout: String(this.pollTimeoutSec) }, (this.pollTimeoutSec + 15) * 1000);
+    } catch (error) {
+      if (error.httpCode !== 404) throw error;
+      // Some Zalo bots answer an empty poll with 404 right away instead of waiting; pause so it does not spin.
+      await new Promise((resolve) => setTimeout(resolve, this.emptyPollDelayMs));
+      return { events: [], cursor };
+    }
     if (!result || !result.message) return { events: [], cursor };
     const m = result.message;
     if (m.from?.is_bot) return { events: [], cursor };
