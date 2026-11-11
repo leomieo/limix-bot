@@ -23,3 +23,8 @@ test("Zalo: other 404s name the method that failed", async () => {
   const ch = new ZaloChannel({ token: "t", fetchImpl: stub({}) });
   await assert.rejects(ch.sendText("1", "hi"), /Zalo lỗi 404 \(sendMessage\)/);
 });
+
+test("Zalo: getUpdates 404 is an empty poll, not a crash", async () => {
+  const ch = new ZaloChannel({ token: "t", fetchImpl: stub({}), emptyPollDelayMs: 1 });
+  assert.deepEqual(await ch.fetchUpdates("c"), { events: [], cursor: "c" });
+});
