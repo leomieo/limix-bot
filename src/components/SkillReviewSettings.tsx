@@ -5,6 +5,7 @@ import {
   MIN_SKILL_REVIEW_STEPS,
   parseSkillReviewSteps,
   skillAuthoringEnabled,
+  skillAutoApplyEnabled,
   skillReviewEnabled,
   skillReviewSteps,
   skillReviewUnavailableEngines,
@@ -17,6 +18,7 @@ export function SkillReviewSettings() {
   const { state, dispatch } = useStore();
   const authoring = skillAuthoringEnabled(state.config);
   const enabled = skillReviewEnabled(state.config);
+  const autoApply = skillAutoApplyEnabled(state.config);
   const confirmedSteps = skillReviewSteps(state.config);
   const unavailable = skillReviewUnavailableEngines(state.bots, state.instances);
   const [value, setValue] = useState(String(confirmedSteps));
@@ -29,7 +31,7 @@ export function SkillReviewSettings() {
     if (!dirty) setValue(String(confirmedSteps));
   }, [confirmedSteps, dirty]);
 
-  const save = async (features: { skillReview?: boolean; skillReviewSteps?: number }) => {
+  const save = async (features: { skillReview?: boolean; skillAutoApply?: boolean; skillReviewSteps?: number }) => {
     if (inFlight.current) return false;
     inFlight.current = true;
     setSaving(true);
@@ -78,6 +80,21 @@ export function SkillReviewSettings() {
         />
       </div>
       <SkillReviewEngineNote engines={unavailable} />
+      {enabled ? (
+        <div className="mt-3 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-[13px] text-ink">{t("settings.experimental.skillAutoApply")}</div>
+            <div className="mt-0.5 text-[12px] leading-relaxed text-ink-secondary">{t("settings.experimental.skillAutoApplyDetail")}</div>
+          </div>
+          <Switch
+            checked={autoApply}
+            aria-label={t("settings.experimental.skillAutoApplyAria")}
+            disabled={saving}
+            onClick={() => void save({ skillAutoApply: !autoApply })}
+            className="disabled:cursor-not-allowed disabled:opacity-50"
+          />
+        </div>
+      ) : null}
       {enabled ? (
         <div className="mt-3 flex items-center gap-3">
           <label htmlFor="skill-review-steps" className="text-[13px] text-ink">

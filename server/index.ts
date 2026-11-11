@@ -166,6 +166,7 @@ import {
   showToolCallsEnabled,
   claudeUserMcpEnabled,
   skillAuthoringEnabled,
+  skillAutoApplyEnabled,
   skillReviewEnabled,
   skillReviewSteps,
   autoRecallEnabled,
@@ -5349,7 +5350,11 @@ const skillReview = createSkillReview({
     if (!bot) return { ok: false, error: "unknown bot" };
     const direct = appliesDirectly(botId, threadId);
     if (!direct) return { ok: false, error: "this conversation cannot apply skill changes without review" };
-    if (change.action === "update" && skillsHost.editable(botId, change.name)) return skillsHost.applyReviewUpdate(bot, threadId, change, direct);
+    const askFirst = !skillAutoApplyEnabled(cfg); // Limix Bot: owner asked first
+    if (change.action === "update" && skillsHost.editable(botId, change.name)) {
+      if (askFirst) return { ok: false, error: "a team-shared skill is not changed while learning asks first" };
+      return skillsHost.applyReviewUpdate(bot, threadId, change, direct);
+    }
     const staged = stageSkillWrite(botId, {
       action: change.action,
       targetName: change.action === "update" ? change.name : undefined,
@@ -5358,6 +5363,17 @@ const skillReview = createSkillReview({
       source: learnSource("automatic review of this conversation"),
     });
     if ("error" in staged) return { ok: false, error: staged.error };
+    if (askFirst) {
+      try {
+        const card = appendSkillRequestCard({ botId, threadId, staged });
+        appendDecision(DATA_DIR, { threadId, requestId: card.requestId, botId, botName: bot.name, tool: "stage_skill",
+          summary: card.summary, decision: "card-shown", source: "skill" });
+        return { ok: true };
+      } catch (error) {
+        rejectStagedSkillWrite(botId, staged.id);
+        return { ok: false, error: error instanceof Error ? error.message : String(error) };
+      }
+    }
     const applied = applyOwnStagedSkill(bot, threadId, staged, direct);
     return "error" in applied ? { ok: false, error: applied.error } : { ok: true };
   },
@@ -11782,6 +11798,7 @@ function configStatus() {
     features: {
       skillAuthoring: skillAuthoringEnabled(cfg),
       skillReview: cfg.features?.skillReview !== false,
+      skillAutoApply: skillAutoApplyEnabled(cfg),
       skillReviewSteps: skillReviewSteps(cfg),
       skillsLibrary: skillsLibraryEnabled(cfg),
       shareLearnedSkills: skillsHost.mode(),

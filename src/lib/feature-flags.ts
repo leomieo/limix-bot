@@ -1,7 +1,7 @@
 import { t } from "./i18n";
 
 export interface FeatureFlagConfig {
-  features?: { skillAuthoring?: boolean; skillReview?: boolean; skillReviewSteps?: number; showToolCalls?: boolean; browser?: boolean; sharedComputers?: boolean; claudeUserMcp?: boolean; claudeUserSkills?: boolean; llmThreadTitles?: boolean; skillsLibrary?: boolean; shareLearnedSkills?: "off" | "ask" | "auto"; roomMemoryCapture?: boolean; savedSteps?: boolean; savedStepsHere?: boolean };
+  features?: { skillAuthoring?: boolean; skillReview?: boolean; skillAutoApply?: boolean; skillReviewSteps?: number; showToolCalls?: boolean; browser?: boolean; sharedComputers?: boolean; claudeUserMcp?: boolean; claudeUserSkills?: boolean; llmThreadTitles?: boolean; skillsLibrary?: boolean; shareLearnedSkills?: "off" | "ask" | "auto"; roomMemoryCapture?: boolean; savedSteps?: boolean; savedStepsHere?: boolean };
   browserEngine?: { kind: "engine" | "unavailable"; reason?: string; installable?: boolean; installing?: boolean; installError?: string };
 }
 
@@ -26,6 +26,10 @@ export const MAX_SKILL_REVIEW_STEPS = 100;
 
 export function skillReviewEnabled(config: FeatureFlagConfig | null | undefined): boolean {
   return skillAuthoringEnabled(config) && config?.features?.skillReview !== false;
+}
+
+export function skillAutoApplyEnabled(config: FeatureFlagConfig | null | undefined): boolean {
+  return config?.features?.skillAutoApply !== false;
 }
 
 export function skillReviewSteps(config: FeatureFlagConfig | null | undefined): number {
