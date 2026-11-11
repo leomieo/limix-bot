@@ -111,7 +111,18 @@ edit("src/lib/app-links.ts", app_links)
 edit("server/config.ts", lambda s: must(s, 'join(dataHome(), ".openmausbot");', 'join(dataHome(), ".limixbot");'))
 edit("electron/main.mjs", lambda s: must(s, 'path.join(app.getPath("home"), ".openmausbot");', 'path.join(app.getPath("home"), ".limixbot");'))
 # MausBot Cloud is Supamaus's hosted service: Limix Bot does not offer it.
-edit("electron/main.mjs", lambda s: must(s, "  return app.isPackaged && !desktopRemoteAccess && brandedBuild === false;", "  return false;"))
+def cloud_switch(s):
+    gated = "  return LIMIX_CLOUD_ENABLED && app.isPackaged && !desktopRemoteAccess;"
+    for old in ("  return app.isPackaged && !desktopRemoteAccess && brandedBuild === false;", "function cloudOffersAllowed() {\n  return false;\n}"):
+        s = s.replace(old, gated if old.startswith("  return app") else "function cloudOffersAllowed() {\n" + gated + "\n}")
+    if gated not in s:
+        raise SystemExit("rebrand: cloudOffersAllowed not found in electron/main.mjs")
+    imp = 'import { LIMIX_CLOUD_ENABLED } from "./limix-features.mjs";\n'
+    if imp not in s:
+        first = s.index("\nimport ") + 1
+        s = s[:first] + imp + s[first:]
+    return s
+edit("electron/main.mjs", cloud_switch)
 edit("electron/main.mjs", lambda s: s.replace('app.setDesktopName("com.openmausbot.app.desktop")', f'app.setDesktopName("{APP_ID}.desktop")'))
 edit("index.html", lambda s: s.replace('content="OpenMausBot"', f'content="{NAME}"').replace("<title>MausBot</title>", f"<title>{NAME}</title>"))
 def manifest(s):
@@ -337,6 +348,17 @@ for p in sorted((ROOT / "src/locales").glob("*.json")):
 OLD_FALLBACK = """    notice ? { brand: DEFAULT_BRAND, source: "default", file, notice } : { brand: DEFAULT_BRAND, source: "default", file };"""
 NEW_FALLBACK = """    notice ? { brand: DEFAULT_BRAND, source: "file", file, notice } : { brand: DEFAULT_BRAND, source: "file", file };"""
 edit("server/brand.ts", lambda s: must(s, OLD_FALLBACK, NEW_FALLBACK))
+
+# 8c. The Settings section for a Cloud account follows the Limix Cloud module switch.
+def settings_cloud(s):
+    imp = 'import { LIMIX_CLOUD_ENABLED } from "../../shared/limix-features";\n'
+    s = must(s, '  const availableSections = baseSections.filter((entry) => entry.id !== "skills" || skillsLibraryEnabled(state.config));',
+             '  const availableSections = baseSections.filter((entry) => (entry.id !== "skills" || skillsLibraryEnabled(state.config)) && (entry.id !== "cloudAccount" || LIMIX_CLOUD_ENABLED));')
+    if imp not in s:
+        first = s.index("\nimport ") + 1
+        s = s[:first] + imp + s[first:]
+    return s
+edit("src/components/SettingsModal.tsx", settings_cloud)
 
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
