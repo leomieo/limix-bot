@@ -125,7 +125,7 @@ def cloud_switch(s):
     if gated not in s:
         raise SystemExit("rebrand: cloudOffersAllowed not found in electron/main.mjs")
     imp = 'import { LIMIX_CLOUD_ENABLED } from "./limix-features.mjs";\n'
-    if "import { LIMIX_CLOUD_ENABLED" not in s:
+    if not re.search(r"import \{[^}]*LIMIX_CLOUD_ENABLED[^}]*\} from \"\./limix-features\.mjs\"", s):
         first = s.index("\nimport ") + 1
         s = s[:first] + imp + s[first:]
     return s
@@ -417,8 +417,9 @@ edit("electron/menu.mjs", lambda s: must(s,
      '      { id: "organization-sign-in", label: t("native.menu.orgSignIn"), click: onOrganizationSignIn },',
      '      ...(onOrganizationSignIn ? [{ id: "organization-sign-in", label: t("native.menu.orgSignIn"), click: onOrganizationSignIn }] : []),'))
 def org_main(s):
-    s = must(s, 'import { LIMIX_CLOUD_ENABLED } from "./limix-features.mjs";',
-             'import { LIMIX_CLOUD_ENABLED, LIMIX_ORGANIZATION_ENABLED } from "./limix-features.mjs";')
+    if "LIMIX_ORGANIZATION_ENABLED }" not in s and "LIMIX_ORGANIZATION_ENABLED," not in s:
+        s = must(s, 'import { LIMIX_CLOUD_ENABLED } from "./limix-features.mjs";',
+                 'import { LIMIX_CLOUD_ENABLED, LIMIX_ORGANIZATION_ENABLED } from "./limix-features.mjs";')
     return must(s, '      onOrganizationSignIn: () => queueOrganizationEntry("openmausbot://organization"),',
                 '      onOrganizationSignIn: LIMIX_ORGANIZATION_ENABLED ? () => queueOrganizationEntry("openmausbot://organization") : undefined,')
 edit("electron/main.mjs", org_main)
