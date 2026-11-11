@@ -1,5 +1,5 @@
 import { useContext, useState, type ReactNode } from "react";
-import { Check, Clock3, ShieldCheck, Undo2, X } from "lucide-react";
+import { Check, Clock3, ShieldCheck, Sparkles, Undo2, X } from "lucide-react";
 import { api, ApiError, StoreContext, type Bot, type Message, type OptionCardData } from "@/state/store";
 import { shareLearnedSkillsMode } from "@/lib/feature-flags";
 import { cn } from "@/lib/cn";
@@ -247,6 +247,7 @@ function AppliedChangeLine({
   const undone = card.undone === true;
   const cancels = summary.cancels === true;
   const skill = card.skillRequest;
+  const learned = !undone && (skill?.action === "create" || skill?.action === "update");
   const shared = skill?.shared ?? (sharedNow && sharedNow.requestId === card.requestId ? sharedNow.shared : undefined);
   const canShare = Boolean(skill && !isSkillSwitchAction(skill.action) && !shared && !undone && threadId && card.requestId)
     && shareLearnedSkillsMode(config) === "ask";
@@ -282,9 +283,9 @@ function AppliedChangeLine({
   return (
     <div className="w-full max-w-[840px] text-[13px] text-ink-tertiary" data-applied-change={name}>
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 leading-5">
-        {undone ? <Undo2 size={13} className="shrink-0 self-center" /> : <Check size={13} className="shrink-0 self-center text-success/80" />}
+        {undone ? <Undo2 size={13} className="shrink-0 self-center" /> : learned ? <Sparkles size={13} className="shrink-0 self-center text-[#f2c94c]" /> : <Check size={13} className="shrink-0 self-center text-success/80" />}
         <span className="min-w-0 break-words">
-          {summary.line}
+          <span className={learned ? "limix-gold-text" : undefined}>{summary.line}</span>
           {shared && !undone && (
             <span> · {sharedNames.length ? t("approval.applied.sharedSkill", { names: sharedNames.join(", ") }) : t("approval.applied.sharedSkillNobody")}</span>
           )}

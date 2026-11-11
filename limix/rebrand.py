@@ -614,6 +614,131 @@ def runtime_env(s):
     return s if new in s else must(s, old, new)
 edit("electron/main.mjs", runtime_env)
 
+# 9a. Brand words the whole-file literal pass above can miss: one stray apostrophe in a comment shifts its quote
+# pairing for the rest of the file. This pass pairs quotes line by line, so error messages and prompts that still said
+# "OpenMausBot" now say Limix Bot.
+def fix_line(line):
+    st = line.lstrip()
+    if st.startswith(("//", "*", "/*")):
+        return line
+    out, i, q, seg = [], 0, None, []
+    while i < len(line):
+        c = line[i]
+        if q is None:
+            out.append(c)
+            if c in "\"'`":
+                q, seg = c, []
+        elif c == "\\" and i + 1 < len(line):
+            seg.append(line[i:i + 2])
+            i += 2
+            continue
+        elif c == q:
+            out.append(fix_text("".join(seg)))
+            out.append(c)
+            q = None
+        else:
+            seg.append(c)
+        i += 1
+    if q is not None:
+        out.append("".join(seg))
+    return "".join(out)
+
+def line_pass(s):
+    return "\n".join(fix_line(l) if "Maus" in l else l for l in s.split("\n"))
+for folder in ("src", "server", "shared", "electron", "companion"):
+    for p in sorted((ROOT / folder).rglob("*")):
+        rel = p.relative_to(ROOT).as_posix()
+        if not p.is_file() or TEST.search(rel) or p.suffix not in (".ts", ".tsx", ".mjs", ".cjs", ".js") or "/locales/" in rel or "node_modules" in rel:
+            continue
+        edit(rel, line_pass)
+
+# 9b. The Local VM (Cua Driver) image and the paths inside it carry the Limix name, so Settings > Computer no longer
+# shows "openmausbot". The image layer number goes up, so a VM built from the old image is recreated once. Container
+# and label names stay: they identify containers earlier builds made, and the Local VM page never shows them.
+def vm_names(s):
+    s = s.replace('"localhost/openmausbot/cua-local-vm"', '"localhost/limixbot/cua-local-vm"')
+    s = s.replace('"/usr/local/libexec/openmausbot/cua-driver"', '"/usr/local/libexec/limixbot/cua-driver"')
+    s = s.replace('"/run/user/1000/openmausbot-cua.sock"', '"/run/user/1000/limixbot-cua.sock"')
+    s = s.replace('export const IMAGE_LAYER_VERSION = "8";', 'export const IMAGE_LAYER_VERSION = "9";')
+    return s
+edit("server/container-computer.ts", vm_names)
+for rel in ("server/container-computer.test.ts", "server/desktop-updates.e2e.test.ts", "server/vps-computer.test.ts",
+            "server/vps-container-mcp.test.ts", "scripts/smoke-cua-container.mjs"):
+    if (ROOT / rel).exists():
+        edit(rel, lambda s: s.replace("localhost/openmausbot/cua-local-vm", "localhost/limixbot/cua-local-vm")
+              .replace("localhost\\/openmausbot\\/cua-local-vm", "localhost\\/limixbot\\/cua-local-vm")
+              .replace("libexec/openmausbot/cua-driver", "libexec/limixbot/cua-driver")
+              .replace("/run/user/1000/openmausbot-cua.sock", "/run/user/1000/limixbot-cua.sock"))
+
+# 9c. Quit from the tray (or File > Quit) ends every helper the app started: the server, the Cua driver, browsers.
+# After the usual orderly stop, anything still running from the install folder is stopped too.
+QUIT_OLD = 'app.on("will-quit", () => { desktopTray?.destroy(); void tailnetShare.stop(); });\n'
+QUIT_NEW = QUIT_OLD + r"""// Limix Bot: Quit ends every helper process the app started. The orderly stop above runs first; this clears any
+// process still running from the install folder (packaged Windows builds only).
+app.on("will-quit", () => {
+  if (process.platform !== "win32" || !app.isPackaged) return;
+  try {
+    const dir = path.dirname(process.execPath).replace(/'/g, "''") + "\\";
+    execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command",
+      `$dir='${dir}'; Get-Process | Where-Object { $_.Id -ne ${process.pid} -and $_.Path -and $_.Path.StartsWith($dir, [StringComparison]::OrdinalIgnoreCase) } | Stop-Process -Force -ErrorAction SilentlyContinue`],
+      { windowsHide: true, timeout: 6000, stdio: "ignore" });
+  } catch {}
+});
+"""
+def quit_sweep(s):
+    if "Limix Bot: Quit ends every helper" not in s:
+        s = must(s, QUIT_OLD, QUIT_NEW)
+    if 'import { execFileSync } from "node:child_process";' not in s and "execFileSync }" not in s and "execFileSync," not in s:
+        s = must(s, 'import fs from "node:fs";\n', 'import fs from "node:fs";\nimport { execFileSync } from "node:child_process";\n')
+    return s
+edit("electron/main.mjs", quit_sweep)
+
+# 9d. "Community repo" in the team-template dialog opens Limix Bot's own repository of Vietnamese templates.
+def community(s):
+    return s.replace("milind-soni/openmausbot-teams", "leomieo/limix-bot-teams")
+for rel in ("server/team-library.ts", "server/team-library.test.ts", "src/components/TeamLibraryPanel.tsx"):
+    edit(rel, community)
+
+# 9e. Learning skills like Hermes Agent: the background skill review and the skills library start on (upstream: off).
+# A bot still needs the owner's approval for a new skill unless the chat has full access, and every change has Undo.
+def on_by_default(s):
+    return s.replace("cfg.features?.skillReview === true", "cfg.features?.skillReview !== false") \
+            .replace("config?.features?.skillReview === true", "config?.features?.skillReview !== false") \
+            .replace("config?.features?.skillsLibrary === true", "config?.features?.skillsLibrary !== false") \
+            .replace("cfg.features?.skillsLibrary === true", "cfg.features?.skillsLibrary !== false")
+for rel in ("server/config.ts", "server/index.ts", "server/skill-library.ts", "src/lib/feature-flags.ts"):
+    edit(rel, on_by_default)
+edit("src/locales/en.json", lambda s: s.replace("Off by default. After a bot has run enough tool steps", "On by default. After a bot has run enough tool steps"))
+
+# 9f. Gold text when a bot learns a skill (Hermes shows the same moment in gold): the line in the chat that says a bot
+# added or updated a skill shimmers a few times, then stays gold.
+GOLD_CSS = """
+
+/* Limix Bot: gold text when a bot learns a skill */
+@keyframes limix-gold-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.limix-gold-text {
+  background-image: linear-gradient(100deg, #b8860b 0%, #f2c94c 22%, #fff1a8 50%, #f2c94c 78%, #b8860b 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent; -webkit-text-fill-color: transparent;
+  font-weight: 600;
+  animation: limix-gold-shimmer 3s linear 3;
+}
+@media (prefers-reduced-motion: reduce) { .limix-gold-text { animation: none; } }
+"""
+edit("src/styles.css", lambda s: s if "limix-gold-text" in s else s.rstrip("\n") + GOLD_CSS)
+def gold_card(s):
+    if "limix-gold-text" in s:
+        return s
+    s = must(s, 'import { Check, Clock3, ShieldCheck, Undo2, X } from "lucide-react";',
+             'import { Check, Clock3, ShieldCheck, Sparkles, Undo2, X } from "lucide-react";')
+    s = must(s, "  const skill = card.skillRequest;\n  const shared = skill?.shared",
+             '  const skill = card.skillRequest;\n  const learned = !undone && (skill?.action === "create" || skill?.action === "update");\n  const shared = skill?.shared')
+    s = must(s, '{undone ? <Undo2 size={13} className="shrink-0 self-center" /> : <Check size={13} className="shrink-0 self-center text-success/80" />}\n        <span className="min-w-0 break-words">\n          {summary.line}',
+             '{undone ? <Undo2 size={13} className="shrink-0 self-center" /> : learned ? <Sparkles size={13} className="shrink-0 self-center text-[#f2c94c]" /> : <Check size={13} className="shrink-0 self-center text-success/80" />}\n        <span className="min-w-0 break-words">\n          <span className={learned ? "limix-gold-text" : undefined}>{summary.line}</span>')
+    return s
+edit("src/components/ApprovalCard.tsx", gold_card)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):

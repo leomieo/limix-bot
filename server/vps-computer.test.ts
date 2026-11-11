@@ -652,10 +652,10 @@ describe("VPS computer", () => {
       "-e",
       "CUA_DRIVER_RS_TELEMETRY_ENABLED=0",
       vpsContainerName(BOT_ID),
-      "/usr/local/libexec/openmausbot/cua-driver",
+      "/usr/local/libexec/limixbot/cua-driver",
       "mcp",
       "--socket",
-      "/run/user/1000/openmausbot-cua.sock",
+      "/run/user/1000/limixbot-cua.sock",
     ]);
   });
 

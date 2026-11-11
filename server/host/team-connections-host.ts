@@ -361,7 +361,7 @@ export function createTeamConnectionsHost(deps: TeamConnectionsHostDeps) {
         const these = `${list(names)} ${names.length === 1 ? "is" : "are"} each person's own in ${team.name}`;
         return hasOwn(acting)
           ? ` ${these}, used only in a chat that is theirs alone. Others read this chat, so ${who}'s own aren't here: what they bring back would be read here. If the task needs one, don't try it another way (the browser or another tool). ${handOnHow(who)}`
-          : ` ${these}, and ${who} hasn't connected any yet. If the task needs one, don't try it another way (the browser or another tool): reply with one plain line and nothing more about it: "Connect your <name> here: ${ownPage(acting) ?? "your team's page in MausBot Cloud"}".`;
+          : ` ${these}, and ${who} hasn't connected any yet. If the task needs one, don't try it another way (the browser or another tool): reply with one plain line and nothing more about it: "Connect your <name> here: ${ownPage(acting) ?? "your team's page in Limix Bot Cloud"}".`;
       }
       if (!person) {
         const where = appsPage();
@@ -378,7 +378,7 @@ export function createTeamConnectionsHost(deps: TeamConnectionsHostDeps) {
       return (ownApps.length ? ` ${list(ownApps.map(appLabel))} ${ownApps.length === 1 ? "is" : "are"} ${whose} own: use ${ownApps.length === 1 ? "it" : "them"} through the ${OWN_APPS_SERVER} tools, which act as their own accounts; ${team.name}'s shared apps stay under composio.` : "")
         + (ownServers.length ? ` The MCP ${ownServers.length === 1 ? "server" : "servers"} ${list(ownServers)} act${ownServers.length === 1 ? "s" : ""} as ${whose} own account.` : "")
         + (ownApps.length || ownServers.length ? ` ${only}` : "")
-        + (missing.length ? ` Each person connects these for themselves, and ${who} hasn't connected ${missing.length === 1 ? "it" : "them"} yet, or their sign-in ended: ${list(missing)}. If the task needs one, don't try it another way (the browser or another tool): reply with one plain line and nothing more about it: "Connect your <name> here: ${where ?? "your team's page in MausBot Cloud"}".` : "");
+        + (missing.length ? ` Each person connects these for themselves, and ${who} hasn't connected ${missing.length === 1 ? "it" : "them"} yet, or their sign-in ended: ${list(missing)}. If the task needs one, don't try it another way (the browser or another tool): reply with one plain line and nothing more about it: "Connect your <name> here: ${where ?? "your team's page in Limix Bot Cloud"}".` : "");
     },
 
     /** Whose own account a tool call uses, for its step ("using Ada's Notion"): a `person` app through their own bridge,

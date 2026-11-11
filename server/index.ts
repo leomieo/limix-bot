@@ -11781,7 +11781,7 @@ function configStatus() {
     },
     features: {
       skillAuthoring: skillAuthoringEnabled(cfg),
-      skillReview: cfg.features?.skillReview === true,
+      skillReview: cfg.features?.skillReview !== false,
       skillReviewSteps: skillReviewSteps(cfg),
       skillsLibrary: skillsLibraryEnabled(cfg),
       shareLearnedSkills: skillsHost.mode(),
