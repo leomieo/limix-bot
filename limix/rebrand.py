@@ -393,6 +393,45 @@ cloud_gate("src/state/store.tsx", [(
     '    case "openCloudAdd":\n      return {',
     '    case "openCloudAdd":\n      if (!LIMIX_CLOUD_ENABLED) return state.cloudHowTo ? { ...state, cloudHowTo: false } : state;\n      return {')])
 
+# 8f. No Limix phone app yet: hide "Get the phone app" (menu entry, dialog, App Store/APK codes); keep "Connect phone".
+def phone_gate(rel, pairs):
+    depth = rel.count("/")
+    imp = 'import { LIMIX_PHONE_APPS_ENABLED } from "' + "../" * depth + 'shared/limix-features";\n'
+    def fn(s):
+        for old, new in pairs:
+            s = must(s, old, new)
+        if imp not in s:
+            first = s.index("import ")
+            s = s[:first] + imp + s[first:]
+        return s
+    edit(rel, fn)
+phone_gate("src/components/SidebarProfileMenu.tsx", [
+    ("""    {
+      key: "phone-app",
+      label: t("sidebar.menu.getPhoneApp"),
+      icon: <Download size={18} />,
+      onSelect: onGetApp,
+    },
+  ];""", """    ...(LIMIX_PHONE_APPS_ENABLED ? [{
+      key: "phone-app",
+      label: t("sidebar.menu.getPhoneApp"),
+      icon: <Download size={18} />,
+      onSelect: onGetApp,
+    } satisfies SidebarMenuItem] : []),
+  ];"""),
+    ("    phone: simple\n      ? simplePhoneItems(", "    phone: simple && LIMIX_PHONE_APPS_ENABLED\n      ? simplePhoneItems("),
+    ("      {phoneAppOpen && <PhoneAppDialog", "      {LIMIX_PHONE_APPS_ENABLED && phoneAppOpen && <PhoneAppDialog"),
+])
+phone_gate("src/components/PhonePairingQr.tsx", [
+    ("""        <button onClick={() => setStoreOpen((open) => !open)} aria-expanded={storeOpen} className="text-[12px] text-ink-secondary hover:text-ink">
+          {t("phone.code.e2e.getApp")}
+        </button>
+        {storeOpen && (""", """        {LIMIX_PHONE_APPS_ENABLED && <button onClick={() => setStoreOpen((open) => !open)} aria-expanded={storeOpen} className="text-[12px] text-ink-secondary hover:text-ink">
+          {t("phone.code.e2e.getApp")}
+        </button>}
+        {LIMIX_PHONE_APPS_ENABLED && storeOpen && ("""),
+])
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):
