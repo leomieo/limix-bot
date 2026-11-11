@@ -1052,6 +1052,14 @@ def gw_keys(s):
     return json.dumps(out, indent=2, ensure_ascii=False) + "\n"
 edit("src/locales/en.json", gw_keys)
 
+# 10h. Lists of ways ("Wi-Fi, X and Y") follow the app language, not the Windows one: an English Windows printed "and".
+def list_locale(s):
+    s = must(s, 'new Intl.ListFormat(undefined, { type: "conjunction" })', 'new Intl.ListFormat(intlLocale(), { type: "conjunction" })')
+    if "intlLocale" not in s.split("\n", 5)[1] and 'import { intlLocale, t } from "@/lib/i18n";' not in s:
+        s = must(s, 'import { t } from "@/lib/i18n";', 'import { intlLocale, t } from "@/lib/i18n";')
+    return s
+edit("src/components/PhoneDevicesSection.tsx", list_locale)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):
