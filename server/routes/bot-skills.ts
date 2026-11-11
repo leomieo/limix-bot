@@ -6,6 +6,7 @@ import { setImportedSkillEnabled } from "../imported-skills.ts";
 import { setNativeSkillEnabled } from "../native-skill-choices.ts";
 import { botSkillTemplateSchema } from "../new-bot-defaults.ts";
 import { fetchSkillFromSource } from "../skill-fetch.ts";
+import { readLocalSkills } from "../limix-skill-folder.ts";
 import { skillImportSummary } from "../skill-folder.ts";
 import { installLibrarySkill, librarySkillOptOuts, listLibrarySkills, readLibrarySkillFile, readSkillLibraryIndex, setLibrarySkillEveryBot, setLibrarySkillOptOut, setLibrarySkillReviewState, skillsLibraryEnabled, unassignLibrarySkill } from "../skill-library.ts";
 import {
@@ -70,7 +71,7 @@ export function createBotSkillsRoutes(deps: BotSkillsRouteDeps): RouteHandler {
       if (!store.bot(m[1])) return json(res, 404, { error: "no such bot" });
       const parsed = z.object({ source: z.string().min(1).max(2000) }).safeParse(await readBody(req));
       if (!parsed.success) return json(res, 400, { error: "source must be a GitHub or skills.sh URL, or owner/repo" });
-      const fetched = await fetchSkillFromSource(parsed.data.source);
+      const fetched = parsed.data.source.startsWith("local-folder:") ? readLocalSkills(parsed.data.source.slice("local-folder:".length)) : await fetchSkillFromSource(parsed.data.source);
       if ("error" in fetched) return json(res, 422, { error: fetched.error });
       const results = fetched.skills.map((skill) => ({ skill, result: installSkill(m![1]!, skill.source, skill.files, skill.github) }));
       const errors = results.flatMap(({ result }) => ("error" in result ? [result.error] : []));
