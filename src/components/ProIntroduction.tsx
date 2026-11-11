@@ -1,3 +1,4 @@
+import { LIMIX_CLOUD_ENABLED } from "../../shared/limix-features";
 import { useEffect, useState } from "react";
 import { Cloud, Crown } from "lucide-react";
 import type { CloudAccountState } from "../../electron/cloud-account.mjs";
@@ -23,7 +24,7 @@ export function useCloudPlan(): { view: CloudPlanView; account: CloudAccountStat
     void bridge.state().then(next => { if (active && !updated) setAccount(next); }).catch(() => {});
     return () => { active = false; unsubscribe(); };
   }, [bridge]);
-  return bridge ? { view: cloudPlanView(account), account } : null;
+  return bridge && LIMIX_CLOUD_ENABLED ? { view: cloudPlanView(account), account } : null;
 }
 
 export function ProSettingsCard() {

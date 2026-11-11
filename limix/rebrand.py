@@ -361,6 +361,38 @@ def settings_cloud(s):
     return s
 edit("src/components/SettingsModal.tsx", settings_cloud)
 
+# 8d. Every other way into Limix Cloud follows the same switch: the plan/offer rows in Settings (General, Usage &
+# billing), routine notes, onboarding chips, "more pages" buttons, and the Add-a-Cloud dialog itself.
+def cloud_gate(rel, pairs):
+    depth = rel.count("/")
+    imp = 'import { LIMIX_CLOUD_ENABLED } from "' + "../" * depth + 'shared/limix-features";\n'
+    def fn(s):
+        for old, new in pairs:
+            s = must(s, old, new)
+        if imp not in s:
+            first = s.index("import ")
+            s = s[:first] + imp + s[first:]
+        return s
+    edit(rel, fn)
+cloud_gate("src/lib/cloud-plan.ts", [(
+    '  return view.kind === "signed-out" || (view.kind === "free" && !view.invited);',
+    '  return LIMIX_CLOUD_ENABLED && (view.kind === "signed-out" || (view.kind === "free" && !view.invited));')])
+cloud_gate("src/components/ProIntroduction.tsx", [(
+    '  return bridge ? { view: cloudPlanView(account), account } : null;',
+    '  return bridge && LIMIX_CLOUD_ENABLED ? { view: cloudPlanView(account), account } : null;')])
+cloud_gate("src/lib/default-bot.ts", [(
+    '    ...(fresh && !input.onCloud && !input.remote ? ["cloud" as const] : []),',
+    '    ...(LIMIX_CLOUD_ENABLED && fresh && !input.onCloud && !input.remote ? ["cloud" as const] : []),')])
+cloud_gate("src/components/app/PageTools.tsx", [(
+    '{state.card?.upgrade && window.ogb?.cloudAccount',
+    '{LIMIX_CLOUD_ENABLED && state.card?.upgrade && window.ogb?.cloudAccount')])
+cloud_gate("src/components/PublishedPageCard.tsx", [(
+    '{card.upgrade && bridge && <button',
+    '{LIMIX_CLOUD_ENABLED && card.upgrade && bridge && <button')])
+cloud_gate("src/state/store.tsx", [(
+    '    case "openCloudAdd":\n      return {',
+    '    case "openCloudAdd":\n      if (!LIMIX_CLOUD_ENABLED) return state.cloudHowTo ? { ...state, cloudHowTo: false } : state;\n      return {')])
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):

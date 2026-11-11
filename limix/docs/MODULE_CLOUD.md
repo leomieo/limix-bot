@@ -18,6 +18,7 @@ Hai file được chép từ `limix/overlay/` bởi `limix/rebrand.py` (bước 
 |---|---|---|
 | Nút/menu "Add a Cloud", lựa chọn Cloud ở thanh bên | `electron/main.mjs` `cloudOffersAllowed()` | `return LIMIX_CLOUD_ENABLED && …` |
 | Mục Settings → Cloud account | `src/components/SettingsModal.tsx` `availableSections` | lọc `cloudAccount` khi tắt |
+| Dòng "Limix Bot Cloud / Add a Cloud" ở Settings → General và Usage & billing, ghi chú routine, chip Cloud khi mới cài, nút "thêm trang", hộp thoại Add a Cloud | `src/components/ProIntroduction.tsx` `useCloudPlan`, `src/lib/cloud-plan.ts` `buyOfferAllowed`, `src/lib/default-bot.ts`, `PageTools.tsx`, `PublishedPageCard.tsx`, `src/state/store.tsx` (`openCloudAdd`) | rebrand bước 8d, từ 0.2.6 |
 | Bảng giá, popup "What's new", thẻ dùng thử Cloud, thẻ tài trợ, thông báo từ máy chủ MausBot | `src/components/AppNotices.tsx`, `BoatOffer.tsx`, `modelgo-offer.ts`… | Limix là "branded build": `server/brand.ts` trả `source: "file"` (rebrand bước 8b) |
 
 Không bị ảnh hưởng: app trên máy, Remote access/ghép cặp điện thoại, `npx limixbot serve` (tự dựng máy chủ), BYO VPS
