@@ -331,6 +331,13 @@ for p in sorted((ROOT / "src/locales").glob("*.json")):
     if p.name != "source-hashes.json":
         edit(p.relative_to(ROOT).as_posix(), report_lines(p.stem))
 
+# 8b. Limix Bot is its own branded build: the app hides what a branded build hides (MausBot Cloud plans and their
+# What's new popup, sponsor and upstream announcement cards, star and launch prompts). A brand.json still needs the
+# whitelabel entitlement exactly as before; only the built-in Limix brand counts as applied.
+OLD_FALLBACK = """    notice ? { brand: DEFAULT_BRAND, source: "default", file, notice } : { brand: DEFAULT_BRAND, source: "default", file };"""
+NEW_FALLBACK = """    notice ? { brand: DEFAULT_BRAND, source: "file", file, notice } : { brand: DEFAULT_BRAND, source: "file", file };"""
+edit("server/brand.ts", lambda s: must(s, OLD_FALLBACK, NEW_FALLBACK))
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):
