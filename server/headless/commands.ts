@@ -19,7 +19,7 @@ const DAY = 24 * 3_600_000;
 async function doctorOnce(ctx: VerbContext): Promise<VerbOutcome> {
   const client = await ctx.client();
   // A shared server lets a local caller without a session count its engines, not list them: in the server's container
-  // (`docker compose exec omb openmausbot doctor`, as deploy/update.sh runs it) that count is the answer.
+  // (`docker compose exec omb limixbot doctor`, as deploy/update.sh runs it) that count is the answer.
   const counted = (refusal: unknown) => (refusal as { status?: unknown })?.status === 403
     ? client.json<Rec>("/api/health/engines").then((answer) => ({ counted: Number(answer?.engines) || 0 }), () => Promise.reject(refusal))
     : Promise.reject(refusal);
@@ -42,7 +42,7 @@ async function doctorOnce(ctx: VerbContext): Promise<VerbOutcome> {
   if (tooOld) problems.push(`Limix Bot ${server!.version ?? "(unknown version)"} is too old for the headless commands: it cannot report a conversation's job`);
   if (isOmb && !availableCount) problems.push("no engine is available: set one up with `openmausbot engine set KIND --key-env VAR`");
   if (session?.kind === "session" && typeof session.expiresAt === "number" && session.expiresAt - Date.now() < 14 * DAY) {
-    warnings.push(`this session expires in ${Math.max(0, Math.floor((session.expiresAt - Date.now()) / DAY))} days: get a new one with openmausbot connect`);
+    warnings.push(`this session expires in ${Math.max(0, Math.floor((session.expiresAt - Date.now()) / DAY))} days: get a new one with limixbot connect`);
   }
   const browser = config?.browserEngine ?? null;
   if (browser && browser.kind !== "engine") warnings.push(`bots have no built-in browser here: ${browser.reason ?? "not installed"}${browser.installable ? " (install it with `openmausbot browser install`)" : ""}`);

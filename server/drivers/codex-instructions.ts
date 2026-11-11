@@ -45,7 +45,7 @@ export function codexDeveloperInstructions(config: unknown, botInstructions: str
   }
   // Native rules go last, keeping their precedence over the bot's.
   return configured
-    ? `${botInstructions || "No OpenMausBot bot-specific instructions remain."}\n\n${configured}`
+    ? `${botInstructions || "No Limix Bot bot-specific instructions remain."}\n\n${configured}`
     : botInstructions;
 }
 
@@ -80,7 +80,7 @@ export async function syncCodexInstructions(
           role: "developer",
           content: [{
             type: "input_text",
-            text: "The following replaces the previous developer instruction block supplied by OpenMausBot, including its native configured rules and bot-specific instructions. Other Codex instructions and permissions still apply.\n\n"
+            text: "The following replaces the previous developer instruction block supplied by Limix Bot, including its native configured rules and bot-specific instructions. Other Codex instructions and permissions still apply.\n\n"
               + (instructions || "No Limix Bot bot-specific instructions remain."),
           }],
         }],

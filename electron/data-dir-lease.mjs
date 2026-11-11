@@ -5,7 +5,7 @@ import { hostname, uptime } from "node:os";
 import { join } from "node:path";
 
 const LEASE_NAME = "openmausbot-server.lease";
-const DELEGATED_CHILD_DIR = ".openmausbot-server-child";
+const DELEGATED_CHILD_DIR = ".limixbot-server-child";
 // Internal parent-to-child capability, obtained only from utilityServerLeaseEnvironment(); never public configuration.
 const CHILD_LEASE_ENV = "OPENMAUSBOT_INTERNAL_DATA_DIR_LEASE";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;

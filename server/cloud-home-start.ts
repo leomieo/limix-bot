@@ -185,7 +185,7 @@ export function tunnelCommand(bin: string, token: string): { command: string; ar
 
 /** The server's data directory on the volume. */
 export function cloudHomeDataDir(env: NodeJS.ProcessEnv, home: string): string {
-  return env.OMB_DATA_DIR || posix.join(home, ".openmausbot");
+  return env.OMB_DATA_DIR || posix.join(home, ".limixbot");
 }
 
 /** flock(1)'s exit status when another process holds the lock (its --conflict-exit-code). */
@@ -394,7 +394,7 @@ export function startCloudHome(processEnv: NodeJS.ProcessEnv = process.env) {
   const home = processEnv.HOME || "/data";
   const env = root ? { ...processEnv, ...readCloudSecretsFile(home) } : processEnv;
   const config = cloudHomeConfiguration(env);
-  if (!config) throw new Error("This image runs a My Cloud machine for MausBot Cloud; set its boot contract (docs/cloud-pro.md).");
+  if (!config) throw new Error("This image runs a My Cloud machine for Limix Bot Cloud; set its boot contract (docs/cloud-pro.md).");
   // Logged here once: the server child never sees what they are about.
   for (const warning of config.warnings) console.warn(`cloud home: ${warning}`);
   const { server, edge, edgeFiles, tunnelToken, secrets, dropped } = cloudHomeChildEnvironments(config, env, home);

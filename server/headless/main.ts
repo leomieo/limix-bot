@@ -14,12 +14,12 @@ import { tokenVerb } from "./token.ts";
 
 const T = "TARGET is a bot or room by name or id, or --bot ID, --channel ID, --thread ID; --task ID picks one of its conversations.";
 
-/** Each verb's help, in plain words. `openmausbot help VERB` or `VERB --help`. */
+/** Each verb's help, in plain words. `limixbot help VERB` or `VERB --help`. */
 export const VERB_HELP: Record<string, string> = {
-  doctor: `openmausbot doctor [--wait DURATION]
+  doctor: `limixbot doctor [--wait DURATION]
   Check the server answers, is new enough, says who you are to it, and has an engine ready.
   --wait 2m keeps checking until it is ready. Exit 0 ready, 1 no engine, 5 unreachable or too old.
-openmausbot doctor --host [--data-dir DIR] [--port 8799] [--domain HOST]
+limixbot doctor --host [--data-dir DIR] [--port 8799] [--domain HOST]
   Check this Linux machine can run the server and the bots' sandbox: the system, Docker or Podman, user
   namespaces, seccomp, cgroup v2, free disk, size, ports and the clock. Each problem says its fix.
   Exit 0 ready (warnings allowed), 7 something is missing. On macOS and Windows it says it is for Linux.`,
@@ -79,11 +79,11 @@ openmausbot doctor --host [--data-dir DIR] [--port 8799] [--domain HOST]
   command if it is not running already, so a script can run this on every start.
   claude: the key runs every Claude bot; --only-claude-api keeps it to "Claude (API key)" bots.`,
   "engine list": "openmausbot engine list\n  The engines, whether each is ready, and which keys are set (never their values).",
-  connect: `openmausbot connect [URL] [--code CODE] --out FILE [--label NAME] [--client] [--force]
+  connect: `limixbot connect [URL] [--code CODE] --out FILE [--label NAME] [--client] [--force]
   Get a token for a workspace you reach over the network, saved to FILE (only you can read it).
   On this computer's own server the code is made for you; elsewhere, get one from Settings → Phone.
   Then use it: --url URL --token-file FILE (or OPENMAUSBOT_URL and OPENMAUSBOT_TOKEN).`,
-  mcp: "openmausbot mcp\n  Serve the OpenMausBot MCP tools on stdin and stdout, for an agent (docs/mcp-server.md).",
+  mcp: "openmausbot mcp\n  Serve the Limix Bot MCP tools on stdin and stdout, for an agent (docs/mcp-server.md).",
   token: "openmausbot token create NAME --out FILE … | token list | token revoke ID   (see help token create)",
   "token create": `openmausbot token create NAME --out FILE [--scope client|admin] [--expires 90d] [--force]
   An access token for CI and scripts, saved to FILE (only you can read it) and never printed.

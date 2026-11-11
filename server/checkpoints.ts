@@ -22,11 +22,11 @@ export const CHECKPOINTS_DIR = join(DATA_DIR, "checkpoints");
 const COMMIT_HASH = /^[0-9a-f]{40}$/;
 
 // What a checkpoint never carries, so a digest never lists it; categories follow Roo-Code's checkpoint excludes.
-const EXCLUDES = `# OpenMausBot checkpoint excludes — never snapshotted
+const EXCLUDES = `# Limix Bot checkpoint excludes — never snapshotted
 .git/
 .svn/
 .hg/
-.openmausbot-secrets/
+.limixbot-secrets/
 node_modules/
 bower_components/
 .pnpm-store/
