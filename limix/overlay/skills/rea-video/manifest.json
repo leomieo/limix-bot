@@ -1,0 +1,32 @@
+{
+  "id": "rea-video",
+  "name": "rea-video",
+  "version": "1.0.0",
+  "description": "Reverse-engineers how a video was made, shot by shot (live action, AI, 3D, screen recording...), its subtitles, sound and editing, and how to remake it.",
+  "defaultEnabled": true,
+  "triggerTerms": [
+    "video này làm",
+    "video này được làm",
+    "phân tích video",
+    "mổ xẻ video",
+    "làm lại video",
+    "dựng lại video",
+    "video có phải ai",
+    "video ai hay thật",
+    "how was this video made",
+    "remake this video",
+    "reverse engineer this video",
+    "这条视频怎么做",
+    "视频怎么做的",
+    "是不是ai",
+    "怎么复刻",
+    "rea-video"
+  ],
+  "requiredCapabilities": [],
+  "source": {
+    "repo": "JuneYaooo/rea-video",
+    "commit": "3669923645e3953632e7406a57fb883e0ba8a6e0",
+    "folder": "skills/rea-video",
+    "license": "Apache-2.0"
+  }
+}

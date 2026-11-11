@@ -4,12 +4,12 @@
 // Server routes (tiktok-checker gui_server.py, /api/limixbot/*): login, validate, logout, machines, remove-machine.
 // One account may be signed in on at most `max` computers; the next is refused with error "device_limit".
 
-const DAY = 86_400_000;
+const HOUR = 3_600_000;
 
 /** @typedef {{ token?: string, username?: string, email?: string, lastOk?: number }} SavedAccount */
 
 export function createAccountClient({
-  baseUrl, fetch: fetcher = fetch, store, machineId, machineName, now = Date.now, graceMs = 7 * DAY, timeoutMs = 15_000,
+  baseUrl, fetch: fetcher = fetch, store, machineId, machineName, now = Date.now, graceMs = HOUR, timeoutMs = 15_000,
 }) {
   const url = path => `${String(baseUrl).replace(/\/+$/, "")}/${path}`;
   async function post(path, body) {

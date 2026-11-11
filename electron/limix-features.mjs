@@ -5,3 +5,8 @@ export const LIMIX_CLOUD_ENABLED = false;
 /** Limix account server for the desktop sign-in gate (shared with Limix Studio; limix/docs/MODULE_ACCOUNT.md).
  * Empty turns the gate off. Each account may be signed in on at most N computers at once (set on the server). */
 export const LIMIX_ACCOUNT_URL = "https://tiktok.limixmedia.com/api/limixbot";
+
+/** LIMIX_ORGANIZATION_ENABLED: organization (company) sign-in needs Limix's own admin gateway (admin.limixbot.com), which
+ * does not exist yet. While false the Settings → Organization block, the onboarding row and the Server-menu entry are
+ * hidden (owner's choice 2026-11-12). The preload carries its own copy of this switch (it cannot import modules). */
+export const LIMIX_ORGANIZATION_ENABLED = false;

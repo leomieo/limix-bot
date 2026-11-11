@@ -23,6 +23,10 @@ Limix Bot = ứng dụng tạo và quản lý Bot AI — **bản fork đổi th�
 | D9 | Limix Bot = fork OpenMausBot @6f226f15. Mọi thay đổi thương hiệu đi qua `limix/rebrand.py` (chạy lại được khi cập nhật upstream). Sửa lõi tối thiểu: chuỗi hiển thị, tên, biểu tượng, thư mục dữ liệu `~/.limixbot`, kênh cập nhật. Bỏ `enterprise/` và MausBot Cloud | 2026-11-11 |
 | D10 | Mã nguồn ở GitHub `leomieo/limix-bot` (Public). Build Windows bằng GitHub Actions (`.github/workflows/limix-windows.yml`), phát hành qua Releases (app tự cập nhật từ đó) | 2026-11-11 |
 | D12 | Limix Cloud (bản đám mây trả phí) là **mô-đun ẩn**: công tắc `LIMIX_CLOUD_ENABLED = false` (`limix/overlay/shared/limix-features.ts`, `limix/overlay/electron/limix-features.mjs`). Chỉ phát triển khi chủ dự án có dàn VPS. Xem `limix/docs/MODULE_CLOUD.md` | 2026-11-11 |
+| D13 | Tài khoản: app bắt buộc đăng nhập bằng tài khoản Limix **dùng chung với Limix Studio** (máy chủ `tiktok.limixmedia.com`); khách tự đăng ký; 1 tài khoản tối đa 10 máy cùng lúc, máy thứ 11 bị từ chối; chưa giới hạn thời gian. Xem `limix/docs/MODULE_ACCOUNT.md` | 2026-11-11 |
+| D14 | Skill mặc định lấy từ GitHub (ui-ux-pro-max, Agent-Reach, rea-video; rea tắt sẵn), ghim commit, cập nhật theo bản phát hành Limix sau khi chủ dự án duyệt; gói sẵn Python 3.12 + uv trong file cài Windows. Xem `limix/docs/MODULE_SKILLS.md` | 2026-11-11 |
+| D15 | Linh vật (avatar bot) theo ảnh mẫu chủ dự án gửi 2026-11-12: thân mặc định "Limi" = ngôi sao năm cánh bo tròn, màu mặc định xanh ngọc (#45D6EE), mặt = kính đen + hai mắt hình viên thuốc phát sáng, không miệng. Logo app giữ nguyên (D11). Hình hai khối của logo vẫn có trong danh sách thân ("Giao thoa") | 2026-11-12 |
+| D16 | "Đăng nhập bằng tài khoản tổ chức" (cổng Admin công ty) là **mô-đun ẩn**: `LIMIX_ORGANIZATION_ENABLED = false` (`limix/overlay/electron/limix-features.mjs`, bản sao trong preload). Địa chỉ mặc định khi bật: https://admin.limixbot.com (chưa có máy chủ) | 2026-11-12 |
 | D11 | Thương hiệu: tên "Limix Bot", tác giả "Leox ৹ Limix AI", logo đen trắng #000/#FFF "Giao thoa ánh sáng" (hai khối bo tròn chồng nhau, chỗ giao đảo màu; Li = ánh sáng/vô hạn, Mix = pha trộn; chốt 2026-11-11 21:15), linh vật "Limi" = cùng hình hai khối, có mặt. Nguồn: `limix/make-brand.ts`. Không dùng tên/linh vật MausBot (thương hiệu đã đăng ký của Supamaus) | 2026-11-11 |
 
 Mốc mã nguồn đã khảo sát (pin, không dùng "latest"):
@@ -71,6 +75,9 @@ Mốc mã nguồn đã khảo sát (pin, không dùng "latest"):
 | F1 | Fork + đổi thương hiệu + build `LimixBot-setup.exe` qua GitHub Actions | Xong: phát hành tự động trên Releases (0.2.x); CHỜ chủ dự án xác nhận chạy thật |
 | P1 | Telegram + Zalo nhắn tin chữ (limix-gateway, nhập token có sẵn) | Xong mã, test giả lập; CHỜ thử bot thật |
 | C1 | Limix Cloud (mô-đun ẩn) | Hoãn tới khi có dàn VPS |
+| L1 | Đăng nhập tài khoản Limix (dùng chung Limix Studio, tối đa 10 máy) | Đang làm: mã máy chủ + app xong, chờ đưa máy chủ lên VPS |
+| S1 | Skill mặc định từ GitHub + Python/uv đi kèm | Đang làm: 0.2.8 chờ build; rea chỉ hướng dẫn bật tay |
+| I1 | Vẽ lại dàn icon: 10 hình thân bot + icon giao diện | Đang làm: 0.2.9 linh vật mới theo ảnh mẫu (sao xanh ngọc, kính đen, mắt phát sáng; `limix/face.py`); icon giao diện chưa làm |
 | F2 | Gộp kết nối Telegram/Zalo vào trong app Limix Bot | Chưa bắt đầu |
 | P2 | Tự học skill có kiểm duyệt | Chưa bắt đầu |
 | P3 | Tạo bot Telegram bằng QR (Managed Bots) | Chưa bắt đầu |

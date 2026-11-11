@@ -1,0 +1,41 @@
+{
+  "id": "agent-reach",
+  "name": "Agent Reach",
+  "version": "1.0.0",
+  "description": "Read-only search and reading on X/Twitter, Reddit, YouTube (subtitles), GitHub, Bilibili, XiaoHongShu, V2EX, LinkedIn and more through the agent-reach command.",
+  "defaultEnabled": true,
+  "triggerTerms": [
+    "reddit.com",
+    "reddit",
+    "bilibili",
+    "b站",
+    "xiaohongshu",
+    "小红书",
+    "twitter.com",
+    "x.com/",
+    "v2ex",
+    "xueqiu",
+    "雪球",
+    "youtube.com",
+    "youtu.be",
+    "phụ đề youtube",
+    "youtube transcript",
+    "transcript",
+    "phụ đề video",
+    "xiaoyuzhou",
+    "小宇宙",
+    "boss直聘",
+    "agent-reach",
+    "agent reach",
+    "đọc link",
+    "đọc giúp link",
+    "read this link"
+  ],
+  "requiredCapabilities": [],
+  "source": {
+    "repo": "Panniantong/Agent-Reach",
+    "commit": "c70ae6da5d39bc90e09ad2ae0575ccc89f31e284",
+    "folder": "agent_reach/skill",
+    "license": "MIT"
+  }
+}

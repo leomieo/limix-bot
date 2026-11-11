@@ -56,8 +56,7 @@ const CLOUD_SETS = AIMS.map(aim => buildClouds(LOOK_AROUND, MOUTH_STROKE, aim))
 const ALL_CLOUDS = CLOUD_SETS.flat()
 
 /** The scale cap. 1.0 reproduces the proportions the expressions were drawn at. */
-// Limix Bot: its bubble body holds a full-size face, so the catalog cap sits just under what the star body can hold.
-const CAP = 0.83
+const CAP = 1
 
 function solveBody(def: BodyDef): Solved {
   // `def.viewBox` is advisory and wrong for two bodies; bounds come from the outline.

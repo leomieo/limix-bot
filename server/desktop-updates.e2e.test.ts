@@ -40,7 +40,7 @@ esac
 `;
 const OLD_VPS_CONTAINER = JSON.stringify([{
   Id: "c".repeat(64), Name: "/__NAME__", Image: `sha256:${"d".repeat(64)}`,
-  Config: { Image: "localhost/openmausbot/cua-local-vm:driver-0.20.0-v5", Env: ["VNC_PW=fixture"],
+  Config: { Image: "localhost/limixbot/cua-local-vm:driver-0.20.0-v5", Env: ["VNC_PW=fixture"],
     Labels: { [VPS_MANAGED_LABEL]: "1", [VPS_CONTAINER_LABEL]: "__NAME__" } },
   State: { Running: true }, NetworkSettings: { Networks: { bridge: { IPAddress: "172.17.0.9" } } }, Mounts: [], HostConfig: {},
 }]);

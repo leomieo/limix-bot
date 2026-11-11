@@ -1,0 +1,34 @@
+{
+  "id": "ui-ux-pro-max",
+  "name": "UI/UX Pro Max",
+  "version": "1.0.0",
+  "description": "Design intelligence for UI/UX: styles, colour palettes, font pairings, UX rules and stack guidance, searched with a local Python script.",
+  "defaultEnabled": true,
+  "triggerTerms": [
+    "ui/ux",
+    "ui ux",
+    "ux/ui",
+    "ui design",
+    "ux design",
+    "design system",
+    "landing page",
+    "giao diện",
+    "thiết kế web",
+    "thiết kế app",
+    "thiết kế ứng dụng",
+    "bảng màu",
+    "phối màu",
+    "font chữ",
+    "trang đích",
+    "dashboard design",
+    "redesign",
+    "ui-ux-pro-max"
+  ],
+  "requiredCapabilities": [],
+  "source": {
+    "repo": "nextlevelbuilder/ui-ux-pro-max-skill",
+    "commit": "6ae86f61f520d6ca229d2f40e070410638c908c5",
+    "folder": ".claude/skills/ui-ux-pro-max",
+    "license": "MIT"
+  }
+}
