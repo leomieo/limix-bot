@@ -9,12 +9,12 @@
 
 - **Hướng chính (đổi 2026-11-11 18:41):** Limix Bot = **bản fork đổi thương hiệu của OpenMausBot** (giao diện như mausbot.com), phát hành file cài Windows `.exe` qua GitHub Actions của repo `leomieo/limix-bot`. `limix-gateway` (cổng Telegram/Zalo) là module sẽ gộp vào app ở mốc sau.
 - **Mốc đang làm:** F1 — đẩy mã fork lên GitHub và build bản Windows đầu tiên
-- **Việc dở dang:** 0.2.6 chặn hết lối vào Cloud còn sót (bước 8d). 0.2.5 đổi bộ nhận diện sang đen trắng (phương án F "Giao thoa ánh sáng", Codex thiết kế, chủ dự án chọn): biểu tượng app mọi cỡ, linh vật Limi thân mới, bỏ ảnh chrome con trỏ MausBot. Bản đã phát hành trước đó: v0.2.4 (ẩn Limix Cloud, run 43033302953 thành công)
+- **Việc dở dang:** L1 tài khoản Limix dùng chung với Limix Studio (xem `limix/docs/MODULE_ACCOUNT.md`): mã máy chủ đã sửa ở máy chủ dự án riêng (chưa đưa lên VPS), app trên nhánh `limix-account`. Thứ tự: đưa máy chủ lên → thử → gộp nhánh. Bản đã phát hành: v0.2.6
 - **Đã làm được:** script `limix/rebrand.py` (chạy lại được, ổn định); logo đen trắng + linh vật "Limi" (hai khối bo tròn chồng nhau); báo lỗi về hộp thư chủ dự án; Cloud là mô-đun ẩn; kiểm tra: 0 lỗi cú pháp, chạy từ bản sạch 6f226f15 → trùng khớp (trừ số phiên bản)
 - **Đã kiểm trên GitHub Actions (run 43018860396, thành công):** cài thư viện, typecheck + build, cấu trúc gói, `Limix Bot.exe`, kênh cập nhật leomieo/limix-bot, máy chủ đóng gói trả lời /api/health
 - **CHƯA kiểm:** cài và mở app thật 0.2.4+/0.2.5 trên máy Windows; linh vật chrome vẽ (không còn ảnh) trông thế nào trong app; thử gửi báo lỗi @devs thật
 - **Đang bị chặn:** không
-- **Bước tiếp theo:** chủ dự án cài thử → báo lỗi/ảnh chụp → F2 gộp Telegram/Zalo vào app. (Cũ:) chờ workflow "Limix Bot Windows" → sửa lỗi build nếu có → tải `LimixBot-setup.exe` từ Releases
+- **Bước tiếp theo:** chủ dự án đồng ý đưa bản sửa máy chủ lên VPS → kiểm tra → gộp `limix-account` → build 0.3.0. Sau đó: vẽ lại dàn icon (10 hình thân bot + icon giao diện). (Trước:) chủ dự án cài thử → báo lỗi/ảnh chụp → F2 gộp Telegram/Zalo vào app. (Cũ:) chờ workflow "Limix Bot Windows" → sửa lỗi build nếu có → tải `LimixBot-setup.exe` từ Releases
 
 ## 2. Bản đồ thư mục dự án
 
@@ -69,6 +69,7 @@
 
 Định dạng: `- YYYY-MM-DD HH:MM | Ai | Làm gì | File | Kiểm chứng`
 
+- 2026-11-11 22:00 | Claude | L1 tài khoản: (1) máy chủ có sẵn tiktok.limixmedia.com thêm `/api/limixbot/*` (đăng nhập, kiểm tra, đăng xuất, xem/gỡ máy; tối đa 10 máy, máy 11 bị từ chối, 30 ngày tự nhả chỗ, chặn dò mật khẩu) + nút "🤖 Bot n/10" ở trang admin — đã ghi vào `F:\Tool tu build\tiktok-checker` (bản gốc `*.bak-before-limixbot`), CHƯA đưa lên VPS; (2) app: cửa sổ đăng nhập trước khi mở app, màn hình đủ máy, kiểm tra 10 phút, 7 ngày mất mạng — nhánh `limix-account` (0.3.0), CHƯA gộp main | `limix/docs/MODULE_ACCOUNT.md` | máy chủ 33/33 + client 14/14 tình huống (CSDL tạm); ảnh trang admin + cửa sổ đăng nhập; rebrand từ bản sạch trùng khớp
 - 2026-11-11 21:40 | GitHub Actions | Phát hành v0.2.5 và v0.2.6 (Windows + npm đều thành công); bản mới nhất v0.2.6 | Releases | run 43037001238, 43037001253
 - 2026-11-11 21:35 | Chủ dự án + Claude | Mốc mới L1 "Tài khoản Limix": khách tự đăng ký, app bắt buộc đăng nhập, 1 tài khoản tối đa 10 máy cùng lúc (máy thứ 11 bị từ chối), chưa giới hạn thời gian; DÙNG CHUNG tài khoản với Limix Studio (máy chủ hiện có https://tiktok.limixmedia.com, `gui_server.py` + `users.db`, VPS Ubuntu 24.04, theo `F:\Tool tu build\Bo Nho Du An\DU_AN_LIMIX.md`). Bản nháp máy chủ riêng `limix/account-server/` (Node, chưa dùng) — chờ đọc mã máy chủ hiện có để gắn vào | — | cần chủ dự án cấp quyền thư mục `tiktok-checker`, `LimixStudio`
 - 2026-11-11 21:25 | Claude | 0.2.6: chủ dự án báo Settings → General vẫn có "Limix Bot Cloud / Add a Cloud". Bước 8d mới chặn MỌI lối vào Cloud theo công tắc LIMIX_CLOUD_ENABLED: dòng gói/ưu đãi ở General và Usage & billing (`useCloudPlan`, `buyOfferAllowed`), ghi chú lịch routine, chip Cloud khi mới cài, nút "thêm trang", hộp thoại Add a Cloud (reducer `openCloudAdd` bỏ qua) | `limix/rebrand.py` bước 8d; 6 file `src/` | chạy từ bản sạch → trùng khớp; typecheck chờ CI

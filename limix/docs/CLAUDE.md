@@ -23,6 +23,7 @@ Limix Bot = ứng dụng tạo và quản lý Bot AI — **bản fork đổi th�
 | D9 | Limix Bot = fork OpenMausBot @6f226f15. Mọi thay đổi thương hiệu đi qua `limix/rebrand.py` (chạy lại được khi cập nhật upstream). Sửa lõi tối thiểu: chuỗi hiển thị, tên, biểu tượng, thư mục dữ liệu `~/.limixbot`, kênh cập nhật. Bỏ `enterprise/` và MausBot Cloud | 2026-11-11 |
 | D10 | Mã nguồn ở GitHub `leomieo/limix-bot` (Public). Build Windows bằng GitHub Actions (`.github/workflows/limix-windows.yml`), phát hành qua Releases (app tự cập nhật từ đó) | 2026-11-11 |
 | D12 | Limix Cloud (bản đám mây trả phí) là **mô-đun ẩn**: công tắc `LIMIX_CLOUD_ENABLED = false` (`limix/overlay/shared/limix-features.ts`, `limix/overlay/electron/limix-features.mjs`). Chỉ phát triển khi chủ dự án có dàn VPS. Xem `limix/docs/MODULE_CLOUD.md` | 2026-11-11 |
+| D13 | Tài khoản: app bắt buộc đăng nhập bằng tài khoản Limix **dùng chung với Limix Studio** (máy chủ `tiktok.limixmedia.com`); khách tự đăng ký; 1 tài khoản tối đa 10 máy cùng lúc, máy thứ 11 bị từ chối; chưa giới hạn thời gian. Xem `limix/docs/MODULE_ACCOUNT.md` | 2026-11-11 |
 | D11 | Thương hiệu: tên "Limix Bot", tác giả "Leox ৹ Limix AI", logo đen trắng #000/#FFF "Giao thoa ánh sáng" (hai khối bo tròn chồng nhau, chỗ giao đảo màu; Li = ánh sáng/vô hạn, Mix = pha trộn; chốt 2026-11-11 21:15), linh vật "Limi" = cùng hình hai khối, có mặt. Nguồn: `limix/make-brand.ts`. Không dùng tên/linh vật MausBot (thương hiệu đã đăng ký của Supamaus) | 2026-11-11 |
 
 Mốc mã nguồn đã khảo sát (pin, không dùng "latest"):
@@ -71,6 +72,8 @@ Mốc mã nguồn đã khảo sát (pin, không dùng "latest"):
 | F1 | Fork + đổi thương hiệu + build `LimixBot-setup.exe` qua GitHub Actions | Xong: phát hành tự động trên Releases (0.2.x); CHỜ chủ dự án xác nhận chạy thật |
 | P1 | Telegram + Zalo nhắn tin chữ (limix-gateway, nhập token có sẵn) | Xong mã, test giả lập; CHỜ thử bot thật |
 | C1 | Limix Cloud (mô-đun ẩn) | Hoãn tới khi có dàn VPS |
+| L1 | Đăng nhập tài khoản Limix (dùng chung Limix Studio, tối đa 10 máy) | Đang làm: mã máy chủ + app xong, chờ đưa máy chủ lên VPS |
+| I1 | Vẽ lại dàn icon: 10 hình thân bot + icon giao diện | Chưa bắt đầu |
 | F2 | Gộp kết nối Telegram/Zalo vào trong app Limix Bot | Chưa bắt đầu |
 | P2 | Tự học skill có kiểm duyệt | Chưa bắt đầu |
 | P3 | Tạo bot Telegram bằng QR (Managed Bots) | Chưa bắt đầu |
