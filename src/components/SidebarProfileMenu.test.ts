@@ -204,7 +204,7 @@ describe("outward links", () => {
   });
 
   it("sends Send Feedback to the Discord community", () => {
-    expect(FEEDBACK_URL).toBe("https://discord.gg/9Wb8MEpXRs");
+    expect(FEEDBACK_URL).toBe("https://zalo.me/0977242439");
   });
 });
 
@@ -383,7 +383,7 @@ describe("profileMenuItems", () => {
     const items = build();
     expect(items.map((item) => item.key)).toEqual(["usage", "phone-app", "support", "settings", "account"]);
     expect(items.filter((item) => item.separatorBefore).map((item) => item.key)).toEqual(["account"]);
-    expect(items.find((item) => item.key === "support")!.submenu!.map((item) => item.key)).toEqual(["help", "feedback", "shortcuts", "about"]);
+    expect(items.find((item) => item.key === "support")!.submenu!.map((item) => item.key)).toEqual(["feedback", "shortcuts", "about"]);
     expect(items.find((item) => item.key === "account")!.label).toBe("OpenMausBot Cloud");
   });
 
@@ -443,7 +443,7 @@ describe("Simple mode's account menu", () => {
       ["phone-app", "support"],
       ["place", "switch-place", "account"],
     ]);
-    expect(items.find((item) => item.key === "support")!.submenu!.map((item) => item.key)).toEqual(["help", "feedback", "shortcuts", "about", "update"]);
+    expect(items.find((item) => item.key === "support")!.submenu!.map((item) => item.key)).toEqual(["feedback", "shortcuts", "about", "update"]);
   });
 
   it("raises an update that is ready or failed to its own top row with a pill, and keeps it out of support", () => {

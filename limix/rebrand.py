@@ -141,7 +141,12 @@ edit("public/manifest.webmanifest", manifest)
 
 # 4. Author and upstream attribution in the About dialog.
 def about(s):
-    line = f'        <p className="mt-2 text-[12px] text-ink-secondary">{AUTHOR} · Based on OpenMausBot (Apache-2.0)</p>\n'
+    # Owner's choice 2026-11-12: the About window shows only the author. The Apache-2.0 attribution stays in NOTICE, the
+    # README, the License link and as a hover note on the author line.
+    line = f'        <p className="mt-2 text-[12px] text-ink-secondary" title="Based on OpenMausBot (Apache-2.0)">{AUTHOR}</p>\n'
+    old_line = f'        <p className="mt-2 text-[12px] text-ink-secondary">{AUTHOR} · Based on OpenMausBot (Apache-2.0)</p>\n'
+    if old_line in s:
+        return s.replace(old_line, line)
     if AUTHOR in s:
         return s
     anchor = "        <div className=\"mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-[13px]\">\n"
@@ -757,13 +762,19 @@ edit("src/components/ApprovalCard.tsx", gold_card)
 
 # 9g. Help menu: no "Help center" row; "Send feedback" gets a Zalo icon and opens the owner's Zalo chat.
 def help_menu(s):
-    if "ZaloIcon" in s:
+    if "onHelp?: () => void" in s:
         return s
-    s = must(s, 'import { DiscordIcon } from "./DiscordIcon";', 'import { ZaloIcon } from "./ZaloIcon";')
+    if "ZaloIcon" not in s:
+        s = must(s, 'import { DiscordIcon } from "./DiscordIcon";', 'import { ZaloIcon } from "./ZaloIcon";')
     s = must(s, "  HelpCircle,\n", "")
     s = must(s, '    { key: "help", label: t("sidebar.menu.help"), icon: <HelpCircle size={18} />, onSelect: onHelp },\n', "")
-    return must(s, 'icon: <DiscordIcon size={17} />', 'icon: <ZaloIcon size={17} />')
+    s = must(s, 'icon: <DiscordIcon size={17} />', 'icon: <ZaloIcon size={17} />')
+    s = must(s, "  onHelp,\n  onFeedback,\n", "  onFeedback,\n")
+    return must(s, "  onHelp: () => void;\n", "  onHelp?: () => void;\n")
 edit("src/components/SidebarProfileMenu.tsx", help_menu)
+edit("src/components/SidebarProfileMenu.test.ts", lambda s: s.replace('"https://discord.gg/9Wb8MEpXRs"', '"https://zalo.me/0977242439"')
+     .replace('toEqual(["help", "feedback", "shortcuts", "about"])', 'toEqual(["feedback", "shortcuts", "about"])')
+     .replace('toEqual(["help", "feedback", "shortcuts", "about", "update"])', 'toEqual(["feedback", "shortcuts", "about", "update"])'))
 edit("src/lib/app-links.ts", lambda s: s.replace('export const FEEDBACK_URL = "https://discord.gg/9Wb8MEpXRs";', 'export const FEEDBACK_URL = "https://zalo.me/0977242439";'))
 
 # 9h. Learned skills are added at once, no question asked (owner's choice 2026-11-12). Settings > Experimental has a switch
