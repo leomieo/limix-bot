@@ -428,6 +428,32 @@ edit("electron/main.mjs", org_main)
 edit("electron-builder.yml", lambda s: s if "include: build/limix-installer.nsh" in s else must(s,
      "nsis:\n  oneClick: true\n", "nsis:\n  oneClick: true\n  include: build/limix-installer.nsh\n"))
 
+# 6i. A damaged install (the UI folder missing, e.g. after an interrupted update) used to open a window showing
+# {"error":"no route: GET /"}. Limix Bot says so plainly instead and offers the installer download.
+def ui_check(s):
+    if "Limix Bot: a damaged install" in s:
+        return s
+    return must(s, "app.whenReady().then(async () => {\n", """app.whenReady().then(async () => {
+  // Limix Bot: a damaged install (no UI files, e.g. after an interrupted update) explains itself instead of showing
+  // a bare "no route" page.
+  if (app.isPackaged && !fs.existsSync(path.join(process.resourcesPath, "ui", "index.html"))) {
+    const vi = /^vi\b/i.test(app.getLocale());
+    const { response } = await dialog.showMessageBox({
+      type: "error",
+      buttons: [vi ? "Tải bản cài" : "Download installer", vi ? "Thoát" : "Quit"],
+      defaultId: 0, cancelId: 1,
+      message: vi ? "Bộ cài Limix Bot bị thiếu tệp" : "Limix Bot's installation is missing files",
+      detail: vi
+        ? "Có thể lần cập nhật trước bị gián đoạn. Hãy tải và chạy lại LimixBot-setup.exe. Bot, cuộc trò chuyện và cài đặt của bạn vẫn được giữ nguyên."
+        : "An earlier update may have been interrupted. Download and run LimixBot-setup.exe again. Your bots, chats and settings are kept.",
+    });
+    if (response === 0) await shell.openExternal("https://github.com/leomieo/limix-bot/releases/latest");
+    app.exit(1);
+    return;
+  }
+""")
+edit("electron/main.mjs", ui_check)
+
 # 6c. MausBot's finished chrome pictures of the trademark cursor (face included) go: with no pictures for a body the
 # avatar keeps its drawn steel finish over the Limi outline (src/lib/steel-body.ts).
 steel = ROOT / "src/assets/mausbot-steel"

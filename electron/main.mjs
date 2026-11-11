@@ -2816,6 +2816,23 @@ setCuaStateListener((connection) => {
 });
 
 app.whenReady().then(async () => {
+  // Limix Bot: a damaged install (no UI files, e.g. after an interrupted update) explains itself instead of showing
+  // a bare "no route" page.
+  if (app.isPackaged && !fs.existsSync(path.join(process.resourcesPath, "ui", "index.html"))) {
+    const vi = /^vi/i.test(app.getLocale());
+    const { response } = await dialog.showMessageBox({
+      type: "error",
+      buttons: [vi ? "Tải bản cài" : "Download installer", vi ? "Thoát" : "Quit"],
+      defaultId: 0, cancelId: 1,
+      message: vi ? "Bộ cài Limix Bot bị thiếu tệp" : "Limix Bot's installation is missing files",
+      detail: vi
+        ? "Có thể lần cập nhật trước bị gián đoạn. Hãy tải và chạy lại LimixBot-setup.exe. Bot, cuộc trò chuyện và cài đặt của bạn vẫn được giữ nguyên."
+        : "An earlier update may have been interrupted. Download and run LimixBot-setup.exe again. Your bots, chats and settings are kept.",
+    });
+    if (response === 0) await shell.openExternal("https://github.com/leomieo/limix-bot/releases/latest");
+    app.exit(1);
+    return;
+  }
   await evictStartupCacheOnce({
     userData: app.getPath("userData"),
     currentVersion: app.getVersion(),
