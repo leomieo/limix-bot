@@ -57,7 +57,7 @@ jobs:
           rm -rf limix-runtime && mkdir -p limix-runtime/uv
           curl -fsSL -o "$RUNNER_TEMP/py.tgz" "https://github.com/astral-sh/python-build-standalone/releases/download/20261026/${py//+/%2B}"
           echo "$py_sha  $RUNNER_TEMP/py.tgz" | sha256sum -c -
-          tar -xzf "$RUNNER_TEMP/py.tgz" -C limix-runtime
+          tar --force-local -xzf "$RUNNER_TEMP/py.tgz" -C limix-runtime
           cp limix-runtime/python/python.exe limix-runtime/python/python3.exe
           curl -fsSL -o "$RUNNER_TEMP/uv.zip" "https://github.com/astral-sh/uv/releases/download/0.13.5/uv-x86_64-pc-windows-msvc.zip"
           echo "$uv_sha  $RUNNER_TEMP/uv.zip" | sha256sum -c -
