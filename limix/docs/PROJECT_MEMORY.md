@@ -69,6 +69,8 @@
 
 Định dạng: `- YYYY-MM-DD HH:MM | Ai | Làm gì | File | Kiểm chứng`
 
+- 2026-11-12 02:35 | Claude | 0.2.11: cổng Admin mặc định của "Đăng nhập bằng tài khoản tổ chức" đổi admin.openmausbot.com → https://admin.limixbot.com (theo yêu cầu chủ dự án). CHƯA có máy chủ ở địa chỉ đó nên nút vẫn báo lỗi; chủ dự án cũng báo 0.2.9 lỗi, chờ ảnh/log | rebrand bước 6f | rebrand từ 6f226f15 trùng khớp
+
 - 2026-11-12 02:20 | Claude | 0.2.10: dấu tin chưa đọc trên taskbar Windows đổi từ logo thu nhỏ (trông như logo thứ hai) sang chấm đỏ có số 1–9, 9+ | limix/overlay/electron/resources/unread-badge-*.png, rebrand bước 6e | node --check main.mjs; rebrand từ 6f226f15 trùng khớp; CHƯA thấy trên Windows thật
 
 - 2026-11-12 02:30 | Claude | 0.2.9: linh vật mới theo ảnh mẫu (sao bo tròn, kính đen, 25 biểu cảm mắt viên thuốc, bóng 3D, màu mặc định xanh ngọc); thân "star" thành hình hai khối "Giao thoa"; dịch nốt 4.632 chuỗi còn tiếng Anh, "Chief of Staff" → "Trợ lý trưởng" | limix/face.py, limix/rebrand.py, src/locales/vi.json | rebrand từ 6f226f15 trùng khớp (trừ version + vi.json), chạy lại 0 thay đổi; gen-mascot-bodies: mọi thân scale 1, không chạm mép; merge.py 0 lỗi placeholder
