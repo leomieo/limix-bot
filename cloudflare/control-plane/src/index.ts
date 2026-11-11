@@ -104,7 +104,7 @@ async function route(
 
   const auth = createAuth(env, ctx, config, requestId);
   if (request.method === "GET" && url.pathname === "/v1/me") {
-    const session = await accountSession(request, auth);
+    const session = await accountSession(request, auth, env);
     if (!session) throw new HTTPError(401, "unauthorized");
     return json({
       user: {

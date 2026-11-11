@@ -17,7 +17,7 @@ export { friendlyCompanionAccountError };
 
 export { managedEndpointNeed, PHONE_UNUSED_RELEASE_MS } from "./companion-endpoint-need.mjs";
 
-export const DEFAULT_COMPANION_CONTROL_PLANE_URL = "https://accounts.openmausbot.com";
+export const DEFAULT_COMPANION_CONTROL_PLANE_URL = "https://accounts.limixmedia.com";
 
 export const COMPANION_CLIENT_INSTANCE_FIELD = "companionClientInstanceId";
 export const COMPANION_ACCOUNT_TOKEN_FIELD = "companionAccountToken";
@@ -636,7 +636,7 @@ export function createCompanionAccountService({
     return settledState();
   });
 
-  const verifyCode = (rawEmail, rawCode) => serialize(async () => {
+  const signInFlow = (rawEmail, obtain) => serialize(async () => {
     if (!configured) throw new Error(FRIENDLY_MESSAGES.control_plane_unavailable);
     requestedAt = now();
     const email = normalizeAccountEmail(rawEmail);
@@ -644,7 +644,7 @@ export function createCompanionAccountService({
     let verified;
     try {
       await requireHealthyControlPlane();
-      verified = await client.verifyOTP(email, rawCode);
+      verified = await obtain(email);
     } catch (error) {
       const message = failAction(error, { email, signedOut: true });
       throw new Error(message);
@@ -692,6 +692,13 @@ export function createCompanionAccountService({
       return settledState();
     }
   });
+
+  const verifyCode = (rawEmail, rawCode) => signInFlow(rawEmail, (email) => client.verifyOTP(email, rawCode));
+  // Limix account: its bearer is `limix.<machine>.<token>`; the control plane checks it with the account server.
+  const connectLimix = (credential) => signInFlow(credential.email, async () => ({
+    accountToken: credential.bearer,
+    user: { id: credential.userId, email: credential.email },
+  }));
 
   const retryWork = async () => {
     if (!configured) return settledState();
@@ -991,6 +998,7 @@ export function createCompanionAccountService({
     },
     requestCode,
     verifyCode,
+    connectLimix,
     retry,
     prepare,
     signOut,

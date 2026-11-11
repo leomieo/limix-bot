@@ -136,11 +136,23 @@ $("#forgot").onclick = () => api.open("forgot");
  * closes the sign-in window. While the app runs, re-checks every 10 minutes; a removed computer or a locked account
  * restarts the app at the sign-in window.
  */
+let remoteCredential = () => null;
+
+/** What remote access signs in with: the Limix account's own bearer for this computer, or null when not signed in. */
+export function limixRemoteCredential() { return remoteCredential(); }
+
 export async function limixAccountGate({ app, BrowserWindow, ipcMain, safeStorage, shell, dialog, iconPath, log = () => {}, baseUrl }) {
   if (!baseUrl) return true;
   const userData = app.getPath("userData");
   const store = fileStore(path.join(userData, "limix-account.json"), safeStorage);
-  const client = createAccountClient({ baseUrl, store, machineId: await machineIdentity(userData), machineName: os.hostname() });
+  const machineId = await machineIdentity(userData);
+  const client = createAccountClient({ baseUrl, store, machineId, machineName: os.hostname() });
+  remoteCredential = () => {
+    const saved = store.read() ?? {};
+    const key = String(saved.username ?? "").trim().toLowerCase();
+    if (!saved.token || saved.token === "master-offline" || !/^[a-z0-9._-]{1,64}$/.test(key)) return null;
+    return { bearer: `limix.${Buffer.from(machineId, "utf8").toString("base64url")}.${saved.token}`, userId: `limix:${key}`, email: `${key}@limix.invalid` };
+  };
 
   const first = await client.check();
   log(`limix account: ${first.status}${first.offline ? " (offline grace)" : ""}${first.reason ? ` (${first.reason})` : ""}`);

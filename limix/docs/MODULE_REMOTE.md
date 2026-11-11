@@ -40,3 +40,8 @@
 - Bảo vệ nằm ở máy chủ nội bộ (server/index.ts): `/api/pair` đổi mã ghép nối dùng 1 lần (có khoá khi nhập sai), mọi route khác qua `resolveRequestAuth` (cookie/token phiên). Chưa có phiên → bị từ chối 401.
 - Chưa thử xâm nhập thực tế; làm khi bắt đầu R1.
 - Cloudflare Account ID: e2c5f1d87da45803ba77f9eb676ec3ed · Zone ID (limixmedia.com): b6ded94cfef973f6dbb5e480d7dde361 (không phải bí mật).
+
+## Tiến độ R1 (2026-11-12)
+- Xong code: Worker nhận `Bearer limix.<máy>.<token>` (cloudflare/control-plane/src/limix-auth.ts, hỏi /api/limixbot/validate), app tự đăng nhập remote bằng tài khoản Limix (`connectLimix`, `limixAutoConnect`), suffix limixmedia.com, URL accounts.limixmedia.com.
+- Triển khai: Actions → "Limix Cloudflare" (cần secret repo `CLOUDFLARE_API_TOKEN`; quyền: Account: Workers Scripts Edit, D1 Edit, Cloudflare Tunnel Edit, Account Settings Read; Zone limixmedia.com: DNS Edit, Workers Routes Edit, Zone Read).
+- Chưa làm: bước thử xâm nhập, thử thật bằng điện thoại 4G, sửa chữ trong hộp "Ghép nối điện thoại".

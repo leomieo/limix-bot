@@ -1,0 +1,46 @@
+{
+  // Limix Bot remote access: the same control plane, signed in with the Limix Studio account instead of an e-mail code.
+  // Deployed by .github/workflows/limix-cloudflare.yml (Actions → "Limix Cloudflare" → Run workflow).
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "limix-control-plane",
+  "main": "src/index.ts",
+  "account_id": "e2c5f1d87da45803ba77f9eb676ec3ed",
+  "compatibility_date": "2026-08-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "routes": [{ "pattern": "accounts.limixmedia.com", "custom_domain": true }],
+  "vars": {
+    "BETTER_AUTH_URL": "https://accounts.limixmedia.com",
+    "EMAIL_FROM": "noreply@limixmedia.com",
+    "ALLOWED_ORIGINS": "",
+    "LIMIX_ACCOUNT_URL": "https://tiktok.limixmedia.com/api/limixbot",
+    "CLOUDFLARE_ACCOUNT_ID": "e2c5f1d87da45803ba77f9eb676ec3ed",
+    "CLOUDFLARE_ZONE_ID": "b6ded94cfef973f6dbb5e480d7dde361",
+    "COMPANION_HOST_SUFFIX": "limixmedia.com",
+    "OMB_TUNNEL_LIMIT": "1000",
+    "OMB_DNS_RECORD_LIMIT": "200",
+    "OMB_TUNNEL_RECLAIM": "on",
+    "OMB_TUNNEL_OFFLINE_RECLAIM_DAYS": "3",
+    "OMB_TUNNEL_RECLAIM_PREVIEW_DAYS": "",
+    "OMB_CLEANUP_SWEEP_LIMIT": "4",
+    // No relay and no tunnel release: every computer keeps its own Cloudflare Tunnel.
+    "RELAY_NODES": "",
+    "RELAY_DISABLED": "1",
+    "RELAY_ROLLOUT_PERCENT": "0",
+    "RELAY_CAPABLE_MIN_VERSION": "",
+    "RELAY_TUNNEL_RELEASE_PERCENT": "0",
+    "TUNNEL_LEGACY_PHONE_CUTOFF_PERCENT": "0",
+    "TUNNEL_MIN_APP_VERSION": "",
+    "TUNNEL_REASON_MIN_VERSION": ""
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "limix-control-plane",
+      "database_id": "__D1_ID__",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "triggers": { "crons": ["*/5 * * * *"] },
+  "observability": { "enabled": true }
+}

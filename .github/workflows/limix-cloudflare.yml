@@ -1,0 +1,48 @@
+# Limix Bot remote access: puts the control plane on Cloudflare (Worker + D1 database) from GitHub, so nothing
+# is typed on a computer. Needs one repository secret: CLOUDFLARE_API_TOKEN (see limix/docs/MODULE_REMOTE.md).
+name: Limix Cloudflare
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: e2c5f1d87da45803ba77f9eb676ec3ed
+    defaults:
+      run:
+        working-directory: cloudflare/control-plane
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: check the token is set
+        run: test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Add the repository secret CLOUDFLARE_API_TOKEN first."; exit 1; }
+      - name: install
+        run: npm install --no-audit --no-fund --no-save better-auth@1.7.7 zod@4.6.7 wrangler@4.125.0 @cloudflare/workers-types@5.20260825.1 typescript@5
+      - name: create the database if it is missing, write its id into the config
+        run: |
+          npx wrangler d1 create limix-control-plane >/dev/null 2>&1 || true
+          ID=$(npx wrangler d1 list --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const x=JSON.parse(s).find(d=>d.name==="limix-control-plane");console.log(x?x.uuid:"")})')
+          test -n "$ID" || { echo "::error::The D1 database could not be created."; exit 1; }
+          sed -i "s/__D1_ID__/$ID/" wrangler.limix.jsonc
+      - name: database tables
+        run: npx wrangler d1 migrations apply limix-control-plane --remote --config wrangler.limix.jsonc
+      - name: deploy
+        run: npx wrangler deploy --config wrangler.limix.jsonc
+      - name: secrets (derived from the token, so they stay the same on every run)
+        run: |
+          SECRET=$(printf 'limix-better-auth' | openssl dgst -sha256 -hmac "$CLOUDFLARE_API_TOKEN" -hex | awk '{print $NF}')
+          printf '%s' "$SECRET$SECRET" | npx wrangler secret put BETTER_AUTH_SECRET --config wrangler.limix.jsonc
+          printf '%s' "$CLOUDFLARE_API_TOKEN" | npx wrangler secret put CLOUDFLARE_API_TOKEN --config wrangler.limix.jsonc
+      - name: health
+        run: |
+          sleep 8
+          curl -sS https://accounts.limixmedia.com/healthz | head -c 400 || true
