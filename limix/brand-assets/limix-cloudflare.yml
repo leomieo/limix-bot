@@ -26,6 +26,7 @@ jobs:
         run: |
           mkdir -p "/tmp/cp"
           cp -r cloudflare/control-plane/. "/tmp/cp/"
+          rm -f /tmp/cp/wrangler.jsonc
           printf '{"name":"limix-control-plane","private":true,"type":"module"}' > "/tmp/cp/package.json"
       - name: install
         working-directory: /tmp/cp
@@ -34,7 +35,7 @@ jobs:
         working-directory: /tmp/cp
         run: |
           npx wrangler d1 create limix-control-plane >/dev/null 2>&1 || true
-          ID=$(npx wrangler d1 list --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const x=JSON.parse(s).find(d=>d.name==="limix-control-plane");console.log(x?x.uuid:"")})')
+          ID=$(npx wrangler d1 list --json 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const x=JSON.parse(s).find(d=>d.name==="limix-control-plane");console.log(x?x.uuid:"")})')
           test -n "$ID" || { echo "::error::The D1 database could not be created."; exit 1; }
           sed -i "s/__D1_ID__/$ID/" wrangler.limix.jsonc
       - name: database tables
