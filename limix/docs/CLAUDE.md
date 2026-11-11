@@ -22,6 +22,7 @@ Limix Bot = ứng dụng tạo và quản lý Bot AI — **bản fork đổi th�
 | D8 | ~~Không sửa lõi OpenMausBot~~ → thay bằng D9 (chủ dự án muốn chính app OpenMausBot mang tên Limix Bot). `limix-gateway/` giữ làm module Telegram/Zalo, sẽ gộp vào app | 2026-11-11 |
 | D9 | Limix Bot = fork OpenMausBot @6f226f15. Mọi thay đổi thương hiệu đi qua `limix/rebrand.py` (chạy lại được khi cập nhật upstream). Sửa lõi tối thiểu: chuỗi hiển thị, tên, biểu tượng, thư mục dữ liệu `~/.limixbot`, kênh cập nhật. Bỏ `enterprise/` và MausBot Cloud | 2026-11-11 |
 | D10 | Mã nguồn ở GitHub `leomieo/limix-bot` (Public). Build Windows bằng GitHub Actions (`.github/workflows/limix-windows.yml`), phát hành qua Releases (app tự cập nhật từ đó) | 2026-11-11 |
+| D12 | Limix Cloud (bản đám mây trả phí) là **mô-đun ẩn**: công tắc `LIMIX_CLOUD_ENABLED = false` (`limix/overlay/shared/limix-features.ts`, `limix/overlay/electron/limix-features.mjs`). Chỉ phát triển khi chủ dự án có dàn VPS. Xem `limix/docs/MODULE_CLOUD.md` | 2026-11-11 |
 | D11 | Thương hiệu: tên "Limix Bot", tác giả "Leox ৹ Limix AI", linh vật "Limi" = bong bóng chat bo tròn, màu tím #A78BFA→#6D28D9. Không dùng tên/linh vật MausBot (thương hiệu đã đăng ký của Supamaus) | 2026-11-11 |
 
 Mốc mã nguồn đã khảo sát (pin, không dùng "latest"):
@@ -67,8 +68,9 @@ Mốc mã nguồn đã khảo sát (pin, không dùng "latest"):
 | Mốc | Nội dung | Trạng thái |
 |---|---|---|
 | P0 | Chốt nền tảng, pin mã, khảo sát, gap analysis | Xong (`docs/KHAO_SAT_P0.md`) |
-| F1 | Fork + đổi thương hiệu + build `LimixBot-setup.exe` qua GitHub Actions | Đang làm: commit xong, chờ repo `leomieo/limix-bot` |
+| F1 | Fork + đổi thương hiệu + build `LimixBot-setup.exe` qua GitHub Actions | Xong: phát hành tự động trên Releases (0.2.x); CHỜ chủ dự án xác nhận chạy thật |
 | P1 | Telegram + Zalo nhắn tin chữ (limix-gateway, nhập token có sẵn) | Xong mã, test giả lập; CHỜ thử bot thật |
+| C1 | Limix Cloud (mô-đun ẩn) | Hoãn tới khi có dàn VPS |
 | F2 | Gộp kết nối Telegram/Zalo vào trong app Limix Bot | Chưa bắt đầu |
 | P2 | Tự học skill có kiểm duyệt | Chưa bắt đầu |
 | P3 | Tạo bot Telegram bằng QR (Managed Bots) | Chưa bắt đầu |

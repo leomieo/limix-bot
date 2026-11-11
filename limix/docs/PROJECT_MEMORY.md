@@ -69,6 +69,10 @@
 
 Định dạng: `- YYYY-MM-DD HH:MM | Ai | Làm gì | File | Kiểm chứng`
 
+- 2026-11-11 21:00 | Claude | 0.2.4: Limix Cloud thành mô-đun ẩn (công tắc LIMIX_CLOUD_ENABLED=false: nút/menu Add Cloud, mục Settings Cloud); tài liệu MODULE_CLOUD.md | `limix/overlay/*/limix-features.*`, `electron/main.mjs`, `src/components/SettingsModal.tsx`, `limix/docs/MODULE_CLOUD.md` | 0 lỗi cú pháp; script ổn định
+- 2026-11-11 20:55 | Chủ dự án | Quyết định D12: bỏ phần Cloud, giữ làm mô-đun ẩn, phát triển khi có dàn VPS | — | tin nhắn
+- 2026-11-11 20:50 | Claude | 0.2.3: Limix là "branded build" → ẩn bảng giá MausBot Cloud, popup What's new, thẻ tài trợ/thông báo upstream | `server/brand.ts` (rebrand bước 8b) | commit c62deac
+
 - 2026-11-11 20:41 | GitHub Actions | Phát hành Windows v0.2.1; npm `limixbot` qua rà soát, công khai 0.2.0 + 0.2.1 | Releases, npmjs.com/package/limixbot | run 43029716881 success; trang npm hiện 0.2.1
 
 - 2026-11-11 20:50 | Claude | Báo cáo lỗi gửi về hộp thư chủ dự án qua FormSubmit (mã ẩn danh), bỏ tên Milind/Omkar khỏi 15 ngôn ngữ, workflow đọc secret LIMIX_REPORT_ALIAS; đã gửi email kích hoạt FormSubmit | `limix/overlay/server/limix-report-*.ts`, `server/index.ts`, `limix/rebrand.py` bước 8 | tsc 0 lỗi file mới; chạy thử 6 tình huống với máy chủ giả; script ổn định
