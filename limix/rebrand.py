@@ -118,7 +118,7 @@ def cloud_switch(s):
     if gated not in s:
         raise SystemExit("rebrand: cloudOffersAllowed not found in electron/main.mjs")
     imp = 'import { LIMIX_CLOUD_ENABLED } from "./limix-features.mjs";\n'
-    if imp not in s:
+    if 'LIMIX_CLOUD_ENABLED } from "./limix-features.mjs"' not in s:
         first = s.index("\nimport ") + 1
         s = s[:first] + imp + s[first:]
     return s
@@ -392,6 +392,18 @@ cloud_gate("src/components/PublishedPageCard.tsx", [(
 cloud_gate("src/state/store.tsx", [(
     '    case "openCloudAdd":\n      return {',
     '    case "openCloudAdd":\n      if (!LIMIX_CLOUD_ENABLED) return state.cloudHowTo ? { ...state, cloudHowTo: false } : state;\n      return {')])
+
+# 8e. Sign-in gate: before the splash, the computer must be signed in to a Limix account (limix/docs/MODULE_ACCOUNT.md).
+def account_gate(s):
+    s = must(s, 'import { LIMIX_CLOUD_ENABLED } from "./limix-features.mjs";\n',
+             'import { LIMIX_ACCOUNT_URL, LIMIX_CLOUD_ENABLED } from "./limix-features.mjs";\nimport { limixAccountGate } from "./limix-account.mjs";\n')
+    if "limixAccountGate({" in s:
+        return s
+    return must(s, "  hiddenStart = loginItem.startedHidden() || reopenedOutOfSight();\n",
+                "  // Limix Bot: no app until this computer is signed in to a Limix account (closing the sign-in window quits).\n"
+                "  if (!(await limixAccountGate({ app, BrowserWindow, ipcMain, safeStorage, shell, dialog, iconPath: APP_ICON, log: slog, baseUrl: LIMIX_ACCOUNT_URL }))) { app.quit(); return; }\n"
+                "  hiddenStart = loginItem.startedHidden() || reopenedOutOfSight();\n")
+edit("electron/main.mjs", account_gate)
 
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
