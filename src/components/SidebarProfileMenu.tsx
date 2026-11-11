@@ -463,7 +463,6 @@ export function profileMenuItems({
   onSettings,
   onShortcuts,
   onAbout,
-  onHelp,
   onFeedback,
   onAccount,
 }: {
@@ -482,7 +481,7 @@ export function profileMenuItems({
   onSettings: () => void;
   onShortcuts: () => void;
   onAbout: () => void;
-  onHelp: () => void;
+  onHelp?: () => void;
   onFeedback: () => void;
   onAccount: () => void;
 }): SidebarMenuItem[] {
