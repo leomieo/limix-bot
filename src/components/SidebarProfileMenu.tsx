@@ -11,7 +11,6 @@ import {
   FolderOpen,
   Gauge,
   Info,
-  HelpCircle,
   Keyboard,
   Laptop,
   LifeBuoy,
@@ -27,7 +26,7 @@ import {
 import { accountMenuItems, AccountsSheet, cloudRowLabel, useAccounts } from "./AccountMenu";
 import { AccountMoveStatus, useAccountMove, type AccountMoveKind } from "./AccountMove";
 import { InitialsAvatar } from "./Avatar";
-import { DiscordIcon } from "./DiscordIcon";
+import { ZaloIcon } from "./ZaloIcon";
 import { AboutDialog } from "./AboutDialog";
 import { PhoneAppDialog } from "./lazy-screens";
 import { CloudTile } from "./cloud-buy/parts";
@@ -488,8 +487,7 @@ export function profileMenuItems({
   onAccount: () => void;
 }): SidebarMenuItem[] {
   const help: SidebarMenuItem[] = [
-    { key: "help", label: t("sidebar.menu.help"), icon: <HelpCircle size={18} />, onSelect: onHelp },
-    { key: "feedback", label: t("sidebar.menu.feedback"), icon: <DiscordIcon size={17} />, onSelect: onFeedback },
+    { key: "feedback", label: t("sidebar.menu.feedback"), icon: <ZaloIcon size={17} />, onSelect: onFeedback },
     {
       key: "shortcuts",
       label: t("sidebar.menu.shortcuts"),
