@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="448" height="128" viewBox="0 0 448 128" role="img" aria-labelledby="title">
+  <title>Limix Bot</title>
+  <g transform="scale(0.125)">
+    <rect width="1024" height="1024" rx="224" fill="#000000"/>
+    <path fill="#FFFFFF" fill-rule="evenodd" d="M269 344H533C593 344 641 392 641 452V672C641 732 593 780 533 780H269C209 780 161 732 161 672V452C161 392 209 344 269 344ZM491 244H755C815 244 863 292 863 352V572C863 632 815 680 755 680H491C431 680 383 632 383 572V352C383 292 431 244 491 244Z"/>
+  </g>
+  <g transform="translate(157 38)" fill="none" stroke="#000000" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 5V46H31 M44 22V46 M60 22V46M60 30C63 19 80 19 80 31V46M80 30C83 19 100 19 100 31V46 M116 22V46 M132 22L155 46M155 22L132 46 M181 46V5H197C214 5 215 25 197 25H181M197 25C216 25 216 46 197 46H181 M235 22C218 22 218 46 235 46C252 46 252 22 235 22Z M265 10V37C265 44 269 46 279 46M257 22H279"/>
+    <path d="M44 11H44.1 M116 11H116.1"/>
+  </g>
+</svg>
