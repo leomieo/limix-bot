@@ -13,7 +13,7 @@
 - **Đã làm được:** script `limix/rebrand.py` (chạy lại được, ổn định); logo đen trắng (hai khối bo tròn chồng nhau); linh vật mới 0.2.9: sao xanh ngọc + kính đen + mắt phát sáng (`limix/face.py`, rebrand bước 6a/6b/6d); tiếng Việt đủ 10210/10210 chuỗi; báo lỗi về hộp thư chủ dự án; Cloud là mô-đun ẩn; kiểm tra: 0 lỗi cú pháp, chạy từ bản sạch 6f226f15 → trùng khớp (trừ số phiên bản)
 - **Đã kiểm trên GitHub Actions (run 43018860396, thành công):** cài thư viện, typecheck + build, cấu trúc gói, `Limix Bot.exe`, kênh cập nhật leomieo/limix-bot, máy chủ đóng gói trả lời /api/health
 - **CHƯA kiểm:** cài và mở app thật 0.2.4+/0.2.5 trên máy Windows; linh vật 0.2.9 trong app thật (mới xem bằng ảnh dựng lại từ dữ liệu, chưa chạy vitest vì máy làm việc không có node_modules); thử gửi báo lỗi @devs thật
-- **Đang bị chặn:** không
+- **Đang bị chặn:** không. **Luật tạm thời (2026-11-12 02:36): không push lên GitHub cho tới khi chủ dự án cho phép**
 - **Bước tiếp theo:** chủ dự án đồng ý đưa bản sửa máy chủ lên VPS → kiểm tra → gộp `limix-account` → build 0.3.0. Sau đó: icon giao diện (I1 phần 2). (Trước:) chủ dự án cài thử → báo lỗi/ảnh chụp → F2 gộp Telegram/Zalo vào app. (Cũ:) chờ workflow "Limix Bot Windows" → sửa lỗi build nếu có → tải `LimixBot-setup.exe` từ Releases
 
 ## 2. Bản đồ thư mục dự án
@@ -68,6 +68,8 @@
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
 
 Định dạng: `- YYYY-MM-DD HH:MM | Ai | Làm gì | File | Kiểm chứng`
+
+- 2026-11-12 03:00 | Claude | Chủ dự án: TẠM KHÔNG ĐẨY LÊN GITHUB cho tới khi được phép. 0.2.14 (chỉ commit trong máy): bộ cài thiếu thư mục ui → hộp thoại "Bộ cài Limix Bot bị thiếu tệp" + nút tải bản cài, thay cho trang "no route" | rebrand bước 6i | node --check main.mjs; rebrand từ 6f226f15 trùng khớp
 
 - 2026-11-12 02:55 | Claude | 0.2.13: sửa lỗi cập nhật (app biến mất, mở lại thấy "no route: GET /"). Nguyên nhân nghi cao: tiến trình phụ (cua-driver, trình duyệt bot, cloudflared, Python/uv) còn chạy giữ tệp → trình cài xóa giao diện cũ nhưng không ghi được bản mới. Sửa: build/limix-installer.nsh (customInit/customUnInit) dừng mọi tiến trình chạy từ thư mục cài trước khi cài. CHƯA kiểm trên Windows thật; chưa có log xác nhận | limix/overlay/build/limix-installer.nsh, rebrand bước 6h | rebrand từ 6f226f15 trùng khớp; chờ build CI (makensis biên dịch script)
 
