@@ -2,6 +2,7 @@ import { app, autoUpdater as nativeAutoUpdater, BrowserWindow, Tray, WebContents
 import { LIMIX_ACCOUNT_URL, LIMIX_CLOUD_ENABLED, LIMIX_ORGANIZATION_ENABLED } from "./limix-features.mjs";
 import { limixAccountGate, limixRemoteCredential } from "./limix-account.mjs";
 import { limixRuntimeEnv } from "./limix-runtime.mjs";
+import { createLimixGateway } from "./limix-gateway.mjs";
 import { createRequire } from "node:module";
 import { randomBytes, randomUUID } from "node:crypto";
 import fs from "node:fs";
@@ -2828,6 +2829,7 @@ setCuaStateListener((connection) => {
   });
 });
 
+let limixGateway = null;
 app.whenReady().then(async () => {
   // Limix Bot: a damaged install (no UI files, e.g. after an interrupted update) explains itself instead of showing
   // a bare "no route" page.
@@ -2865,6 +2867,8 @@ app.whenReady().then(async () => {
   }
   // Limix Bot: no app until this computer is signed in to a Limix account (closing the sign-in window quits).
   if (!(await limixAccountGate({ app, BrowserWindow, ipcMain, safeStorage, shell, dialog, iconPath: APP_ICON, log: slog, baseUrl: LIMIX_ACCOUNT_URL }))) { app.quit(); return; }
+  limixGateway = createLimixGateway({ app, BrowserWindow, shell, resourcesPath: process.resourcesPath, userData: app.getPath("userData"), iconPath: APP_ICON, log: slog });
+  limixGateway.start();
   hiddenStart = loginItem.startedHidden() || reopenedOutOfSight();
   startupScreen = hiddenStart ? null : createStartupScreen({
     BrowserWindow, iconPath: APP_ICON, isQuitting: () => desktopShutdownStarted, t: nativeT, lang: nativeText.intlTag(),
@@ -3192,6 +3196,8 @@ function releaseDesktopDataDirLease() {
 }
 
 // before-quit is too early (this app defers it); will-quit is Electron's last boundary, and the process hook covers app.exit().
+ipcMain.handle("limix-gateway:open", localOnly("limix-gateway:open", () => limixGateway ? limixGateway.open() : Promise.reject(new Error("Chương trình kết nối chưa sẵn sàng."))));
+app.on("will-quit", () => limixGateway?.stop());
 app.on("will-quit", releaseDesktopDataDirLease);
 app.on("will-quit", () => { desktopTray?.destroy(); void tailnetShare.stop(); });
 // Limix Bot: Quit ends every helper process the app started. The orderly stop above runs first; this clears any

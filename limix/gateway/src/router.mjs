@@ -26,7 +26,7 @@ export const TEXT = {
   linked: "Đã xác nhận bạn là chủ bot này.",
   linkBad: "Mã liên kết không đúng hoặc đã hết hạn. Tạo mã mới trong Limix.",
   newSession: "Đã bắt đầu cuộc trò chuyện mới.",
-  needsApproval: "Bot cần chủ duyệt một thao tác trong ứng dụng OpenMausBot. Sau khi duyệt, hãy nhắn tiếp để nhận kết quả.",
+  needsApproval: "Bot cần chủ duyệt một thao tác trong ứng dụng Limix Bot. Sau khi duyệt, hãy nhắn tiếp để nhận kết quả.",
   stillWorking: "Bot vẫn đang xử lý lâu hơn dự kiến. Bạn hãy nhắn lại sau ít phút để nhận kết quả.",
   busy: "Bot đang trả lời tin trước của bạn, vui lòng chờ một chút.",
   emptyReply: "(Bot không gửi câu trả lời bằng chữ.)",
@@ -137,7 +137,7 @@ export class Router {
         case "status":
           await this.reply(channel, event.chatId, [
             `Trạng thái: ${conn.status}`,
-            `AI: ${engine.kind === "echo" ? "chế độ thử" : "OpenMausBot"}`,
+            `AI: ${engine.kind === "echo" ? "chế độ thử" : "Limix Bot"}`,
             `Quyền của bạn: ${{ owner: "chủ bot", member: "đã duyệt", external: "khách", unknown: "chưa được duyệt" }[role]}`,
           ].join("\n"));
           return "command";

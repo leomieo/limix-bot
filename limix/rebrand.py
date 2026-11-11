@@ -1002,6 +1002,56 @@ def skill_keys(s):
     return json.dumps(out, indent=2, ensure_ascii=False) + "\n"
 edit("src/locales/en.json", skill_keys)
 
+# 10g. The Telegram / Zalo / Discord connector (limix/gateway) is part of the app: shipped in resources/limix-gateway,
+# started after sign-in (electron/limix-gateway.mjs), opened from the account menu, stopped on quit.
+def gw_builder(s):
+    if "limix-gateway" in s:
+        return s
+    anchor = "    - from: limix-runtime\n      to: limix-runtime\n"
+    add = "    - from: limix/gateway/src\n      to: limix-gateway/src\n    - from: limix/gateway/package.json\n      to: limix-gateway/package.json\n"
+    return must(s, anchor, anchor + add)
+edit("electron-builder.yml", gw_builder)
+
+def gw_main(s):
+    if "createLimixGateway" in s:
+        return s
+    s = must(s, 'import { limixRuntimeEnv } from "./limix-runtime.mjs";\n', 'import { limixRuntimeEnv } from "./limix-runtime.mjs";\nimport { createLimixGateway } from "./limix-gateway.mjs";\n')
+    s = must(s, "app.whenReady().then(async () => {", "let limixGateway = null;\napp.whenReady().then(async () => {")
+    gate = "  if (!(await limixAccountGate({ app, BrowserWindow, ipcMain, safeStorage, shell, dialog, iconPath: APP_ICON, log: slog, baseUrl: LIMIX_ACCOUNT_URL }))) { app.quit(); return; }\n"
+    s = must(s, gate, gate + "  limixGateway = createLimixGateway({ app, BrowserWindow, shell, resourcesPath: process.resourcesPath, userData: app.getPath(\"userData\"), iconPath: APP_ICON, log: slog });\n  limixGateway.start();\n")
+    return must(s, 'app.on("will-quit", releaseDesktopDataDirLease);',
+        'ipcMain.handle("limix-gateway:open", localOnly("limix-gateway:open", () => limixGateway ? limixGateway.open() : Promise.reject(new Error("Chương trình kết nối chưa sẵn sàng."))));\n'
+        'app.on("will-quit", () => limixGateway?.stop());\n'
+        'app.on("will-quit", releaseDesktopDataDirLease);')
+edit("electron/main.mjs", gw_main)
+edit("electron/preload.cjs", lambda s: s if "limix-gateway:open" in s else must(s, '  pickFolder: (current) => ipcRenderer.invoke("desktop:pick-folder", current),\n', '  pickFolder: (current) => ipcRenderer.invoke("desktop:pick-folder", current),\n  limixGateway: { open: () => ipcRenderer.invoke("limix-gateway:open") },\n'))
+edit("src/types/ogb.d.ts", lambda s: s if "limixGateway" in s else must(s, "      pickFolder?(current?: string): Promise<string | null>;\n", "      pickFolder?(current?: string): Promise<string | null>;\n      /** Limix Bot: opens the Telegram / Zalo / Discord connector window. */\n      limixGateway?: { open(): Promise<void> };\n"))
+
+def gw_menu(s):
+    if "connectItem" in s:
+        return s
+    s = must(s, "  Laptop,\n  LifeBuoy,\n", "  Laptop,\n  LifeBuoy,\n  Link2,\n")
+    s = must(s, "  const settings: SidebarMenuItem = {", 
+        "  const connectItem: SidebarMenuItem | null = typeof window !== \"undefined\" && window.ogb?.limixGateway ? {\n"
+        "    key: \"connect\", label: t(\"sidebar.menu.connect\"), icon: <Link2 size={18} />,\n"
+        "    onSelect: () => { void window.ogb?.limixGateway?.open().catch((error: unknown) => window.alert(String((error as Error)?.message ?? error).replace(/^Error invoking remote method '[^']*': (Error: )?/, \"\"))); },\n"
+        "  } : null;\n  const settings: SidebarMenuItem = {")
+    s = must(s, "...phone, support, settings,", "...phone, ...present(connectItem), support, settings,")
+    return must(s, "    [...present(usageItem), settings],", "    [...present(usageItem), ...present(connectItem), settings],")
+edit("src/components/SidebarProfileMenu.tsx", gw_menu)
+
+def gw_keys(s):
+    d = json.loads(s)
+    if "sidebar.menu.connect" in d:
+        return s
+    out = {}
+    for k, v in d.items():
+        out[k] = v
+        if k == "sidebar.menu.feedback":
+            out["sidebar.menu.connect"] = "Connect Telegram, Zalo, Discord"
+    return json.dumps(out, indent=2, ensure_ascii=False) + "\n"
+edit("src/locales/en.json", gw_keys)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):

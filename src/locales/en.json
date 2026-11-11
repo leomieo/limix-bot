@@ -2496,6 +2496,7 @@
   "sidebar.menu.support": "Help and support",
   "sidebar.menu.help": "Help Center",
   "sidebar.menu.feedback": "Send Feedback",
+  "sidebar.menu.connect": "Connect Telegram, Zalo, Discord",
   "sidebar.menu.usageUsed": "{percent}% used",
   "sidebar.menu.weeklyUsage": "Weekly usage",
   "sidebar.menu.resets": "Resets {when}",

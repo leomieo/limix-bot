@@ -82,7 +82,7 @@ export function createApp({ store, secrets, pairing, gateway, makeChannel = defa
     "POST /api/connections": async (body) => {
       const platform = String(body.platform ?? "");
       const token = String(body.token ?? "").trim();
-      if (!["telegram", "zalo"].includes(platform)) throw Object.assign(new Error("Chọn Telegram hoặc Zalo"), { status: 400 });
+      if (!["telegram", "zalo", "discord"].includes(platform)) throw Object.assign(new Error("Chọn Telegram, Zalo hoặc Discord"), { status: 400 });
       if (!token) throw Object.assign(new Error("Chưa nhập token của bot"), { status: 400 });
       if (store.listConnections().some((c) => c.platform === platform && c.tokenFingerprint === hashCode(token))) {
         throw Object.assign(new Error("Bot này đã được kết nối rồi"), { status: 409 });
