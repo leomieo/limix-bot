@@ -1,3 +1,4 @@
+import { LIMIX_CLOUD_ENABLED } from "../../shared/limix-features";
 import type { CloudAccountState, CloudPlanSnapshot } from "../../electron/cloud-account.mjs";
 import type { CloudCredit, CloudOffer, CloudOfferPlan, CloudPlanAllowances, CloudSetupStep, CloudTrial, CloudTrialState } from "../../electron/cloud-home.mjs";
 import { planTeam, teamPlan } from "../../electron/cloud-team-plan.mjs";
@@ -47,7 +48,7 @@ export function cloudPlanView(account: CloudAccountState | null | undefined): Cl
 }
 
 export function buyOfferAllowed(view: CloudPlanView): boolean {
-  return view.kind === "signed-out" || (view.kind === "free" && !view.invited);
+  return LIMIX_CLOUD_ENABLED && (view.kind === "signed-out" || (view.kind === "free" && !view.invited));
 }
 
 /** What the X research card offers someone whose server has no plan credential yet: a paying desktop is still connecting
