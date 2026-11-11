@@ -928,6 +928,65 @@ def main_limix(s):
     return s
 edit("electron/main.mjs", main_limix)
 
+# 10c. Settings > General: e-mail and name come from the Limix account until the owner types their own.
+def profile_fallback(s):
+    s = must(s, 'name: cfg.profile?.name ?? "", email: cfg.profile?.email ?? "", aboutMe:', 'name: cfg.profile?.name || process.env.LIMIX_ACCOUNT_NAME || "", email: cfg.profile?.email || process.env.LIMIX_ACCOUNT_EMAIL || "", aboutMe:')
+    return s
+edit("server/index.ts", profile_fallback)
+
+# 10d. About: only "A desktop home for your agents." (no "built on ..., open source" tail). Example address uses limix.example.com.
+def about_tagline(s):
+    return must(s, '"about.tagline": "A desktop home for your agents, built on {app}: open source, Apache 2.0 licensed."', '"about.tagline": "A desktop home for your agents."')
+edit("src/locales/en.json", about_tagline)
+edit("src/locales/en.json", lambda s: must(s, '"connect.addressPlaceholder": "https://maus.example.com or', '"connect.addressPlaceholder": "https://limix.example.com or'))
+
+# 10e. Usage analytics page: Limix Bot's own docs/analytics.md (overlay) and link.
+edit("src/components/AnalyticsRow.tsx", lambda s: must(s, "https://github.com/milind-soni/OpenMausBot/blob/main/docs/analytics.md", f"{REPO_URL}/blob/main/docs/analytics.md"))
+
+# 10f. Skills page of a bot: "Find on skills.sh" (https://www.skills.sh), "Limix Bot's built-in skills" (the library) and
+# "Add skills from a folder on this computer" (works offline). Server: source "local-folder:<path>" reads that folder.
+def skills_route(s):
+    if "readLocalSkills" in s:
+        return s
+    s = must(s, 'import { fetchSkillFromSource } from "../skill-fetch.ts";', 'import { fetchSkillFromSource } from "../skill-fetch.ts";\nimport { readLocalSkills } from "../limix-skill-folder.ts";')
+    return must(s, "      const fetched = await fetchSkillFromSource(parsed.data.source);",
+        '      const fetched = parsed.data.source.startsWith("local-folder:") ? readLocalSkills(parsed.data.source.slice("local-folder:".length)) : await fetchSkillFromSource(parsed.data.source);')
+edit("server/routes/bot-skills.ts", skills_route)
+
+def skills_page(s):
+    if "importFolder" in s:
+        return s
+    s = must(s, 'const SKILLS_SITE = "https://skills.sh";', 'const SKILLS_SITE = "https://www.skills.sh";')
+    s = must(s, "  const browse = () => {\n    if (libraryOn) {",
+        "  const importFolder = async () => {\n"
+        "    const chosen = await window.ogb?.pickFolder?.();\n"
+        "    if (!chosen || importing) return;\n"
+        "    setImporting(true);\n    skills.setError(\"\");\n    setImported([]);\n"
+        "    try {\n"
+        "      const result = await api<{ imported?: SkillImportSummary[] }>(`/api/bots/${bot.id}/skills`, { method: \"POST\", body: JSON.stringify({ source: `local-folder:${chosen}` }) });\n"
+        "      setImported(skillImportLines(result.imported ?? []));\n      await skills.refresh();\n"
+        "    } catch (cause) {\n      skills.setError(errorText(cause, t(\"botPanel.skills.importFailed\")));\n    } finally {\n      setImporting(false);\n    }\n  };\n"
+        "  const browse = () => {\n    if (libraryOn) {")
+    s = must(s, '        <LinkRow data-panel-link="browse-skills" onClick={browse}>{t("botPanel.skills.browse")}</LinkRow>',
+        '        <LinkRow data-panel-link="skills-sh" onClick={() => void openExternalLink(SKILLS_SITE)}>{t("botPanel.skills.skillsSh")}</LinkRow>\n'
+        '        <LinkRow data-panel-link="browse-skills" onClick={browse}>{t("botPanel.skills.bundled")}</LinkRow>\n'
+        '        {window.ogb?.pickFolder && <LinkRow data-panel-link="skills-folder" onClick={() => void importFolder()}>{t("botPanel.skills.fromFolder")}</LinkRow>}')
+    return s
+edit("src/components/bot-panel/pages.tsx", skills_page)
+
+SKILL_KEYS_EN = {"botPanel.skills.skillsSh": "Find skills on skills.sh", "botPanel.skills.bundled": "Limix Bot's built-in skills", "botPanel.skills.fromFolder": "Add skills from a folder on this computer"}
+def skill_keys(s):
+    d = json.loads(s)
+    if "botPanel.skills.skillsSh" in d:
+        return s
+    out = {}
+    for k, v in d.items():
+        out[k] = v
+        if k == "botPanel.skills.browse":
+            out.update(SKILL_KEYS_EN)
+    return json.dumps(out, indent=2, ensure_ascii=False) + "\n"
+edit("src/locales/en.json", skill_keys)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):

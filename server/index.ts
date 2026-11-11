@@ -11775,7 +11775,7 @@ function configStatus() {
     decider: describeDecider(cfg), helpers: describeHelpers(cfg),
     imageGen: avatarImageStatus(cfg), savedKeys: nestedKeyStatus(cfg),
     live: liveSettingsFor(cfg),
-    profile: CLOUD_TEAM ? NOBODY_PROFILE : { name: cfg.profile?.name ?? "", email: cfg.profile?.email ?? "", aboutMe: cfg.profile?.aboutMe ?? "", ...(cfg.profile?.avatarUrl ? { avatarUrl: cfg.profile.avatarUrl } : {}) },
+    profile: CLOUD_TEAM ? NOBODY_PROFILE : { name: cfg.profile?.name || process.env.LIMIX_ACCOUNT_NAME || "", email: cfg.profile?.email || process.env.LIMIX_ACCOUNT_EMAIL || "", aboutMe: cfg.profile?.aboutMe ?? "", ...(cfg.profile?.avatarUrl ? { avatarUrl: cfg.profile.avatarUrl } : {}) },
     managedPolicy: managedPolicy.summary(),
     ...(CLOUD_HOME ? { cloudHome: true } : {}), ...(CLOUD_TEAM ? { team: { id: CLOUD_TEAM.id, name: CLOUD_TEAM.name, ...(CLOUD_HOME ? { cloudPage: `${CLOUD_HOME.adminOrigin}/cloud` } : {}) } } : {}),
     language: appLanguage() ?? "", computerName: cfg.computerName ?? "", everyBotRules: cfg.everyBotRules ?? "",

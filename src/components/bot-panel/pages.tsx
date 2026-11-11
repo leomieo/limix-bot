@@ -45,7 +45,7 @@ export interface PageContext {
 
 export const pageSurfaceCls = "flex flex-col gap-3";
 
-const SKILLS_SITE = "https://skills.sh";
+const SKILLS_SITE = "https://www.skills.sh";
 
 function errorText(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;
@@ -398,6 +398,22 @@ export function SkillsPage({ bot }: PageContext) {
       setImporting(false);
     }
   };
+  const importFolder = async () => {
+    const chosen = await window.ogb?.pickFolder?.();
+    if (!chosen || importing) return;
+    setImporting(true);
+    skills.setError("");
+    setImported([]);
+    try {
+      const result = await api<{ imported?: SkillImportSummary[] }>(`/api/bots/${bot.id}/skills`, { method: "POST", body: JSON.stringify({ source: `local-folder:${chosen}` }) });
+      setImported(skillImportLines(result.imported ?? []));
+      await skills.refresh();
+    } catch (cause) {
+      skills.setError(errorText(cause, t("botPanel.skills.importFailed")));
+    } finally {
+      setImporting(false);
+    }
+  };
   const browse = () => {
     if (libraryOn) {
       dispatch({ type: "toggleSettings", open: false });
@@ -443,7 +459,9 @@ export function SkillsPage({ bot }: PageContext) {
           onSubmit={() => void importSkill()}
         />
         {imported.map((line) => <NoteRow key={line}>{line}</NoteRow>)}
-        <LinkRow data-panel-link="browse-skills" onClick={browse}>{t("botPanel.skills.browse")}</LinkRow>
+        <LinkRow data-panel-link="skills-sh" onClick={() => void openExternalLink(SKILLS_SITE)}>{t("botPanel.skills.skillsSh")}</LinkRow>
+        <LinkRow data-panel-link="browse-skills" onClick={browse}>{t("botPanel.skills.bundled")}</LinkRow>
+        {window.ogb?.pickFolder && <LinkRow data-panel-link="skills-folder" onClick={() => void importFolder()}>{t("botPanel.skills.fromFolder")}</LinkRow>}
       </Card>
       {skills.reviewing && (
         <SkillReviewDialog

@@ -164,6 +164,9 @@ export async function limixAccountGate({ app, BrowserWindow, ipcMain, safeStorag
     if (!signedIn) return false;
   }
 
+  // The profile (Settings > General) shows the Limix account's name and e-mail until the owner types their own.
+  { const saved = store.read() ?? {}; if (saved.email) process.env.LIMIX_ACCOUNT_EMAIL = String(saved.email); if (saved.username) process.env.LIMIX_ACCOUNT_NAME = String(saved.username); }
+
   const beat = setInterval(async () => {
     const now = await client.check();
     if (now.status === "ok") return;
