@@ -73,8 +73,14 @@ def builder(s):
     s = re.sub(r"(publish:\n  - provider: github\n    owner: )\S+(\n    repo: )\S+", rf"\g<1>{OWNER}\g<2>{REPO}", s)
     s = re.sub(r"^  shortcutName: .*$", f"  shortcutName: {NAME}", s, flags=re.M)
     s = re.sub(r"^  artifactName: OpenMausBot-\$\{version\}-setup\.\$\{ext\}$", "  artifactName: LimixBot-${version}-setup.${ext}", s, flags=re.M)
+    # Python 3.12 and uv for the default skills (limix/skills): the Windows workflow downloads them into limix-runtime/.
+    runtime = "    - from: limix-runtime\n      to: limix-runtime\n"
+    anchor = "  extraResources:\n    - from: dist-native/cloudflared/win32-x64/cloudflared.exe\n"
+    if runtime not in s:
+        s = must(s, anchor, anchor.replace("  extraResources:\n", "  extraResources:\n" + runtime))
     return s
 edit("electron-builder.yml", builder)
+edit(".gitignore", lambda s: s if "/limix-runtime/" in s else s.rstrip("\n") + "\n# Limix Bot: Python and uv fetched by the Windows workflow\n/limix-runtime/\n")
 
 # 2b. Build on GitHub: only Limix Bot's own Windows workflow runs in the fork.
 wf = ROOT / ".github/workflows"
@@ -431,6 +437,17 @@ phone_gate("src/components/PhonePairingQr.tsx", [
         </button>}
         {LIMIX_PHONE_APPS_ENABLED && storeOpen && ("""),
 ])
+
+# 8g. Bundled Python and uv for the default skills (limix/skills, limix/overlay/electron/limix-runtime.mjs).
+def runtime_env(s):
+    imp = 'import { limixRuntimeEnv } from "./limix-runtime.mjs";\n'
+    if imp not in s:
+        s = must(s, 'import { limixAccountGate } from "./limix-account.mjs";\n', 'import { limixAccountGate } from "./limix-account.mjs";\n' + imp) \
+            if 'import { limixAccountGate } from "./limix-account.mjs";\n' in s else s.replace('\nimport ', '\n' + imp + 'import ', 1)
+    old = "    ...desktopDataDirLease.utilityServerLeaseEnvironment(),\n"
+    new = old + '    ...limixRuntimeEnv({ resourcesPath: process.resourcesPath, userData: app.getPath("userData") }),\n'
+    return s if new in s else must(s, old, new)
+edit("electron/main.mjs", runtime_env)
 
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
