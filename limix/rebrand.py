@@ -394,6 +394,14 @@ def unread_badge(s):
       badge && !badge.isEmpty() ? badge : null,""")
 edit("electron/main.mjs", unread_badge)
 
+# 6f. Organization sign-in ("Dang nhap bang tai khoan to chuc"): its default admin gateway points at Limix's own
+# address (owner's choice 2026-11-12). Nothing answers there until Limix runs its own admin gateway.
+LIMIX_ADMIN_ORIGIN = "https://admin.limixbot.com"
+edit("src/components/OrganizationSettings.tsx", lambda s: must(s, 'const DEFAULT_PORTAL_ORIGIN = "https://admin.openmausbot.com";',
+     f'const DEFAULT_PORTAL_ORIGIN = "{LIMIX_ADMIN_ORIGIN}";'))
+edit("src/lib/onboarding.ts", lambda s: must(s, 'export const DEFAULT_ADMIN_ORIGIN = "https://admin.openmausbot.com";',
+     f'export const DEFAULT_ADMIN_ORIGIN = "{LIMIX_ADMIN_ORIGIN}";'))
+
 # 6c. MausBot's finished chrome pictures of the trademark cursor (face included) go: with no pictures for a body the
 # avatar keeps its drawn steel finish over the Limi outline (src/lib/steel-body.ts).
 steel = ROOT / "src/assets/mausbot-steel"
