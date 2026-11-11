@@ -125,7 +125,7 @@ def cloud_switch(s):
     if gated not in s:
         raise SystemExit("rebrand: cloudOffersAllowed not found in electron/main.mjs")
     imp = 'import { LIMIX_CLOUD_ENABLED } from "./limix-features.mjs";\n'
-    if imp not in s:
+    if "import { LIMIX_CLOUD_ENABLED" not in s:
         first = s.index("\nimport ") + 1
         s = s[:first] + imp + s[first:]
     return s
@@ -401,6 +401,27 @@ edit("src/components/OrganizationSettings.tsx", lambda s: must(s, 'const DEFAULT
      f'const DEFAULT_PORTAL_ORIGIN = "{LIMIX_ADMIN_ORIGIN}";'))
 edit("src/lib/onboarding.ts", lambda s: must(s, 'export const DEFAULT_ADMIN_ORIGIN = "https://admin.openmausbot.com";',
      f'export const DEFAULT_ADMIN_ORIGIN = "{LIMIX_ADMIN_ORIGIN}";'))
+
+# 6g. Organization sign-in is a hidden module until Limix runs its own admin gateway (LIMIX_ORGANIZATION_ENABLED in
+# limix/overlay/electron/limix-features.mjs). Without the preload bridge, Settings and onboarding hide their blocks.
+def org_preload(s):
+    s = must(s, '  organization: process.argv.includes("--omb-company-desktop=1") ? {',
+             '  organization: LIMIX_ORGANIZATION_ENABLED && process.argv.includes("--omb-company-desktop=1") ? {')
+    if "const LIMIX_ORGANIZATION_ENABLED" not in s:
+        anchor = 'if (isLocalPage && !desktopRemoteClient && process.argv.includes("--omb-company-desktop=1")) {'
+        s = must(s, anchor, "// Limix Bot: organization sign-in is hidden (electron/limix-features.mjs LIMIX_ORGANIZATION_ENABLED).\n"
+                 "const LIMIX_ORGANIZATION_ENABLED = false;\n" + anchor)
+    return s
+edit("electron/preload.cjs", org_preload)
+edit("electron/menu.mjs", lambda s: must(s,
+     '      { id: "organization-sign-in", label: t("native.menu.orgSignIn"), click: onOrganizationSignIn },',
+     '      ...(onOrganizationSignIn ? [{ id: "organization-sign-in", label: t("native.menu.orgSignIn"), click: onOrganizationSignIn }] : []),'))
+def org_main(s):
+    s = must(s, 'import { LIMIX_CLOUD_ENABLED } from "./limix-features.mjs";',
+             'import { LIMIX_CLOUD_ENABLED, LIMIX_ORGANIZATION_ENABLED } from "./limix-features.mjs";')
+    return must(s, '      onOrganizationSignIn: () => queueOrganizationEntry("openmausbot://organization"),',
+                '      onOrganizationSignIn: LIMIX_ORGANIZATION_ENABLED ? () => queueOrganizationEntry("openmausbot://organization") : undefined,')
+edit("electron/main.mjs", org_main)
 
 # 6c. MausBot's finished chrome pictures of the trademark cursor (face included) go: with no pictures for a body the
 # avatar keeps its drawn steel finish over the Limi outline (src/lib/steel-body.ts).
