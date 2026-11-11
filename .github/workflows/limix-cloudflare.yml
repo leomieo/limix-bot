@@ -26,7 +26,7 @@ jobs:
       - name: check the token is set
         run: test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Add the repository secret CLOUDFLARE_API_TOKEN first."; exit 1; }
       - name: install
-        run: npm install --no-audit --no-fund --no-save better-auth@1.7.7 zod@4.6.7 wrangler@4.125.0 @cloudflare/workers-types@5.20260825.1 typescript@5
+        run: npm install --no-audit --no-fund --no-save --no-package-lock --workspaces=false better-auth@1.7.7 zod@4.6.7 wrangler@4.125.0 @cloudflare/workers-types@5.20260825.1 typescript@5
       - name: create the database if it is missing, write its id into the config
         run: |
           npx wrangler d1 create limix-control-plane >/dev/null 2>&1 || true
