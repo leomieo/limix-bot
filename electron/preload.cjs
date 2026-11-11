@@ -111,6 +111,8 @@ const COMPANY_BACKUP_CLIENT_KEYS = [
   "openmausbot.sidebarCollapsedSections.v1", "openmausbot.sidebarSectionOrder.v1",
   "omb-analytics-opt-out", "openmausbot.remote-voice.v1",
 ];
+// Limix Bot: organization sign-in is hidden (electron/limix-features.mjs LIMIX_ORGANIZATION_ENABLED).
+const LIMIX_ORGANIZATION_ENABLED = false;
 if (isLocalPage && !desktopRemoteClient && process.argv.includes("--omb-company-desktop=1")) {
   ipcRenderer.on("company-backups:collect-client-state", (_event, request) => {
     if (!request || typeof request.requestId !== "string" || !/^[a-f0-9-]{36}$/.test(request.requestId)) return;
@@ -618,7 +620,7 @@ const bridge = {
     restartNow: () => navigator.userActivation?.isActive === true
       ? ipcRenderer.invoke("cloud-plan:restart-now") : Promise.reject(new Error("Choose Restart now to restart the Cloud.")),
   } : undefined,
-  organization: process.argv.includes("--omb-company-desktop=1") ? {
+  organization: LIMIX_ORGANIZATION_ENABLED && process.argv.includes("--omb-company-desktop=1") ? {
     settingsOpened: () => ipcRenderer.invoke("organization:settings-opened"),
     state: () => ipcRenderer.invoke("organization:state"),
     begin: input => ipcRenderer.invoke("organization:begin", input),

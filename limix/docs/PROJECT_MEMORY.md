@@ -69,6 +69,8 @@
 
 Định dạng: `- YYYY-MM-DD HH:MM | Ai | Làm gì | File | Kiểm chứng`
 
+- 2026-11-12 02:45 | Claude | 0.2.12: ẩn hẳn "Đăng nhập bằng tài khoản tổ chức" (Cài đặt → Tổ chức, dòng trong màn hình chào, menu Máy chủ) bằng công tắc LIMIX_ORGANIZATION_ENABLED = false, theo yêu cầu chủ dự án. Lỗi "no route: GET /" sau khi cập nhật 0.2.10: chưa rõ nguyên nhân (nghi tiến trình cũ còn chạy), chờ server.log/updater.log | limix/overlay/electron/limix-features.mjs, rebrand bước 6g | node --check main/menu/preload; rebrand từ 6f226f15 trùng khớp
+
 - 2026-11-12 02:35 | Claude | 0.2.11: cổng Admin mặc định của "Đăng nhập bằng tài khoản tổ chức" đổi admin.openmausbot.com → https://admin.limixbot.com (theo yêu cầu chủ dự án). CHƯA có máy chủ ở địa chỉ đó nên nút vẫn báo lỗi; chủ dự án cũng báo 0.2.9 lỗi, chờ ảnh/log | rebrand bước 6f | rebrand từ 6f226f15 trùng khớp
 
 - 2026-11-12 02:20 | Claude | 0.2.10: dấu tin chưa đọc trên taskbar Windows đổi từ logo thu nhỏ (trông như logo thứ hai) sang chấm đỏ có số 1–9, 9+ | limix/overlay/electron/resources/unread-badge-*.png, rebrand bước 6e | node --check main.mjs; rebrand từ 6f226f15 trùng khớp; CHƯA thấy trên Windows thật
