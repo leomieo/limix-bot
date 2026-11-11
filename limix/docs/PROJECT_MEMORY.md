@@ -9,7 +9,7 @@
 
 - **Hướng chính (đổi 2026-11-11 18:41):** Limix Bot = **bản fork đổi thương hiệu của OpenMausBot** (giao diện như mausbot.com), phát hành file cài Windows `.exe` qua GitHub Actions của repo `leomieo/limix-bot`. `limix-gateway` (cổng Telegram/Zalo) là module sẽ gộp vào app ở mốc sau.
 - **Mốc đang làm:** F1 — đẩy mã fork lên GitHub và build bản Windows đầu tiên
-- **Việc dở dang:** L1 tài khoản Limix dùng chung với Limix Studio (xem `limix/docs/MODULE_ACCOUNT.md`): mã máy chủ đã sửa ở máy chủ dự án riêng (chưa đưa lên VPS), app trên nhánh `limix-account`. Thứ tự: đưa máy chủ lên → thử → gộp nhánh. Bản đã phát hành: v0.2.6
+- **Việc dở dang:** L1 tài khoản Limix dùng chung với Limix Studio (xem `limix/docs/MODULE_ACCOUNT.md`): mã máy chủ đã sửa ở máy chủ dự án riêng (chưa đưa lên VPS), app trên nhánh `limix-account`. Thứ tự: đưa máy chủ lên → thử → gộp nhánh. Bản đã phát hành: v0.2.7
 - **Đã làm được:** script `limix/rebrand.py` (chạy lại được, ổn định); logo đen trắng + linh vật "Limi" (hai khối bo tròn chồng nhau); báo lỗi về hộp thư chủ dự án; Cloud là mô-đun ẩn; kiểm tra: 0 lỗi cú pháp, chạy từ bản sạch 6f226f15 → trùng khớp (trừ số phiên bản)
 - **Đã kiểm trên GitHub Actions (run 43018860396, thành công):** cài thư viện, typecheck + build, cấu trúc gói, `Limix Bot.exe`, kênh cập nhật leomieo/limix-bot, máy chủ đóng gói trả lời /api/health
 - **CHƯA kiểm:** cài và mở app thật 0.2.4+/0.2.5 trên máy Windows; linh vật chrome vẽ (không còn ảnh) trông thế nào trong app; thử gửi báo lỗi @devs thật
@@ -69,6 +69,7 @@
 
 Định dạng: `- YYYY-MM-DD HH:MM | Ai | Làm gì | File | Kiểm chứng`
 
+- 2026-11-11 22:40 | GitHub Actions | Phát hành v0.2.7 (Windows + npm thành công) | Releases | run 43041602191, 43041602203
 - 2026-11-11 22:30 | Claude | 0.2.7: ẩn "Tải ứng dụng điện thoại" (mục menu, hộp QR App Store/APK, nút "Chưa có ứng dụng? Tải về") theo công tắc `LIMIX_PHONE_APPS_ENABLED=false`; giữ "Kết nối điện thoại". Phát hiện: mã QR "Kết nối điện thoại" là `openmausbot://pair?...` dành cho app gốc, KHÔNG mở được bản web; bản web trên điện thoại cần địa chỉ HTTPS (Tailscale/tên miền riêng), relay mặc định là hạ tầng của Supamaus | `limix/rebrand.py` bước 8f, `shared/pairing-link.ts`, `docs/phone-web-app.md` | rebrand từ bản sạch trùng khớp
 - 2026-11-11 22:20 | Claude | Máy chủ tài khoản (dự án riêng tiktok-checker): sửa lỗ hổng (1) cookie admin cố định → phiên ngẫu nhiên, (3) trang admin chèn HTML không lọc → lọc hết; chủ dự án chọn để sau (2) băm mật khẩu yếu, (4) mã admin offline trong Limix Studio; CHƯA deploy (chủ dự án chưa muốn) | `F:\Tool tu build\tiktok-checker\gui_server.py`, `gui/admin_panel.html` | 9/9 phiên admin + 33/33 Limix Bot (CSDL tạm), thử chèn mã vào tên khách không chạy
 - 2026-11-11 22:20 | Chủ dự án + Claude | Hỏi app điện thoại: repo OpenMausBot @6f226f15 KHÔNG có mã nguồn app iPhone/Android (chỉ `companion/` = tiến trình trung gian chạy trên máy tính, và bản web cho điện thoại); hộp "Tải ứng dụng điện thoại" của Limix đang trỏ tới app MausBot trên App Store và file APK không tồn tại ở repo Limix | `src/lib/app-links.ts` `IOS_APP_STORE_URL`, `ANDROID_APK_URL`; trang release android-v1.5.0 của upstream | đọc mã + trang GitHub
