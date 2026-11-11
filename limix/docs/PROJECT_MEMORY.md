@@ -9,12 +9,12 @@
 
 - **Hướng chính (đổi 2026-11-11 18:41):** Limix Bot = **bản fork đổi thương hiệu của OpenMausBot** (giao diện như mausbot.com), phát hành file cài Windows `.exe` qua GitHub Actions của repo `leomieo/limix-bot`. `limix-gateway` (cổng Telegram/Zalo) là module sẽ gộp vào app ở mốc sau.
 - **Mốc đang làm:** F1 — đẩy mã fork lên GitHub và build bản Windows đầu tiên
-- **Việc dở dang:** L1 tài khoản Limix dùng chung với Limix Studio (xem `limix/docs/MODULE_ACCOUNT.md`): mã máy chủ đã sửa ở máy chủ dự án riêng (chưa đưa lên VPS), app trên nhánh `limix-account`. Thứ tự: đưa máy chủ lên → thử → gộp nhánh. Bản đã phát hành: v0.2.7; 0.2.8 (skill mặc định + Python) đang build
-- **Đã làm được:** script `limix/rebrand.py` (chạy lại được, ổn định); logo đen trắng + linh vật "Limi" (hai khối bo tròn chồng nhau); báo lỗi về hộp thư chủ dự án; Cloud là mô-đun ẩn; kiểm tra: 0 lỗi cú pháp, chạy từ bản sạch 6f226f15 → trùng khớp (trừ số phiên bản)
+- **Việc dở dang:** L1 tài khoản Limix dùng chung với Limix Studio (xem `limix/docs/MODULE_ACCOUNT.md`): mã máy chủ đã sửa ở máy chủ dự án riêng (chưa đưa lên VPS), app trên nhánh `limix-account`. Thứ tự: đưa máy chủ lên → thử → gộp nhánh. Bản đã phát hành: v0.2.8; 0.2.9 (linh vật mới + dịch tiếng Việt đủ 100%) đang build
+- **Đã làm được:** script `limix/rebrand.py` (chạy lại được, ổn định); logo đen trắng (hai khối bo tròn chồng nhau); linh vật mới 0.2.9: sao xanh ngọc + kính đen + mắt phát sáng (`limix/face.py`, rebrand bước 6a/6b/6d); tiếng Việt đủ 10210/10210 chuỗi; báo lỗi về hộp thư chủ dự án; Cloud là mô-đun ẩn; kiểm tra: 0 lỗi cú pháp, chạy từ bản sạch 6f226f15 → trùng khớp (trừ số phiên bản)
 - **Đã kiểm trên GitHub Actions (run 43018860396, thành công):** cài thư viện, typecheck + build, cấu trúc gói, `Limix Bot.exe`, kênh cập nhật leomieo/limix-bot, máy chủ đóng gói trả lời /api/health
-- **CHƯA kiểm:** cài và mở app thật 0.2.4+/0.2.5 trên máy Windows; linh vật chrome vẽ (không còn ảnh) trông thế nào trong app; thử gửi báo lỗi @devs thật
+- **CHƯA kiểm:** cài và mở app thật 0.2.4+/0.2.5 trên máy Windows; linh vật 0.2.9 trong app thật (mới xem bằng ảnh dựng lại từ dữ liệu, chưa chạy vitest vì máy làm việc không có node_modules); thử gửi báo lỗi @devs thật
 - **Đang bị chặn:** không
-- **Bước tiếp theo:** chủ dự án đồng ý đưa bản sửa máy chủ lên VPS → kiểm tra → gộp `limix-account` → build 0.3.0. Sau đó: vẽ lại dàn icon (10 hình thân bot + icon giao diện). (Trước:) chủ dự án cài thử → báo lỗi/ảnh chụp → F2 gộp Telegram/Zalo vào app. (Cũ:) chờ workflow "Limix Bot Windows" → sửa lỗi build nếu có → tải `LimixBot-setup.exe` từ Releases
+- **Bước tiếp theo:** chủ dự án đồng ý đưa bản sửa máy chủ lên VPS → kiểm tra → gộp `limix-account` → build 0.3.0. Sau đó: icon giao diện (I1 phần 2). (Trước:) chủ dự án cài thử → báo lỗi/ảnh chụp → F2 gộp Telegram/Zalo vào app. (Cũ:) chờ workflow "Limix Bot Windows" → sửa lỗi build nếu có → tải `LimixBot-setup.exe` từ Releases
 
 ## 2. Bản đồ thư mục dự án
 
@@ -68,6 +68,8 @@
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
 
 Định dạng: `- YYYY-MM-DD HH:MM | Ai | Làm gì | File | Kiểm chứng`
+
+- 2026-11-12 02:30 | Claude | 0.2.9: linh vật mới theo ảnh mẫu (sao bo tròn, kính đen, 25 biểu cảm mắt viên thuốc, bóng 3D, màu mặc định xanh ngọc); thân "star" thành hình hai khối "Giao thoa"; dịch nốt 4.632 chuỗi còn tiếng Anh, "Chief of Staff" → "Trợ lý trưởng" | limix/face.py, limix/rebrand.py, src/locales/vi.json | rebrand từ 6f226f15 trùng khớp (trừ version + vi.json), chạy lại 0 thay đổi; gen-mascot-bodies: mọi thân scale 1, không chạm mép; merge.py 0 lỗi placeholder
 
 - 2026-11-11 23:35 | GitHub Actions + Claude | Build Windows 0.2.8 lỗi ở bước tải Python: GNU tar hiểu `D:\...` là máy từ xa → thêm `--force-local`; build lại | run 43046287196 (fail) | log job
 - 2026-11-11 23:20 | Claude | 0.2.8 (S1): 3 skill mặc định từ GitHub ghim commit — ui-ux-pro-max `6ae86f6` (MIT), agent-reach `c70ae6d` (MIT), rea-video `3669923` (Apache-2.0) — qua `limix/skills/sources.json` + `sync.py` → `limix/overlay/skills/`; gói Python 3.12.16 + uv 0.13.5 (kiểm SHA-256) vào `resources/limix-runtime` (workflow Windows), `electron/limix-runtime.mjs` đưa lên PATH engine qua `OMB_EXTRA_PATH`; rea chỉ hướng dẫn bật tay | `limix/docs/MODULE_SKILLS.md`, rebrand bước 8g + builder | manifest hợp lệ 8/8, thử từ khóa 5 câu, `search.py` chạy được; rebrand từ bản sạch trùng khớp; CHƯA thử trên Windows

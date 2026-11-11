@@ -196,7 +196,7 @@ function GradientAvatarComponent(
         silhouette={silhouette}
         gradient={gradient ?? gradientFor(color)}
         picture={chrome && !faceInk ? steelBodyImage(silhouette.id, size, globalThis.devicePixelRatio ?? 1) : null}
-        eyeColor={faceInk ?? (chrome ? CHROME_EYES : undefined)}
+        eyeColor={faceInk ?? (chrome ? CHROME_EYES : mix(MAUS_COLORS[color] ?? MAUS_COLORS.green, "#ffffff", 0.62))}
         title={label ?? null}
         lookAround={lookAround ?? (forward ? 0 : 1)}
         gaze={{ x: (gaze?.x ?? 0) + pointer.x, y: (gaze?.y ?? 0) + pointer.y }}

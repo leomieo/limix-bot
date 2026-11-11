@@ -44,3 +44,4 @@ deploy/podman/.env.*
 /.env
 # Limix Bot: Python and uv fetched by the Windows workflow
 /limix-runtime/
+limix/__pycache__/
