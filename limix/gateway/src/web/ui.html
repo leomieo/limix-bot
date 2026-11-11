@@ -326,7 +326,7 @@ function renderList() {
   });
 }
 
-function top(title, extra = "") { return `<div class="top"><h1>${title}</h1><span class="grow"></span>${extra}</div>`; }
+function pageTop(title, extra = "") { return `<div class="top"><h1>${title}</h1><span class="grow"></span>${extra}</div>`; }
 
 function homeView() {
   const running = S.connections.filter((c) => c.status === "running").length;
@@ -347,7 +347,7 @@ function homeView() {
     <div class="card stat"><div class="n">${S.pairing.length}</div><div class="l">Yêu cầu chờ duyệt</div></div>
     <div class="card stat"><div class="n" style="color:${problems ? "var(--bad)" : "inherit"}">${problems}</div><div class="l">Bot cần chú ý · ${events} sự kiện trong 24 giờ</div></div>
   </div>` : "";
-  return top("Tổng quan") + `<div class="content">${hero}${stats}${S.connections.length ? logCard(S.activity.slice(0, 8), "Hoạt động gần đây") : ""}</div>`;
+  return pageTop("Tổng quan") + `<div class="content">${hero}${stats}${S.connections.length ? logCard(S.activity.slice(0, 8), "Hoạt động gần đây") : ""}</div>`;
 }
 
 function logCard(rows, title, showBot = true) {
@@ -356,7 +356,7 @@ function logCard(rows, title, showBot = true) {
 }
 
 function botView(c) {
-  if (!c) return top("Không tìm thấy") + `<div class="content"><div class="card">Bot này không còn.</div></div>`;
+  if (!c) return pageTop("Không tìm thấy") + `<div class="content"><div class="card">Bot này không còn.</div></div>`;
   const who = c.botIdentity?.username ? "@" + c.botIdentity.username : c.botIdentity?.id;
   const bad = ["conflict", "credential_invalid", "error"].includes(c.status);
   const actions = `<span class="pill"><span class="dot ${c.status}"></span>${esc(STATUS[c.status] || c.status)}</span>
@@ -391,17 +391,17 @@ function botView(c) {
 }
 
 function pairingView() {
-  return top("Chờ duyệt") + `<div class="content"><section class="card"><h2>${icon("inbox")}Yêu cầu dùng bot</h2>
+  return pageTop("Chờ duyệt") + `<div class="content"><section class="card"><h2>${icon("inbox")}Yêu cầu dùng bot</h2>
     <p class="sub">Người lạ nhắn cho bot sẽ nhận mã và xuất hiện ở đây. Yêu cầu tự hết hạn sau 1 giờ.</p>
     <div class="people">${S.pairing.length ? S.pairing.map((p) => `<div class="person"><span class="grow"><b>${esc(p.senderName || p.senderId)}</b><br><span class="help">ID ${esc(p.senderId)} · ${esc(conn(p.connectionId)?.name || "")} · ${esc(fmtTime(p.createdAt))}</span></span>
       <button class="btn primary" data-act="approve" data-id="${p.id}">${icon("check")}Duyệt</button><button class="btn ghost" data-act="deny" data-id="${p.id}">Từ chối</button></div>`).join("") : `<div class="empty">Không có yêu cầu nào.</div>`}</div></section></div>`;
 }
 
-function activityView() { return top("Nhật ký") + `<div class="content">${logCard(S.activity, "Toàn bộ hoạt động")}</div>`; }
+function activityView() { return pageTop("Nhật ký") + `<div class="content">${logCard(S.activity, "Toàn bộ hoạt động")}</div>`; }
 
 function settingsView() {
   const t = prefTheme();
-  return top("Cài đặt") + `<div class="content">
+  return pageTop("Cài đặt") + `<div class="content">
     <section class="card"><h2>Giao diện</h2><p class="sub">Chọn màu nền cho ứng dụng.</p>
       <div class="seg" role="radiogroup" aria-label="Giao diện">${[["system", "Theo Windows"], ["dark", "Tối"], ["light", "Sáng"]].map(([k, l]) => `<label><input type="radio" name="theme" value="${k}" data-theme-pick ${k === t ? "checked" : ""}><span><b>${l}</b></span></label>`).join("")}</div></section>
     <section class="card"><h2>Giới thiệu</h2>
