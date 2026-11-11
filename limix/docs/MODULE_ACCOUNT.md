@@ -50,9 +50,13 @@ Phần thêm cho Limix Bot (chỉ thêm, không sửa luồng cũ; bản gốc l
 2. Gọi thử `/api/limixbot/validate` trên máy chủ thật.
 3. Mới gộp nhánh `limix-account` vào `main` (build app bắt buộc đăng nhập). Làm ngược lại thì không ai vào được app.
 
-## Rủi ro đã thấy ở máy chủ có sẵn (chưa sửa, cần chủ dự án quyết)
+## Rủi ro ở máy chủ có sẵn
 
-- Cookie admin là một chuỗi cố định viết trong mã, kiểm tra bằng "chứa chuỗi"; tài khoản/mật khẩu admin viết trong mã.
-- Mật khẩu khách băm SHA-256 một vòng (nên dùng scrypt/bcrypt).
-- Trang admin chèn tên/email khách bằng `innerHTML` (khách tự đăng ký → có thể chèn mã vào trang admin).
-- Limix Studio có mã băm tài khoản admin offline trong file .exe.
+| # | Rủi ro | Trạng thái |
+|---|---|---|
+| 1 | Cookie admin là chuỗi cố định, kiểm tra bằng "chứa chuỗi"; tài khoản/mật khẩu admin viết trong mã | **ĐÃ SỬA (chưa deploy)**: mỗi lần đăng nhập admin tạo phiên ngẫu nhiên lưu dạng băm (bảng `admin_sessions`, 30 ngày), đọc cookie đúng tên, đăng xuất xóa phiên, so mật khẩu thời gian hằng, chặn đoán sai 10 lần/10 phút. Tài khoản admin đọc từ biến môi trường `ADMIN_USERNAME`/`ADMIN_PASSWORD`, giá trị cũ còn làm dự phòng trong mã cho tới khi đặt biến trên VPS. Sau deploy admin phải đăng nhập lại một lần |
+| 2 | Mật khẩu khách băm SHA-256 một vòng | Chưa sửa (chủ dự án để sau) |
+| 3 | Trang admin chèn tên/email khách, dữ liệu TikTok bằng `innerHTML` | **ĐÃ SỬA (chưa deploy)**: mọi giá trị qua `esc()`/`escUrlPart()`; thử tên `<img onerror=...>` → hiện dạng chữ, không chạy |
+| 4 | Limix Studio chứa mã băm tài khoản admin offline trong .exe | Chưa sửa (chủ dự án để sau) |
+
+Kiểm thử bản sửa (CSDL tạm): 9/9 tình huống phiên admin + chạy lại 33/33 tình huống Limix Bot.
