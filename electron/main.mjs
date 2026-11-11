@@ -1672,7 +1672,7 @@ function createLocalEnvironment(name, dataDir) {
       ? name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
       : "";
     if (typeof name !== "string" || !name.trim()) return { ok: false, error: "name", state };
-    candidateDir = path.join(os.homedir(), `.openmausbot-${slug && slug !== "clean" && slug !== "profiles" ? slug : randomUUID().slice(0, 8)}`);
+    candidateDir = path.join(os.homedir(), `.limixbot-${slug && slug !== "clean" && slug !== "profiles" ? slug : randomUUID().slice(0, 8)}`);
   } else {
     candidateDir = typeof dataDir === "string" ? dataDir.trim() : "";
     if (
@@ -1892,7 +1892,7 @@ async function forgetEnvironment(id, purge = false, confirmed = false) {
     const resolvedCanon = canonical(resolved);
     const rootCanon = canonical(root);
     if (runningDataDir && canonical(runningDataDir) === resolvedCanon) return { ok: false, error: "active" };
-    if (path.basename(resolved).startsWith(".openmausbot") && resolvedCanon !== rootCanon && !resolvedCanon.startsWith(rootCanon + path.sep)) {
+    if (path.basename(resolved).startsWith(".limixbot") && resolvedCanon !== rootCanon && !resolvedCanon.startsWith(rootCanon + path.sep)) {
       try {
         await fs.promises.rm(resolved, { recursive: true, force: true });
       } catch (error) {
@@ -2251,7 +2251,7 @@ ipcMain.handle("desktop:export-diagnostics", localOrHome("desktop:export-diagnos
   return result.filePath;
 }));
 
-// The path is renderer-controlled: it must resolve inside ~/.openmausbot to a regular file, never a symlink escape.
+// The path is renderer-controlled: it must resolve inside ~/.limixbot to a regular file, never a symlink escape.
 ipcMain.handle("desktop:save-file", localOnly("desktop:save-file", async (event, rawPath) => {
   return withSavableFile(rawPath, { home: os.homedir() }, async ({ defaultName, copyTo }) => {
     const parent = BrowserWindow.fromWebContents(event.sender);

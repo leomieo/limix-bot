@@ -1,4 +1,4 @@
-// ~/.openmausbot/config.json, with env vars overriding its credentials.
+// ~/.limixbot/config.json, with env vars overriding its credentials.
 import { readFileSync, mkdirSync, existsSync, renameSync } from "node:fs";
 import { dataHome } from "./data-dir.ts";
 import { signInFromEnv } from "./sign-in-env.ts";
@@ -846,7 +846,7 @@ function openCodeProviderKeyNameRefusal(name: string): string | undefined {
   const reserved = name.startsWith("OPENCODE_") || name.startsWith("OMB_")
     || (WORKSPACE_CREDENTIAL_ENV as readonly string[]).includes(name)
     || ((PROVIDER_CREDENTIAL_ENV as readonly string[]).includes(name) && !(OPENCODE_PROVIDER_ENV as readonly string[]).includes(name));
-  return reserved ? `OpenMaus keeps ${name} for itself, so OpenCode can't be given it here. Put this key in opencode.json instead.` : undefined;
+  return reserved ? `Limix keeps ${name} for itself, so OpenCode can't be given it here. Put this key in opencode.json instead.` : undefined;
 }
 
 export function openCodeProviderKeys(cfg: Pick<AppConfig, "opencodeGo">): Record<string, string> {

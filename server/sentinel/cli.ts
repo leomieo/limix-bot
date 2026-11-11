@@ -20,7 +20,7 @@ export const SENTINEL_USAGE = `openmausbot sentinel [--data-dir DIR] [--out DIR]
                      [--queue-wait SECONDS] [--cost USD]
 openmausbot sentinel --check-install [--json]
 
-Scans an OpenMausBot data dir, read-only, for failed tool calls, stopped or
+Scans an Limix Bot data dir, read-only, for failed tool calls, stopped or
 timed-out turns, long queue waits, expensive turns and retry loops, and keeps
 them as issues in issues.jsonl, outside the data dir: on macOS in
 ~/Library/Application Support/openmausbot-sentinel, on Linux in
@@ -38,7 +38,7 @@ copy tool output or message text.
 
 export function parseSentinelArgs(argv: string[], env: NodeJS.ProcessEnv = process.env): SentinelArgs | { error: string; json: boolean } {
   const json = argv.includes("--json");
-  let dataDir = env.OMB_DATA_DIR || join(homedir(), ".openmausbot");
+  let dataDir = env.OMB_DATA_DIR || join(homedir(), ".limixbot");
   let out: string | undefined;
   const args: Omit<SentinelArgs, "dataDir" | "out"> = { json };
   for (let i = 0; i < argv.length; i += 1) {
@@ -83,10 +83,10 @@ const HOST: SentinelHost = { platform: process.platform, home: homedir(), exists
 export function describeInstallCheck(check: SentinelInstallCheck): string {
   switch (check.status) {
     case "ok": return `sentinel schedule ok: ${check.unit} runs ${check.script} with ${check.node}`;
-    case "stale": return `stale install: ${check.unit} needs ${check.missing.join(" and ")}, which no longer exists; rerun openmausbot service install --sentinel`;
-    case "not_installed": return `no Sentinel schedule at ${check.unit}; install one with openmausbot service install --sentinel`;
-    case "unreadable": return `could not read the command in ${check.unit}; rerun openmausbot service install --sentinel`;
-    default: return "no Sentinel schedule to check on this platform; openmausbot service install --sentinel prints the Task Scheduler command for Windows";
+    case "stale": return `stale install: ${check.unit} needs ${check.missing.join(" and ")}, which no longer exists; rerun limixbot service install --sentinel`;
+    case "not_installed": return `no Sentinel schedule at ${check.unit}; install one with limixbot service install --sentinel`;
+    case "unreadable": return `could not read the command in ${check.unit}; rerun limixbot service install --sentinel`;
+    default: return "no Sentinel schedule to check on this platform; limixbot service install --sentinel prints the Task Scheduler command for Windows";
   }
 }
 

@@ -323,7 +323,7 @@ export async function runSetup(
     return true;
   } catch (error) {
     if (!(error instanceof SetupCancelled)) throw error;
-    io.log("\nSetup cancelled. No OpenMausBot settings were changed. Provider sign-ins or installs already completed are kept.");
+    io.log("\nSetup cancelled. No Limix Bot settings were changed. Provider sign-ins or installs already completed are kept.");
     return false;
   } finally {
     lease.release();

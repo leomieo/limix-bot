@@ -115,12 +115,29 @@ def about(s):
     return must(s, anchor, line + anchor)
 edit("src/components/AboutDialog.tsx", about)
 
-# 5. Words people read: string literals, JSX text and locale values. URLs, paths and file names stay.
-WORD = re.compile(r"\b(?:OpenMausBot|MausBot)\b(?!\.(?:app|exe|dmg|lnk|AppImage)| Speech)")
-SKIP = re.compile(r"https?:|://|[/\\]|\.com\b|\.md\b|Apache-2\.0")
+# 5. Words people read, and the data folders that carry the old name.
+# Brand words in string literals, JSX text and locale values. A word touching a URL, path, file name or
+# identifier stays (the lookarounds), so links, domains and internal ids keep working.
+EDGE_L = r"(?<![\w./@:\\-])"
+EDGE_R = r"(?![\w/\\])(?!-(?![a-z]))(?!\.[A-Za-z])(?! Speech)"
+BRAND = [(re.compile(EDGE_L + pat + EDGE_R), to) for pat, to in (
+    (r"Open ?Maus ?[Bb]ot", NAME),
+    (r"Maus ?Bot", NAME),
+    (r"OpenMaus", "Limix"),
+    (r"Maus", "Limix"),
+)]
+KEEP = re.compile(r"Apache-2\.0|Supamaus|trademark")
+# Command lines shown to people: `openmausbot pair` and friends.
+CLI = re.compile(r"\b(npx )?openmausbot (?=(?:serve|pair|browser|status|logout|login|setup|update|service|connect|doctor|backup|restore|version|help|install|unpair|start|stop)\b)")
+# The data folders: ~/.openmausbot, ~/.openmausbot-secrets, ... but never a domain such as cloud.openmausbot.com.
+DATA_DIR = re.compile(r"(?<![\w])\.openmausbot(?![\w])(?!\\?\.[a-z])")
 
 def fix_text(text):
-    return text if SKIP.search(text) else WORD.sub(NAME, text)
+    if KEEP.search(text):
+        return text
+    for rx, to in BRAND:
+        text = rx.sub(to, text)
+    return CLI.sub(lambda m: (m.group(1) or "") + "limixbot ", text)
 
 LITERAL = re.compile(r'"(?:[^"\\\n]|\\.)*"|\'(?:[^\'\\\n]|\\.)*\'|`(?:[^`\\]|\\.)*`')
 JSX_TEXT = re.compile(r">([^<>{}]*)<")
@@ -129,15 +146,17 @@ def fix_code(s, jsx):
     s = LITERAL.sub(lambda m: fix_text(m.group(0)), s)
     if jsx:
         s = JSX_TEXT.sub(lambda m: ">" + fix_text(m.group(1)) + "<", s)
-    return s
+    return DATA_DIR.sub(".limixbot", s)
 
-TEST = re.compile(r"\.(test|spec|e2e|node-test)\.|/test/|__tests__")
-for folder in ("src", "server", "shared", "electron"):
+TEST = re.compile(r"\.(test|spec|e2e|node-test)\.|/test/|__tests__|/fixtures?/")
+for folder in ("src", "server", "shared", "electron", "companion"):
+    if not (ROOT / folder).exists():
+        continue
     for p in sorted((ROOT / folder).rglob("*")):
         rel = p.relative_to(ROOT).as_posix()
-        if not p.is_file() or TEST.search(rel) or p.suffix not in (".ts", ".tsx", ".mjs", ".cjs", ".js"):
+        if not p.is_file() or TEST.search(rel) or p.suffix not in (".ts", ".tsx", ".mjs", ".cjs", ".js", ".html"):
             continue
-        if "/locales/" in rel:
+        if "/locales/" in rel or "node_modules" in rel:
             continue
         edit(rel, lambda s, tsx=p.suffix == ".tsx": fix_code(s, tsx))
 
@@ -148,7 +167,7 @@ def fix_locale(s):
             return {k: walk(x) for k, x in v.items()}
         if isinstance(v, list):
             return [walk(x) for x in v]
-        return fix_text(v) if isinstance(v, str) else v
+        return DATA_DIR.sub(".limixbot", fix_text(v)) if isinstance(v, str) else v
     return json.dumps(walk(d), indent=2, ensure_ascii=False) + "\n"
 for p in sorted((ROOT / "src/locales").glob("*.json")):
     if p.name == "source-hashes.json":

@@ -78,7 +78,7 @@ export function createSignInMail(options: { url: string; from?: string; now?: ()
       try {
         await (await transport).sendMail({
           from: sender, to: email, subject: target ? `Your Limix Bot sign-in code for ${target}` : "Your Limix Bot sign-in code",
-          text: `Your code to sign in to ${target ?? "MausBot"} is\n\n    ${code.slice(0, 4)} ${code.slice(4)}\n\nIt works once, for the next ten minutes.\n`
+          text: `Your code to sign in to ${target ?? "Limix Bot"} is\n\n    ${code.slice(0, 4)} ${code.slice(4)}\n\nIt works once, for the next ten minutes.\n`
             + "If you did not ask to sign in, ignore this email: nobody gets in without the code.\n",
         });
       } catch (error) {

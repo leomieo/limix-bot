@@ -1,8 +1,8 @@
 // `openmausbot` on the command line: run the server anywhere and pair devices to it.
 //
-//   openmausbot setup [--data-dir ~/.openmausbot]
+//   openmausbot setup [--data-dir ~/.limixbot]
 //   openmausbot start [serve options]
-//   openmausbot serve [--port 8799] [--data-dir ~/.openmausbot] [--label "cab mini"]
+//   openmausbot serve [--port 8799] [--data-dir ~/.limixbot] [--label "cab mini"]
 //                     [--public-url https://host] [--tailscale | --tunnel | --domain HOST] [--relay] [--no-pair]
 //   openmausbot pair  [--label "My MacBook"] [--client] [--public-url https://host]
 //   openmausbot sessions [revoke <id>]
@@ -131,7 +131,7 @@ export function parseArgs(argv: string[], env: NodeJS.ProcessEnv = process.env):
   const options: CliOptions = {
     command: command === "--help" || command === "-h" ? "help" : command === "--version" || command === "-v" ? "version" : command === "devices" ? "sessions" : (command as CliOptions["command"]),
     port: Number(env.OMB_PORT || 8799),
-    dataDir: env.OMB_DATA_DIR || join(homedir(), ".openmausbot"),
+    dataDir: env.OMB_DATA_DIR || join(homedir(), ".limixbot"),
     tailscale: false,
     tunnel: false,
     client: false,
@@ -388,7 +388,7 @@ export async function runPair(options: CliOptions): Promise<number> {
 
 export async function runSessions(options: CliOptions): Promise<number> {
   if (!(await serverUp(options.port))) {
-    console.error(`no OpenMausBot server on http://127.0.0.1:${options.port}`);
+    console.error(`no Limix Bot server on http://127.0.0.1:${options.port}`);
     return 1;
   }
   if (options.revoke) {
@@ -431,7 +431,7 @@ export async function runStatus(options: CliOptions, io: CliIo = defaultIo()): P
   if (body && options.json) io.log(JSON.stringify(body, null, 2));
   if (!body) io.error(`No Limix Bot server is running here. Start it: ${cliCommand("serve")}`);
   if (body && !options.json) {
-    io.log(`Server "${body.label}"   running · MausBot ${body.version} on ${body.platform}\n  Local        127.0.0.1:${options.port}`);
+    io.log(`Server "${body.label}"   running · Limix Bot ${body.version} on ${body.platform}\n  Local        127.0.0.1:${options.port}`);
     const address = await api(options.port, "/api/auth/pairing").then((r) => (typeof r.body?.publicUrl === "string" ? r.body.publicUrl as string : null)).catch(() => null);
     if (!address || isLoopbackHost(new URL(address).hostname)) io.log(`  Address      none: reachable from this machine only. Ways in: ${cliCommand("serve --help")}`);
     else for (const line of reachLines(address.startsWith("http:") ? "lan" : "public-url", address, options.port, cliPrefix(), address.startsWith("http:") ? undefined : await checkReach(options.port, address))) io.log(`  ${line.replace(/^Reach   /, "Address     ")}`);
@@ -580,7 +580,7 @@ export async function runBrowser(options: CliOptions, io: CliIo = defaultIo()): 
   const status = browserEngineStatus({ dataDir: options.dataDir });
   if (options.browserAction === "status") {
     io.log(describeBrowserEngine(status, status.kind === "ready" ? new (await import("./browser/chrome/launcher.ts")).ChromeLauncher({ dataDir: options.dataDir }).describe() : undefined));
-    if (status.kind !== "ready" && status.installable) io.log("install it with:  openmausbot browser install");
+    if (status.kind !== "ready" && status.installable) io.log("install it with:  limixbot browser install");
     return status.kind === "ready" ? 0 : 1;
   }
   let binary = resolveAgentBrowserBinary({ dataDir: options.dataDir });
@@ -968,7 +968,7 @@ export async function runOnboardingCommand(
     }
     if (options.command === "setup") {
       io.log(`\nAll set. Start with: ${cliPrefix()}`);
-      if (options.dataDir !== join(homedir(), ".openmausbot") || options.port !== 8799) {
+      if (options.dataDir !== join(homedir(), ".limixbot") || options.port !== 8799) {
         io.log(`Use the same --data-dir (${options.dataDir}) and --port (${options.port}) options when starting.`);
       }
       return 0;

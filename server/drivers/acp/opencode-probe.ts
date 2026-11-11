@@ -65,7 +65,7 @@ function runGit(directory: string, args: string[]): Promise<void> {
   const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("GIT_")));
   return new Promise((resolveRun, rejectRun) => {
     execFile("git", [
-      "-c", "user.name=OpenMaus", "-c", "user.email=model-discovery@openmaus.invalid",
+      "-c", "user.name=Limix", "-c", "user.email=model-discovery@openmaus.invalid",
       "-c", "commit.gpgsign=false", "-c", `core.hooksPath=${join(directory, ".git", "no-hooks")}`, "-c", "core.fsmonitor=false",
       ...args,
     ], { cwd: directory, env: { ...env, GIT_TERMINAL_PROMPT: "0", GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" }, timeout: 10_000, windowsHide: true }, (error) => {
@@ -93,7 +93,7 @@ export function discoveryDirectory(): Promise<string> {
         rmSync(directory, { recursive: true, force: true });
         mkdirSync(directory, { recursive: true });
         await runGit(directory, ["init", "-q"]);
-        await runGit(directory, ["commit", "-q", "--allow-empty", "--no-verify", "-m", "OpenMaus model discovery"]);
+        await runGit(directory, ["commit", "-q", "--allow-empty", "--no-verify", "-m", "Limix model discovery"]);
         writeFileSync(marker, "OpenCode files this folder's sessions under its own project.\n");
       } catch {}
     }

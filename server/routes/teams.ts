@@ -165,7 +165,7 @@ export function createTeamRoutes(deps: TeamRouteDeps): RouteHandler {
           ? body.name.trim()
           : profileName
             ? `${profileName}'s Team`
-            : "My OpenMaus Team";
+            : "My Limix Team";
       const memberIds = exportable.filter((bot) => !bot.hidden).map((bot) => bot.id);
       if ((body.format === "backup" ? exportable.length : memberIds.length) === 0) return json(res, 400, { error: "Create a bot before exporting your team" });
       try {

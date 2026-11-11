@@ -673,7 +673,7 @@ if (existsSync(join(DATA_DIR, ".backups"))) {
   if (!workspaceRestore.restored && !workspaceRestore.rolledBack) workspaceRestore = readLastWorkspaceRestore(DATA_DIR) ?? workspaceRestore;
 } dataFormatAtStart("stamp", DATA_DIR, serverVersion());
 const workspaceMaintenance = new WorkspaceBackupMaintenance(), moveFreeze = createMoveFreeze({ dataDir: DATA_DIR, exportOnly: (process.env.OMB_CLOUD_ROLE === "home" || process.env.OMB_CLOUD_ROLE === "team") && process.env.OMB_CLOUD_EXPORT_ONLY === "1" });
-// Only after ensureDirs(), whose one-time legacy data-dir rename must not find ~/.openmausbot already there.
+// Only after ensureDirs(), whose one-time legacy data-dir rename must not find ~/.limixbot already there.
 const ENVIRONMENT_ID = loadEnvironmentId(DATA_DIR);
 const signInAllowList = cacheUntilConfigChanges((config) => ({
   admins: parseAllowList(config.signIn?.admins?.join(",")),
@@ -1928,7 +1928,7 @@ const parkedSeats = new Map<string, string>();
 const COMPUTER_FREE_NOTE = "Limix Bot computer update: the computer this conversation waited for is free again. Continue the task that parked waiting for it.";
 const STEP_CAP_NOTE = "Your previous turn stopped at the step limit; continue from where it stopped.";
 const teamSetupDecisionText = (request: TeamSetupRequest): string =>
-  `OpenMausBot team setup decision ${request.requestId}: ${JSON.stringify(request.result)}. Report this exact result and continue the user's already requested work. Do not ask for confirmation again or repeat this setup/deletion. A denied or cancelled operation did not authorize any substitute action. Existing thread models were not changed.`;
+  `Limix Bot team setup decision ${request.requestId}: ${JSON.stringify(request.result)}. Report this exact result and continue the user's already requested work. Do not ask for confirmation again or repeat this setup/deletion. A denied or cancelled operation did not authorize any substitute action. Existing thread models were not changed.`;
 const connectionUpdateText = (labels: readonly string[]): string =>
   `Limix Bot connection update: the user securely connected ${labels.join(", ")}. Continue the task that paused for this connection. Do not ask them to connect it again.`;
 
