@@ -33,7 +33,9 @@ export class ZaloChannel {
     if (code === 401) throw new ChannelError("credential_invalid", "Token Zalo sai hoặc đã hết hạn");
     if (code === 408) return null;
     if (code === 429) throw new ChannelError("rate_limited", "Zalo báo vượt hạn mức", 10_000);
-    throw new ChannelError("platform_error", `Zalo lỗi ${code}: ${data.description ?? ""}`);
+    const failure = new ChannelError("platform_error", `Zalo lỗi ${code} (${method}): ${data.description ?? ""}`);
+    failure.httpCode = code;
+    throw failure;
   }
 
   async getMe() {
@@ -42,7 +44,14 @@ export class ZaloChannel {
   }
 
   async checkConflict() {
-    const info = await this.api("getWebhookInfo");
+    let info;
+    try {
+      info = await this.api("getWebhookInfo");
+    } catch (error) {
+      // Zalo answers 404 when the bot has no webhook at all: that is "no conflict", not a failure.
+      if (error.httpCode === 404) return { conflict: false };
+      throw error;
+    }
     if (info?.url) return { conflict: true, detail: `Bot đang dùng webhook: ${info.url}` };
     return { conflict: false };
   }
