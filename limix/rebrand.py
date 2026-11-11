@@ -940,8 +940,22 @@ def about_tagline(s):
 edit("src/locales/en.json", about_tagline)
 edit("src/locales/en.json", lambda s: must(s, '"connect.addressPlaceholder": "https://maus.example.com or', '"connect.addressPlaceholder": "https://limix.example.com or'))
 
-# 10e. Usage analytics page: Limix Bot's own docs/analytics.md (overlay) and link.
-edit("src/components/AnalyticsRow.tsx", lambda s: must(s, "https://github.com/milind-soni/OpenMausBot/blob/main/docs/analytics.md", f"{REPO_URL}/blob/main/docs/analytics.md"))
+# 10e. No usage analytics at all (owner's decision 2026-11-12): the code shipped a PostHog key of the OpenMausBot project.
+# analyticsEnabled() is always false, so posthog-js is never loaded and nothing is sent; the Settings row is gone; the
+# key is blanked; docs/analytics.md is removed.
+def no_analytics(s):
+    if "Limix Bot never sends usage analytics" in s:
+        return s
+    s = must(s, 'const TOKEN = "phc_m2hP39w8y2gLPvHgDvSXAu6xcZ3agjf4ruL56rGcMZEe";', 'const TOKEN = ""; // Limix Bot never sends usage analytics')
+    a = s.index("export function analyticsEnabled(): boolean {")
+    b = s.index("\n}\n", a) + 3
+    return s[:a] + "export function analyticsEnabled(): boolean {\n  void choice; // never on: Limix Bot sends no usage analytics\n  return false;\n}\n" + s[b:]
+edit("src/lib/analytics.ts", no_analytics)
+edit("src/components/AnalyticsRow.tsx", lambda s: s if "no usage analytics row" in s else must(s, "export function AnalyticsRow({ simple = false }: { simple?: boolean }) {\n", "export function AnalyticsRow({ simple = false }: { simple?: boolean }) {\n  const off: boolean = true; // Limix Bot: no usage analytics row\n  if (off) return null;\n"))
+_doc = ROOT / "docs/analytics.md"
+if _doc.exists():
+    _doc.unlink()
+    changed.append("docs/analytics.md (removed)")
 
 # 10f. Skills page of a bot: "Find on skills.sh" (https://www.skills.sh), "Limix Bot's built-in skills" (the library) and
 # "Add skills from a folder on this computer" (works offline). Server: source "local-folder:<path>" reads that folder.

@@ -6,6 +6,8 @@ import { SettingRow, Switch } from "./SettingsPrimitives";
 const ANALYTICS_DOC_URL = "https://github.com/leomieo/limix-bot/blob/main/docs/analytics.md";
 
 export function AnalyticsRow({ simple = false }: { simple?: boolean }) {
+  const off: boolean = true; // Limix Bot: no usage analytics row
+  if (off) return null;
   const [on, setOn] = useState(analyticsEnabled);
   const subtitle = (
     <>
