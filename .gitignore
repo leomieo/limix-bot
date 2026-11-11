@@ -42,3 +42,5 @@ deploy/podman/.env
 deploy/podman/.env.*
 !deploy/podman/.env.example
 /.env
+# Limix Bot: Python and uv fetched by the Windows workflow
+/limix-runtime/

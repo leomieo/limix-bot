@@ -47,6 +47,23 @@ jobs:
       - name: clean build outputs
         shell: bash
         run: rm -rf dist dist-server release
+      - name: bundled Python and uv for skills (pinned, checksum-verified)
+        shell: bash
+        run: |
+          set -euo pipefail
+          py=cpython-3.12.16+20261026-x86_64-pc-windows-msvc-install_only_stripped.tar.gz
+          py_sha=1f2ab53880fc67ea323398c6388e05af28addc99a8e389209f08a51fdff4b149
+          uv_sha=a38b8d1902b7cfbc76b423ba1bb456f623f42064cdc72628b6075b89afd1019a
+          rm -rf limix-runtime && mkdir -p limix-runtime/uv
+          curl -fsSL -o "$RUNNER_TEMP/py.tgz" "https://github.com/astral-sh/python-build-standalone/releases/download/20261026/${py//+/%2B}"
+          echo "$py_sha  $RUNNER_TEMP/py.tgz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/py.tgz" -C limix-runtime
+          cp limix-runtime/python/python.exe limix-runtime/python/python3.exe
+          curl -fsSL -o "$RUNNER_TEMP/uv.zip" "https://github.com/astral-sh/uv/releases/download/0.13.5/uv-x86_64-pc-windows-msvc.zip"
+          echo "$uv_sha  $RUNNER_TEMP/uv.zip" | sha256sum -c -
+          limix-runtime/python/python.exe -m zipfile -e "$(cygpath -w "$RUNNER_TEMP/uv.zip")" limix-runtime/uv
+          limix-runtime/python/python.exe --version
+          limix-runtime/uv/uv.exe --version
       - run: pnpm package:win
 
       - name: verify the packaged tree
@@ -54,7 +71,7 @@ jobs:
         run: |
           res=release/win-unpacked/resources
           fail=0
-          for f in server/index.js server/desktop-entry.mjs ui/index.html cloudflared/cloudflared.exe app-update.yml; do
+          for f in server/index.js server/desktop-entry.mjs ui/index.html cloudflared/cloudflared.exe app-update.yml limix-runtime/python/python.exe limix-runtime/python/python3.exe limix-runtime/uv/uv.exe skills/ui-ux-pro-max/SKILL.md skills/agent-reach/SKILL.md skills/rea-video/SKILL.md; do
             [ -f "$res/$f" ] || { echo "::error::missing $res/$f"; fail=1; }
           done
           [ -f "release/win-unpacked/Limix Bot.exe" ] || { echo "::error::missing Limix Bot.exe"; fail=1; }

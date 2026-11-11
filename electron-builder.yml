@@ -172,6 +172,8 @@ win:
       arch: x64
   icon: build/icon.ico
   extraResources:
+    - from: limix-runtime
+      to: limix-runtime
     - from: dist-native/cloudflared/win32-x64/cloudflared.exe
       to: cloudflared/cloudflared.exe
     - from: dist-native/browser/win32-x64
