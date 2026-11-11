@@ -60,7 +60,7 @@ export const MAUS_COLORS = {
   teal: "#01A492",
   coral: "#E5634E",
   silver: "#A8ADB4",
-  chrome: "#B3BAC4",
+  chrome: "#45D6EE",
 } satisfies Record<MausColor, string>;
 
 export const MAUS_COLOR_LABEL = {
@@ -70,8 +70,8 @@ export const MAUS_COLOR_LABEL = {
   chrome: "mascotColor.chrome",
 } as const satisfies Record<MausColor, LocaleKey>;
 
-export const CHROME_GRADIENT: [string, string, string] = ["#F1F4F7", "#AEB8C3", "#66717E"];
-export const CHROME_EYES = "#1E2833";
+export const CHROME_GRADIENT: [string, string, string] = ["#C4FAFF", "#45D6EE", "#137F9E"];
+export const CHROME_EYES = "#9CF7FF";
 
 export function colorSwatch(color: MausColor): string {
   if (color !== "chrome") return MAUS_COLORS[color];

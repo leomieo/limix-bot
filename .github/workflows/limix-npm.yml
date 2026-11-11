@@ -75,8 +75,10 @@ jobs:
             echo "limixbot@$v is already on npm"; exit 0
           fi
           cd release/npm
-          if npm publish --access public --provenance; then
+          if npm publish --access public --provenance 2>&1 | tee "$RUNNER_TEMP/publish.log"; then
             echo "published limixbot@$v"
+          elif grep -q "previously staged version\|previously published version" "$RUNNER_TEMP/publish.log"; then
+            echo "limixbot@$v was already published by an earlier run"
           elif [ -z "${NODE_AUTH_TOKEN}" ]; then
             echo "::warning::Not published: add the repository secret NPM_TOKEN (npm granular access token, Read and write on packages)."
           else

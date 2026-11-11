@@ -110,7 +110,7 @@ export function buildApplicationMenu({ environments, activeId, onSwitch, onAddFr
       })),
       ...(onAddCloud ? [{ id: "add-cloud", label: t("native.menu.addCloud"), click: () => onAddCloud() }] : []),
       { type: "separator" },
-      { id: "organization-sign-in", label: t("native.menu.orgSignIn"), click: onOrganizationSignIn },
+      ...(onOrganizationSignIn ? [{ id: "organization-sign-in", label: t("native.menu.orgSignIn"), click: onOrganizationSignIn }] : []),
       { label: t("native.menu.connect"), click: onConnect },
       { label: t("native.menu.addFromLink"), click: () => onAddFromClipboard() },
       {

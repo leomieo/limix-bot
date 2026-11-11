@@ -1,9 +1,12 @@
 import { app, autoUpdater as nativeAutoUpdater, BrowserWindow, Tray, WebContentsView, clipboard, desktopCapturer, dialog, globalShortcut, ipcMain, Menu, nativeImage, Notification, net, powerMonitor, powerSaveBlocker, safeStorage, screen, session, shell, systemPreferences, utilityProcess, nativeTheme } from "electron";
-import { LIMIX_ACCOUNT_URL, LIMIX_CLOUD_ENABLED } from "./limix-features.mjs";
+import { LIMIX_CLOUD_ENABLED, LIMIX_ORGANIZATION_ENABLED } from "./limix-features.mjs";
+import { limixRuntimeEnv } from "./limix-runtime.mjs";
+import { LIMIX_ACCOUNT_URL, LIMIX_CLOUD_ENABLED, LIMIX_ORGANIZATION_ENABLED } from "./limix-features.mjs";
 import { limixAccountGate } from "./limix-account.mjs";
 import { createRequire } from "node:module";
 import { randomBytes, randomUUID } from "node:crypto";
 import fs from "node:fs";
+import { execFileSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -161,7 +164,7 @@ let organizationEntryReady = false;
 let mainWindow = null;
 const serverUnavailableWindows = new WeakSet();
 let unreadCount = 0;
-let unreadOverlayIcon = null;
+const unreadBadgeIcons = {};
 
 const windowStateFile = createWindowStateFile({ file: () => path.join(app.getPath("userData"), "window-state.json"), log: message => slog(message) });
 
@@ -169,9 +172,11 @@ function applyUnreadBadge(win = mainWindow) {
   const count = normalizeUnreadCount(unreadCount);
   if (process.platform === "win32") {
     if (!win || win.isDestroyed()) return;
-    unreadOverlayIcon ??= nativeImage.createFromPath(APP_ICON).resize({ width: 16, height: 16 });
+    // Limix Bot: a red count dot, not a second copy of the logo.
+    const badgeName = count > 9 ? "9plus" : String(count);
+    const badge = count > 0 ? (unreadBadgeIcons[badgeName] ??= nativeImage.createFromPath(path.join(__dirname, `resources/unread-badge-${badgeName}.png`))) : null;
     win.setOverlayIcon(
-      count > 0 && !unreadOverlayIcon.isEmpty() ? unreadOverlayIcon : null,
+      badge && !badge.isEmpty() ? badge : null,
       count > 0 ? nativeT(count === 1 ? "native.badge.one" : "native.badge.many", { count }) : nativeT("native.badge.none"),
     );
     return;
@@ -1114,6 +1119,7 @@ async function startServerOn(port, dataDir = runningDataDir ?? startupEnvironmen
     ...process.env,
     // The parent owns the data-dir lease; a child only validates it, so fallback-port children never replace it.
     ...desktopDataDirLease.utilityServerLeaseEnvironment(),
+    ...limixRuntimeEnv({ resourcesPath: process.resourcesPath, userData: app.getPath("userData") }),
     OMB_DATA_DIR: dataDir,
     // Fail-closed until this process sends the private connection; never a descriptor inherited from the shell.
     OMB_DESKTOP_PARENT: "1",
@@ -1510,7 +1516,7 @@ function refreshApplicationMenu() {
       onSwitch: (id) => void workspaceMenuAction(() => switchEnvironment(id)),
       onAddFromClipboard: () => void addServerFromClipboard(),
       onConnect: () => void workspaceMenuAction(openWorkspaceSettings),
-      onOrganizationSignIn: () => queueOrganizationEntry("openmausbot://organization"),
+      onOrganizationSignIn: LIMIX_ORGANIZATION_ENABLED ? () => queueOrganizationEntry("openmausbot://organization") : undefined,
       onForget: (id) => void workspaceMenuAction(() => forgetEnvironment(id)),
       onOpenSettings: () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("app:open-settings"); },
       openAtLogin: loginItem.available() ? { checked: loginItem.chosen(), onToggle: on => { loginItem.choose(on); refreshApplicationMenu(); } } : null,
@@ -2813,6 +2819,23 @@ setCuaStateListener((connection) => {
 });
 
 app.whenReady().then(async () => {
+  // Limix Bot: a damaged install (no UI files, e.g. after an interrupted update) explains itself instead of showing
+  // a bare "no route" page.
+  if (app.isPackaged && !fs.existsSync(path.join(process.resourcesPath, "ui", "index.html"))) {
+    const vi = /^vi/i.test(app.getLocale());
+    const { response } = await dialog.showMessageBox({
+      type: "error",
+      buttons: [vi ? "Tải bản cài" : "Download installer", vi ? "Thoát" : "Quit"],
+      defaultId: 0, cancelId: 1,
+      message: vi ? "Bộ cài Limix Bot bị thiếu tệp" : "Limix Bot's installation is missing files",
+      detail: vi
+        ? "Có thể lần cập nhật trước bị gián đoạn. Hãy tải và chạy lại LimixBot-setup.exe. Bot, cuộc trò chuyện và cài đặt của bạn vẫn được giữ nguyên."
+        : "An earlier update may have been interrupted. Download and run LimixBot-setup.exe again. Your bots, chats and settings are kept.",
+    });
+    if (response === 0) await shell.openExternal("https://github.com/leomieo/limix-bot/releases/latest");
+    app.exit(1);
+    return;
+  }
   await evictStartupCacheOnce({
     userData: app.getPath("userData"),
     currentVersion: app.getVersion(),
@@ -3161,4 +3184,15 @@ function releaseDesktopDataDirLease() {
 // before-quit is too early (this app defers it); will-quit is Electron's last boundary, and the process hook covers app.exit().
 app.on("will-quit", releaseDesktopDataDirLease);
 app.on("will-quit", () => { desktopTray?.destroy(); void tailnetShare.stop(); });
+// Limix Bot: Quit ends every helper process the app started. The orderly stop above runs first; this clears any
+// process still running from the install folder (packaged Windows builds only).
+app.on("will-quit", () => {
+  if (process.platform !== "win32" || !app.isPackaged) return;
+  try {
+    const dir = path.dirname(process.execPath).replace(/'/g, "''") + "\\";
+    execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command",
+      `$dir='${dir}'; Get-Process | Where-Object { $_.Id -ne ${process.pid} -and $_.Path -and $_.Path.StartsWith($dir, [StringComparison]::OrdinalIgnoreCase) } | Stop-Process -Force -ErrorAction SilentlyContinue`],
+      { windowsHide: true, timeout: 6000, stdio: "ignore" });
+  } catch {}
+});
 process.once("exit", releaseDesktopDataDirLease);

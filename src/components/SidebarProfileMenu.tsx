@@ -1,3 +1,4 @@
+import { LIMIX_PHONE_APPS_ENABLED } from "../../shared/limix-features";
 import { useEffect, useRef, useState } from "react";
 import {
   Archive,
@@ -322,12 +323,12 @@ export function phoneMenuItems({
         ) : undefined,
       onSelect: () => onConnect(destination),
     } satisfies SidebarMenuItem)),
-    {
+    ...(LIMIX_PHONE_APPS_ENABLED ? [{
       key: "phone-app",
       label: t("sidebar.menu.getPhoneApp"),
       icon: <Download size={18} />,
       onSelect: onGetApp,
-    },
+    } satisfies SidebarMenuItem] : []),
   ];
 }
 
@@ -592,7 +593,7 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
   const accounts = useAccounts();
 
   const items = profileMenuItems({
-    phone: simple
+    phone: simple && LIMIX_PHONE_APPS_ENABLED
       ? simplePhoneItems({ connected: phone.kind === "connected", onGetApp: () => setPhoneAppOpen(true) })
       : phoneMenuItems({
         destinations,
@@ -703,7 +704,7 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
       />
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
       {accounts.sheet && <AccountsSheet adding={accounts.sheet.email} note={accounts.sheet.note} onClose={accounts.closeSheet} />}
-      {phoneAppOpen && <PhoneAppDialog
+      {LIMIX_PHONE_APPS_ENABLED && phoneAppOpen && <PhoneAppDialog
         open
         onClose={() => setPhoneAppOpen(false)}
         connect={destinations.map((destination) => ({

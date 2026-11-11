@@ -25,7 +25,7 @@ export const MIN_SKILL_REVIEW_STEPS = 3;
 export const MAX_SKILL_REVIEW_STEPS = 100;
 
 export function skillReviewEnabled(config: FeatureFlagConfig | null | undefined): boolean {
-  return skillAuthoringEnabled(config) && config?.features?.skillReview === true;
+  return skillAuthoringEnabled(config) && config?.features?.skillReview !== false;
 }
 
 export function skillReviewSteps(config: FeatureFlagConfig | null | undefined): number {
@@ -77,7 +77,7 @@ export function llmThreadTitlesEnabled(config: FeatureFlagConfig | null | undefi
 }
 
 export function skillsLibraryEnabled(config: FeatureFlagConfig | null | undefined): boolean {
-  return config?.features?.skillsLibrary === true;
+  return config?.features?.skillsLibrary !== false;
 }
 
 export function shareLearnedSkillsMode(config: FeatureFlagConfig | null | undefined): "off" | "ask" | "auto" {

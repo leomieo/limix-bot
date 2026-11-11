@@ -34,7 +34,7 @@ Phần thêm cho Limix Bot (chỉ thêm, không sửa luồng cũ; bản gốc l
 | File (sửa ở `limix/overlay/electron/`) | Việc |
 |---|---|
 | `limix-features.mjs` | `LIMIX_ACCOUNT_URL` (rỗng = tắt cổng đăng nhập) |
-| `limix-account-client.mjs` | gọi máy chủ; cho chạy tiếp tối đa 7 ngày khi mất mạng sau lần kiểm tra tốt gần nhất |
+| `limix-account-client.mjs` | gọi máy chủ; cho chạy tiếp tối đa 1 giờ khi mất mạng sau lần kiểm tra tốt gần nhất |
 | `limix-account.mjs` | cửa sổ đăng nhập (trước màn hình khởi động), màn hình "đã đủ máy" để gỡ máy, kiểm tra lại mỗi 10 phút; máy bị gỡ/tài khoản bị khóa → báo rồi khởi động lại app |
 | `limix-account-preload.cjs` | cầu nối tối thiểu cho cửa sổ đăng nhập |
 | `electron/main.mjs` | rebrand bước 8e chèn lời gọi `limixAccountGate` |
