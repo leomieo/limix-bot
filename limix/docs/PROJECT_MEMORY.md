@@ -9,11 +9,12 @@
 
 - **Hướng chính (đổi 2026-11-11 18:41):** Limix Bot = **bản fork đổi thương hiệu của OpenMausBot** (giao diện như mausbot.com), phát hành file cài Windows `.exe` qua GitHub Actions của repo `leomieo/limix-bot`. `limix-gateway` (cổng Telegram/Zalo) là module sẽ gộp vào app ở mốc sau.
 - **Mốc đang làm:** F1 — đẩy mã fork lên GitHub và build bản Windows đầu tiên
-- **Việc dở dang:** commit `a40e26cf` (đổi thương hiệu) nằm trong máy chủ Claude, CHƯA đẩy lên GitHub vì repo `leomieo/limix-bot` chưa được tạo
+- **Việc dở dang:** build 0.2.0 (đổi hết chữ OpenMaus còn sót) đang chạy: https://github.com/leomieo/limix-bot/actions/runs/43021503580. Bản trước: v0.1.153
 - **Đã làm được:** script `limix/rebrand.py` (chạy lại được, ổn định); logo + linh vật "Limi" (bong bóng chat tím); kiểm tra: 0 lỗi cú pháp, so token trước/sau chỉ chuỗi chữ thay đổi (trừ 2 chỗ chủ ý)
-- **CHƯA kiểm:** typecheck/build thật (cần `pnpm install`, bị chặn mạng ở máy chủ Claude → sẽ chạy trên GitHub Actions); app chạy thật trên Windows
-- **Đang bị chặn:** chờ chủ dự án tạo repo `limix-bot` (Public, trống) trên tài khoản GitHub `leomieo`
-- **Bước tiếp theo:** đẩy commit → chạy workflow "Limix Bot Windows" → sửa lỗi build nếu có → tải `LimixBot-setup.exe` từ Releases
+- **Đã kiểm trên GitHub Actions (run 43018860396, thành công):** cài thư viện, typecheck + build, cấu trúc gói, `Limix Bot.exe`, kênh cập nhật leomieo/limix-bot, máy chủ đóng gói trả lời /api/health
+- **CHƯA kiểm:** cài và mở app thật trên máy Windows của chủ dự án; giao diện hiển thị tên/linh vật mới
+- **Đang bị chặn:** không
+- **Bước tiếp theo:** chủ dự án cài thử → báo lỗi/ảnh chụp → F2 gộp Telegram/Zalo vào app. (Cũ:) chờ workflow "Limix Bot Windows" → sửa lỗi build nếu có → tải `LimixBot-setup.exe` từ Releases
 
 ## 2. Bản đồ thư mục dự án
 
@@ -58,10 +59,22 @@
 | R7 | Giao thức liên kết `openmausbot://` giữ nguyên (mã chạy dùng đúng tên này) | Cài cả OpenMausBot gốc thì link cài gói có thể mở nhầm app | Mở, nhỏ |
 | R8 | Bản cài chưa ký số | SmartScreen báo "Unknown publisher" | Mở |
 | R9 | Không chạy được typecheck ở máy chủ Claude | Lỗi build chỉ lộ ra trên GitHub Actions | Mở |
+| R11 | Hướng dẫn dòng lệnh giờ ghi `limixbot pair/serve/browser install`, nhưng chưa có gói dòng lệnh tên `limixbot` (gói npm `openmausbot` là của upstream) | Chỉ ảnh hưởng chế độ máy chủ/từ xa, không ảnh hưởng app desktop | Mở |
+| R12 | Lần đổi tên 1 sót chữ "OpenMaus Bot" (có dấu cách), "OpenMaus", "Maus" và câu có dấu "/" | Màn hình khởi động/khay còn tên cũ ở v0.1.153 | Đã sửa ở 0.2.0 |
+| R10 | Máy chủ Claude không đẩy được tag git (chỉ đẩy nhánh) | Build kích hoạt bằng push lên `main`; tag phát hành do workflow tự tạo | Đã xử lý |
 
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
 
 Định dạng: `- YYYY-MM-DD HH:MM | Ai | Làm gì | File | Kiểm chứng`
+
+- 2026-11-11 19:45 | Claude | 0.2.0: đổi mọi biến thể OpenMaus/MausBot/Maus hiển thị → Limix; thư mục `.openmausbot*` → `.limixbot*` đồng bộ mọi nơi (sửa lỗi tiềm ẩn ở lưu tệp/xóa môi trường); lệnh hiển thị → `limixbot`; version 0.2.0 | `limix/rebrand.py`, 119 file | 0 lỗi cú pháp, so token: chỉ chuỗi đổi; script chạy lại → 0 thay đổi; build run 43021503580
+- 2026-11-11 19:31 | Chủ dự án | Báo màn hình khởi động ghi "OpenMaus Bot" và trang ghép cặp ghi `openmausbot pair`; yêu cầu đổi hết sang Limix | — | ảnh chụp
+
+- 2026-11-11 19:30 | GitHub Actions | Build Windows thành công, phát hành v0.1.153 | Releases | run 43018860396 success, server smoke OK
+
+- 2026-11-11 19:25 | Claude | Workflow build chạy khi push lên `main` (tag bị chặn); kích hoạt build đầu tiên | `.github/workflows/limix-windows.yml` | run 43018860396 đang chạy
+- 2026-11-11 19:22 | Claude | Đẩy mã Limix Bot lên `leomieo/limix-bot` nhánh `main` (1 commit gốc, kèm `limix/gateway`, `limix/docs`) | repo GitHub | `git ls-remote` thấy `main`
+- 2026-11-11 19:18 | Claude | Kiểm tra cài đặt GitHub App Claude của leomieo: đã có quyền "All repositories" (không đổi gì) | github.com/settings/installations | đọc trang
 
 - 2026-11-11 19:20 | Claude | Commit đổi thương hiệu OpenMausBot → Limix Bot (381 file): tên, tác giả Leox ৹ Limix AI, biểu tượng, linh vật Limi, thư mục `~/.limixbot`, kênh cập nhật `leomieo/limix-bot`, bỏ `enterprise/` + MausBot Cloud, workflow build Windows | commit `a40e26cf` (chưa đẩy) | 0 lỗi cú pháp; so token; script chạy 2 lần → 0 thay đổi; chạy từ bản sạch → trùng khớp
 - 2026-11-11 19:00 | Claude | Thiết kế logo + linh vật "Limi" (bong bóng chat, tím #A78BFA→#6D28D9) | `limix/brand-assets/`, `limix-brand-sheet.png` | bộ sinh linh vật kiểm tra mặt vừa thân ở mọi biểu cảm
