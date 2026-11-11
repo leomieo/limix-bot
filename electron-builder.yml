@@ -199,6 +199,7 @@ win:
 
 nsis:
   oneClick: true
+  include: build/limix-installer.nsh
   perMachine: false
   shortcutName: Limix Bot
   # Versioned, like the .dmg. The README's /latest/download/ button needs a

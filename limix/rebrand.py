@@ -423,6 +423,11 @@ def org_main(s):
                 '      onOrganizationSignIn: LIMIX_ORGANIZATION_ENABLED ? () => queueOrganizationEntry("openmausbot://organization") : undefined,')
 edit("electron/main.mjs", org_main)
 
+# 6h. Windows installer: stop processes still running from the install folder before installing (limix/overlay/build/
+# limix-installer.nsh). Without it an update could remove the old UI and fail to write the new one ("no route: GET /").
+edit("electron-builder.yml", lambda s: s if "include: build/limix-installer.nsh" in s else must(s,
+     "nsis:\n  oneClick: true\n", "nsis:\n  oneClick: true\n  include: build/limix-installer.nsh\n"))
+
 # 6c. MausBot's finished chrome pictures of the trademark cursor (face included) go: with no pictures for a body the
 # avatar keeps its drawn steel finish over the Limi outline (src/lib/steel-body.ts).
 steel = ROOT / "src/assets/mausbot-steel"

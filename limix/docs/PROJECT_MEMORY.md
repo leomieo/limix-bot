@@ -69,6 +69,8 @@
 
 Định dạng: `- YYYY-MM-DD HH:MM | Ai | Làm gì | File | Kiểm chứng`
 
+- 2026-11-12 02:55 | Claude | 0.2.13: sửa lỗi cập nhật (app biến mất, mở lại thấy "no route: GET /"). Nguyên nhân nghi cao: tiến trình phụ (cua-driver, trình duyệt bot, cloudflared, Python/uv) còn chạy giữ tệp → trình cài xóa giao diện cũ nhưng không ghi được bản mới. Sửa: build/limix-installer.nsh (customInit/customUnInit) dừng mọi tiến trình chạy từ thư mục cài trước khi cài. CHƯA kiểm trên Windows thật; chưa có log xác nhận | limix/overlay/build/limix-installer.nsh, rebrand bước 6h | rebrand từ 6f226f15 trùng khớp; chờ build CI (makensis biên dịch script)
+
 - 2026-11-12 02:45 | Claude | 0.2.12: ẩn hẳn "Đăng nhập bằng tài khoản tổ chức" (Cài đặt → Tổ chức, dòng trong màn hình chào, menu Máy chủ) bằng công tắc LIMIX_ORGANIZATION_ENABLED = false, theo yêu cầu chủ dự án. Lỗi "no route: GET /" sau khi cập nhật 0.2.10: chưa rõ nguyên nhân (nghi tiến trình cũ còn chạy), chờ server.log/updater.log | limix/overlay/electron/limix-features.mjs, rebrand bước 6g | node --check main/menu/preload; rebrand từ 6f226f15 trùng khớp
 
 - 2026-11-12 02:35 | Claude | 0.2.11: cổng Admin mặc định của "Đăng nhập bằng tài khoản tổ chức" đổi admin.openmausbot.com → https://admin.limixbot.com (theo yêu cầu chủ dự án). CHƯA có máy chủ ở địa chỉ đó nên nút vẫn báo lỗi; chủ dự án cũng báo 0.2.9 lỗi, chờ ảnh/log | rebrand bước 6f | rebrand từ 6f226f15 trùng khớp
