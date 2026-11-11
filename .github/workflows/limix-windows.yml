@@ -1,7 +1,7 @@
 # Limix Bot (Leox ৹ Limix AI): builds the Windows installer on a real Windows runner, checks that the packaged
 # server starts, and publishes a GitHub release whose latest.yml the in-app updater reads.
 # Adapted from OpenMausBot's package-win.yml (Apache-2.0). Run it from Actions → "Limix Bot Windows" → Run workflow,
-# or push a tag v<version>.
+# or push to main (the release tag v<version> is created by the publish step).
 name: Limix Bot Windows
 
 on:
@@ -13,7 +13,9 @@ on:
         type: boolean
         default: true
   push:
+    branches: [main]
     tags: ["v*"]
+    paths-ignore: ["limix/docs/**", "limix/gateway/**", "**/*.md"]
 
 permissions:
   contents: write
@@ -89,7 +91,7 @@ jobs:
           retention-days: 30
 
       - name: publish the GitHub release
-        if: startsWith(github.ref, 'refs/tags/v') || inputs.publish
+        if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' || inputs.publish
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
