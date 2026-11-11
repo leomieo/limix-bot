@@ -133,7 +133,7 @@ export function createWorkspaceBackupRoutes(options: {
         }));
         try { check(req, auth); } catch (error) { removeWorkspaceBackupJob(options.dataDir, result.id); throw error; }
         artifacts.set(result.id, { owner: owner(auth), kind: "download", path: result.path, summary: result.summary, expires: Date.now() + EXPIRES_MS });
-        json(res, 200, { id: result.id, filename: `Limix Bot-${result.summary.createdAt.slice(0, 10)}.ombbackup`, bytes: statSync(result.path).size, summary: result.summary });
+        json(res, 200, { id: result.id, filename: `LimixBot-${result.summary.createdAt.slice(0, 10)}.ombbackup`, bytes: statSync(result.path).size, summary: result.summary });
         return true;
       }
       const download = /^\/api\/workspace-backup\/download\/([\w-]+)$/.exec(path);
@@ -143,7 +143,7 @@ export function createWorkspaceBackupRoutes(options: {
         res.writeHead(200, {
           "content-type": "application/octet-stream",
           "content-length": statSync(file).size,
-          "content-disposition": `attachment; filename="Limix Bot-${artifact.summary!.createdAt.slice(0, 10)}.ombbackup"`,
+          "content-disposition": `attachment; filename="LimixBot-${artifact.summary!.createdAt.slice(0, 10)}.ombbackup"`,
           "x-content-type-options": "nosniff",
         });
         await pipeline(createReadStream(file), res);
