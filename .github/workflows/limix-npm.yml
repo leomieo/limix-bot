@@ -1,0 +1,73 @@
+# Limix Bot (Leox ৹ Limix AI): builds the `limixbot` command-line package (npx limixbot serve / pair), proves the
+# packed tarball runs with no node_modules, and publishes it to npm when this version is not there yet.
+# Adapted from OpenMausBot's npm-package.yml (Apache-2.0).
+#
+# Publishing needs ONE of:
+#   - the repository secret NPM_TOKEN (an npm "Granular access token" with Read and write on packages), or
+#   - npm Trusted Publishing for package `limixbot` pointing at leomieo/limix-bot, workflow limix-npm.yml
+#     (only possible after the first version exists on npm).
+# Without either, the package is still built and tested; the publish step says what is missing.
+name: Limix Bot npm
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore: ["limix/docs/**", "limix/gateway/**", "**/*.md"]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  npm:
+    name: build, prove and publish limixbot
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ff378ebe6b225b0680b81c1ad4498ae0d1d3a5e3 # v6.0.10
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+      - run: pnpm build:server && pnpm exec vite build && node scripts/build-npm-package.mjs
+
+      - name: prove the packed tarball runs with no node_modules
+        run: |
+          set -euo pipefail
+          grep -q '"name": "limixbot"' release/npm/package.json
+          grep -q '"limixbot": "cli.js"' release/npm/package.json
+          cd release/npm && npm pack --silent && cd ../..
+          rm -rf /tmp/limix-pack && mkdir -p /tmp/limix-pack && tar -xzf release/npm/limixbot-*.tgz -C /tmp/limix-pack
+          cd /tmp/limix-pack/package
+          trap 'echo "--- serve.log"; cat serve.log 2>/dev/null' ERR
+          test ! -d node_modules
+          node cli.js --help | grep -q "limixbot serve"
+          HOME=/tmp/limix-pack/home node cli.js serve --no-pair --port 18799 --data-dir /tmp/limix-pack/data --label ci --public-url https://ci.example > serve.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:18799/api/health >/dev/null && break; sleep 1; done
+          curl -sf http://127.0.0.1:18799/api/health
+          OMB_PORT=18799 node cli.js pair --label "CI phone" | grep -q "https://ci.example/pair#code="
+          kill %1; wait %1 || true
+
+      - name: publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          npm install -g npm@11
+          v=$(node -p "require('./release/npm/package.json').version")
+          if npm view "limixbot@$v" version >/dev/null 2>&1; then
+            echo "limixbot@$v is already on npm"; exit 0
+          fi
+          cd release/npm
+          if npm publish --access public --provenance; then
+            echo "published limixbot@$v"
+          elif [ -z "${NODE_AUTH_TOKEN}" ]; then
+            echo "::warning::Not published: add the repository secret NPM_TOKEN (npm granular access token, Read and write on packages)."
+          else
+            exit 1
+          fi

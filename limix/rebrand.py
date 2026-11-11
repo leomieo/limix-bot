@@ -80,10 +80,25 @@ edit("electron-builder.yml", builder)
 wf = ROOT / ".github/workflows"
 if wf.exists():
     for f in wf.glob("*.yml"):
-        if f.name != "limix-windows.yml":
+        if f.name not in ("limix-windows.yml", "limix-npm.yml"):
             f.unlink()
             changed.append(f".github/workflows/{f.name} (removed)")
 shutil.copy(ASSETS / "limix-windows.yml", wf / "limix-windows.yml")
+shutil.copy(ASSETS / "limix-npm.yml", wf / "limix-npm.yml")
+
+# 2c. The command-line package is published as `limixbot` (npx limixbot pair). The bundle keeps its file name.
+def npm_package(s):
+    s = s.replace("https://github.com/milind-soni/OpenMausBot.git", f"{REPO_URL}.git")
+    s = s.replace("https://github.com/milind-soni/OpenMausBot#readme", f"{REPO_URL}#readme")
+    s = s.replace('"cli.js", "dist-server", "dist", "skills", "enterprise", "LICENSE", "README.md"', '"cli.js", "dist-server", "dist", "skills", "LICENSE", "README.md"')
+    s = s.replace("openmausbot.js", "\0BUNDLE\0")
+    s = re.sub(r"(?<![\w.-])openmausbot(?![\w-])", "limixbot", s)
+    s = s.replace("\0BUNDLE\0", "openmausbot.js")
+    s = re.sub(r"\bOpen ?Maus ?Bot\b|\bMausBot\b", NAME, s)
+    s = s.replace('description: "Run the Limix Bot server anywhere and pair your devices to it"',
+                  f'description: "Run the Limix Bot server anywhere and pair your devices to it ({AUTHOR})"')
+    return s
+edit("scripts/build-npm-package.mjs", npm_package)
 
 # 3. Product name, links, data folder, hosted cloud offers.
 edit("server/brand.ts", lambda s: must(s, 'export const DEFAULT_BRAND: Brand = { name: "OpenMausBot" };',
