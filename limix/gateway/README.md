@@ -1,5 +1,14 @@
 # Limix Gateway — nối bot Telegram, Zalo với OpenMausBot
 
+> **Từ Limix Bot 0.3.3:** chương trình này đã nằm sẵn trong app. Mở app → bấm tên tài khoản (góc dưới bên trái) →
+> **Kết nối Telegram, Zalo, Discord**. Không cần Node.js hay `Start-Limix.bat`. Các hướng dẫn bên dưới vẫn đúng cho cách chạy riêng.
+>
+> **Discord:** vào https://discord.com/developers/applications → New Application → Bot → Reset Token (copy token) →
+> bật **Message Content Intent** → mời bot vào máy chủ/nhắn tin riêng. Trên trang kết nối chọn Discord và dán token.
+>
+> **WhatsApp và Messenger:** chưa có. Cả hai chỉ gửi tin qua địa chỉ công khai (webhook) và cần tài khoản Meta Business đã duyệt,
+> nên sẽ làm ở bản sau.
+
 Limix Gateway là chương trình nhỏ chạy trên máy Windows của bạn. Nó nhận tin nhắn từ bot Telegram hoặc Zalo,
 chuyển cho một bot AI trong OpenMausBot, rồi gửi câu trả lời lại cho người nhắn.
 

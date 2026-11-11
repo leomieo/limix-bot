@@ -67,6 +67,7 @@ aside { background:var(--sidebar); border-right:1px solid var(--line); display:f
 .avatar { position:relative; width:42px; height:42px; border-radius:13px; display:grid; place-items:center; font-weight:700; font-size:17px; flex:none; }
 .avatar.telegram { background:linear-gradient(140deg,#3aa8e8,#1f78c6); color:#fff; }
 .avatar.zalo { background:linear-gradient(140deg,#2f7cf6,#1a4fd0); color:#fff; }
+.avatar.discord { background:linear-gradient(140deg,#7b88f7,#4f5bd5); color:#fff; }
 .avatar .dot { position:absolute; right:-2px; bottom:-2px; width:13px; height:13px; border-radius:50%; border:2.5px solid var(--sidebar); background:var(--faint); }
 .dot.running { background:var(--accent); } .dot.degraded, .dot.starting { background:var(--warn); } .dot.conflict, .dot.credential_invalid, .dot.error { background:var(--bad); }
 .nav { padding:8px; border-top:1px solid var(--line); display:grid; gap:2px; }
@@ -234,19 +235,20 @@ dialog .actions { display:flex; justify-content:flex-end; gap:10px; margin-top:8
       <div class="choice" role="radiogroup" aria-label="Nền tảng">
         <label><input type="radio" name="platform" value="telegram" checked><span class="avatar telegram" style="width:36px;height:36px;border-radius:11px"><svg class="i" aria-hidden="true"><use href="#i-send"/></svg></span><span><b>Telegram</b><br><span class="help">Token từ @BotFather</span></span></label>
         <label><input type="radio" name="platform" value="zalo"><span class="avatar zalo" style="width:36px;height:36px;border-radius:11px"><svg class="i" aria-hidden="true"><use href="#i-chat"/></svg></span><span><b>Zalo</b><br><span class="help">Token từ bot.zaloplatforms.com</span></span></label>
+        <label><input type="radio" name="platform" value="discord"><span class="avatar discord" style="width:36px;height:36px;border-radius:11px"><svg class="i" aria-hidden="true"><use href="#i-chat"/></svg></span><span><b>Discord</b><br><span class="help">Token từ Discord Developer Portal</span></span></label>
       </div>
     </div>
     <label class="field"><span>Token của bot</span><input name="token" type="password" autocomplete="off" required placeholder="Dán token vào đây"><span class="help" id="tokenHelp">Telegram: nhắn @BotFather → /newbot → copy token.</span></label>
     <label class="field"><span>Tên hiển thị (không bắt buộc)</span><input name="name" maxlength="60" placeholder="Ví dụ: Trợ lý bán hàng"></label>
     <div class="field"><span>Bộ não AI</span>
       <div class="seg">
-        <label><input type="radio" name="engineKind" value="openmausbot" checked><span><b>Bot trong OpenMausBot</b><span>Câu trả lời do bot AI trong OpenMausBot viết.</span></span></label>
+        <label><input type="radio" name="engineKind" value="openmausbot" checked><span><b>Bot trong Limix Bot</b><span>Câu trả lời do bot AI trong Limix Bot viết.</span></span></label>
         <label><input type="radio" name="engineKind" value="echo"><span><b>Chế độ thử</b><span>Bot nhắc lại tin bạn gửi, để kiểm tra kết nối.</span></span></label>
       </div>
     </div>
     <div id="ombFields">
       <label class="field"><span>Địa chỉ Bot API</span><input name="endpoint" class="mono" autocomplete="off" placeholder="http://127.0.0.1:…/hooks/api/bots/…/messages"></label>
-      <label class="field"><span>Khóa Bot API</span><input name="apiKey" type="password" autocomplete="off" placeholder="bak_…"><span class="help">OpenMausBot: mở bot → bánh răng → Advanced: Access → Bot API → bật “Let apps talk to this bot”, copy địa chỉ và khóa.</span></label>
+      <label class="field"><span>Khóa Bot API</span><input name="apiKey" type="password" autocomplete="off" placeholder="bak_…"><span class="help">Limix Bot: mở bot → bánh răng → Advanced: Access → Bot API → bật “Let apps talk to this bot”, copy địa chỉ và khóa.</span></label>
     </div>
     <label class="field"><span>Ai được nhắn cho bot</span>
       <select name="accessPolicy">
@@ -274,7 +276,7 @@ const POLICY = {
   owner_only: ["Chỉ chủ bot", "Chỉ người đã liên kết bằng /link mới dùng được bot."],
   open: ["Mọi người", "Ai cũng nhắn được và dùng chung hạn mức AI của bạn."],
 };
-const PLATFORM = { telegram:"Telegram", zalo:"Zalo" };
+const PLATFORM = { telegram:"Telegram", zalo:"Zalo", discord:"Discord" };
 let S = { connections: [], pairing: [], activity: [] };
 let view = { name: "home" };
 let lastMain = "";
@@ -332,12 +334,12 @@ function homeView() {
   const dayAgo = Date.now() - 86400000;
   const events = S.activity.filter((a) => a.at > dayAgo).length;
   const hero = `<section class="card hero">
-    <div><h2>Bot AI của bạn, có mặt trên Telegram và Zalo.</h2>
-      <p>Kết nối bot với bộ não AI trong OpenMausBot. Limix nhận tin, kiểm soát ai được nhắn và gửi câu trả lời về đúng người.</p>
+    <div><h2>Bot AI của bạn, có mặt trên Telegram, Zalo và Discord.</h2>
+      <p>Kết nối bot với bộ não AI trong Limix Bot. Limix nhận tin, kiểm soát ai được nhắn và gửi câu trả lời về đúng người.</p>
       <div class="row"><button class="btn primary" data-act="add">${icon("plus")}Kết nối bot ${S.connections.length ? "mới" : "đầu tiên"}</button></div></div>
     <div class="steps">
-      <div class="step"><div><b>Tạo bot trên nền tảng</b><span>@BotFather (Telegram) hoặc bot.zaloplatforms.com</span></div></div>
-      <div class="step"><div><b>Bật Bot API trong OpenMausBot</b><span>Copy địa chỉ và khóa của bot AI</span></div></div>
+      <div class="step"><div><b>Tạo bot trên nền tảng</b><span>@BotFather (Telegram), bot.zaloplatforms.com (Zalo) hoặc discord.com/developers</span></div></div>
+      <div class="step"><div><b>Bật Bot API trong Limix Bot</b><span>Copy địa chỉ và khóa của bot AI</span></div></div>
       <div class="step"><div><b>Kết nối và xác nhận chủ bot</b><span>Gửi /link MÃ từ điện thoại</span></div></div>
     </div></section>`;
   const stats = S.connections.length ? `<div class="grid3">
@@ -368,8 +370,8 @@ function botView(c) {
       <section class="card"><h2>${icon("link")}Liên kết chủ bot</h2><p class="sub">Mở bot trên điện thoại và gửi mã. Mã dùng một lần, hết hạn sau 15 phút.</p>
         <div id="codeBox"></div>
         <button class="btn" data-act="link-code" data-id="${c.id}">${icon("plus")}Tạo mã liên kết</button></section>
-      <section class="card"><h2>${icon("cpu")}Bộ não AI</h2><p class="sub">${c.engine.kind === "echo" ? "Đang ở chế độ thử: bot nhắc lại tin nhắn." : "Bot AI trong OpenMausBot trả lời qua Bot API."}</p>
-        <dl class="kv"><dt>Loại</dt><dd>${c.engine.kind === "echo" ? "Chế độ thử" : "OpenMausBot"}</dd>
+      <section class="card"><h2>${icon("cpu")}Bộ não AI</h2><p class="sub">${c.engine.kind === "echo" ? "Đang ở chế độ thử: bot nhắc lại tin nhắn." : "Bot AI trong Limix Bot trả lời qua Bot API."}</p>
+        <dl class="kv"><dt>Loại</dt><dd>${c.engine.kind === "echo" ? "Chế độ thử" : "Limix Bot"}</dd>
         ${c.engine.kind === "openmausbot" ? `<dt>Địa chỉ</dt><dd class="mono">${esc(c.engine.endpoint)}</dd><dt>Khóa</dt><dd class="mono">${esc(c.engine.keyMasked)}</dd>` : ""}
         <dt>Token bot</dt><dd class="mono">${esc(c.tokenMasked)}</dd></dl>
         <details style="margin-top:14px"><summary class="btn ghost" style="display:inline-flex">Đổi bộ não AI</summary>
@@ -405,7 +407,7 @@ function settingsView() {
     <section class="card"><h2>Giới thiệu</h2>
       <dl class="kv"><dt>Ứng dụng</dt><dd>Limix Bot ${APP.version}</dd><dt>Tác giả</dt><dd>${esc(APP.author)}</dd>
       <dt>Dữ liệu</dt><dd>Thư mục <span class="mono">limix-gateway\\data</span> (token đã mã hóa, đừng chia sẻ)</dd>
-      <dt>Nền tảng AI</dt><dd>OpenMausBot qua Bot API</dd></dl></section>
+      <dt>Nền tảng AI</dt><dd>Limix Bot qua Bot API</dd></dl></section>
     <section class="card"><h2>${icon("power")}Thoát Limix</h2><p class="sub">Dừng mọi bot. Bot sẽ không trả lời cho tới khi mở lại Limix Bot.</p>
       <button class="btn danger" data-act="shutdown">${icon("power")}Thoát</button></section>
   </div>`;
@@ -471,7 +473,7 @@ $("#q").addEventListener("input", renderList);
 const dlg = $("#addDialog"), form = $("#addForm");
 function syncForm() {
   $("#ombFields").hidden = form.engineKind.value !== "openmausbot";
-  $("#tokenHelp").textContent = form.platform.value === "zalo" ? "Zalo: đăng nhập bot.zaloplatforms.com → tạo bot → copy token." : "Telegram: nhắn @BotFather → /newbot → copy token.";
+  $("#tokenHelp").textContent = form.platform.value === "discord" ? "Discord: discord.com/developers → New Application → Bot → Reset Token → copy; bật Message Content Intent." : form.platform.value === "zalo" ? "Zalo: đăng nhập bot.zaloplatforms.com → tạo bot → copy token." : "Telegram: nhắn @BotFather → /newbot → copy token.";
 }
 function openAdd() { form.reset(); $("#addError").textContent = ""; syncForm(); dlg.showModal(); form.token.focus(); }
 form.addEventListener("change", syncForm);
@@ -479,7 +481,7 @@ form.addEventListener("submit", async (ev) => {
   ev.preventDefault();
   const err = $("#addError"); err.textContent = "";
   if (!form.token.value.trim()) { err.textContent = "Chưa nhập token của bot."; form.token.focus(); return; }
-  if (form.engineKind.value === "openmausbot" && (!form.endpoint.value.trim() || !form.apiKey.value.trim())) { err.textContent = "Cần địa chỉ và khóa Bot API của OpenMausBot (hoặc chọn Chế độ thử)."; return; }
+  if (form.engineKind.value === "openmausbot" && (!form.endpoint.value.trim() || !form.apiKey.value.trim())) { err.textContent = "Cần địa chỉ và khóa Bot API của Limix Bot (hoặc chọn Chế độ thử)."; return; }
   const btn = form.querySelector("[type=submit]"); btn.disabled = true; btn.lastChild.textContent = "Đang kiểm tra…";
   try {
     const r = await api("/api/connections", Object.fromEntries(new FormData(form)));

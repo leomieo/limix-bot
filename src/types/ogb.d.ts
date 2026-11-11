@@ -430,6 +430,8 @@ const __APP_VERSION__: string;
       };
       /** Native folder picker; resolves null when the user cancels. */
       pickFolder?(current?: string): Promise<string | null>;
+      /** Limix Bot: opens the Telegram / Zalo / Discord connector window. */
+      limixGateway?: { open(): Promise<void> };
       /** Writes the redacted diagnostics report to a user-chosen file;
        * resolves the path, or null when cancelled. */
       exportDiagnostics?(): Promise<string | null>;

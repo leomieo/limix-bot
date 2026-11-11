@@ -2496,6 +2496,7 @@
   "sidebar.menu.support": "Trợ giúp và hỗ trợ",
   "sidebar.menu.help": "Trung tâm trợ giúp",
   "sidebar.menu.feedback": "Gửi phản hồi",
+  "sidebar.menu.connect": "Kết nối Telegram, Zalo, Discord",
   "sidebar.menu.usageUsed": "Đã dùng {percent}%",
   "sidebar.menu.weeklyUsage": "Mức dùng trong tuần",
   "sidebar.menu.resets": "Đặt lại {when}",

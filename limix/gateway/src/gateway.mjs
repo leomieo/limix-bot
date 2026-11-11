@@ -2,6 +2,7 @@
 // Security invariant: a connection never takes over a bot that another consumer (webhook or poller) holds.
 import { EchoEngine, OpenMausBotEngine } from "./engines/openmausbot.mjs";
 import { TelegramChannel } from "./channels/telegram.mjs";
+import { DiscordChannel } from "./channels/discord.mjs";
 import { ZaloChannel } from "./channels/zalo.mjs";
 import { Router, TEXT } from "./router.mjs";
 
@@ -13,6 +14,7 @@ const sleep = (ms, signal) => new Promise((resolve) => {
 export const PLATFORMS = {
   telegram: (opts) => new TelegramChannel(opts),
   zalo: (opts) => new ZaloChannel(opts),
+  discord: (opts) => new DiscordChannel(opts),
 };
 
 export function defaultMakeChannel(conn, token, overrides = {}) {
@@ -83,6 +85,7 @@ export class Gateway {
   async loop(conn, signal) {
     const channel = this.makeChannel(conn, this.secrets.get(conn.tokenRef));
     const engine = this.makeEngine(conn, this.secrets);
+    signal.addEventListener("abort", () => channel.close?.(), { once: true });
     this.setStatus(conn.id, "starting", "");
 
     const conflict = await channel.checkConflict();
