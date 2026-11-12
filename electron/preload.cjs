@@ -412,6 +412,7 @@ const bridge = {
   },
   pickFolder: (current) => ipcRenderer.invoke("desktop:pick-folder", current),
   limixGateway: { open: () => ipcRenderer.invoke("limix-gateway:open") },
+  limixPhone: { state: () => ipcRenderer.invoke("limix-phone:state"), set: (on) => ipcRenderer.invoke("limix-phone:set", on === true) },
   exportDiagnostics: () => ipcRenderer.invoke("desktop:export-diagnostics"),
   saveFile: (filePath) => invokeWithPlainError("desktop:save-file", filePath),
   revealInFolder: (filePath) => ipcRenderer.invoke("desktop:reveal-file", filePath),
