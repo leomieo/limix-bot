@@ -190,7 +190,9 @@ export class Router {
     channel.typing(event.chatId);
     const typing = setInterval(() => channel.typing(event.chatId), TYPING_EVERY_MS);
     try {
-      const answer = await engine.send({ message: text, thread: this.store.getThread(sessionKey) });
+      // Only the linked owner, in a private chat, gets the owner lane (any AI); everyone else stays confined.
+      const owner = roleOf(conn, event.senderId) === "owner" && event.chatType === "private";
+      const answer = await engine.send({ message: text, thread: this.store.getThread(sessionKey), owner });
       if (answer.thread) this.store.setThread(sessionKey, answer.thread);
       if (typeof answer.reply === "string") {
         await this.reply(channel, event.chatId, answer.reply.trim() || TEXT.emptyReply);

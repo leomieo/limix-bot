@@ -1121,6 +1121,8 @@ async function startServerOn(port, dataDir = runningDataDir ?? startupEnvironmen
     // The parent owns the data-dir lease; a child only validates it, so fallback-port children never replace it.
     ...desktopDataDirLease.utilityServerLeaseEnvironment(),
     ...limixRuntimeEnv({ resourcesPath: process.resourcesPath, userData: app.getPath("userData") }),
+    LIMIX_OWNER_LANE_TOKEN: limixOwnerLaneToken,
+    ...limixRuntimeEnv({ resourcesPath: process.resourcesPath, userData: app.getPath("userData") }),
     ...((lan) => { limixLanActive = Boolean(lan.OMB_LAN); return lan; })(limixPhoneBrowserEnv(app.getPath("userData"))),
     OMB_DATA_DIR: dataDir,
     // Fail-closed until this process sends the private connection; never a descriptor inherited from the shell.
@@ -2832,6 +2834,7 @@ setCuaStateListener((connection) => {
 });
 
 let limixGateway = null;
+const limixOwnerLaneToken = randomBytes(32).toString("base64url");
 let limixLanActive = false;
 app.whenReady().then(async () => {
   // Limix Bot: a damaged install (no UI files, e.g. after an interrupted update) explains itself instead of showing
@@ -2870,7 +2873,7 @@ app.whenReady().then(async () => {
   }
   // Limix Bot: no app until this computer is signed in to a Limix account (closing the sign-in window quits).
   if (!(await limixAccountGate({ app, BrowserWindow, ipcMain, safeStorage, shell, dialog, iconPath: APP_ICON, log: slog, baseUrl: LIMIX_ACCOUNT_URL }))) { app.quit(); return; }
-  limixGateway = createLimixGateway({ app, BrowserWindow, shell, resourcesPath: process.resourcesPath, userData: app.getPath("userData"), iconPath: APP_ICON, log: slog });
+  limixGateway = createLimixGateway({ app, BrowserWindow, shell, resourcesPath: process.resourcesPath, userData: app.getPath("userData"), iconPath: APP_ICON, log: slog, ownerLaneToken: limixOwnerLaneToken });
   limixGateway.start();
   hiddenStart = loginItem.startedHidden() || reopenedOutOfSight();
   startupScreen = hiddenStart ? null : createStartupScreen({

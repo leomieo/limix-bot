@@ -1138,6 +1138,43 @@ def pb_section(s):
                 head + "  if (!LIMIX_PHONE_APPS_ENABLED) return <LimixPhoneBrowser />;\n  const c = usePhoneSetupController(profileEmail);\n")
 edit("src/components/PhoneDevicesSection.tsx", pb_section)
 
+# 10k. The owner's own chat from Telegram / Zalo / Discord runs with any AI (server/limix-owner-lane.ts): the desktop
+# app makes a per-launch secret for the server and the connector; a Bot API call carrying it is not confined.
+def ol_host(s):
+    if "limix-owner-lane" in s:
+        return s
+    s = must(s, 'import { bearerSecret, header, json, readRawBody, type IngressDoor } from "./webhook-ingress.ts";\n',
+             'import { bearerSecret, header, json, readRawBody, type IngressDoor } from "./webhook-ingress.ts";\n'
+             'import { isLimixOwnerThread, LIMIX_OWNER_HEADER, limixOwnerCall, markLimixOwnerThread } from "./limix-owner-lane.ts";\n')
+    s = must(s, "  async function runCall(botId: string, call: z.output<typeof callSchema>, turnStarted: () => void): Promise<{ status: number; body: BotApiReply }> {\n",
+             "  async function runCall(botId: string, call: z.output<typeof callSchema>, turnStarted: () => void, owner = false): Promise<{ status: number; body: BotApiReply }> {\n")
+    s = must(s, "      if (!task || task.botApi !== true) fail(404, \"no such thread\");\n      if (deps.threadBusy(botId, threadId))",
+             "      if (!task || task.botApi !== true || isLimixOwnerThread(threadId) !== owner) fail(404, \"no such thread\");\n      if (deps.threadBusy(botId, threadId))")
+    s = must(s, "      store.patchTask(botId, threadId, { botApi: true, outside: true });\n",
+             "      store.patchTask(botId, threadId, { botApi: true, outside: true });\n      if (owner) markLimixOwnerThread(threadId);\n")
+    s = must(s, "      if (!deps.canConfine(botId)) {\n", "      const limixOwner = limixOwnerCall(req.headers[LIMIX_OWNER_HEADER]);\n      if (!limixOwner && !deps.canConfine(botId)) {\n")
+    s = must(s, "        if (!task || task.botApi !== true) { json(res, 404, { error: \"no such thread\" }); return true; }\n",
+             "        if (!task || task.botApi !== true || isLimixOwnerThread(threadId) !== limixOwner) { json(res, 404, { error: \"no such thread\" }); return true; }\n")
+    return must(s, "        const answer = await runCall(botId, call, release);\n", "        const answer = await runCall(botId, call, release, limixOwner);\n")
+edit("server/bot-api-host.ts", ol_host)
+
+def ol_index(s):
+    if "isLimixOwnerThread" in s:
+        return s
+    s = must(s, "function botApiThread(id: string): boolean { const owner = store.botByThread(id); return Boolean(owner && store.taskByThread(owner.id, id)?.botApi); }",
+             "function botApiThread(id: string): boolean { const owner = store.botByThread(id); return Boolean(owner && store.taskByThread(owner.id, id)?.botApi) && !isLimixOwnerThread(id); }")
+    return must(s, 'import { captureRecentLog } from "./recent-log.ts";',
+                'import { captureRecentLog } from "./recent-log.ts"; import { isLimixOwnerThread } from "./limix-owner-lane.ts";')
+edit("server/index.ts", ol_index)
+
+def ol_main(s):
+    if "LIMIX_OWNER_LANE_TOKEN" in s:
+        return s
+    s = must(s, "let limixGateway = null;\n", "let limixGateway = null;\nconst limixOwnerLaneToken = randomBytes(32).toString(\"base64url\");\n")
+    s = must(s, '    ...limixRuntimeEnv({ resourcesPath: process.resourcesPath, userData: app.getPath("userData") }),\n', '    LIMIX_OWNER_LANE_TOKEN: limixOwnerLaneToken,\n    ...limixRuntimeEnv({ resourcesPath: process.resourcesPath, userData: app.getPath("userData") }),\n')
+    return must(s, "iconPath: APP_ICON, log: slog });\n  limixGateway.start();", "iconPath: APP_ICON, log: slog, ownerLaneToken: limixOwnerLaneToken });\n  limixGateway.start();")
+edit("electron/main.mjs", ol_main)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):

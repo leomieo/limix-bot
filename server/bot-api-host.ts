@@ -14,6 +14,7 @@ import { PASS, type RouteHandler } from "./routes/table.ts";
 import { parseJson, schemaIssue } from "./schema.ts";
 import type { Message, Store } from "./store.ts";
 import { bearerSecret, header, json, readRawBody, type IngressDoor } from "./webhook-ingress.ts";
+import { isLimixOwnerThread, LIMIX_OWNER_HEADER, limixOwnerCall, markLimixOwnerThread } from "./limix-owner-lane.ts";
 
 /** How long a call waits by default before answering "working" with its thread id. Under the 60 s that Fly's proxy is reported
  * (community.fly.io, staff replies, 2022-2024) to allow a connection with no bytes: a dropped answer would lose the thread id. */
@@ -137,13 +138,13 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     return { reply: replyText(after), thread: threadId };
   }
 
-  async function runCall(botId: string, call: z.output<typeof callSchema>, turnStarted: () => void): Promise<{ status: number; body: BotApiReply }> {
+  async function runCall(botId: string, call: z.output<typeof callSchema>, turnStarted: () => void, owner = false): Promise<{ status: number; body: BotApiReply }> {
     const store = deps.store;
     let threadId = call.thread;
     if (threadId !== undefined) {
       const task = store.taskByThread(botId, threadId);
       // Only a thread this API opened: the caller never writes into the person's own conversations.
-      if (!task || task.botApi !== true) fail(404, "no such thread");
+      if (!task || task.botApi !== true || isLimixOwnerThread(threadId) !== owner) fail(404, "no such thread");
       if (deps.threadBusy(botId, threadId)) return { status: 409, body: { thread: threadId, status: "working" } };
     }
     if (!deps.canStart(botId, threadId ?? "")) fail(409, BUSY, "The bot already had as many conversations going as it may");
@@ -156,6 +157,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       threadId = task.threadId;
       opened = true;
       store.patchTask(botId, threadId, { botApi: true, outside: true });
+      if (owner) markLimixOwnerThread(threadId);
     }
     const receivedAt = Date.now();
     const userMessage = store.appendMessage(threadId, { role: "user", kind: "text", text: message, via: "api" });
@@ -219,7 +221,8 @@ export function createBotApiHost(deps: BotApiHostDeps) {
         json(res, 403, { error: BOT_API_UPGRADE });
         return true;
       }
-      if (!deps.canConfine(botId)) {
+      const limixOwner = limixOwnerCall(req.headers[LIMIX_OWNER_HEADER]);
+      if (!limixOwner && !deps.canConfine(botId)) {
         manager.recordRefused(botId, 403, CANNOT_CONFINE);
         json(res, 403, { error: CANNOT_CONFINE });
         return true;
@@ -227,7 +230,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       if (req.method === "GET") {
         const threadId = url.searchParams.get("thread") ?? "";
         const task = /^[\w-]{1,128}$/.test(threadId) ? deps.store.taskByThread(botId, threadId) : undefined;
-        if (!task || task.botApi !== true) { json(res, 404, { error: "no such thread" }); return true; }
+        if (!task || task.botApi !== true || isLimixOwnerThread(threadId) !== limixOwner) { json(res, 404, { error: "no such thread" }); return true; }
         const state = threadState(botId, threadId);
         json(res, "reply" in state ? 200 : 202, state);
         return true;
@@ -258,7 +261,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
         return true;
       }
       try {
-        const answer = await runCall(botId, call, release);
+        const answer = await runCall(botId, call, release, limixOwner);
         manager.record(botId, { outcome: "accepted", statusCode: answer.status, threadId: answer.body.thread, preview: call.message,
           reason: "reply" in answer.body ? "Replied" : answer.body.status === "needs_approval" ? "Stopped at an approval" : "Still working" });
         json(res, answer.status, answer.body);
