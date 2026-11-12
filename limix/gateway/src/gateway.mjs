@@ -82,6 +82,23 @@ export class Gateway {
     }
   }
 
+  async recheckEngine(id, engine, signal, { everyMs = 5_000, forMs = 5 * 60_000 } = {}) {
+    const until = Date.now() + forMs;
+    while (!signal.aborted && Date.now() < until) {
+      await new Promise((resolve) => setTimeout(resolve, everyMs));
+      if (signal.aborted) return;
+      const health = await engine.check();
+      if (health.ok) {
+        if (this.store.getConnection(id)?.status === "running") this.setStatus(id, "running", "");
+        return;
+      }
+      if (health.code !== "engine_unreachable") {
+        this.setStatus(id, "running", `Cảnh báo AI: ${health.message}`);
+        return;
+      }
+    }
+  }
+
   async loop(conn, signal) {
     const channel = this.makeChannel(conn, this.secrets.get(conn.tokenRef));
     const engine = this.makeEngine(conn, this.secrets);
@@ -95,6 +112,8 @@ export class Gateway {
     }
     const health = await engine.check();
     this.setStatus(conn.id, "running", health.ok ? "" : `Cảnh báo AI: ${health.message}`);
+    // The connector starts before the app's own server is listening: an unreachable AI is checked again until it answers.
+    if (!health.ok && health.code === "engine_unreachable") void this.recheckEngine(conn.id, engine, signal);
 
     for (const row of this.interrupted.filter((r) => r.connectionId === conn.id)) {
       await channel.sendText(row.chatId, TEXT.interrupted).catch(() => {});

@@ -100,6 +100,9 @@ export function createLimixGateway({ app, BrowserWindow, shell, resourcesPath, u
     window.setMenu(null);
     window.webContents.setWindowOpenHandler(({ url }) => { if (/^https:\/\//.test(url)) void shell.openExternal(url); return { action: "deny" }; });
     window.webContents.on("will-navigate", (event, url) => { if (!url.startsWith(URL_)) event.preventDefault(); });
+    window.webContents.on("render-process-gone", (_event, details) => {
+      if (details?.reason !== "clean-exit") setTimeout(() => { if (window && !window.isDestroyed()) window.webContents.reload(); }, 1000);
+    });
     window.on("closed", () => { window = null; });
     void window.loadURL(URL_);
   }
