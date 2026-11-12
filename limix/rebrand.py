@@ -1539,6 +1539,30 @@ def settings_resize(s):
                 '          <span id="app-settings-title" className="sr-only">{t("settings.title")}</span>\n          <LimixResizeHandles />\n          <nav aria-label')
 edit("src/components/SettingsModal.tsx", settings_resize)
 
+# 10z7. The "new chat" menu opens leftwards from the + button; in a narrow sidebar (Windows 10 at 100-125 %) it still ran
+# past the sidebar's clipped left edge. On open it narrows itself to the space left of the button.
+def plus_menu_clamp(s):
+    if "limixClampMenu" in s:
+        return s
+    s = must(s, '        <div role="menu" aria-label={remoteClient ? t("sidebar.new") : t("sidebar.newOrShare")} onKeyDown={navigateThreadMenu} className={cn(\n',
+                '        <div ref={rail ? undefined : limixClampMenu} role="menu" aria-label={remoteClient ? t("sidebar.new") : t("sidebar.newOrShare")} onKeyDown={navigateThreadMenu} className={cn(\n')
+    s = s.replace("\nexport function Sidebar(", "\n/** Limix: keep a right-aligned menu inside the nearest clipping box (and the window). */\n"
+        "function limixClampMenu(el: HTMLDivElement | null): void {\n"
+        "  if (!el) return;\n"
+        "  let left = 0;\n"
+        "  for (let node = el.parentElement; node; node = node.parentElement) {\n"
+        "    const style = getComputedStyle(node);\n"
+        "    if (style.overflowX !== \"visible\" || style.overflow !== \"visible\") { left = Math.max(0, node.getBoundingClientRect().left); break; }\n"
+        "  }\n"
+        "  const right = el.getBoundingClientRect().right;\n"
+        "  const room = right - left - 8;\n"
+        "  if (room > 0 && el.offsetWidth > room) { el.style.minWidth = \"0\"; el.style.maxWidth = `${Math.floor(room)}px`; }\n"
+        "}\n\nexport function Sidebar(", 1)
+    if "function limixClampMenu" not in s:
+        raise SystemExit("rebrand: Sidebar export not found")
+    return s
+edit("src/components/Sidebar.tsx", plus_menu_clamp)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):

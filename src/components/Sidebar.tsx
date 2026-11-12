@@ -920,6 +920,19 @@ export const BotListItem = memo(function BotListItem(props: BotRowProps) {
   );
 });
 
+/** Limix: keep a right-aligned menu inside the nearest clipping box (and the window). */
+function limixClampMenu(el: HTMLDivElement | null): void {
+  if (!el) return;
+  let left = 0;
+  for (let node = el.parentElement; node; node = node.parentElement) {
+    const style = getComputedStyle(node);
+    if (style.overflowX !== "visible" || style.overflow !== "visible") { left = Math.max(0, node.getBoundingClientRect().left); break; }
+  }
+  const right = el.getBoundingClientRect().right;
+  const room = right - left - 8;
+  if (room > 0 && el.offsetWidth > room) { el.style.minWidth = "0"; el.style.maxWidth = `${Math.floor(room)}px`; }
+}
+
 export function Sidebar({ open, onClose, collapseToIcons = false }: {
   open: boolean;
   onClose: () => void;
@@ -1161,7 +1174,7 @@ export function Sidebar({ open, onClose, collapseToIcons = false }: {
     </button>
     {plusMotion.shown && (
       <>
-        <div role="menu" aria-label={remoteClient ? t("sidebar.new") : t("sidebar.newOrShare")} onKeyDown={navigateThreadMenu} className={cn(
+        <div ref={rail ? undefined : limixClampMenu} role="menu" aria-label={remoteClient ? t("sidebar.new") : t("sidebar.newOrShare")} onKeyDown={navigateThreadMenu} className={cn(
           "absolute z-40 w-max min-w-[200px] max-w-[min(18rem,calc(100vw-2rem))] overflow-hidden", MENU_SHEET,
           rail ? "left-full top-0 ml-4" : cn("top-full", advanced ? "mt-1" : "mt-1.5", density === "icons" ? "left-0" : "right-0"),
           plusMotion.className,
