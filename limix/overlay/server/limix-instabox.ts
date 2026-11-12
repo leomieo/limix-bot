@@ -14,7 +14,7 @@ const STREAM_TTL_SECONDS = 3600;
 const IDLE_SUSPEND_SECONDS = 3600;
 const BG_DIR = "/tmp/limix-bg";
 
-export const isInstaboxKey = (token: string | undefined | null): boolean => typeof token === "string" && token.startsWith("ibk_");
+export const isInstaboxKey = (token: string | undefined | null): boolean => typeof token === "string" && token.trim().startsWith("ibk_");
 
 /** Boat's sandbox states, from an Instabox machine state. */
 export function boatStateFromInstabox(state: unknown): string {
@@ -154,7 +154,8 @@ async function readDetached(token: string, machineId: string, processId: string,
 }
 
 /** Boat's request (path relative to its API, with its method, headers and JSON body) answered by Instabox. */
-export async function instaboxFetch(token: string, path: string, opts: RequestInit = {}): Promise<Response> {
+export async function instaboxFetch(rawToken: string, path: string, opts: RequestInit = {}): Promise<Response> {
+  const token = rawToken.trim();
   const method = (opts.method ?? "GET").toUpperCase();
   const signal = opts.signal;
   const url = new URL(path, "http://boat.invalid");
@@ -299,7 +300,8 @@ export async function instaboxFetch(token: string, path: string, opts: RequestIn
 }
 
 /** Instabox checks a key with GET /v1/me. */
-export async function verifyInstaboxKey(token: string): Promise<{ ok: true } | { ok: false; message: string; rejected?: true }> {
+export async function verifyInstaboxKey(rawToken: string): Promise<{ ok: true } | { ok: false; message: string; rejected?: true }> {
+  const token = rawToken.trim();
   try {
     const res = await fetch(`${INSTABOX_API}/v1/me`, { headers: { "X-API-Key": token }, signal: AbortSignal.timeout(20_000) });
     if (res.ok) return { ok: true };

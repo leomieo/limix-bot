@@ -394,12 +394,18 @@ export function KeyRow({
             {verdict && <p role="status" className="whitespace-pre-line text-ink-secondary">{verdict}</p>}
             {(fieldShown && target.href) || (!fieldShown && saved.configured && target.test) ? (
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                {fieldShown && target.href && (
+                {fieldShown && target.href && !target.serviceLinks && (
                   <a href={target.href} target="_blank" rel="noopener noreferrer" onClick={() => { if (via === "settings") target.settingsEvent?.("get_key"); }} className="inline-flex items-center gap-1 font-medium text-accent-text hover:underline">
                     {t("keys.row.getKey")}
                     <ExternalLink size={11} aria-hidden="true" />
                   </a>
                 )}
+                {fieldShown && target.serviceLinks?.map((link) => (
+                  <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-medium text-accent-text hover:underline">
+                    {t("hostedMcp.getKey", { service: link.service })}
+                    <ExternalLink size={11} aria-hidden="true" />
+                  </a>
+                ))}
                 {!fieldShown && saved.configured && target.test && (
                   <button type="button" data-key-check className="cursor-pointer text-ink-secondary hover:text-ink hover:underline disabled:opacity-50" disabled={busy !== null} onClick={() => void recheck()}>
                     {t("common.checkAgain")}

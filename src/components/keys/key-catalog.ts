@@ -34,6 +34,8 @@ export interface KeyTarget {
   placeholder: string;
   placeholderKey?: LocaleKey;
   href?: string;
+  /** Limix Bot: one key page per service a row takes (Boat and Instabox), each named. */
+  serviceLinks?: ReadonlyArray<{ service: string; href: string }>;
   test?: TestableProvider;
   verifiedOnSave?: boolean;
   analytics: KeyProvider;
@@ -160,7 +162,8 @@ export const KEY_CATALOG: readonly KeyEntry[] = [
     words: ["boat", "instabox", "box", "cloud desktop", "cloud computer", "computer", "sandbox"], mark: { icon: Monitor }, kind: "key",
     target: { patch: (value) => ({ box: { token: value } }), slot: "boxToken", verifiedOnSave: true,
       saved: (config) => ({ ...flag(config.box?.included ? undefined : config.box), ...(config.box?.included ? { included: true } : {}) }),
-      placeholder: "boat_… / ibk_…", href: "https://docs.boat.dev/api-keys", analytics: "boat", shape: /^(boat|box|ibk)_/, warningKey: "keys.boat.warning" } },
+      placeholder: "boat_… / ibk_…", href: "https://docs.boat.dev/api-keys", analytics: "boat", shape: /^(boat|box|ibk)_/, warningKey: "keys.boat.warning",
+      serviceLinks: [{ service: "Boat", href: "https://docs.boat.dev/api-keys" }, { service: "Instabox", href: "https://dashboard.instabox.sh/dashboard/api-keys" }] } },
   { id: "vps", section: "computers", labelKey: "keys.vps.label", purposeKey: "keys.purpose.vps", name: "VPS", env: [],
     words: ["vps", "ssh", "server", "self-hosted", "computer", "docker"], mark: { icon: Server }, kind: "panel",
     status: (config) => ({ configured: config.vps?.configured === true }) },

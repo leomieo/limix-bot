@@ -917,7 +917,7 @@ export async function verifyToken(token: string): Promise<{ ok: true } | { ok: f
         ok: false, rejected: true,
         message: /^(boat|box)_/.test(token)
           ? "boat.dev rejected that key — it may have been revoked or expired. Copy a fresh one from your boat.dev account."
-          : "That doesn't look like a Boat API key: they start with boat_ (older ones with box_). Copy the API key from your boat.dev account (an account or session token won't work here).",
+          : "That isn't a Boat or Instabox API key: Boat keys start with boat_ (older ones with box_), Instabox keys with ibk_. Copy the whole key, first letters included.",
       };
     }
     return { ok: false, message: `boat.dev returned ${res.status} for that token — try again in a moment.` };
