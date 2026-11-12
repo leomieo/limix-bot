@@ -150,3 +150,4 @@
 - 2026-11-12 0.3.16: menu chat mới không bị cắt chữ (Windows 10), thẻ Hub có hướng dẫn cài đặt đầy đủ cho kỹ năng kèm tool + nút "Cài kèm tool" (rebrand 10x).
 - 2026-11-12 0.3.17: Antigravity chậm do giải nén 0.3-1.3 GB mỗi lần mở; giữ động cơ rảnh 45 phút thay vì 10 (OMB_ACP_SESSION_IDLE_MS trong limix-runtime.mjs). Lần mở đầu tiên vẫn chậm.
 - 2026-11-12 0.3.18: chủ dự án tự làm bot dịch/chấm riêng, đẩy kết quả lên kho Hub; app người dùng chỉ xem và tải skill (bỏ tab Việt hóa và dòng 'chưa có bản dịch'). Mô tả tiếng Việt hiện khi kho có description_vi.
+- 2026-11-12 0.3.19: Antigravity làn nhanh: AI Antigravity đầu tiên dùng Antigravity CLI có sẵn (%LOCALAPPDATA%\agy\bin\agy.exe hoặc PATH, lệnh `agy acp`, đăng nhập theo agy), các AI khác dùng runtime như cũ. Tắt bằng LIMIX_AGY_CLI=0. Chủ làn lưu ở DATA_DIR/limix-agy-cli.json, đăng xuất AI đó thì nhả làn (rebrand 10y).

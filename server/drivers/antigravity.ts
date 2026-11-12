@@ -27,6 +27,7 @@ import {
 import { resolveAntigravityReleaseAsset } from "./antigravity-release.ts";
 import { VERIFICATION_TEMP_KEY, scheduleAntigravityTempSweep } from "./antigravity-temp.ts";
 import { augmentedPath } from "../env-path.ts";
+import { agyCliFor, releaseAgyCli } from "../limix-agy-cli.ts";
 import { bundledEngineCatalog } from "../model-manifest/bundled.ts";
 import { currentEngineCatalog } from "../model-manifest/manifest.ts";
 
@@ -79,6 +80,8 @@ const support: AcpSupport = {
   sanitizeToolPayload: true,
 
   resolveCommand: async (env, config, instanceId) => {
+    const agyCli = agyCliFor(instanceId, env);
+    if (agyCli) return { command: agyCli, args: ["acp"] };
     const runtime = await resolveAntigravityRuntime(config.cli, env);
     const profile = await prepareAntigravityProfile({ instanceId, runtime, baseEnv: env });
     if (profile.tempDirectory) scheduleAntigravityTempSweep(instanceId);
@@ -90,6 +93,7 @@ const support: AcpSupport = {
   },
 
   resolveModels: async (env, config, instanceId) => {
+    if (agyCliFor(instanceId, env)) return currentEngineCatalog("antigravity");
     const runtime = await resolveAntigravityRuntime(config.cli, env);
     const profile = await prepareAntigravityProfile({ instanceId, runtime, baseEnv: env });
     if (!(await antigravityProfileAuthenticated(profile))) throw new Error(support.loginNote);
@@ -106,6 +110,7 @@ const support: AcpSupport = {
   authFailure: "fail",
   requireAuthenticationBeforeSpawn: true,
   isAuthenticated: async (env, config, instanceId) => {
+    if (agyCliFor(instanceId, env)) return true;
     try {
       const runtime = await resolveAntigravityRuntime(config.cli, env);
       const profile = await prepareAntigravityProfile({ instanceId, runtime, baseEnv: env });
@@ -115,6 +120,7 @@ const support: AcpSupport = {
     }
   },
   snapshot: async (env, config, instanceId): Promise<ProviderSnapshot> => {
+    if (agyCliFor(instanceId, env)) return { state: "available", version: "Antigravity CLI", authenticated: true };
     try {
       const runtime = await resolveAntigravityRuntime(config.cli, env);
       const profile = await prepareAntigravityProfile({ instanceId, runtime, baseEnv: env });
@@ -204,6 +210,7 @@ export const AntigravityDriver: ProviderDriver<AcpConfig> = {
       signOut: async () => {
         auth.cancel();
         await removeAntigravitySignIn(input.instanceId);
+        releaseAgyCli(input.instanceId);
       },
       dispose: async () => {
         auth.cancel();
