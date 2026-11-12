@@ -38,6 +38,19 @@ jobs:
           npx wrangler deploy
       - name: point limixmedia.com and www at the site
         run: |
+          api=https://api.cloudflare.com/client/v4
+          auth=(-H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json")
+          zone=$(curl -sS "${auth[@]}" "$api/zones?name=limixmedia.com" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).result?.[0]?.id??""))')
+          test -n "$zone" || { echo "::error::Zone limixmedia.com not found for this token"; exit 1; }
+          for host in limixmedia.com www.limixmedia.com; do
+            # The old record (a Cloudflare Tunnel) is printed before removal so it can be recreated by hand.
+            curl -sS "${auth[@]}" "$api/zones/$zone/dns_records?name=$host" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{for(const r of JSON.parse(s).result??[]) if(["A","AAAA","CNAME"].includes(r.type)) console.log(r.id+" "+r.type+" "+r.content+" proxied="+r.proxied)})' > /tmp/old.txt
+            while read -r id type content proxied; do
+              [ -n "$id" ] || continue
+              echo "removing $host $type $content $proxied"
+              curl -sS -X DELETE "${auth[@]}" "$api/zones/$zone/dns_records/$id" | head -c 200; echo
+            done < /tmp/old.txt
+          done
           for host in limixmedia.com www.limixmedia.com; do
             body=$(printf '{"hostname":"%s","service":"limix-site","environment":"production","zone_name":"limixmedia.com","override_existing_dns_record":true,"override_existing_origin":true}' "$host")
             out=$(curl -sS -X PUT "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/domains" \
