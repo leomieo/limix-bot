@@ -2,6 +2,7 @@ import { app, autoUpdater as nativeAutoUpdater, BrowserWindow, Tray, WebContents
 import { LIMIX_ACCOUNT_URL, LIMIX_CLOUD_ENABLED, LIMIX_ORGANIZATION_ENABLED } from "./limix-features.mjs";
 import { limixAccountGate, limixAccountInfo, limixRemoteCredential, limixSignOut } from "./limix-account.mjs";
 import { limixRuntimeEnv } from "./limix-runtime.mjs";
+import { lxm, setLimixLanguageSource } from "./limix-lang.mjs";
 import { createLimixGateway } from "./limix-gateway.mjs";
 import { createLimixTools } from "./limix-tools.mjs";
 import { limixPhoneBrowserEnv, limixPhoneBrowserOn, setLimixPhoneBrowser } from "./limix-phone-browser.mjs";
@@ -372,7 +373,7 @@ let desktopCompanionRelay = null;
 
 const CREDENTIALS_FILE = path.join(app.getPath("userData"), "credentials.bin");
 
-const nativeText = createDesktopText(app), nativeT = nativeText.t; const createCloudAccountClient = options => cloudAccountClient({ ...options, t: nativeT });
+const nativeText = createDesktopText(app), nativeT = nativeText.t; setLimixLanguageSource(() => nativeText.prefs?.language() || app.getLocale()); const createCloudAccountClient = options => cloudAccountClient({ ...options, t: nativeT });
 /** True when the store could not be read, which is not the same as nothing saved. */
 let credentialStoreUnavailable = false;
 
@@ -3207,16 +3208,16 @@ function releaseDesktopDataDirLease() {
 }
 
 // before-quit is too early (this app defers it); will-quit is Electron's last boundary, and the process hook covers app.exit().
-ipcMain.handle("limix-gateway:open", localOnly("limix-gateway:open", () => limixGateway ? limixGateway.open() : Promise.reject(new Error("Chương trình kết nối chưa sẵn sàng."))));
+ipcMain.handle("limix-gateway:open", localOnly("limix-gateway:open", () => limixGateway ? limixGateway.open() : Promise.reject(new Error(lxm("Chương trình kết nối chưa sẵn sàng.", "The connector program is not ready yet.")))));
 app.on("will-quit", () => limixGateway?.stop());
 ipcMain.handle("limix-account:info", localOnly("limix-account:info", () => limixAccountInfo()));
 ipcMain.handle("limix-account:sign-out", localOnly("limix-account:sign-out", async (event) => {
   const info = limixAccountInfo();
   if (!info) return false;
   const owner = BrowserWindow.fromWebContents(event.sender) ?? undefined;
-  const { response } = await dialog.showMessageBox(owner, { type: "question", title: "Limix Bot", buttons: ["Đăng xuất", "Hủy"], defaultId: 1, cancelId: 1,
-    message: `Đăng xuất khỏi tài khoản ${info.username || "Limix"}?`,
-    detail: "Máy này sẽ được gỡ khỏi tài khoản và ứng dụng khởi động lại ở màn hình đăng nhập. Bot, cuộc trò chuyện và dữ liệu trên máy vẫn được giữ nguyên." });
+  const { response } = await dialog.showMessageBox(owner, { type: "question", title: "Limix Bot", buttons: [lxm("Đăng xuất", "Sign out"), lxm("Hủy", "Cancel")], defaultId: 1, cancelId: 1,
+    message: lxm(`Đăng xuất khỏi tài khoản ${info.username || "Limix"}?`, `Sign out of the account ${info.username || "Limix"}?`),
+    detail: lxm("Máy này sẽ được gỡ khỏi tài khoản và ứng dụng khởi động lại ở màn hình đăng nhập. Bot, cuộc trò chuyện và dữ liệu trên máy vẫn được giữ nguyên.", "This computer will be removed from the account and the app restarts at the sign-in window. Bots, conversations and data on this computer are kept.") });
   if (response !== 0) return false;
   await limixSignOut();
   app.relaunch(); app.quit();

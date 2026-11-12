@@ -22,17 +22,19 @@ export interface FirstReplyRescue {
   over?: true;
 }
 
+const limixVi = (): boolean => /^vi/i.test((typeof process !== "undefined" ? process.env?.OMB_UI_LANGUAGE : "") ?? "");
+
 /** The waiting row's words, for clients that print the tool name. */
 export function firstReplyWaitingName(botName: string, ai: string): string {
-  return `notice: ${botName} vẫn chưa nhận được phản hồi từ ${ai}.`;
+  return limixVi() ? `notice: ${botName} vẫn chưa nhận được phản hồi từ ${ai}.` : `notice: ${botName} hasn't heard back from ${ai} yet.`;
 }
 
 /** The same row once its turn ended without an answer: history, true as it stands. */
 export function firstReplyOverName(botName: string, ai: string): string {
-  return `notice: ${botName} không nhận được phản hồi từ ${ai}.`;
+  return limixVi() ? `notice: ${botName} không nhận được phản hồi từ ${ai}.` : `notice: ${botName} didn't hear back from ${ai}.`;
 }
 
 /** The same row once the AI's first output arrived. */
 export function firstReplySettledName(ai: string): string {
-  return `notice: ${ai} đã trả lời, sau một lúc chậm.`;
+  return limixVi() ? `notice: ${ai} đã trả lời, sau một lúc chậm.` : `notice: ${ai} answered after a slow start.`;
 }

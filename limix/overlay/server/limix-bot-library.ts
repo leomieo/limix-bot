@@ -4,6 +4,7 @@
 // template only describes who the bot is: its routines always arrive paused and nothing is connected for the person.
 import { MASCOT_BODY_IDS } from "../shared/mascot-bodies.ts";
 import { MAUS_COLOR_NAMES } from "../shared/wire.ts";
+import { lxs } from "./limix-lang.ts";
 
 const TEAM_LIBRARY_RAW_ROOT = "https://raw.githubusercontent.com/leomieo/limix-bot-teams/main";
 
@@ -78,9 +79,9 @@ function apps(value: unknown, field: string): string[] {
 }
 
 export function parseBotListing(value: unknown): LibraryBotListing[] {
-  if (!isRecord(value) || value.format !== "openmaus.catalog" || value.version !== 1) throw new Error("Danh sách mẫu không đúng định dạng");
+  if (!isRecord(value) || value.format !== "openmaus.catalog" || value.version !== 1) throw new Error(lxs("Danh sách mẫu không đúng định dạng", "The template list has the wrong format"));
   if (value.bots === undefined) return [];
-  if (!Array.isArray(value.bots) || value.bots.length > 200) throw new Error("Danh sách bot mẫu không hợp lệ");
+  if (!Array.isArray(value.bots) || value.bots.length > 200) throw new Error(lxs("Danh sách bot mẫu không hợp lệ", "The template bot list is not valid"));
   const seen = new Set<string>();
   const out: LibraryBotListing[] = [];
   value.bots.forEach((raw, index) => {
@@ -104,9 +105,9 @@ export function parseBotListing(value: unknown): LibraryBotListing[] {
 }
 
 export function parseLibraryBot(value: unknown, expectedId: string): LibraryBot {
-  if (!isRecord(value) || value.format !== "limix.bot" || value.version !== 1) throw new Error("Tệp bot mẫu không đúng định dạng");
+  if (!isRecord(value) || value.format !== "limix.bot" || value.version !== 1) throw new Error(lxs("Tệp bot mẫu không đúng định dạng", "The template bot file has the wrong format"));
   const id = text(value.id, "id", 64);
-  if (id !== expectedId) throw new Error("Tệp bot mẫu không khớp với danh sách");
+  if (id !== expectedId) throw new Error(lxs("Tệp bot mẫu không khớp với danh sách", "The template bot file does not match the list"));
   if (!Array.isArray(value.tryAsking) || value.tryAsking.length === 0 || value.tryAsking.length > 6) throw new Error("tryAsking is invalid");
   const bot: LibraryBot = {
     id, category: category(value.category, "category"), name: text(value.name, "name", 40), title: text(value.title, "title", 80),
@@ -148,13 +149,13 @@ export function parseLibraryBot(value: unknown, expectedId: string): LibraryBot 
 
 async function fetchJson(url: string, maxBytes: number): Promise<unknown> {
   const response = await fetch(url, { headers: { accept: "application/json, text/plain;q=0.9" }, redirect: "error", signal: AbortSignal.timeout(10_000) });
-  if (!response.ok) throw new Error(`GitHub trả lỗi HTTP ${response.status}`);
+  if (!response.ok) throw new Error(lxs(`GitHub trả lỗi HTTP ${response.status}`, `GitHub returned HTTP ${response.status}`));
   const raw = await response.text();
-  if (Buffer.byteLength(raw) > maxBytes) throw new Error("Tệp mẫu quá lớn");
+  if (Buffer.byteLength(raw) > maxBytes) throw new Error(lxs("Tệp mẫu quá lớn", "The template file is too large"));
   try {
     return JSON.parse(raw);
   } catch {
-    throw new Error("GitHub không trả về JSON hợp lệ");
+    throw new Error(lxs("GitHub không trả về JSON hợp lệ", "GitHub did not return valid JSON"));
   }
 }
 
@@ -182,7 +183,7 @@ export async function handleLimixBotLibrary(method: string, path: string): Promi
     const match = path.match(/^\/api\/limix\/bots\/([a-z0-9][a-z0-9-]{0,63})$/);
     if (!match) return null;
     const id = match[1]!;
-    if (!(await listing()).some((bot) => bot.id === id)) return { status: 404, body: { error: "Không có bot mẫu này" } };
+    if (!(await listing()).some((bot) => bot.id === id)) return { status: 404, body: { error: lxs("Không có bot mẫu này", "No such template bot") } };
     return { status: 200, body: { bot: parseLibraryBot(await fetchJson(`${TEAM_LIBRARY_RAW_ROOT}/bots/${id}.json?t=${Date.now()}`, MAX_BOT_BYTES), id) } };
   } catch (error) {
     return { status: 502, body: { error: error instanceof Error ? error.message : String(error) } };

@@ -18,6 +18,7 @@ async function addTemplateSkills(botId: string, names: string[] | undefined): Pr
 import { api, useStore, type Bot } from "@/state/store";
 import type { MascotBodyId } from "../../shared/mascot-bodies";
 import type { MausColor } from "../../shared/wire";
+import { lx } from "@/lib/limix-text";
 
 /** Templates > Khám phá > Bot dựng sẵn, read from github.com/leomieo/limix-bot-teams: the page loads only the light list,
  * and a bot's full template is fetched when the person presses "Dùng mẫu". Offline, the bots built into the app show. */
@@ -105,9 +106,10 @@ export function LimixBotGallery({ search, onDialog, onAdded, onRefresh }: {
       remembered = bots.length ? next : null;
       setCards(next);
       setOffline(false);
-      setRefreshed(`Đã cập nhật: ${bots.length} bot mẫu`);
+      setRefreshed(lx(`Đã cập nhật: ${bots.length} bot mẫu`, `Updated: ${bots.length} template bots`));
     } catch (cause) {
-      setError(`Chưa cập nhật được kho mẫu: ${cause instanceof Error ? cause.message : String(cause)}`);
+      const why = cause instanceof Error ? cause.message : String(cause);
+      setError(lx(`Chưa cập nhật được kho mẫu: ${why}`, `Couldn't update the template library: ${why}`));
     } finally {
       setRefreshing(false);
     }
@@ -140,10 +142,10 @@ export function LimixBotGallery({ search, onDialog, onAdded, onRefresh }: {
     <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
       <h3 id="ready-bots-title" className="text-[12px] font-medium text-ink-secondary">{t("readyBots.title")}</h3>
       <div className="flex flex-wrap items-center gap-3">
-        <p className="text-[12px] text-ink-tertiary" role="status" aria-live="polite">{refreshed || (offline ? "Đang dùng bản có sẵn trong ứng dụng (chưa tải được kho mẫu)." : t("readyBots.subtitle"))}</p>
-        <button type="button" onClick={() => void refresh()} disabled={refreshing} title="Tải lại danh sách bot mẫu và nhóm mẫu mới nhất từ kho"
+        <p className="text-[12px] text-ink-tertiary" role="status" aria-live="polite">{refreshed || (offline ? lx("Đang dùng bản có sẵn trong ứng dụng (chưa tải được kho mẫu).", "Showing the bots built into the app (the template library could not be loaded).") : t("readyBots.subtitle"))}</p>
+        <button type="button" onClick={() => void refresh()} disabled={refreshing} title={lx("Tải lại danh sách bot mẫu và nhóm mẫu mới nhất từ kho", "Reload the newest template bots and teams from the library")}
           className="flex h-8 items-center gap-1.5 rounded-full bg-raised px-3 text-[12px] font-medium text-ink hover:bg-raised-hover disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-accent">
-          <RefreshCw size={13} aria-hidden="true" className={refreshing ? "animate-spin" : undefined} />{refreshing ? "Đang cập nhật" : "Cập nhật"}
+          <RefreshCw size={13} aria-hidden="true" className={refreshing ? "animate-spin" : undefined} />{refreshing ? lx("Đang cập nhật", "Updating") : lx("Cập nhật", "Update")}
         </button>
       </div>
     </div>
@@ -164,9 +166,9 @@ export function LimixBotGallery({ search, onDialog, onAdded, onRefresh }: {
             <h4 className="truncate text-[14px] font-medium text-ink">{card.name}</h4>
             <p className="truncate text-[12px] text-ink-secondary">{card.title} · {t(CATEGORY_KEYS[card.category])}</p>
           </div>
-          <button type="button" onClick={() => void use(card)} disabled={busy !== null} aria-label={`Dùng mẫu ${card.name}, ${card.title}`}
+          <button type="button" onClick={() => void use(card)} disabled={busy !== null} aria-label={lx(`Dùng mẫu ${card.name}, ${card.title}`, `Use template ${card.name}, ${card.title}`)}
             className="flex h-8 shrink-0 items-center gap-1 rounded-full bg-raised px-3 text-[13px] font-medium text-ink hover:bg-raised-hover disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-accent">
-            {busy === card.id ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Plus size={14} aria-hidden="true" />}Dùng mẫu
+            {busy === card.id ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Plus size={14} aria-hidden="true" />}{lx("Dùng mẫu", "Use template")}
           </button>
         </div>
         <p className="mt-3 text-[13px] leading-[1.45] text-ink-secondary">{card.description}</p>

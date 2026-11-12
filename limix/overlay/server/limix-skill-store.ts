@@ -21,6 +21,7 @@ import {
   listLibrarySkills, loadBundledSkills, mergeSkills, readSkillLibraryIndex, selectBundledSkills, setLibrarySkillEveryBot,
   setLibrarySkillOptOut, setLibrarySkillReviewState, unassignLibrarySkill, type BundledSkill,
 } from "./skill-library.ts";
+import { lxs } from "./limix-lang.ts";
 
 /** Always on for every bot. "Learning new skills" itself is the skill-authoring feature, on for every bot already. */
 export const LIMIX_CORE_SKILLS: ReadonlySet<string> = new Set([
@@ -75,7 +76,7 @@ export interface BundledListing {
 export function limixBundledListings(botId: string): BundledListing[] {
   return limixBundledFor(botId, loadBundledSkills()).map(({ manifest }) => ({
     name: manifest.id, description: manifest.description, enabled: true, editable: false,
-    source: LIMIX_CORE_SKILLS.has(manifest.id) ? "Kĩ năng gốc của Limix Bot" : "Kho Kĩ Năng (Skills) · có sẵn",
+    source: LIMIX_CORE_SKILLS.has(manifest.id) ? lxs("Kĩ năng gốc của Limix Bot", "Limix Bot core skill") : lxs("Kho Kĩ Năng (Skills) · có sẵn", "Skills Store · built in"),
     sha256: "", importedAt: "", warnings: [], skippedFiles: [], origin: "bundled", core: LIMIX_CORE_SKILLS.has(manifest.id),
   }));
 }
@@ -85,7 +86,7 @@ export function limixBundledSwitch(botId: string, name: string, enabled: boolean
   if (!loadBundledSkills().some(({ manifest }) => manifest.id === name)) return null;
   if (LIMIX_CORE_SKILLS.has(name)) {
     return enabled ? { status: 200, body: { skill: limixBundledListings(botId).find((skill) => skill.name === name) } }
-      : { status: 409, body: { error: "Kĩ năng gốc của Limix Bot luôn bật cho mọi bot." } };
+      : { status: 409, body: { error: lxs("Kĩ năng gốc của Limix Bot luôn bật cho mọi bot.", "Limix Bot core skills are always on for every bot.") } };
   }
   setBundledPick(botId, name, enabled);
   return { status: 200, body: { skill: { ...limixBundledListings(botId).find((skill) => skill.name === name), name, enabled } } };
@@ -103,19 +104,19 @@ function storeItems(bots: StoreBots, botId: string): StoreItem[] {
   const items = new Map<string, StoreItem>();
   for (const { manifest } of loadBundledSkills()) {
     const core = LIMIX_CORE_SKILLS.has(manifest.id);
-    items.set(manifest.id, { name: manifest.id, description: manifest.description, kind: "bundled", added: core || picks.has(manifest.id), core, ready: true, warnings: 0, source: "Có sẵn trong Limix Bot" });
+    items.set(manifest.id, { name: manifest.id, description: manifest.description, kind: "bundled", added: core || picks.has(manifest.id), core, ready: true, warnings: 0, source: lxs("Có sẵn trong Limix Bot", "Built into Limix Bot") });
   }
   for (const skill of listLibrarySkills()) {
     if (items.has(skill.name)) continue;
     const intact = !skill.warnings.some((warning) => warning.includes("enablement is blocked"));
     items.set(skill.name, {
       name: skill.name, description: skill.description, kind: "library", added: assigned.has(skill.name) && skill.enabled, core: false,
-      ready: intact, warnings: skill.warnings.length, source: skill.source.startsWith("limix-hub:") ? "Thư viện kĩ năng Limix" : "Đã cài trong Cài đặt",
+      ready: intact, warnings: skill.warnings.length, source: skill.source.startsWith("limix-hub:") ? lxs("Thư viện kĩ năng Limix", "Limix skill library") : lxs("Đã cài trong Cài đặt", "Installed in Settings"),
     });
   }
   for (const skill of importedSkillListings(botId, new Set())) {
     if (items.has(skill.name)) continue;
-    items.set(skill.name, { name: skill.name, description: skill.description, kind: "imported", added: skill.enabled, core: false, ready: true, warnings: skill.warnings.length, source: skill.source || "Từ máy tính này" });
+    items.set(skill.name, { name: skill.name, description: skill.description, kind: "imported", added: skill.enabled, core: false, ready: true, warnings: skill.warnings.length, source: skill.source || lxs("Từ máy tính này", "From this computer") });
   }
   return [...items.values()].sort((a, b) => Number(b.core) - Number(a.core) || a.name.localeCompare(b.name));
 }
@@ -123,12 +124,12 @@ function storeItems(bots: StoreBots, botId: string): StoreItem[] {
 /** Add one skill to one bot, or take it away. `kind` may be left out: the store finds the name. */
 export function limixStoreSet(bots: StoreBots, botId: string, name: string, add: boolean, kind?: Kind): { ok: true } | { error: string } {
   const bot = bots.bot(botId);
-  if (!bot) return { error: "Không tìm thấy bot." };
-  if (!isSkillName(name)) return { error: "Tên kĩ năng không hợp lệ." };
+  if (!bot) return { error: lxs("Không tìm thấy bot.", "Bot not found.") };
+  if (!isSkillName(name)) return { error: lxs("Tên kĩ năng không hợp lệ.", "Invalid skill name.") };
   const item = storeItems(bots, botId).find((entry) => entry.name === name && (!kind || entry.kind === kind));
-  if (!item) return { error: `Kho chưa có kĩ năng "${name}".` };
+  if (!item) return { error: lxs(`Kho chưa có kĩ năng "${name}".`, `The store has no skill "${name}".`) };
   if (item.kind === "bundled") {
-    if (item.core) return add ? { ok: true } : { error: "Kĩ năng gốc của Limix Bot luôn bật cho mọi bot." };
+    if (item.core) return add ? { ok: true } : { error: lxs("Kĩ năng gốc của Limix Bot luôn bật cho mọi bot.", "Limix Bot core skills are always on for every bot.") };
     setBundledPick(botId, name, add);
     return { ok: true };
   }
@@ -158,12 +159,12 @@ export function handleLimixSkillStore(bots: StoreBots, method: string, path: str
   const m = path.match(/^\/api\/limix\/skill-store\/([\w-]+)$/);
   if (!m) return null;
   const botId = m[1]!;
-  if (!bots.bot(botId)) return { status: 404, body: { error: "Không tìm thấy bot." } };
+  if (!bots.bot(botId)) return { status: 404, body: { error: lxs("Không tìm thấy bot.", "Bot not found.") } };
   if (method === "GET") return { status: 200, body: { skills: storeItems(bots, botId) } };
   if (method === "POST") {
     const raw = (body && typeof body === "object" ? body : {}) as { name?: unknown; add?: unknown; kind?: unknown };
     const kind = raw.kind === "bundled" || raw.kind === "library" || raw.kind === "imported" ? raw.kind : undefined;
-    if (typeof raw.name !== "string" || typeof raw.add !== "boolean") return { status: 400, body: { error: "Cần tên kĩ năng và add." } };
+    if (typeof raw.name !== "string" || typeof raw.add !== "boolean") return { status: 400, body: { error: lxs("Cần tên kĩ năng và add.", "A skill name and add are required.") } };
     const result = limixStoreSet(bots, botId, raw.name, raw.add, kind);
     return "error" in result ? { status: 422, body: result } : { status: 200, body: { skills: storeItems(bots, botId) } };
   }

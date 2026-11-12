@@ -8,6 +8,7 @@ import path from "node:path";
 import { execFile } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { createAccountClient } from "./limix-account-client.mjs";
+import { lxm } from "./limix-lang.mjs";
 
 const HEARTBEAT_MS = 10 * 60_000;
 const SITE = "https://tiktok.limixmedia.com";
@@ -51,9 +52,10 @@ async function machineIdentity(userData) {
 const esc = value => String(value).replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;");
 
 export function loginPageHtml({ iconPath, notice = "", username = "" }) {
+  const J = (vi, en) => JSON.stringify(lxm(vi, en)).replaceAll("<", "\\u003c");
   let icon = "";
   try { icon = fs.readFileSync(iconPath).toString("base64"); } catch {}
-  return `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'"><title>Đăng nhập Limix Bot</title><style>
+  return `<!doctype html><html lang="${lxm("vi", "en")}"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'"><title>${lxm("Đăng nhập Limix Bot", "Sign in to Limix Bot")}</title><style>
 *{box-sizing:border-box}html,body{margin:0;height:100%;background:#0a0a0a;color:#fafafa;font:14px/1.5 "Segoe UI",system-ui,sans-serif}
 main{min-height:100%;display:flex;flex-direction:column;justify-content:center;padding:28px 34px}
 .head{display:flex;align-items:center;gap:12px;margin-bottom:18px}.head img{width:44px;height:44px}
@@ -71,38 +73,38 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible{outline:2px soli
 .row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-top:1px solid #27272a}
 .muted{color:#a1a1aa;font-size:12px}[hidden]{display:none!important}.list{max-height:250px;overflow:auto;margin-top:8px}
 </style></head><body><main>
-<div class="head">${icon ? `<img src="data:image/png;base64,${icon}" alt="">` : ""}<div><h1>Limix Bot</h1><p>Đăng nhập bằng tài khoản Limix (dùng chung với Limix Studio)</p></div></div>
+<div class="head">${icon ? `<img src="data:image/png;base64,${icon}" alt="">` : ""}<div><h1>Limix Bot</h1><p>${lxm("Đăng nhập bằng tài khoản Limix (dùng chung với Limix Studio)", "Sign in with your Limix account (shared with Limix Studio)")}</p></div></div>
 <section id="form">
 ${notice ? `<div class="note" role="status">${esc(notice)}</div>` : ""}
-<label for="u">Email hoặc tên đăng nhập</label><input id="u" autocomplete="username" value="${esc(username)}">
-<label for="p">Mật khẩu</label><input id="p" type="password" autocomplete="current-password">
-<button class="primary" id="go">Đăng nhập</button>
+<label for="u">${lxm("Email hoặc tên đăng nhập", "Email or username")}</label><input id="u" autocomplete="username" value="${esc(username)}">
+<label for="p">${lxm("Mật khẩu", "Password")}</label><input id="p" type="password" autocomplete="current-password">
+<button class="primary" id="go">${lxm("Đăng nhập", "Sign in")}</button>
 <div class="err" id="err" role="alert"></div>
-<button class="secondary" id="reg">Chưa có tài khoản? Đăng ký</button>
-<div class="links"><span></span><a id="forgot">Quên mật khẩu?</a></div>
+<button class="secondary" id="reg">${lxm("Chưa có tài khoản? Đăng ký", "No account yet? Sign up")}</button>
+<div class="links"><span></span><a id="forgot">${lxm("Quên mật khẩu?", "Forgot password?")}</a></div>
 </section>
 <section id="full" hidden>
 <p id="fullText"></p><div class="list" id="list"></div><div class="err" id="err2" role="alert"></div>
-<button id="back" style="margin-top:12px">Quay lại</button>
+<button id="back" style="margin-top:12px">${lxm("Quay lại", "Back")}</button>
 </section>
 </main><script>
 const $ = s => document.querySelector(s), api = window.limixAccount;
-const MSG = { wrong_credentials: "Sai email/tên đăng nhập hoặc mật khẩu.", not_activated: "Tài khoản chưa kích hoạt. Hãy nhập mã OTP trong email đăng ký.",
-  account_locked: "Tài khoản đang bị khóa. Liên hệ Limix AI.", too_many_attempts: "Thử sai quá nhiều lần. Đợi 10 phút rồi thử lại.",
-  offline: "Không kết nối được máy chủ Limix. Kiểm tra Internet rồi thử lại.", server_error: "Máy chủ đang lỗi, thử lại sau.", bad_request: "Thiếu thông tin." };
-const say = r => MSG[r.error] || r.detail || ("Có lỗi: " + r.error);
+const MSG = { wrong_credentials: ${J("Sai email/tên đăng nhập hoặc mật khẩu.", "Wrong email/username or password.")}, not_activated: ${J("Tài khoản chưa kích hoạt. Hãy nhập mã OTP trong email đăng ký.", "The account is not activated yet. Enter the OTP code from your sign-up email.")},
+  account_locked: ${J("Tài khoản đang bị khóa. Liên hệ Limix AI.", "The account is locked. Contact Limix AI.")}, too_many_attempts: ${J("Thử sai quá nhiều lần. Đợi 10 phút rồi thử lại.", "Too many wrong attempts. Wait 10 minutes and try again.")},
+  offline: ${J("Không kết nối được máy chủ Limix. Kiểm tra Internet rồi thử lại.", "Can't reach the Limix server. Check your Internet and try again.")}, server_error: ${J("Máy chủ đang lỗi, thử lại sau.", "The server has an error, try again later.")}, bad_request: ${J("Thiếu thông tin.", "Some information is missing.")} };
+const say = r => MSG[r.error] || r.detail || (${J("Có lỗi: ", "Error: ")} + r.error);
 const when = s => s ? String(s).replace("T", " ").slice(0, 16) : "—";
 let creds = null;
 function showFull(r) {
   $("#form").hidden = true; $("#full").hidden = false;
-  $("#fullText").textContent = "Tài khoản đã đăng nhập trên " + r.machines.length + "/" + r.max + " máy. Gỡ một máy không còn dùng để đăng nhập máy này:";
+  $("#fullText").textContent = ${J("Tài khoản đã đăng nhập trên ", "This account is signed in on ")} + r.machines.length + "/" + r.max + ${J(" máy. Gỡ một máy không còn dùng để đăng nhập máy này:", " computers. Remove one you no longer use to sign in on this one:")};
   const list = $("#list"); list.replaceChildren();
   for (const m of r.machines) {
     const row = document.createElement("div"); row.className = "row";
     const info = document.createElement("div"), name = document.createElement("div"), seen = document.createElement("div");
-    name.textContent = m.name; seen.className = "muted"; seen.textContent = "Dùng lần cuối " + when(m.last_seen);
+    name.textContent = m.name; seen.className = "muted"; seen.textContent = ${J("Dùng lần cuối ", "Last used ")} + when(m.last_seen);
     info.append(name, seen);
-    const b = document.createElement("button"); b.className = "danger"; b.textContent = "Gỡ máy này";
+    const b = document.createElement("button"); b.className = "danger"; b.textContent = ${J("Gỡ máy này", "Remove this computer")};
     b.onclick = async () => {
       b.disabled = true; $("#err2").textContent = "";
       const out = await api.removeMachine(creds.u, creds.p, m.id);
@@ -116,7 +118,7 @@ function showFull(r) {
 }
 $("#go").onclick = async () => {
   const u = $("#u").value.trim(), p = $("#p").value;
-  if (!u || !p) { $("#err").textContent = "Nhập email/tên đăng nhập và mật khẩu."; return; }
+  if (!u || !p) { $("#err").textContent = ${J("Nhập email/tên đăng nhập và mật khẩu.", "Enter your email/username and password.")}; return; }
   $("#go").disabled = true; $("#err").textContent = ""; creds = { u, p };
   const out = await api.login(u, p);
   $("#go").disabled = false;
@@ -181,9 +183,9 @@ export async function limixAccountGate({ app, BrowserWindow, ipcMain, safeStorag
   const first = await client.check();
   log(`limix account: ${first.status}${first.offline ? " (offline grace)" : ""}${first.reason ? ` (${first.reason})` : ""}`);
   if (first.status !== "ok") {
-    const notice = first.reason === "account_locked" ? "Tài khoản đang bị khóa. Liên hệ Limix AI."
-      : first.reason === "signed_out" ? "Máy này đã bị đăng xuất khỏi tài khoản. Hãy đăng nhập lại."
-      : first.reason === "offline" ? "Không kết nối được máy chủ Limix để kiểm tra đăng nhập. Kiểm tra Internet rồi đăng nhập lại." : "";
+    const notice = first.reason === "account_locked" ? lxm("Tài khoản đang bị khóa. Liên hệ Limix AI.", "The account is locked. Contact Limix AI.")
+      : first.reason === "signed_out" ? lxm("Máy này đã bị đăng xuất khỏi tài khoản. Hãy đăng nhập lại.", "This computer was signed out of the account. Please sign in again.")
+      : first.reason === "offline" ? lxm("Không kết nối được máy chủ Limix để kiểm tra đăng nhập. Kiểm tra Internet rồi đăng nhập lại.", "Can't reach the Limix server to check your sign-in. Check your Internet and sign in again.") : "";
     const signedIn = await showLoginWindow({ BrowserWindow, ipcMain, shell, iconPath, client, notice, username: store.read().username ?? "" });
     if (!signedIn) return false;
   }
@@ -197,11 +199,11 @@ export async function limixAccountGate({ app, BrowserWindow, ipcMain, safeStorag
     clearInterval(beat);
     log(`limix account: signed out while running (${now.reason})`);
     if (now.reason === "offline") {
-      await dialog.showMessageBox({ type: "warning", title: "Limix Bot", message: "Đã quá lâu không kết nối được máy chủ Limix.", detail: "Ứng dụng sẽ khởi động lại để đăng nhập." });
+      await dialog.showMessageBox({ type: "warning", title: "Limix Bot", message: lxm("Đã quá lâu không kết nối được máy chủ Limix.", "Couldn't reach the Limix server for too long."), detail: lxm("Ứng dụng sẽ khởi động lại để đăng nhập.", "The app will restart so you can sign in.") });
     } else {
       await dialog.showMessageBox({ type: "warning", title: "Limix Bot",
-        message: now.reason === "account_locked" ? "Tài khoản Limix của bạn đang bị khóa." : "Máy này đã bị đăng xuất khỏi tài khoản Limix.",
-        detail: "Ứng dụng sẽ khởi động lại để đăng nhập." });
+        message: now.reason === "account_locked" ? lxm("Tài khoản Limix của bạn đang bị khóa.", "Your Limix account is locked.") : lxm("Máy này đã bị đăng xuất khỏi tài khoản Limix.", "This computer was signed out of your Limix account."),
+        detail: lxm("Ứng dụng sẽ khởi động lại để đăng nhập.", "The app will restart so you can sign in.") });
     }
     app.relaunch(); app.quit();
   }, HEARTBEAT_MS);
@@ -214,7 +216,7 @@ function showLoginWindow({ BrowserWindow, ipcMain, shell, iconPath, client, noti
     let done = false;
     const win = new BrowserWindow({
       width: 460, height: 600, resizable: false, maximizable: false, fullscreenable: false, show: false,
-      backgroundColor: "#0a0a0a", icon: iconPath, title: "Đăng nhập Limix Bot", autoHideMenuBar: true,
+      backgroundColor: "#0a0a0a", icon: iconPath, title: lxm("Đăng nhập Limix Bot", "Sign in to Limix Bot"), autoHideMenuBar: true,
       webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false,
         preload: fileURLToPath(new URL("./limix-account-preload.cjs", import.meta.url)) },
     });

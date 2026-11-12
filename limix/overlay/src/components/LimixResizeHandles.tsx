@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { lx } from "@/lib/limix-text";
 
 /** Settings window: drag an edge or corner to resize it (it stays centred, so each edge moves twice as far as the
  * pointer). Never smaller than 640 x 460 and never larger than the app window; double-click an edge to reset. The size is
@@ -74,7 +75,7 @@ export function LimixResizeHandles() {
         <span
           key={`${edge.sx}${edge.sy}`}
           aria-hidden="true"
-          title="Kéo để đổi kích thước (bấm đúp để đặt lại)"
+          title={lx("Kéo để đổi kích thước (bấm đúp để đặt lại)", "Drag to resize (double-click to reset)")}
           className={`absolute z-20 hidden touch-none md:block ${edge.cls} ${edge.cursor}`}
           onPointerDown={start(edge)}
           onDoubleClick={() => { const el = anchor.current?.parentElement; if (el) reset(el); }}

@@ -9,6 +9,7 @@ import path from "node:path";
 import { execFile, spawn } from "node:child_process";
 
 import { limixRuntimeEnv } from "./limix-runtime.mjs";
+import { lxm } from "./limix-lang.mjs";
 
 const REA_MCP_PACKAGE = "rea-agents@6.8.0";
 const REA_VIDEO_COMMIT = "3669923645e3953632e7406a57fb883e0ba8a6e0";
@@ -35,15 +36,15 @@ export function limixToolPathDirs(userData) {
 
 /** The list the window shows. `recommended` ones are asked about once on a new computer. */
 const CATALOG = [
-  { id: "docker", name: "Docker Desktop", why: "Chạy máy tính ảo riêng cho từng bot. Cài qua winget: Windows sẽ hỏi quyền quản trị; bấm Cài là đồng ý điều khoản của Docker. Cài xong khởi động lại máy, mở Docker Desktop một lần.", size: "~600 MB", recommended: true },
-  { id: "node", name: "Node.js", why: "Chạy các máy chủ MCP (như rea) và công cụ viết bằng JavaScript.", size: "~30 MB", recommended: true },
-  { id: "ffmpeg", name: "ffmpeg", why: "Xử lý video và âm thanh. Kỹ năng rea-video cần.", size: "~80 MB", recommended: true },
-  { id: "agent-reach", name: "Agent-Reach", why: "Đọc X/Twitter, Reddit, YouTube, GitHub… cho kỹ năng Agent-Reach.", size: "~40 MB", recommended: true },
-  { id: "rea-video", name: "rea-video", why: "Mổ xẻ cách làm một video. Cần ffmpeg.", size: "~400 MB", recommended: true, needs: ["ffmpeg"] },
-  { id: "jdk", name: "Java (JDK 21)", why: "JADX và Ghidra cần Java.", size: "~190 MB" },
-  { id: "jadx", name: "JADX", why: "Dịch ngược ứng dụng Android (APK) cho rea.", size: "~30 MB", needs: ["jdk"] },
-  { id: "ghidra", name: "Ghidra", why: "Dịch ngược file .exe/.dll cho rea. Chỉ dùng với phần mềm bạn có quyền.", size: "~450 MB", needs: ["jdk"] },
-  { id: "rea", name: "rea (MCP)", why: "Máy chủ MCP dịch ngược phần mềm. Được thêm vào danh sách MCP ở trạng thái tắt.", size: "tải khi bật", needs: ["node"] },
+  { id: "docker", name: "Docker Desktop", get why() { return lxm("Chạy máy tính ảo riêng cho từng bot. Cài qua winget: Windows sẽ hỏi quyền quản trị; bấm Cài là đồng ý điều khoản của Docker. Cài xong khởi động lại máy, mở Docker Desktop một lần.", "Runs a private virtual computer for each bot. Installed through winget: Windows will ask for administrator permission, and pressing Install accepts Docker\'s terms. Restart the computer afterwards and open Docker Desktop once."); }, size: "~600 MB", recommended: true },
+  { id: "node", name: "Node.js", get why() { return lxm("Chạy các máy chủ MCP (như rea) và công cụ viết bằng JavaScript.", "Runs MCP servers (like rea) and tools written in JavaScript."); }, size: "~30 MB", recommended: true },
+  { id: "ffmpeg", name: "ffmpeg", get why() { return lxm("Xử lý video và âm thanh. Kỹ năng rea-video cần.", "Processes video and audio. The rea-video skill needs it."); }, size: "~80 MB", recommended: true },
+  { id: "agent-reach", name: "Agent-Reach", get why() { return lxm("Đọc X/Twitter, Reddit, YouTube, GitHub… cho kỹ năng Agent-Reach.", "Reads X/Twitter, Reddit, YouTube, GitHub… for the Agent-Reach skill."); }, size: "~40 MB", recommended: true },
+  { id: "rea-video", name: "rea-video", get why() { return lxm("Mổ xẻ cách làm một video. Cần ffmpeg.", "Breaks down how a video was made. Needs ffmpeg."); }, size: "~400 MB", recommended: true, needs: ["ffmpeg"] },
+  { id: "jdk", name: "Java (JDK 21)", get why() { return lxm("JADX và Ghidra cần Java.", "JADX and Ghidra need Java."); }, size: "~190 MB" },
+  { id: "jadx", name: "JADX", get why() { return lxm("Dịch ngược ứng dụng Android (APK) cho rea.", "Decompiles Android apps (APK) for rea."); }, size: "~30 MB", needs: ["jdk"] },
+  { id: "ghidra", name: "Ghidra", get why() { return lxm("Dịch ngược file .exe/.dll cho rea. Chỉ dùng với phần mềm bạn có quyền.", "Decompiles .exe/.dll files for rea. Only use it on software you have the right to analyze."); }, size: "~450 MB", needs: ["jdk"] },
+  { id: "rea", name: "rea (MCP)", get why() { return lxm("Máy chủ MCP dịch ngược phần mềm. Được thêm vào danh sách MCP ở trạng thái tắt.", "MCP server for reverse-engineering software. It is added to the MCP list switched off."); }, get size() { return lxm("tải khi bật", "downloaded when switched on"); }, needs: ["node"] },
 ];
 
 export function createLimixTools({ userData, resourcesPath, serverRequest, log = () => {}, fetchImpl = globalThis.fetch }) {
@@ -150,12 +151,12 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
 
   async function getJson(url) {
     const res = await fetchImpl(url, { headers: UA });
-    if (!res.ok) throw new Error(`Không tải được ${new URL(url).host} (lỗi ${res.status}).`);
+    if (!res.ok) throw new Error(lxm(`Không tải được ${new URL(url).host} (lỗi ${res.status}).`, `Couldn't download from ${new URL(url).host} (error ${res.status}).`));
     return res.json();
   }
   async function getText(url) {
     const res = await fetchImpl(url, { headers: { "user-agent": UA["user-agent"] } });
-    if (!res.ok) throw new Error(`Không tải được ${new URL(url).host} (lỗi ${res.status}).`);
+    if (!res.ok) throw new Error(lxm(`Không tải được ${new URL(url).host} (lỗi ${res.status}).`, `Couldn't download from ${new URL(url).host} (error ${res.status}).`));
     return res.text();
   }
 
@@ -163,7 +164,7 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
     await fsp.mkdir(p.tools, { recursive: true });
     const file = path.join(p.tools, `.download-${id}`);
     const res = await fetchImpl(url, { headers: { "user-agent": UA["user-agent"] }, redirect: "follow" });
-    if (!res.ok || !res.body) throw new Error(`Không tải được file (lỗi ${res.status}).`);
+    if (!res.ok || !res.body) throw new Error(lxm(`Không tải được file (lỗi ${res.status}).`, `Couldn't download the file (error ${res.status}).`));
     const total = Number(res.headers.get("content-length")) || 0;
     const hash = crypto.createHash("sha256");
     const out = fs.createWriteStream(file);
@@ -173,7 +174,7 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
         hash.update(chunk);
         got += chunk.length;
         if (!out.write(chunk)) await new Promise((resolve) => out.once("drain", resolve));
-        set(id, { step: "Đang tải", progress: total ? got / total : null });
+        set(id, { step: lxm("Đang tải", "Downloading"), progress: total ? got / total : null });
       }
     } finally {
       await new Promise((resolve) => out.end(resolve));
@@ -181,7 +182,7 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
     const digest = hash.digest("hex");
     if (sha256 && digest.toLowerCase() !== sha256.toLowerCase()) {
       await fsp.rm(file, { force: true });
-      throw new Error("File tải về không khớp mã kiểm tra. Đã hủy để an toàn, hãy thử lại.");
+      throw new Error(lxm("File tải về không khớp mã kiểm tra. Đã hủy để an toàn, hãy thử lại.", "The downloaded file does not match its checksum. Cancelled for safety, please try again."));
     }
     return file;
   }
@@ -194,13 +195,13 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
       child.stdout.on("data", keep);
       child.stderr.on("data", keep);
       child.on("error", reject);
-      child.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`Cài không thành công (mã ${code}). ${tail.trim().split("\n").pop() ?? ""}`))));
+      child.on("close", (code) => (code === 0 ? resolve() : reject(new Error(lxm(`Cài không thành công (mã ${code}). `, `Install failed (code ${code}). `) + (tail.trim().split("\n").pop() ?? "")))));
     });
   }
 
   /** Unzips with the bundled Python, then moves the archive's single top folder (if any) to `target`. */
   async function unpack(id, zip, target) {
-    set(id, { step: "Đang giải nén", progress: null });
+    set(id, { step: lxm("Đang giải nén", "Extracting"), progress: null });
     const tmp = path.join(p.tools, `.unpack-${id}`);
     await fsp.rm(tmp, { recursive: true, force: true });
     await fsp.mkdir(tmp, { recursive: true });
@@ -218,29 +219,29 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
   async function githubAsset(repo, pattern) {
     const release = await getJson(`https://api.github.com/repos/${repo}/releases/latest`);
     const asset = (release.assets ?? []).find((a) => pattern.test(a.name));
-    if (!asset) throw new Error(`Không tìm thấy bản cài ${repo} cho Windows.`);
+    if (!asset) throw new Error(lxm(`Không tìm thấy bản cài ${repo} cho Windows.`, `No Windows build of ${repo} was found.`));
     return { url: asset.browser_download_url, sha256: sha256Of(asset.digest), name: asset.name };
   }
 
   const installers = {
     async docker() {
-      set("docker", { step: "Đang cài qua winget, Windows sẽ hỏi quyền quản trị", progress: null });
+      set("docker", { step: lxm("Đang cài qua winget, Windows sẽ hỏi quyền quản trị", "Installing through winget, Windows will ask for administrator permission"), progress: null });
       try {
         await run("winget", ["install", "-e", "--id", "Docker.DockerDesktop", "--accept-source-agreements", "--accept-package-agreements", "--silent"]);
       } catch (error) {
-        if (error?.code === "ENOENT") throw new Error("Máy chưa có winget (App Installer). Cài App Installer từ Microsoft Store rồi thử lại, hoặc tải Docker Desktop ở docker.com.");
+        if (error?.code === "ENOENT") throw new Error(lxm("Máy chưa có winget (App Installer). Cài App Installer từ Microsoft Store rồi thử lại, hoặc tải Docker Desktop ở docker.com.", "This computer has no winget (App Installer). Install App Installer from the Microsoft Store and retry, or download Docker Desktop from docker.com."));
         throw error;
       }
-      if (!(await installed("docker"))) throw new Error("Đã cài xong. Khởi động lại máy rồi mở Docker Desktop một lần.");
+      if (!(await installed("docker"))) throw new Error(lxm("Đã cài xong. Khởi động lại máy rồi mở Docker Desktop một lần.", "Installed. Restart the computer, then open Docker Desktop once."));
     },
     async node() {
       const index = await getJson("https://nodejs.org/dist/index.json");
       const pick = index.find((v) => v.lts && (v.files ?? []).includes("win-x64-zip"));
-      if (!pick) throw new Error("Không tìm thấy bản Node.js LTS.");
+      if (!pick) throw new Error(lxm("Không tìm thấy bản Node.js LTS.", "No Node.js LTS build was found."));
       const name = `node-${pick.version}-win-x64.zip`;
       const sums = await getText(`https://nodejs.org/dist/${pick.version}/SHASUMS256.txt`);
       const sha = sums.split("\n").map((l) => l.trim().split(/\s+/)).find((parts) => parts[1] === name)?.[0];
-      if (!sha) throw new Error("Không có mã kiểm tra cho Node.js.");
+      if (!sha) throw new Error(lxm("Không có mã kiểm tra cho Node.js.", "No checksum available for Node.js."));
       await unpack("node", await download("node", `https://nodejs.org/dist/${pick.version}/${name}`, sha), p.node);
     },
     async ffmpeg() {
@@ -248,21 +249,21 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
       const name = "ffmpeg-master-latest-win64-gpl.zip";
       const sums = await getText(`${base}checksums.sha256`);
       const sha = sums.split("\n").map((l) => l.trim().split(/\s+/)).find((parts) => parts[1]?.replace(/^\*/, "") === name)?.[0];
-      if (!sha) throw new Error("Không có mã kiểm tra cho ffmpeg.");
+      if (!sha) throw new Error(lxm("Không có mã kiểm tra cho ffmpeg.", "No checksum available for ffmpeg."));
       await unpack("ffmpeg", await download("ffmpeg", base + name, sha), p.ffmpeg);
     },
     async "agent-reach"() {
-      set("agent-reach", { step: "Đang cài", progress: null });
+      set("agent-reach", { step: lxm("Đang cài", "Installing"), progress: null });
       await run(uv, ["tool", "install", "--force", "https://github.com/Panniantong/Agent-Reach/releases/latest/download/agent-reach.zip"]);
     },
     async "rea-video"() {
-      set("rea-video", { step: "Đang cài (khá lâu)", progress: null });
+      set("rea-video", { step: lxm("Đang cài (khá lâu)", "Installing (this takes a while)"), progress: null });
       await run(uv, ["tool", "install", "--force", `rea-video[ocr] @ https://github.com/JuneYaooo/rea-video/archive/${REA_VIDEO_COMMIT}.zip`]);
     },
     async jdk() {
       const list = await getJson("https://api.adoptium.net/v3/assets/latest/21/hotspot?architecture=x64&image_type=jdk&os=windows&vendor=eclipse");
       const pkg = list?.[0]?.binary?.package;
-      if (!pkg?.link || !pkg?.checksum) throw new Error("Không tìm thấy bản Java 21 cho Windows.");
+      if (!pkg?.link || !pkg?.checksum) throw new Error(lxm("Không tìm thấy bản Java 21 cho Windows.", "No Java 21 build for Windows was found."));
       await unpack("jdk", await download("jdk", pkg.link, pkg.checksum), p.jdk);
     },
     async jadx() {
@@ -274,7 +275,7 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
       await unpack("ghidra", await download("ghidra", a.url, a.sha256), p.ghidra);
     },
     async rea() {
-      set("rea", { step: "Đang thêm vào MCP", progress: null });
+      set("rea", { step: lxm("Đang thêm vào MCP", "Adding to MCP"), progress: null });
       const node = path.join(p.node, exe("node"));
       const npx = path.join(p.node, "node_modules", "npm", "bin", "npx-cli.js");
       const config = { mcpServers: { rea: { command: node, args: [npx, "-y", REA_MCP_PACKAGE, "mcp"] } } };
@@ -286,7 +287,7 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
       const status = typeof res?.status === "number" ? res.status : 200;
       if (status >= 300) {
         const body = typeof res?.json === "function" ? await res.json().catch(() => ({})) : res;
-        throw new Error(body?.error || `Không thêm được rea vào MCP (lỗi ${status}).`);
+        throw new Error(body?.error || lxm(`Không thêm được rea vào MCP (lỗi ${status}).`, `Couldn't add rea to MCP (error ${status}).`));
       }
     },
   };
@@ -297,7 +298,7 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
     seen.add(id);
     for (const need of tool.needs ?? []) if (!(await installed(need))) await installOne(need, seen);
     if (await installed(id)) return;
-    set(id, { status: "working", step: "Chuẩn bị", progress: null, message: null });
+    set(id, { status: "working", step: lxm("Chuẩn bị", "Preparing"), progress: null, message: null });
     try {
       await installers[id]();
       jobs.delete(id);
@@ -313,7 +314,7 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
   /** Starts in the background (one at a time) and returns at once; the window polls state(). */
   function install(ids) {
     const list = (Array.isArray(ids) ? ids : [ids]).filter((id) => CATALOG.some((t) => t.id === id));
-    for (const id of list) set(id, { status: "working", step: "Đang chờ", progress: null, message: null });
+    for (const id of list) set(id, { status: "working", step: lxm("Đang chờ", "Waiting"), progress: null, message: null });
     queue = queue.then(async () => {
       for (const id of list) await installOne(id).catch(() => {});
     });

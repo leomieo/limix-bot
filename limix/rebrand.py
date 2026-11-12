@@ -1047,7 +1047,7 @@ def gw_main(s):
     gate = "  if (!(await limixAccountGate({ app, BrowserWindow, ipcMain, safeStorage, shell, dialog, iconPath: APP_ICON, log: slog, baseUrl: LIMIX_ACCOUNT_URL }))) { app.quit(); return; }\n"
     s = must(s, gate, gate + "  limixGateway = createLimixGateway({ app, BrowserWindow, shell, resourcesPath: process.resourcesPath, userData: app.getPath(\"userData\"), iconPath: APP_ICON, log: slog });\n  limixGateway.start();\n")
     return must(s, 'app.on("will-quit", releaseDesktopDataDirLease);',
-        'ipcMain.handle("limix-gateway:open", localOnly("limix-gateway:open", () => limixGateway ? limixGateway.open() : Promise.reject(new Error("Chương trình kết nối chưa sẵn sàng."))));\n'
+        'ipcMain.handle("limix-gateway:open", localOnly("limix-gateway:open", () => limixGateway ? limixGateway.open() : Promise.reject(new Error(lxm("Chương trình kết nối chưa sẵn sàng.", "The connector program is not ready yet.")))));\n'
         'app.on("will-quit", () => limixGateway?.stop());\n'
         'app.on("will-quit", releaseDesktopDataDirLease);')
 edit("electron/main.mjs", gw_main)
@@ -1660,9 +1660,9 @@ def sign_out_main(s):
                 '  const info = limixAccountInfo();\n'
                 '  if (!info) return false;\n'
                 '  const owner = BrowserWindow.fromWebContents(event.sender) ?? undefined;\n'
-                '  const { response } = await dialog.showMessageBox(owner, { type: "question", title: "Limix Bot", buttons: ["Đăng xuất", "Hủy"], defaultId: 1, cancelId: 1,\n'
-                '    message: `Đăng xuất khỏi tài khoản ${info.username || "Limix"}?`,\n'
-                '    detail: "Máy này sẽ được gỡ khỏi tài khoản và ứng dụng khởi động lại ở màn hình đăng nhập. Bot, cuộc trò chuyện và dữ liệu trên máy vẫn được giữ nguyên." });\n'
+                '  const { response } = await dialog.showMessageBox(owner, { type: "question", title: "Limix Bot", buttons: [lxm("Đăng xuất", "Sign out"), lxm("Hủy", "Cancel")], defaultId: 1, cancelId: 1,\n'
+                '    message: lxm(`Đăng xuất khỏi tài khoản ${info.username || "Limix"}?`, `Sign out of the account ${info.username || "Limix"}?`),\n'
+                '    detail: lxm("Máy này sẽ được gỡ khỏi tài khoản và ứng dụng khởi động lại ở màn hình đăng nhập. Bot, cuộc trò chuyện và dữ liệu trên máy vẫn được giữ nguyên.", "This computer will be removed from the account and the app restarts at the sign-in window. Bots, conversations and data on this computer are kept.") });\n'
                 '  if (response !== 0) return false;\n'
                 '  await limixSignOut();\n'
                 '  app.relaunch(); app.quit();\n'
@@ -1785,6 +1785,43 @@ def skills_vi(s):
             s = must(s, old, new)
     return s
 edit("src/locales/vi.json", skills_vi)
+
+# 11e. Limix Bot's own windows and dialogs (main process) follow the app's language: Vietnamese, else English.
+def limix_language(s):
+    if "limix-lang.mjs" not in s:
+        s = must(s, 'import { limixRuntimeEnv } from "./limix-runtime.mjs";\n',
+                 'import { limixRuntimeEnv } from "./limix-runtime.mjs";\nimport { lxm, setLimixLanguageSource } from "./limix-lang.mjs";\n')
+    if "setLimixLanguageSource(" not in s.split("limix-lang.mjs", 1)[1]:
+        s = must(s, "const nativeText = createDesktopText(app), nativeT = nativeText.t;",
+                 "const nativeText = createDesktopText(app), nativeT = nativeText.t; setLimixLanguageSource(() => nativeText.prefs?.language() || app.getLocale());")
+    return s
+edit("electron/main.mjs", limix_language)
+# 11f. Notice names shown by clients that print tool names: Vietnamese app, Vietnamese words; otherwise upstream English.
+def rescue_language(s):
+    if "limixVi()" in s:
+        return s
+    helper = 'const limixVi = (): boolean => /^vi/i.test((typeof process !== "undefined" ? process.env?.OMB_UI_LANGUAGE : "") ?? "");\n\n'
+    for vi, en in [
+        ("`notice: ${botName} vẫn chưa nhận được phản hồi từ ${ai}.`", "`notice: ${botName} hasn't heard back from ${ai} yet.`"),
+        ("`notice: ${botName} không nhận được phản hồi từ ${ai}.`", "`notice: ${botName} didn't hear back from ${ai}.`"),
+        ("`notice: ${ai} đã trả lời, sau một lúc chậm.`", "`notice: ${ai} answered after a slow start.`"),
+    ]:
+        both = f"limixVi() ? {vi} : {en}"
+        s = s.replace(f"return {vi};", f"return {both};").replace(f"return {en};", f"return {both};")
+    return s.replace("/** The waiting row's words", helper + "/** The waiting row's words", 1)
+edit("shared/first-reply-rescue.ts", rescue_language)
+# 11g. English names for the renamed skills labels (Vietnamese ones are set in 11d).
+def skills_en(s):
+    for old, new in {
+        '"botPanel.skills.bundled": "Limix Bot\'s built-in skills"': '"botPanel.skills.bundled": "Skills Store"',
+        '"skills.library.allAssigned": "Every skill in the library is already assigned to this bot."': '"skills.library.allAssigned": "This bot already has every skill in the store."',
+        '"skills.library.manageHint": "Import and manage library skills in Settings → Skills."': '"skills.library.manageHint": "Download more skills in Settings → Skills."',
+        '"botSettings.simple.skillsHint": "Things {name} has learned to do. Switch one off and {name} stops using it."': '"botSettings.simple.skillsHint": "Skills {name} uses: Limix Bot core skills, skills {name} learned itself and skills you added from the store. Switch one off to stop it."',
+    }.items():
+        if new not in s:
+            s = must(s, old, new)
+    return s
+edit("src/locales/en.json", skills_en)
 
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
