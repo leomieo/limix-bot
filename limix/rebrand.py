@@ -1618,8 +1618,14 @@ edit("server/routes/bot-skills.ts", bot_library_routes)
 
 def bot_library_gallery(s):
     s = must(s, 'import { ReadyBotGallery } from "./ReadyBotGallery";', 'import { LimixBotGallery } from "./LimixBotGallery";')
-    return must(s, "<ReadyBotGallery search={search}", "<LimixBotGallery search={search}")
+    s = must(s, "<ReadyBotGallery search={search} onDialog", "<LimixBotGallery search={search} onRefresh={() => void loadCatalog(true)} onDialog")
+    # "Cập nhật" asks for the team list past GitHub's cache too.
+    s = must(s, "  const loadCatalog = useCallback(async () => {", "  const loadCatalog = useCallback(async (fresh = false) => {")
+    return must(s, 'setCatalog((await api("/api/team-library/catalog")) as TeamCatalog);',
+                   'setCatalog((await api(`/api/team-library/catalog${fresh ? "?fresh=1" : ""}`)) as TeamCatalog);')
 edit("src/components/TeamLibraryPanel.tsx", bot_library_gallery)
+edit("server/routes/teams.ts", lambda s: must(s, "        return json(res, 200, await fetchTeamCatalog());",
+    "        return json(res, 200, await fetchTeamCatalog(url.searchParams.get(\"fresh\") ? ((input, init) => fetch(`${String(input)}?t=${Date.now()}`, init)) as typeof fetch : fetch));"))
 
 def bot_library_dialog(s):
     if "readyBotData" in s:

@@ -136,12 +136,12 @@ export function TeamLibraryPanel({
   const takenNames = new Set(state.bots.map((bot) => bot.name.trim().toLowerCase()));
   const importedNames = pending?.members.map((member) => takeImportName(member.name, takenNames)) ?? [];
 
-  const loadCatalog = useCallback(async () => {
+  const loadCatalog = useCallback(async (fresh = false) => {
     setCatalogLoading(true);
     setCatalogError("");
     try {
       // SAFETY: this endpoint is owned by the app and returns TeamCatalog.
-      setCatalog((await api("/api/team-library/catalog")) as TeamCatalog);
+      setCatalog((await api(`/api/team-library/catalog${fresh ? "?fresh=1" : ""}`)) as TeamCatalog);
     } catch (cause) {
       setCatalogError(cause instanceof Error ? cause.message : String(cause));
     } finally {
@@ -663,7 +663,7 @@ export function TeamLibraryPanel({
               )}
               {tab === "explore" && (
                 <div>
-                  <LimixBotGallery search={search} onDialog={setNestedDialog} onAdded={onClose} />
+                  <LimixBotGallery search={search} onRefresh={() => void loadCatalog(true)} onDialog={setNestedDialog} onAdded={onClose} />
                   <div className="mb-3 text-[12px] font-medium text-ink-secondary">
                     {search ? t("templates.searchResults") : t("templates.communityTemplates")}
                   </div>
