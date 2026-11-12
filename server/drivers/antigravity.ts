@@ -52,6 +52,28 @@ export function antigravityPermissionMode(fullAuto: boolean, approvalMode?: Appr
 
 const managedAsset = resolveAntigravityReleaseAsset();
 
+const LIMIX_MODE_ALIASES: Record<string, string[]> = {
+  yolo: ["yolo", "bypassPermissions", "bypass_permissions", "full", "auto", "autoEdit", "auto_edit", "acceptEdits"],
+  auto_edit: ["auto_edit", "autoEdit", "acceptEdits", "accept_edits"],
+  default: ["default", "ask", "normal"],
+};
+
+/** The mode value this session offers for `wanted`; null when it offers none (the session keeps its own). */
+function limixModeFor(wanted: string, option: any): string | null {
+  const offered: string[] = [];
+  const collect = (list: unknown): void => {
+    if (!Array.isArray(list)) return;
+    for (const item of list) {
+      if (item && typeof item === "object" && Array.isArray((item as any).options)) collect((item as any).options);
+      const value = item && typeof item === "object" ? (item as any).value ?? (item as any).id : item;
+      if (typeof value === "string") offered.push(value);
+    }
+  };
+  collect(option?.options);
+  if (offered.length === 0) return wanted;
+  return (LIMIX_MODE_ALIASES[wanted] ?? [wanted]).find((value) => offered.includes(value)) ?? null;
+}
+
 const support: AcpSupport = {
   driverKind: "antigravityAgent",
   // Named for what people look for: Google moved personal Gemini subscriptions (free, AI Pro, AI Ultra) from Gemini CLI to Antigravity on 2026-06-18.
@@ -139,7 +161,8 @@ const support: AcpSupport = {
     if (!Array.isArray(configOptions) || !configOptions.some(option => option?.id === "mode")) {
       return;
     }
-    const wanted = antigravityPermissionMode(config.fullAuto, turn.approvalMode);
+    const wanted = limixModeFor(antigravityPermissionMode(config.fullAuto, turn.approvalMode), configOptions.find((option: any) => option?.id === "mode"));
+    if (!wanted) return;
     const result = await request("session/set_config_option", {
       sessionId,
       configId: "mode",

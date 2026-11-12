@@ -1451,6 +1451,39 @@ def web_origin_env(s):
     return s[:first_import] + 'import { limixWebSocketPath } from "./limix-phone-browser.mjs";\n' + s[first_import:]
 edit("electron/companion.mjs", web_origin_env)
 
+# 10z4. Google's Antigravity CLI (`agy acp`, the fast lane) names its permission modes differently from the managed
+# runtime: pick the value the session offers for the same meaning, and skip the switch when it offers none.
+def agy_modes(s):
+    if "limixModeFor" in s:
+        return s
+    s = must(s, "    const wanted = antigravityPermissionMode(config.fullAuto, turn.approvalMode);\n    const result = await request(\"session/set_config_option\", {\n",
+                "    const wanted = limixModeFor(antigravityPermissionMode(config.fullAuto, turn.approvalMode), configOptions.find((option: any) => option?.id === \"mode\"));\n"
+                "    if (!wanted) return;\n"
+                "    const result = await request(\"session/set_config_option\", {\n")
+    return must(s, "const managedAsset = resolveAntigravityReleaseAsset();\n",
+                "const managedAsset = resolveAntigravityReleaseAsset();\n\n"
+                "const LIMIX_MODE_ALIASES: Record<string, string[]> = {\n"
+                "  yolo: [\"yolo\", \"bypassPermissions\", \"bypass_permissions\", \"full\", \"auto\", \"autoEdit\", \"auto_edit\", \"acceptEdits\"],\n"
+                "  auto_edit: [\"auto_edit\", \"autoEdit\", \"acceptEdits\", \"accept_edits\"],\n"
+                "  default: [\"default\", \"ask\", \"normal\"],\n"
+                "};\n\n"
+                "/** The mode value this session offers for `wanted`; null when it offers none (the session keeps its own). */\n"
+                "function limixModeFor(wanted: string, option: any): string | null {\n"
+                "  const offered: string[] = [];\n"
+                "  const collect = (list: unknown): void => {\n"
+                "    if (!Array.isArray(list)) return;\n"
+                "    for (const item of list) {\n"
+                "      if (item && typeof item === \"object\" && Array.isArray((item as any).options)) collect((item as any).options);\n"
+                "      const value = item && typeof item === \"object\" ? (item as any).value ?? (item as any).id : item;\n"
+                "      if (typeof value === \"string\") offered.push(value);\n"
+                "    }\n"
+                "  };\n"
+                "  collect(option?.options);\n"
+                "  if (offered.length === 0) return wanted;\n"
+                "  return (LIMIX_MODE_ALIASES[wanted] ?? [wanted]).find((value) => offered.includes(value)) ?? null;\n"
+                "}\n")
+edit("server/drivers/antigravity.ts", agy_modes)
+
 def tools_main(s):
     if "limix-tools.mjs" in s:
         return s
