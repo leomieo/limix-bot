@@ -1175,6 +1175,55 @@ def ol_main(s):
     return must(s, "iconPath: APP_ICON, log: slog });\n  limixGateway.start();", "iconPath: APP_ICON, log: slog, ownerLaneToken: limixOwnerLaneToken });\n  limixGateway.start();")
 edit("electron/main.mjs", ol_main)
 
+# 10l. The Boat / Instabox key row links to both providers' key pages.
+def ib_links_type(s):
+    if "serviceLinks?:" in s:
+        return s
+    return must(s, "  href?: string;\n  test?: TestableProvider;\n",
+                "  href?: string;\n  /** Limix Bot: one key page per service a row takes (Boat and Instabox), each named. */\n"
+                "  serviceLinks?: ReadonlyArray<{ service: string; href: string }>;\n  test?: TestableProvider;\n")
+def ib_links_catalog(s):
+    s = ib_links_type(s)
+    return must(s, 'shape: /^(boat|box|ibk)_/, warningKey: "keys.boat.warning" } },',
+                'shape: /^(boat|box|ibk)_/, warningKey: "keys.boat.warning",\n      serviceLinks: [{ service: "Boat", href: "https://docs.boat.dev/api-keys" }, { service: "Instabox", href: "https://dashboard.instabox.sh/dashboard/api-keys" }] } },')
+edit("src/components/keys/key-catalog.ts", ib_links_catalog)
+def ib_links_row(s):
+    if "target.serviceLinks" in s:
+        return s
+    old = """                {fieldShown && target.href && (
+                  <a href={target.href} target="_blank" rel="noopener noreferrer" onClick={() => { if (via === "settings") target.settingsEvent?.("get_key"); }} className="inline-flex items-center gap-1 font-medium text-accent-text hover:underline">
+                    {t("keys.row.getKey")}
+                    <ExternalLink size={11} aria-hidden="true" />
+                  </a>
+                )}
+"""
+    new = """                {fieldShown && target.href && !target.serviceLinks && (
+                  <a href={target.href} target="_blank" rel="noopener noreferrer" onClick={() => { if (via === "settings") target.settingsEvent?.("get_key"); }} className="inline-flex items-center gap-1 font-medium text-accent-text hover:underline">
+                    {t("keys.row.getKey")}
+                    <ExternalLink size={11} aria-hidden="true" />
+                  </a>
+                )}
+                {fieldShown && target.serviceLinks?.map((link) => (
+                  <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-medium text-accent-text hover:underline">
+                    {t("hostedMcp.getKey", { service: link.service })}
+                    <ExternalLink size={11} aria-hidden="true" />
+                  </a>
+                ))}
+"""
+    return must(s, old, new)
+edit("src/components/keys/KeyRow.tsx", ib_links_row)
+def ib_warn(s):
+    d = json.loads(s)
+    d["keys.boat.warning"] = "Boat and Instabox are paid services after their free allowance. Usage may incur charges."
+    return json.dumps(d, indent=2, ensure_ascii=False) + "\n"
+edit("src/locales/en.json", ib_warn)
+
+# 10m. A pasted key keeps no stray spaces, and the "not a Boat key" message names Instabox's ibk_ keys too.
+def ib_messages(s):
+    return must(s, "\"That doesn't look like a Boat API key: they start with boat_ (older ones with box_). Copy the API key from your boat.dev account (an account or session token won't work here).\",",
+                "\"That isn't a Boat or Instabox API key: Boat keys start with boat_ (older ones with box_), Instabox keys with ibk_. Copy the whole key, first letters included.\",")
+edit("server/boat.ts", ib_messages)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):

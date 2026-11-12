@@ -6661,7 +6661,7 @@
   "keys.boat.placeholder": "Dán khóa API Boat (boat_…) hoặc Instabox (ibk_…)",
   "keys.boat.desc": "Cung cấp cho bot một máy tính Linux từ xa được cô lập với màn hình desktop và terminal.",
   "keys.boat.link": "Mở hướng dẫn khóa API Boat",
-  "keys.boat.warning": "Boat là dịch vụ trả phí sau thời gian dùng thử. Việc sử dụng có thể phát sinh chi phí.",
+  "keys.boat.warning": "Boat và Instabox là dịch vụ trả phí khi dùng quá phần miễn phí. Việc sử dụng có thể phát sinh chi phí.",
   "computer.phase.showReadyBoat": "Auto đã tìm thấy một máy tính đám mây hiện có. Desktop không được mở hay thay đổi.",
   "computer.phase.showSleepingBoat": "Auto đã tìm thấy một máy tính đám mây đang ngủ. Desktop không được đánh thức hay thay đổi.",
   "computer.phase.showPendingBoat": "Auto đã tìm thấy một máy tính đám mây hiện có chưa sẵn sàng. Desktop không có thay đổi nào.",
