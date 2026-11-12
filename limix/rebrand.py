@@ -1645,6 +1645,47 @@ edit("src/locales/vi.json", lambda s: s.replace('"templates.load": "Nạp",', '"
     '"readyBots.subtitle": "Thêm một bot rồi bắt đầu trò chuyện. Bạn được xem lại mọi thứ trước khi tạo.",',
     '"readyBots.subtitle": "Bấm Dùng mẫu để tải mẫu về; bạn được xem lại mọi thứ trước khi tạo bot.",'))
 
+# 11c. Sign out of the Limix account from the app: "Đăng xuất" at the end of the account menu (bottom-left avatar;
+# limix/overlay/src/lib/limix-account-menu.tsx). Main confirms, frees this computer's seat, forgets the token and restarts
+# at the sign-in window, which also gained a full "Đăng ký" button (limix/overlay/electron/limix-account.mjs).
+def sign_out_main(s):
+    if "limix-account:sign-out" in s:
+        return s
+    s = must(s, 'import { limixAccountGate, limixRemoteCredential } from "./limix-account.mjs";',
+                'import { limixAccountGate, limixAccountInfo, limixRemoteCredential, limixSignOut } from "./limix-account.mjs";')
+    return must(s, 'app.on("will-quit", () => limixGateway?.stop());\n',
+                'app.on("will-quit", () => limixGateway?.stop());\n'
+                'ipcMain.handle("limix-account:info", localOnly("limix-account:info", () => limixAccountInfo()));\n'
+                'ipcMain.handle("limix-account:sign-out", localOnly("limix-account:sign-out", async (event) => {\n'
+                '  const info = limixAccountInfo();\n'
+                '  if (!info) return false;\n'
+                '  const owner = BrowserWindow.fromWebContents(event.sender) ?? undefined;\n'
+                '  const { response } = await dialog.showMessageBox(owner, { type: "question", title: "Limix Bot", buttons: ["Đăng xuất", "Hủy"], defaultId: 1, cancelId: 1,\n'
+                '    message: `Đăng xuất khỏi tài khoản ${info.username || "Limix"}?`,\n'
+                '    detail: "Máy này sẽ được gỡ khỏi tài khoản và ứng dụng khởi động lại ở màn hình đăng nhập. Bot, cuộc trò chuyện và dữ liệu trên máy vẫn được giữ nguyên." });\n'
+                '  if (response !== 0) return false;\n'
+                '  await limixSignOut();\n'
+                '  app.relaunch(); app.quit();\n'
+                '  return true;\n'
+                '}));\n')
+edit("electron/main.mjs", sign_out_main)
+edit("electron/preload.cjs", lambda s: s if "limix-account:sign-out" in s else must(s,
+    '  limixGateway: { open: () => ipcRenderer.invoke("limix-gateway:open") },\n',
+    '  limixGateway: { open: () => ipcRenderer.invoke("limix-gateway:open") },\n'
+    '  limixAccount: { info: () => ipcRenderer.invoke("limix-account:info"), signOut: () => ipcRenderer.invoke("limix-account:sign-out") },\n'))
+edit("src/types/ogb.d.ts", lambda s: s if "limixAccount?:" in s else must(s, "      limixGateway?: { open(): Promise<void> };\n",
+    "      limixGateway?: { open(): Promise<void> };\n"
+    "      /** Limix Bot: the Limix account this computer is signed in to, and signing out (confirms, then restarts). */\n"
+    "      limixAccount?: { info(): Promise<{ username: string; email: string } | null>; signOut(): Promise<boolean> };\n"))
+def sign_out_menu(s):
+    if "withLimixSignOut" in s:
+        return s
+    s = must(s, 'import { LimixPhoneDialog } from "./LimixPhoneDialog";\n',
+                'import { LimixPhoneDialog } from "./LimixPhoneDialog";\nimport { useLimixAccount, withLimixSignOut } from "@/lib/limix-account-menu";\n')
+    s = must(s, "  const items = profileMenuItems({\n", "  const limixAccount = useLimixAccount();\n  const items = withLimixSignOut(limixAccount, profileMenuItems({\n")
+    return must(s, "    onAccount: openCloudAccount,\n  });\n  const noteworthy", "    onAccount: openCloudAccount,\n  }));\n  const noteworthy")
+edit("src/components/SidebarProfileMenu.tsx", sign_out_menu)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):
