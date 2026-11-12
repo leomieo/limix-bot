@@ -2862,7 +2862,7 @@ app.whenReady().then(async () => {
   if (process.platform === "win32") {
     try {
       desktopTray = createSystemTray({
-        Tray, Menu, nativeImage, iconPath: APP_ICON, t: nativeT,
+        Tray, Menu, nativeImage, iconPath: path.join(__dirname, "resources/limix-tray.png"), t: nativeT,
         getWindow: () => startupScreen?.window ?? mainWindow ?? (openWindowForLink?.(), mainWindow),
         onQuit: () => app.quit(),
       });
