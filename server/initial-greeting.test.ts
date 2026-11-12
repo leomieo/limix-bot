@@ -24,6 +24,7 @@ describe("a new bot's greeting", () => {
     expect(initialGreeting("Scout", "es-MX", "  Ana  María ")).toBe("Hola Ana, soy Scout. ¿Qué te gustaría que hiciera?");
     expect(initialGreeting("Scout", "pt-BR", "João")).toBe("Oi João, eu sou Scout. O que você gostaria que eu fizesse?");
     expect(initialGreeting("Scout", "zh-TW", "王小明")).toBe("嗨 王小明，我是 Scout。你想要我幫你做什麼？");
+    expect(initialGreeting("Scout", "vi-VN", "Nguyễn Tuấn")).toBe("Xin chào Nguyễn, mình là Scout. Bạn muốn mình giúp việc gì?");
     expect(initialGreeting("Scout", "zh-Hant")).toBe("嗨，我是 Scout。你想要我幫你做什麼？");
   });
 

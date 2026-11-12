@@ -1577,6 +1577,31 @@ def narrow_icons(s):
                 "  const collapseSidebar = (sidePanelOpen && !sidebarAndPanelFit) || (sidebarInline && !limixSidebarFits);\n")
 edit("src/App.tsx", narrow_icons)
 
+# 11a. The first greeting, the "tell me what you need" line and the starting choices in Vietnamese, and the server
+# told the language picked in the desktop app (it only knew Settings > Language on the server or the system's).
+VI_GREETING = '  vi: (name, person) => `Xin chào${person ? ` ${person}` : ""}, mình là ${name}. Bạn muốn mình giúp việc gì?`,\n'
+VI_SETUP_LINE = '  vi: "Tuyệt. Bạn cứ kể bằng lời của mình về việc cần giúp, mình sẽ tự thiết lập để làm việc đó. Ví dụ: \\"sắp xếp hộp thư của tôi mỗi sáng\\" hoặc \\"tìm hiểu đối thủ của chúng tôi mỗi tuần\\".",\n'
+VI_CHOICES = ('  vi: ["Nghiên cứu và tìm hiểu sâu một chủ đề", "Theo dõi mọi việc giúp tôi", "Email, lịch và tin nhắn",\n'
+              '    "Đặt chỗ, mua sắm và việc vặt", "Dữ liệu, bảng tính và báo cáo"],\n')
+def vi_greeting(s):
+    if VI_GREETING in s:
+        return s
+    s = must(s, '  "zh-tw": (name, person) => `嗨', VI_GREETING + '  "zh-tw": (name, person) => `嗨')
+    s = must(s, '  "zh-tw": "好的。', VI_SETUP_LINE + '  "zh-tw": "好的。')
+    return must(s, '  "zh-tw": ["研究', VI_CHOICES + '  "zh-tw": ["研究')
+edit("server/initial-greeting.ts", vi_greeting)
+edit("server/initial-greeting.test.ts", lambda s: s if "vi-VN" in s else must(s,
+    '    expect(initialGreeting("Scout", "zh-TW", "王小明")).toBe("嗨 王小明，我是 Scout。你想要我幫你做什麼？");\n',
+    '    expect(initialGreeting("Scout", "zh-TW", "王小明")).toBe("嗨 王小明，我是 Scout。你想要我幫你做什麼？");\n'
+    '    expect(initialGreeting("Scout", "vi-VN", "Nguyễn Tuấn")).toBe("Xin chào Nguyễn, mình là Scout. Bạn muốn mình giúp việc gì?");\n'))
+edit("server/index.ts", lambda s: must(s,
+    "const appLanguage = (): string | undefined => cfg.language ?? CLOUD_TEAM?.language;",
+    "const appLanguage = (): string | undefined => cfg.language ?? CLOUD_TEAM?.language ?? (process.env.OMB_UI_LANGUAGE?.trim() || undefined);"))
+edit("electron/main.mjs", lambda s: s if "OMB_UI_LANGUAGE" in s else must(s, "    OMB_DATA_DIR: dataDir,\n",
+    "    OMB_DATA_DIR: dataDir,\n"
+    "    // The language picked in this app, so the first greeting and the starting choices are written in it (empty: follow the system).\n"
+    "    OMB_UI_LANGUAGE: nativeText.prefs?.language() ?? \"\",\n"))
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):
