@@ -22,7 +22,7 @@ interface HubState { repo: string; settings: { autoSync: boolean; autoInstall: b
 
 const TABS = [
   ["discover", "Khám phá"], ["recommended", "Khuyên dùng"], ["installed", "Đã cài"], ["updates", "Cập nhật"],
-  ["localization", "Việt hóa"], ["security", "Bảo mật"], ["sources", "Nguồn"], ["settings", "Cài đặt"],
+  ["security", "Bảo mật"], ["sources", "Nguồn"], ["settings", "Cài đặt"],
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
@@ -70,7 +70,6 @@ export function LimixSkillHub() {
         case "recommended": return !s.blocked && (s.grade === "excellent" || s.grade === "recommended");
         case "installed": return s.installed;
         case "updates": return s.updateAvailable;
-        case "localization": return !s.description_vi;
         case "security": return s.security_status !== "clean";
         default: return false;
       }
@@ -89,7 +88,6 @@ export function LimixSkillHub() {
             <span className="text-[12px] text-ink-tertiary">v{s.version}</span>
           </div>
           <p className="mt-0.5 text-[12px] leading-relaxed text-ink-secondary">{s.description_vi || s.description}</p>
-          {!s.description_vi && <p className="text-[11px] text-ink-tertiary">Chưa có bản dịch tiếng Việt</p>}
           <p className="mt-1 text-[12px] text-ink-tertiary">
             {KIND[s.kind] ?? s.kind} · Bảo mật: {SECURITY[s.security_status] ?? s.security_status} · {s.license ?? "Chưa có giấy phép"} · {s.source.repository ?? "nguồn ?"}
             {s.dependencies.length > 0 && ` · Cần: ${s.dependencies.join(", ")}`}
