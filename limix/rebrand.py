@@ -1563,13 +1563,15 @@ def plus_menu_clamp(s):
     return s
 edit("src/components/Sidebar.tsx", plus_menu_clamp)
 
-# 10z8. A narrow window (under 960 px, e.g. Windows 10 at 125 %) shows the sidebar as its column of avatars, the way it
-# already did with a side panel open, instead of a full sidebar whose names and menus get cut.
+# 10z8. Whenever the full sidebar would leave the chat too little room (any resolution, Windows scaling or app zoom:
+# limix/overlay/src/lib/limix-sidebar-fit.ts measures in CSS pixels on every resize and zoom), the sidebar shows its
+# column of avatars, the way it already did with a side panel open, instead of cutting its names and menus.
 def narrow_icons(s):
-    if "limixSidebarFits" in s:
+    if "useLimixSidebarFits" in s:
         return s
-    s = must(s, "  const sidebarAndPanelFit = useMediaQuery(SIDEBAR_AND_PANEL_FIT, true);\n",
-                "  const sidebarAndPanelFit = useMediaQuery(SIDEBAR_AND_PANEL_FIT, true);\n  const limixSidebarFits = useMediaQuery(\"(min-width: 960px)\", true);\n")
+    s = s.replace("\nimport ", '\nimport { useLimixSidebarFits } from "./lib/limix-sidebar-fit";\nimport ', 1)
+    s = must(s, "  const advanced = useAdvancedMode();\n",
+                "  const advanced = useAdvancedMode();\n  const limixSidebarFits = useLimixSidebarFits(!advanced);\n")
     return must(s, "  const collapseSidebar = sidePanelOpen && !sidebarAndPanelFit;\n",
                 "  const collapseSidebar = (sidePanelOpen && !sidebarAndPanelFit) || (sidebarInline && !limixSidebarFits);\n")
 edit("src/App.tsx", narrow_icons)
