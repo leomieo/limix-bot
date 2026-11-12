@@ -1224,6 +1224,14 @@ def ib_messages(s):
                 "\"That isn't a Boat or Instabox API key: Boat keys start with boat_ (older ones with box_), Instabox keys with ibk_. Copy the whole key, first letters included.\",")
 edit("server/boat.ts", ib_messages)
 
+# 10n. An Instabox refusal is shown in Instabox's own words, never as "boat.dev rejected your key".
+def ib_error_words(s):
+    head = "export function boatErrorMessage(status: number, what: string, body?: any, included = false): string {\n"
+    if "Instabox:" in s:
+        return s
+    return must(s, head, head + '  if (typeof body?.message === "string" && body.message.startsWith("Instabox:")) return `${what} failed. ${body.message}`;\n')
+edit("server/boat.ts", ib_error_words)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):

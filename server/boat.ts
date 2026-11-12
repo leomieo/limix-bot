@@ -930,6 +930,7 @@ const INCLUDED_BOAT_UNAVAILABLE = "The cloud computers included with your Cloud 
 const boatServiceName = (included: boolean) => included ? "Limix Bot Cloud's computer service" : "boat.dev";
 
 export function boatErrorMessage(status: number, what: string, body?: any, included = false): string {
+  if (typeof body?.message === "string" && body.message.startsWith("Instabox:")) return `${what} failed. ${body.message}`;
   const theirs = typeof body?.message === "string" ? body.message.trim() : "";
   const link = typeof body?.error?.details?.billingUrl === "string" ? body.error.details.billingUrl : "";
   if (status === 402) {
