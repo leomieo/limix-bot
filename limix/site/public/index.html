@@ -75,7 +75,7 @@ nav.links a:hover { color: var(--ink); }
 .btn-ghost:hover { border-color: var(--ink-3); }
 .btn svg { width: 18px; height: 18px; flex: none; }
 .bar .btn { min-height: 40px; padding: 0 16px; font-size: 14px; }
-@media (max-width: 860px) { nav.links { display: none; } .bar .btn { margin-left: auto; } }
+@media (max-width: 860px) { nav.links { display: none; } .bar .btn:first-of-type { margin-left: auto; } }
 
 /* Hero */
 .hero { padding-block: clamp(48px, 8vw, 96px) clamp(40px, 6vw, 72px); }
@@ -350,6 +350,7 @@ header { background: color-mix(in srgb, var(--bg) 78%, transparent); }
       <a href="#hoi-dap">Hỏi đáp</a>
       <a href="https://github.com/leomieo/limix-bot" target="_blank" rel="noopener">GitHub</a>
     </nav>
+    <a class="btn btn-ghost" href="/dang-ky">Đăng ký</a>
     <a class="btn btn-primary" href="https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-setup.exe">Tải về</a>
   </div>
 </header>
