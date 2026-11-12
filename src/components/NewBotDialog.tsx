@@ -4,7 +4,7 @@ import { api, BotEditorStore, useStore, type Bot } from "@/state/store";
 import { BotCreationDraft, EMPTY_BOT_DEFAULTS } from "@/lib/bot-creation-draft";
 import { createConfiguredBot, preparedBotTemplate } from "@/lib/create-configured-bot";
 import { BOT_ROLES, roleProfilePatch } from "@/lib/bot-roles";
-import { readyBot, readyBotTemplate } from "@/lib/ready-bots";
+import { readyBot, readyBotTemplate, type ReadyBot } from "@/lib/ready-bots";
 import { chosenPreset, presetDraftPatch, presetGroups, presetPictureFile, presetSummaryLines, type BotPreset } from "@/lib/bot-presets";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
@@ -53,9 +53,11 @@ interface NewBotDialogProps {
   defaultsMode?: boolean; onClose: () => void; onCreated?: (bot: Bot) => void | Promise<void>;
   /** A ready-made bot from the Templates gallery, filled in over the person's New bot defaults. */
   readyBotId?: string;
+  /** The same, downloaded from the template library: used instead of the built-in copy. */
+  readyBotData?: ReadyBot;
 }
 
-function NewBotEditor({ defaultsMode = false, onClose, onCreated, readyBotId }: NewBotDialogProps) {
+function NewBotEditor({ defaultsMode = false, onClose, onCreated, readyBotId, readyBotData }: NewBotDialogProps) {
   const isTop = useIsTopLayer();
   const parent = useStore();
   const [, render] = useState(0);
@@ -86,14 +88,14 @@ function NewBotEditor({ defaultsMode = false, onClose, onCreated, readyBotId }: 
       .then(result => {
         if (cancelled) return;
         const defaults = startingTemplate(result, !defaultsMode);
-        const ready = defaultsMode || !readyBotId ? undefined : readyBot(readyBotId);
+        const ready = defaultsMode ? undefined : readyBotData ?? (readyBotId ? readyBot(readyBotId) : undefined);
         const next = new BotCreationDraft(ready ? readyBotTemplate(defaults, ready) : defaults, () => render(value => value + 1));
-        if (ready) next.role = ready.id;
+        if (ready && readyBot(ready.id)) next.role = ready.id;
         setDraft(next);
         setReady(true);
       }).catch(cause => { if (!cancelled) setError(String(cause)); });
     return () => { cancelled = true; };
-  }, [defaultsMode, readyBotId]);
+  }, [defaultsMode, readyBotId, readyBotData]);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   useEffect(() => () => draft.dispose(), [draft]);
   // Disabling the focused Create button drops focus to the page in Chromium.

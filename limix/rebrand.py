@@ -1602,6 +1602,43 @@ edit("electron/main.mjs", lambda s: s if "OMB_UI_LANGUAGE" in s else must(s, "  
     "    // The language picked in this app, so the first greeting and the starting choices are written in it (empty: follow the system).\n"
     "    OMB_UI_LANGUAGE: nativeText.prefs?.language() ?? \"\",\n"))
 
+# 11b. Bot templates from github.com/leomieo/limix-bot-teams, the way the Skill Hub works: Templates > Khám phá
+# lists bots from catalog.json (limix/overlay/server/limix-bot-library.ts) and fetches one bot's file only when
+# "Dùng mẫu" is pressed (limix/overlay/src/components/LimixBotGallery.tsx); offline, the built-in bots show.
+def bot_library_routes(s):
+    if "handleLimixBotLibrary" in s:
+        return s
+    s = s.replace("\nimport ", '\nimport { handleLimixBotLibrary } from "../limix-bot-library.ts";\nimport ', 1)
+    return must(s, '    if (path.startsWith("/api/limix/hub")) {',
+                   '    if (path.startsWith("/api/limix/bots")) {\n'
+                   '      const library = await handleLimixBotLibrary(method, path);\n'
+                   '      if (library) return json(res, library.status, library.body);\n    }\n'
+                   '    if (path.startsWith("/api/limix/hub")) {')
+edit("server/routes/bot-skills.ts", bot_library_routes)
+
+def bot_library_gallery(s):
+    s = must(s, 'import { ReadyBotGallery } from "./ReadyBotGallery";', 'import { LimixBotGallery } from "./LimixBotGallery";')
+    return must(s, "<ReadyBotGallery search={search}", "<LimixBotGallery search={search}")
+edit("src/components/TeamLibraryPanel.tsx", bot_library_gallery)
+
+def bot_library_dialog(s):
+    if "readyBotData" in s:
+        return s
+    s = must(s, 'import { readyBot, readyBotTemplate } from "@/lib/ready-bots";',
+                'import { readyBot, readyBotTemplate, type ReadyBot } from "@/lib/ready-bots";')
+    s = must(s, "  readyBotId?: string;\n}", "  readyBotId?: string;\n  /** The same, downloaded from the template library: used instead of the built-in copy. */\n  readyBotData?: ReadyBot;\n}")
+    s = must(s, "function NewBotEditor({ defaultsMode = false, onClose, onCreated, readyBotId }: NewBotDialogProps) {",
+                "function NewBotEditor({ defaultsMode = false, onClose, onCreated, readyBotId, readyBotData }: NewBotDialogProps) {")
+    s = must(s, "        const ready = defaultsMode || !readyBotId ? undefined : readyBot(readyBotId);",
+                "        const ready = defaultsMode ? undefined : readyBotData ?? (readyBotId ? readyBot(readyBotId) : undefined);")
+    s = must(s, "        if (ready) next.role = ready.id;", "        if (ready && readyBot(ready.id)) next.role = ready.id;")
+    return must(s, "  }, [defaultsMode, readyBotId]);", "  }, [defaultsMode, readyBotId, readyBotData]);")
+edit("src/components/NewBotDialog.tsx", bot_library_dialog)
+
+edit("src/locales/vi.json", lambda s: s.replace('"templates.load": "Nạp",', '"templates.load": "Dùng mẫu",').replace(
+    '"readyBots.subtitle": "Thêm một bot rồi bắt đầu trò chuyện. Bạn được xem lại mọi thứ trước khi tạo.",',
+    '"readyBots.subtitle": "Bấm Dùng mẫu để tải mẫu về; bạn được xem lại mọi thứ trước khi tạo bot.",'))
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):

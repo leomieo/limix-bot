@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { handleLimixBotLibrary } from "../limix-bot-library.ts";
 import type { SkillsLibrarySkillWire } from "../../shared/wire.ts";
 import type { AppConfig } from "../config.ts";
 import { setImportedSkillEnabled } from "../imported-skills.ts";
@@ -30,6 +31,10 @@ export function createBotSkillsRoutes(deps: BotSkillsRouteDeps): RouteHandler {
   const { store, cfg, listBotSkills, readBotSkillFile, stagedSkillListing } = deps;
   return async ({ req, res, url, path, method, json, readBody }) => {
     let m: RegExpMatchArray | null = null;
+    if (path.startsWith("/api/limix/bots")) {
+      const library = await handleLimixBotLibrary(method, path);
+      if (library) return json(res, library.status, library.body);
+    }
     if (path.startsWith("/api/limix/hub")) {
       const hub = await handleLimixHub(method, path, method === "POST" ? await readBody(req) : undefined);
       if (hub) return json(res, hub.status, hub.body);
