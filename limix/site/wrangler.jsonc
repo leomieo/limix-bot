@@ -1,0 +1,7 @@
+// Limix Bot website (limixmedia.com): static files only, served by a Cloudflare Worker. Deployed by
+// .github/workflows/limix-site.yml, which also points limixmedia.com and www.limixmedia.com at it.
+{
+  "name": "limix-site",
+  "compatibility_date": "2026-06-01",
+  "assets": { "directory": "./public", "not_found_handling": "single-page-application" }
+}

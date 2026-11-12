@@ -1,0 +1,54 @@
+# Limix Bot website: deploys limix/site to a Cloudflare Worker (static files only) and points limixmedia.com and
+# www.limixmedia.com at it. Uses the same CLOUDFLARE_API_TOKEN secret as limix-cloudflare.yml.
+name: Limix Site
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["limix/site/**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: limix-site
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: e2c5f1d87da45803ba77f9eb676ec3ed
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: check the token is set
+        run: test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Add the repository secret CLOUDFLARE_API_TOKEN first."; exit 1; }
+      - name: deploy the static site
+        run: |
+          mkdir -p /tmp/site && cp -r limix/site/. /tmp/site/
+          cd /tmp/site
+          printf '{"name":"limix-site","private":true}' > package.json
+          npm install --no-audit --no-fund --no-save --no-package-lock wrangler@4.125.0
+          npx wrangler deploy
+      - name: point limixmedia.com and www at the site
+        run: |
+          for host in limixmedia.com www.limixmedia.com; do
+            body=$(printf '{"hostname":"%s","service":"limix-site","environment":"production","zone_name":"limixmedia.com","override_existing_dns_record":true,"override_existing_origin":true}' "$host")
+            out=$(curl -sS -X PUT "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/domains" \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" --data "$body")
+            echo "$host: $(echo "$out" | head -c 600)"
+            echo "$out" | grep -q '"success":true' || { echo "::error::Could not attach $host"; exit 1; }
+          done
+      - name: check
+        run: |
+          sleep 15
+          for host in limixmedia.com www.limixmedia.com; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "https://$host/")
+            echo "$host -> $code"
+          done
