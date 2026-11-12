@@ -1384,6 +1384,15 @@ def hub_settings(s):
     return must(s, "      <LimixBundledSkills />\n", "      <LimixBundledSkills />\n      <LimixSkillHub />\n")
 edit("src/components/SkillsSection.tsx", hub_settings)
 
+# 10x. Windows 10: the "new chat" menu is as wide as its longest line, so a long bot name pushed it past the left edge
+# of the sidebar and cut the text. Cap its width and truncate the bot name.
+def plus_menu_width(s):
+    if "max-w-[min(18rem" in s:
+        return s
+    s = must(s, '"absolute z-40 w-max min-w-[200px] overflow-hidden", MENU_SHEET,', '"absolute z-40 w-max min-w-[200px] max-w-[min(18rem,calc(100vw-2rem))] overflow-hidden", MENU_SHEET,')
+    return must(s, '{t("sidebar.newConversationWith", { name: plusBot.name })}</button>', '<span className="min-w-0 truncate">{t("sidebar.newConversationWith", { name: plusBot.name })}</span></button>')
+edit("src/components/Sidebar.tsx", plus_menu_width)
+
 def tools_main(s):
     if "limix-tools.mjs" in s:
         return s
