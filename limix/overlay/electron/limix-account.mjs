@@ -63,6 +63,7 @@ input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #3f3f46;b
 input:focus{outline:2px solid #fafafa;outline-offset:1px}
 button{font:inherit;cursor:pointer;border-radius:10px;padding:10px 14px;border:1px solid #3f3f46;background:#1c1c1f;color:#fafafa}
 button.primary{width:100%;margin-top:16px;background:#fafafa;color:#0a0a0a;border-color:#fafafa;font-weight:600}
+button.secondary{width:100%;margin-top:10px;background:transparent}button.secondary:hover{background:#1c1c1f}
 button.danger{border-color:#7f1d1d;color:#fca5a5;background:transparent;padding:6px 10px}
 button:disabled{opacity:.55;cursor:default}button:focus-visible{outline:2px solid #fafafa;outline-offset:2px}
 .links{display:flex;justify-content:space-between;margin-top:14px}.links a{color:#d4d4d8;cursor:pointer;text-decoration:underline;font-size:13px}
@@ -77,7 +78,8 @@ ${notice ? `<div class="note" role="status">${esc(notice)}</div>` : ""}
 <label for="p">Mật khẩu</label><input id="p" type="password" autocomplete="current-password">
 <button class="primary" id="go">Đăng nhập</button>
 <div class="err" id="err" role="alert"></div>
-<div class="links"><a id="reg">Tạo tài khoản mới</a><a id="forgot">Quên mật khẩu?</a></div>
+<button class="secondary" id="reg">Chưa có tài khoản? Đăng ký</button>
+<div class="links"><span></span><a id="forgot">Quên mật khẩu?</a></div>
 </section>
 <section id="full" hidden>
 <p id="fullText"></p><div class="list" id="list"></div><div class="err" id="err2" role="alert"></div>
@@ -137,6 +139,27 @@ $("#forgot").onclick = () => api.open("forgot");
  * restarts the app at the sign-in window.
  */
 let remoteCredential = () => null;
+let accountStore = null, accountClient = null;
+
+/** Who this computer is signed in as, for the sign-out item in the app's account menu; null when the gate is off. */
+export function limixAccountInfo() {
+  if (!accountStore) return null;
+  const saved = accountStore.read() ?? {};
+  return saved.token ? { username: String(saved.username ?? ""), email: String(saved.email ?? "") } : null;
+}
+
+/** Signs this computer out: frees its seat on the account and forgets the token here even when the server is
+ * unreachable. The caller restarts the app, which then opens at the sign-in window. */
+export async function limixSignOut() {
+  if (!accountStore || !accountClient) return false;
+  try {
+    await accountClient.logout();
+  } catch {
+    const saved = accountStore.read() ?? {};
+    accountStore.write({ username: saved.username });
+  }
+  return true;
+}
 
 /** What remote access signs in with: the Limix account's own bearer for this computer, or null when not signed in. */
 export function limixRemoteCredential() { return remoteCredential(); }
@@ -147,6 +170,7 @@ export async function limixAccountGate({ app, BrowserWindow, ipcMain, safeStorag
   const store = fileStore(path.join(userData, "limix-account.json"), safeStorage);
   const machineId = await machineIdentity(userData);
   const client = createAccountClient({ baseUrl, store, machineId, machineName: os.hostname() });
+  accountStore = store; accountClient = client;
   remoteCredential = () => {
     const saved = store.read() ?? {};
     const key = String(saved.username ?? "").trim().toLowerCase();

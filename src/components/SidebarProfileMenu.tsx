@@ -31,6 +31,7 @@ import { ZaloIcon } from "./ZaloIcon";
 import { AboutDialog } from "./AboutDialog";
 import { PhoneAppDialog } from "./lazy-screens";
 import { LimixPhoneDialog } from "./LimixPhoneDialog";
+import { useLimixAccount, withLimixSignOut } from "@/lib/limix-account-menu";
 import { LimixToolsDialog, limixTools } from "./LimixToolsDialog";
 import { CloudTile } from "./cloud-buy/parts";
 import { usageBridge } from "./CloudUsageMeter";
@@ -605,7 +606,8 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
   const move = useAccountMove(state.config?.cloudHome === true, { onOpen: openCloudAccount, onPairPhone: () => dispatch(phonePairingSettingsAction()) });
   const accounts = useAccounts();
 
-  const items = profileMenuItems({
+  const limixAccount = useLimixAccount();
+  const items = withLimixSignOut(limixAccount, profileMenuItems({
     phone: simple && LIMIX_PHONE_APPS_ENABLED
       ? simplePhoneItems({ connected: phone.kind === "connected", onGetApp: () => setPhoneAppOpen(true) })
       : phoneMenuItems({
@@ -642,7 +644,7 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
     onHelp: () => void openExternalLink(HELP_CENTER_URL),
     onFeedback: () => void openExternalLink(FEEDBACK_URL),
     onAccount: openCloudAccount,
-  });
+  }));
   const noteworthy = update && updateNoteworthy(update.phase, update.pending) && !updateHasButton(update.phase);
   const needsYou = account?.automationsNeedYou === true;
   const initials = profileInitials(profile);
