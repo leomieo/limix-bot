@@ -1393,6 +1393,24 @@ def plus_menu_width(s):
     return must(s, '{t("sidebar.newConversationWith", { name: plusBot.name })}</button>', '<span className="min-w-0 truncate">{t("sidebar.newConversationWith", { name: plusBot.name })}</span></button>')
 edit("src/components/Sidebar.tsx", plus_menu_width)
 
+# 10y. Antigravity fast lane: the first Antigravity AI uses Google's Antigravity CLI (`agy acp`, signed in through the
+# OS keyring) when it is installed; others keep the managed runtime (server/limix-agy-cli.ts).
+def agy_cli(s):
+    if "agyCliFor" in s:
+        return s
+    s = must(s, 'import { augmentedPath } from "../env-path.ts";\n', 'import { augmentedPath } from "../env-path.ts";\nimport { agyCliFor, releaseAgyCli } from "../limix-agy-cli.ts";\n')
+    s = must(s, "  resolveCommand: async (env, config, instanceId) => {\n",
+                "  resolveCommand: async (env, config, instanceId) => {\n    const agyCli = agyCliFor(instanceId, env);\n    if (agyCli) return { command: agyCli, args: [\"acp\"] };\n")
+    s = must(s, "  resolveModels: async (env, config, instanceId) => {\n",
+                "  resolveModels: async (env, config, instanceId) => {\n    if (agyCliFor(instanceId, env)) return currentEngineCatalog(\"antigravity\");\n")
+    s = must(s, "  isAuthenticated: async (env, config, instanceId) => {\n",
+                "  isAuthenticated: async (env, config, instanceId) => {\n    if (agyCliFor(instanceId, env)) return true;\n")
+    s = must(s, "  snapshot: async (env, config, instanceId): Promise<ProviderSnapshot> => {\n",
+                "  snapshot: async (env, config, instanceId): Promise<ProviderSnapshot> => {\n    if (agyCliFor(instanceId, env)) return { state: \"available\", version: \"Antigravity CLI\", authenticated: true };\n")
+    return must(s, "        await removeAntigravitySignIn(input.instanceId);\n",
+                "        await removeAntigravitySignIn(input.instanceId);\n        releaseAgyCli(input.instanceId);\n")
+edit("server/drivers/antigravity.ts", agy_cli)
+
 def tools_main(s):
     if "limix-tools.mjs" in s:
         return s
