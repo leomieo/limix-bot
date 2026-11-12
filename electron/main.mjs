@@ -3,6 +3,7 @@ import { LIMIX_ACCOUNT_URL, LIMIX_CLOUD_ENABLED, LIMIX_ORGANIZATION_ENABLED } fr
 import { limixAccountGate, limixRemoteCredential } from "./limix-account.mjs";
 import { limixRuntimeEnv } from "./limix-runtime.mjs";
 import { createLimixGateway } from "./limix-gateway.mjs";
+import { createLimixTools } from "./limix-tools.mjs";
 import { limixPhoneBrowserEnv, limixPhoneBrowserOn, setLimixPhoneBrowser } from "./limix-phone-browser.mjs";
 import { createRequire } from "node:module";
 import { randomBytes, randomUUID } from "node:crypto";
@@ -2876,6 +2877,7 @@ app.whenReady().then(async () => {
   if (!(await limixAccountGate({ app, BrowserWindow, ipcMain, safeStorage, shell, dialog, iconPath: APP_ICON, log: slog, baseUrl: LIMIX_ACCOUNT_URL }))) { app.quit(); return; }
   limixGateway = createLimixGateway({ app, BrowserWindow, shell, resourcesPath: process.resourcesPath, userData: app.getPath("userData"), iconPath: APP_ICON, log: slog, ownerLaneToken: limixOwnerLaneToken, serverRequest: (route, init) => localServerRequest(route, init) });
   limixGateway.start();
+  limixTools = createLimixTools({ userData: app.getPath("userData"), resourcesPath: process.resourcesPath, serverRequest: (route, init) => localServerRequest(route, init), log: slog });
   hiddenStart = loginItem.startedHidden() || reopenedOutOfSight();
   startupScreen = hiddenStart ? null : createStartupScreen({
     BrowserWindow, iconPath: APP_ICON, isQuitting: () => desktopShutdownStarted, t: nativeT, lang: nativeText.intlTag(),
@@ -3205,6 +3207,11 @@ function releaseDesktopDataDirLease() {
 // before-quit is too early (this app defers it); will-quit is Electron's last boundary, and the process hook covers app.exit().
 ipcMain.handle("limix-gateway:open", localOnly("limix-gateway:open", () => limixGateway ? limixGateway.open() : Promise.reject(new Error("Chương trình kết nối chưa sẵn sàng."))));
 app.on("will-quit", () => limixGateway?.stop());
+let limixTools = null;
+ipcMain.handle("limix-tools:state", localOnly("limix-tools:state", () => limixTools ? limixTools.state() : { supported: false, items: [] }));
+ipcMain.handle("limix-tools:install", localOnly("limix-tools:install", (_event, ids) => limixTools ? limixTools.install(Array.isArray(ids) ? ids.map(String) : []) : { supported: false, items: [] }));
+ipcMain.handle("limix-tools:should-ask", localOnly("limix-tools:should-ask", () => limixTools ? limixTools.shouldAsk() : false));
+ipcMain.handle("limix-tools:asked", localOnly("limix-tools:asked", () => limixTools?.markAsked()));
 app.on("render-process-gone", (_event, contents, details) => {
   if (desktopShutdownStarted || details?.reason === "clean-exit" || !mainWindow || mainWindow.isDestroyed() || contents !== mainWindow.webContents) return;
   slog(`limix: main window page went away (${details?.reason}); loading it again`);

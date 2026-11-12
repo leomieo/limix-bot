@@ -1337,6 +1337,71 @@ def tray_main(s):
                 "    talk.skin(skin); const { color } = skinChrome(skin);\n    if (mainWindow && event.sender === mainWindow.webContents) desktopTray?.setLight?.(skinIsLight(skin));\n")
 edit("electron/main.mjs", tray_main)
 
+# 10v. "Công cụ cho kỹ năng": one-click install of what the default skills, the private computer (Docker) and the
+# suggested rea MCP need (electron/limix-tools.mjs, LimixToolsDialog); asked once on a new computer. Settings > Skills
+# also lists the skills that ship with the app (LimixBundledSkills, GET /api/limix/bundled-skills).
+def tools_route(s):
+    if "/api/limix/bundled-skills" in s:
+        return s
+    s = must(s, 'import { readLocalSkills } from "../limix-skill-folder.ts";\n', 'import { readLocalSkills } from "../limix-skill-folder.ts";\nimport { loadBundledSkills } from "../skill-library.ts";\n')
+    return must(s, "    let m: RegExpMatchArray | null = null;\n",
+                "    let m: RegExpMatchArray | null = null;\n"
+                "    if (method === \"GET\" && path === \"/api/limix/bundled-skills\") {\n"
+                "      const skills = loadBundledSkills().map(({ manifest }) => ({ id: manifest.id, name: manifest.name, description: manifest.description, defaultEnabled: manifest.defaultEnabled, triggerTerms: manifest.triggerTerms }));\n"
+                "      return json(res, 200, { skills });\n"
+                "    }\n")
+edit("server/routes/bot-skills.ts", tools_route)
+def tools_settings(s):
+    if "LimixBundledSkills" in s:
+        return s
+    s = must(s, 'import { Card, Switch } from "./SettingsPrimitives";\n', 'import { Card, Switch } from "./SettingsPrimitives";\nimport { LimixBundledSkills } from "./LimixBundledSkills";\n')
+    return must(s, '    <div className="flex flex-col gap-4">\n      <Card title={t("skills.library.title")}', '    <div className="flex flex-col gap-4">\n      <LimixBundledSkills />\n      <Card title={t("skills.library.title")}')
+edit("src/components/SkillsSection.tsx", tools_settings)
+def tools_main(s):
+    if "limix-tools.mjs" in s:
+        return s
+    s = must(s, 'import { createLimixGateway } from "./limix-gateway.mjs";\n', 'import { createLimixGateway } from "./limix-gateway.mjs";\nimport { createLimixTools } from "./limix-tools.mjs";\n')
+    s = must(s, "  limixGateway.start();\n", "  limixGateway.start();\n  limixTools = createLimixTools({ userData: app.getPath(\"userData\"), resourcesPath: process.resourcesPath, serverRequest: (route, init) => localServerRequest(route, init), log: slog });\n")
+    return must(s, 'app.on("will-quit", () => limixGateway?.stop());\n',
+                'app.on("will-quit", () => limixGateway?.stop());\n'
+                'let limixTools = null;\n'
+                'ipcMain.handle("limix-tools:state", localOnly("limix-tools:state", () => limixTools ? limixTools.state() : { supported: false, items: [] }));\n'
+                'ipcMain.handle("limix-tools:install", localOnly("limix-tools:install", (_event, ids) => limixTools ? limixTools.install(Array.isArray(ids) ? ids.map(String) : []) : { supported: false, items: [] }));\n'
+                'ipcMain.handle("limix-tools:should-ask", localOnly("limix-tools:should-ask", () => limixTools ? limixTools.shouldAsk() : false));\n'
+                'ipcMain.handle("limix-tools:asked", localOnly("limix-tools:asked", () => limixTools?.markAsked()));\n')
+edit("electron/main.mjs", tools_main)
+edit("electron/preload.cjs", lambda s: s if "limix-tools:state" in s else must(s,
+    '  limixGateway: { open: () => ipcRenderer.invoke("limix-gateway:open") },\n',
+    '  limixGateway: { open: () => ipcRenderer.invoke("limix-gateway:open") },\n'
+    '  limixTools: { state: () => ipcRenderer.invoke("limix-tools:state"), install: (ids) => ipcRenderer.invoke("limix-tools:install", ids), shouldAsk: () => ipcRenderer.invoke("limix-tools:should-ask"), markAsked: () => ipcRenderer.invoke("limix-tools:asked") },\n'))
+def tools_menu(s):
+    if "limix:tools-open" in s:
+        return s
+    s = must(s, "  Link2,\n", "  Link2,\n  Wrench,\n")
+    s = must(s, '  const settings: SidebarMenuItem = { key: "settings",',
+             '  const toolsItem: SidebarMenuItem | null = typeof window !== "undefined" && (window as unknown as { ogb?: { limixTools?: unknown } }).ogb?.limixTools ? {\n'
+             '    key: "limix-tools", label: "Công cụ cho kỹ năng", icon: <Wrench size={18} />,\n'
+             '    onSelect: () => { window.dispatchEvent(new CustomEvent("limix:tools-open")); },\n'
+             '  } : null;\n'
+             '  const settings: SidebarMenuItem = { key: "settings",')
+    s = must(s, "...phone, ...present(connectItem), support, settings,", "...phone, ...present(connectItem), ...present(toolsItem), support, settings,")
+    s = must(s, "    [...present(usageItem), ...present(connectItem), settings],", "    [...present(usageItem), ...present(connectItem), ...present(toolsItem), settings],")
+    s = must(s, 'import { LimixPhoneDialog } from "./LimixPhoneDialog";\n', 'import { LimixPhoneDialog } from "./LimixPhoneDialog";\nimport { LimixToolsDialog, limixTools } from "./LimixToolsDialog";\n')
+    s = must(s, "  const [limixPhoneOpen, setLimixPhoneOpen] = useState(false);\n",
+             "  const [limixPhoneOpen, setLimixPhoneOpen] = useState(false);\n"
+             "  const [limixToolsOpen, setLimixToolsOpen] = useState<null | { asking: boolean }>(null);\n"
+             "  useEffect(() => {\n"
+             "    const open = () => setLimixToolsOpen({ asking: false });\n"
+             "    window.addEventListener(\"limix:tools-open\", open);\n"
+             "    // A new computer: ask once, a little after start, whether to install what the default skills need.\n"
+             "    const timer = setTimeout(() => { void limixTools()?.shouldAsk().then((ask) => { if (ask) setLimixToolsOpen((now) => now ?? { asking: true }); }).catch(() => undefined); }, 8000);\n"
+             "    return () => { window.removeEventListener(\"limix:tools-open\", open); clearTimeout(timer); };\n"
+             "  }, []);\n")
+    return must(s, "      {limixPhoneOpen && <LimixPhoneDialog onClose={() => setLimixPhoneOpen(false)} />}\n",
+                "      {limixPhoneOpen && <LimixPhoneDialog onClose={() => setLimixPhoneOpen(false)} />}\n"
+                "      {limixToolsOpen && <LimixToolsDialog asking={limixToolsOpen.asking} onClose={() => setLimixToolsOpen(null)} />}\n")
+edit("src/components/SidebarProfileMenu.tsx", tools_menu)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):
