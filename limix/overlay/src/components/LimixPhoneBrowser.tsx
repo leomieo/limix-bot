@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { Globe, Loader2, RefreshCw, Smartphone, Wifi } from "lucide-react";
+import { Check, Copy, Globe, Loader2, RefreshCw, Smartphone, Wifi } from "lucide-react";
 
 import { api } from "@/state/api";
 
@@ -98,6 +98,7 @@ function WifiPane() {
           <div className="rounded-2xl bg-white p-3"><QRCodeSVG value={pairing.url} size={220} level="M" marginSize={1} bgColor="#ffffff" fgColor="#111111" /></div>
           <div className="text-[12px] text-ink-secondary">Mã dùng một lần, hết hạn lúc {until} · mã: <span className="font-mono text-ink">{pairing.code}</span></div>
           <div className="max-w-full truncate font-mono text-[11px] text-ink-tertiary">{pairing.url.split("#")[0]}</div>
+          <CopyRow url={pairing.url} code={pairing.code} />
         </div>
       ) : pairing ? (
         <p className="text-[13px] text-warning">Máy tính chưa có địa chỉ Wi-Fi. Kiểm tra máy đã nối Wi-Fi hoặc mạng dây trong nhà, rồi tạo mã mới.</p>
@@ -193,11 +194,35 @@ function RemotePane() {
         <div className="rounded-2xl bg-white p-3"><QRCodeSVG value={pairing.url} size={220} level="M" marginSize={1} bgColor="#ffffff" fgColor="#111111" /></div>
         <div className="text-[12px] text-ink-secondary">Mã dùng một lần, hết hạn lúc {until} · mã: <span className="font-mono text-ink">{pairing.code}</span></div>
         <div className="max-w-full truncate font-mono text-[11px] text-ink-tertiary">{pairing.url.split("#")[0]}</div>
+        <CopyRow url={pairing.url} code={pairing.code} />
       </div>
       {error && <p className="text-[12px] text-danger">{error}</p>}
       <div className="flex flex-wrap gap-2">
         <button type="button" className={button} onClick={() => void run()}><RefreshCw size={14} />Tạo mã mới</button>
       </div>
+    </div>
+  );
+}
+
+/** For a laptop or another computer: open the copied link there (it signs that browser in once), or type the code. */
+function CopyRow({ url, code }: { url: string; code: string }) {
+  const [copied, setCopied] = useState<"link" | "code" | null>(null);
+  const copy = async (what: "link" | "code", text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(what);
+      setTimeout(() => setCopied(null), 1500);
+    } catch {
+      setCopied(null);
+    }
+  };
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <div className="flex flex-wrap justify-center gap-2">
+        <button type="button" className={button} onClick={() => void copy("link", url)}>{copied === "link" ? <Check size={14} /> : <Copy size={14} />}{copied === "link" ? "Đã chép link" : "Chép link"}</button>
+        <button type="button" className={button} onClick={() => void copy("code", code)}>{copied === "code" ? <Check size={14} /> : <Copy size={14} />}{copied === "code" ? "Đã chép mã" : "Chép mã"}</button>
+      </div>
+      <p className="text-center text-[11px] text-ink-tertiary">Dùng trên laptop: dán link vào trình duyệt là vào thẳng. Link chỉ dùng được một lần.</p>
     </div>
   );
 }
