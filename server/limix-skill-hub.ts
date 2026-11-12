@@ -10,6 +10,7 @@ import { isSkillName } from "../shared/skill-md.ts";
 import { writeFileAtomic } from "./atomic.ts";
 import { DATA_DIR } from "./config.ts";
 import { installLibrarySkill, readSkillLibraryIndex, retireLibrarySkill, setLibrarySkillReviewState } from "./skill-library.ts";
+import { lxs } from "./limix-lang.ts";
 
 export const HUB_REPO = "leomieo/limix-skill-hub";
 const HUB_BRANCH = "main";
@@ -97,10 +98,10 @@ export function syncHub(): Promise<{ changed: boolean; count: number } | { error
         saveSettings({ ...settings, lastSync: new Date().toISOString(), lastError: null });
         return { changed: false, count: hubCatalog().length };
       }
-      if (!response.ok) throw new Error(`Hub trả về ${response.status}`);
+      if (!response.ok) throw new Error(lxs(`Hub trả về ${response.status}`, `The hub returned ${response.status}`));
       const text = await response.text();
       const parsed = JSON.parse(text) as { skills?: unknown };
-      if (!Array.isArray(parsed.skills)) throw new Error("Danh mục Hub không đúng định dạng");
+      if (!Array.isArray(parsed.skills)) throw new Error(lxs("Danh mục Hub không đúng định dạng", "The hub catalog has the wrong format"));
       mkdirSync(hubDir(), { recursive: true, mode: 0o700 });
       writeFileAtomic(catalogFile(), text, { mode: 0o600 });
       saveSettings({ ...settings, etag: response.headers.get("etag"), lastSync: new Date().toISOString(), lastError: null });
@@ -123,8 +124,8 @@ const isToolFile = (path: string): boolean => SCRIPT.test(path) || MCP_FILE.test
 const sha = (data: Uint8Array | string): string => createHash("sha256").update(data).digest("hex");
 
 export function hubSkillBlocked(entry: HubEntry): string | null {
-  if (entry.area === "quarantine" || entry.security_status === "quarantined") return "Skill nằm trong khu cách ly vì có mã nguy hiểm.";
-  if (entry.approval_status === "quarantined" || entry.approval_status === "rejected") return "Skill bị từ chối.";
+  if (entry.area === "quarantine" || entry.security_status === "quarantined") return lxs("Skill nằm trong khu cách ly vì có mã nguy hiểm.", "This skill is quarantined because it contains dangerous code.");
+  if (entry.approval_status === "quarantined" || entry.approval_status === "rejected") return lxs("Skill bị từ chối.", "This skill was rejected.");
   return null;
 }
 
@@ -157,46 +158,46 @@ export function hubSkills(): HubSkillWire[] {
       // A same-named skill the owner imported by hand is not the hub's: never touched by sync.
       enabled: have?.reviewState === "approved",
       updateAvailable: Boolean(have && have.checksum !== entry.checksum),
-      blocked: !have && library[entry.id] ? "Thư viện đã có kỹ năng cùng tên không đến từ Hub." : null,
+      blocked: !have && library[entry.id] ? lxs("Thư viện đã có kỹ năng cùng tên không đến từ Hub.", "The library already has a skill with this name that did not come from the hub.") : null,
       risky: hubSkillBlocked(entry),
     };
   });
 }
 
 export async function installHubSkill(id: string, options: { allowTools?: boolean; allowRisky?: boolean } = {}): Promise<{ ok: true; skipped: string[] } | { error: string }> {
-  if (!isSkillName(id)) return { error: "Tên kỹ năng không hợp lệ" };
+  if (!isSkillName(id)) return { error: lxs("Tên kỹ năng không hợp lệ", "Invalid skill name") };
   const entry = hubCatalog().find((e) => e.id === id);
-  if (!entry) return { error: "Không thấy kỹ năng này trong danh mục Hub. Hãy đồng bộ lại." };
+  if (!entry) return { error: lxs("Không thấy kỹ năng này trong danh mục Hub. Hãy đồng bộ lại.", "This skill is not in the hub catalog. Sync again.") };
   const blocked = hubSkillBlocked(entry);
   if (blocked && !options.allowRisky) return { error: blocked };
   const installed = installedFromHub().get(id);
   const existing = readSkillLibraryIndex()[id];
-  if (existing && !installed) return { error: "Thư viện đã có kỹ năng cùng tên không đến từ Hub." };
+  if (existing && !installed) return { error: lxs("Thư viện đã có kỹ năng cùng tên không đến từ Hub.", "The library already has a skill with this name that did not come from the hub.") };
   const wanted = Object.keys(entry.file_hashes).filter((path) => path !== "SKILL.md" && (options.allowTools || !isToolFile(path)));
   const skipped = Object.keys(entry.file_hashes).filter((path) => path !== "SKILL.md" && !wanted.includes(path));
   const files: Array<{ path: string; content: Uint8Array }> = [];
   let skillMd = "";
   for (const path of ["SKILL.md", ...wanted]) {
     const expected = entry.file_hashes[path];
-    if (!expected) return { error: `Danh mục thiếu mã kiểm tra cho ${path}` };
+    if (!expected) return { error: lxs(`Danh mục thiếu mã kiểm tra cho ${path}`, `The catalog has no checksum for ${path}`) };
     let response: Response;
     try {
       response = await fetchText(rawUrl(`${entry.area === "quarantine" ? "quarantine" : "skills"}/${id}/${path}`));
     } catch (cause) {
-      return { error: `Không tải được ${path}: ${cause instanceof Error ? cause.message : String(cause)}` };
+      return { error: lxs(`Không tải được ${path}: `, `Couldn't download ${path}: `) + (cause instanceof Error ? cause.message : String(cause)) };
     }
-    if (!response.ok) return { error: `Không tải được ${path} (${response.status})` };
+    if (!response.ok) return { error: lxs(`Không tải được ${path} (${response.status})`, `Couldn't download ${path} (${response.status})`) };
     const bytes = new Uint8Array(await response.arrayBuffer());
-    if (bytes.byteLength > FILE_MAX_BYTES) return { error: `${path} quá lớn` };
+    if (bytes.byteLength > FILE_MAX_BYTES) return { error: lxs(`${path} quá lớn`, `${path} is too large`) };
     // Pinned content: a file the hub no longer serves as catalogued is refused, never installed.
-    if (sha(bytes) !== expected) return { error: `${path} không khớp mã SHA-256 trong danh mục — đã dừng cài` };
+    if (sha(bytes) !== expected) return { error: lxs(`${path} không khớp mã SHA-256 trong danh mục — đã dừng cài`, `${path} does not match the SHA-256 in the catalog — install stopped`) };
     if (path === "SKILL.md") skillMd = new TextDecoder().decode(bytes);
     else files.push({ path, content: bytes });
   }
   if (installed) {
     const retired = retireLibrarySkill(id, installed.sha256);
     if ("error" in retired) return { error: retired.error };
-    if ("stale" in retired) return { error: "Kỹ năng đã bị sửa tay sau khi cài, không cập nhật đè." };
+    if ("stale" in retired) return { error: lxs("Kỹ năng đã bị sửa tay sau khi cài, không cập nhật đè.", "This skill was edited by hand after installing, so it is not overwritten.") };
   }
   const result = installLibrarySkill({
     name: id,
@@ -215,17 +216,17 @@ export async function installHubSkill(id: string, options: { allowTools?: boolea
 }
 
 export function setHubSkillEnabled(id: string, enabled: boolean): { ok: true } | { error: string } {
-  if (!installedFromHub().has(id)) return { error: "Kỹ năng này chưa cài từ Hub" };
+  if (!installedFromHub().has(id)) return { error: lxs("Kỹ năng này chưa cài từ Hub", "This skill was not installed from the hub") };
   const result = setLibrarySkillReviewState(id, enabled ? "approved" : "disabled");
   return "error" in result ? { error: result.error } : { ok: true };
 }
 
 export function removeHubSkill(id: string): { ok: true } | { error: string } {
   const installed = installedFromHub().get(id);
-  if (!installed) return { error: "Kỹ năng này chưa cài từ Hub" };
+  if (!installed) return { error: lxs("Kỹ năng này chưa cài từ Hub", "This skill was not installed from the hub") };
   const result = retireLibrarySkill(id, installed.sha256);
   if ("error" in result) return { error: result.error };
-  if ("stale" in result) return { error: "Kỹ năng đã bị sửa tay sau khi cài, không gỡ tự động." };
+  if ("stale" in result) return { error: lxs("Kỹ năng đã bị sửa tay sau khi cài, không gỡ tự động.", "This skill was edited by hand after installing, so it is not removed automatically.") };
   return { ok: true }; // the bytes stay in the library archive, so a removal can be undone by hand
 }
 

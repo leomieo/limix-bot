@@ -6,6 +6,7 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
+import { lxm } from "./limix-lang.mjs";
 
 const PORT = 8790;
 const URL_ = `http://127.0.0.1:${PORT}/`;
@@ -48,11 +49,11 @@ export function createLimixGateway({ app, BrowserWindow, shell, resourcesPath, u
 
   /** The connector asks for the app's bots, or for one bot's Bot API address and key (switched on if it was off). */
   async function appCall(message) {
-    if (!serverRequest) throw new Error("Limix Bot chưa sẵn sàng");
+    if (!serverRequest) throw new Error(lxm("Limix Bot chưa sẵn sàng", "Limix Bot is not ready yet"));
     const call = async (route, body) => {
       const res = await serverRequest(route, body === undefined ? {} : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || `Limix Bot trả lỗi ${res.status}`);
+      if (!res.ok) throw new Error(data?.error || lxm(`Limix Bot trả lỗi ${res.status}`, `Limix Bot returned error ${res.status}`));
       return data;
     };
     if (message.op === "bots") {
@@ -64,10 +65,10 @@ export function createLimixGateway({ app, BrowserWindow, shell, resourcesPath, u
       const on = await call(route, { enabled: true });
       // Already on: its key was shown once and is not kept, so a new one is made for the connector.
       const key = on.key ?? (await call(`${route}/new-key`, {})).key;
-      if (typeof key !== "string" || typeof on.url !== "string") throw new Error("Limix Bot không đưa địa chỉ hoặc khóa Bot API");
+      if (typeof key !== "string" || typeof on.url !== "string") throw new Error(lxm("Limix Bot không đưa địa chỉ hoặc khóa Bot API", "Limix Bot did not provide the Bot API address or key"));
       return { endpoint: on.url, apiKey: key, canTakeCalls: on.canTakeCalls !== false };
     }
-    throw new Error("Yêu cầu không hợp lệ");
+    throw new Error(lxm("Yêu cầu không hợp lệ", "Invalid request"));
   }
 
   async function answerChild(proc, message) {
@@ -87,14 +88,14 @@ export function createLimixGateway({ app, BrowserWindow, shell, resourcesPath, u
   }
 
   async function open() {
-    if (!entry) throw new Error("Chương trình kết nối chưa được cài kèm bản này.");
+    if (!entry) throw new Error(lxm("Chương trình kết nối chưa được cài kèm bản này.", "The connector program is not included in this build."));
     if (window && !window.isDestroyed()) { window.show(); window.focus(); return; }
     start();
     for (let i = 0; i < 40 && !(await alive()); i++) await new Promise((r) => setTimeout(r, 250));
-    if (!(await alive())) throw new Error("Chưa khởi động được chương trình kết nối. Thử lại sau vài giây.");
+    if (!(await alive())) throw new Error(lxm("Chưa khởi động được chương trình kết nối. Thử lại sau vài giây.", "Couldn't start the connector program. Try again in a few seconds."));
     window = new BrowserWindow({
       width: 1040, height: 720, minWidth: 760, minHeight: 520, backgroundColor: "#0a0a0a", icon: iconPath,
-      title: "Kết nối Zalo · Telegram · Discord", autoHideMenuBar: true,
+      title: lxm("Kết nối Zalo · Telegram · Discord", "Connect Zalo · Telegram · Discord"), autoHideMenuBar: true,
       webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false },
     });
     window.setMenu(null);

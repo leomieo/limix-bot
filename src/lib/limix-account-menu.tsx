@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { LogOut } from "lucide-react";
 import type { SidebarMenuItem } from "@/components/SidebarPopoverMenu";
+import { lx } from "@/lib/limix-text";
 
 /** The Limix account this computer is signed in to (desktop app only), for the "Đăng xuất" item in the account menu. */
 export function useLimixAccount(): { username: string; email: string } | null {
@@ -19,8 +20,8 @@ export function withLimixSignOut(account: { username: string; email: string } | 
   if (!account || !window.ogb?.limixAccount) return items;
   return [...items, {
     key: "limix-sign-out",
-    label: "Đăng xuất",
-    subtitle: account.username ? `Tài khoản Limix: ${account.username}` : "Tài khoản Limix",
+    label: lx("Đăng xuất", "Sign out"),
+    subtitle: account.username ? lx(`Tài khoản Limix: ${account.username}`, `Limix account: ${account.username}`) : lx("Tài khoản Limix", "Limix account"),
     icon: <LogOut size={16} aria-hidden />,
     separatorBefore: true,
     onSelect: () => { void window.ogb?.limixAccount?.signOut().catch(() => undefined); },

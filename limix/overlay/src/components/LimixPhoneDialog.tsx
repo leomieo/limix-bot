@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 import { LimixPhoneBrowser } from "./LimixPhoneBrowser";
+import { lx } from "@/lib/limix-text";
 
 /** "Kết nối điện thoại": a window in the middle of the screen (like the other dialogs), not a page buried in Settings. */
 export function LimixPhoneDialog({ onClose }: { onClose: () => void }) {
@@ -29,8 +30,8 @@ export function LimixPhoneDialog({ onClose }: { onClose: () => void }) {
         className="max-h-full w-full max-w-[480px] overflow-y-auto rounded-2xl border border-hairline/50 bg-panel p-6 shadow-2xl"
       >
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 id="limix-phone-title" className="text-[17px] font-semibold text-ink">Kết nối điện thoại</h2>
-          <button type="button" onClick={onClose} aria-label="Đóng" className="rounded-lg p-1.5 text-ink-secondary hover:bg-raised hover:text-ink">
+          <h2 id="limix-phone-title" className="text-[17px] font-semibold text-ink">{lx("Kết nối điện thoại", "Connect your phone")}</h2>
+          <button type="button" onClick={onClose} aria-label={lx("Đóng", "Close")} className="rounded-lg p-1.5 text-ink-secondary hover:bg-raised hover:text-ink">
             <X size={16} />
           </button>
         </div>

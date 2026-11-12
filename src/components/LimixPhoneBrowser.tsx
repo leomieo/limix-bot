@@ -3,6 +3,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Check, Copy, Globe, Loader2, RefreshCw, Smartphone, Wifi } from "lucide-react";
 
 import { api } from "@/state/api";
+import { lx } from "@/lib/limix-text";
 
 /** Limix Bot has no phone app: a phone opens this computer's Limix Bot in its browser instead. The QR is an ordinary
  * web link (http://<this computer on the Wi-Fi>/pair#code=…) that any camera opens; the code signs that browser in once. */
@@ -30,7 +31,7 @@ function WifiPane() {
     try {
       const made = await api<Pairing>("/api/auth/pairing", {
         method: "POST",
-        body: JSON.stringify({ label: "Điện thoại (trình duyệt)", ttlMs: 15 * 60_000 }),
+        body: JSON.stringify({ label: lx("Điện thoại (trình duyệt)", "Phone (browser)"), ttlMs: 15 * 60_000 }),
       });
       setPairing(made);
     } catch (cause) {
@@ -55,20 +56,20 @@ function WifiPane() {
   };
 
   if (!bridge()) {
-    return <p className="text-[13px] text-ink-secondary">Mở mục này trong ứng dụng Limix Bot trên máy tính.</p>;
+    return <p className="text-[13px] text-ink-secondary">{lx("Mở mục này trong ứng dụng Limix Bot trên máy tính.", "Open this in the Limix Bot desktop app.")}</p>;
   }
   if (!state) return <Loader2 size={15} className="animate-spin text-ink-secondary" />;
 
   if (!state.on) {
     return (
       <div className="flex flex-col gap-3 rounded-xl border border-hairline/40 bg-card px-4 py-4" data-limix-phone="off">
-        <div className="flex items-center gap-2 text-[14px] font-medium text-ink"><Smartphone size={16} />Mở Limix Bot trên điện thoại</div>
+        <div className="flex items-center gap-2 text-[14px] font-medium text-ink"><Smartphone size={16} />{lx("Mở Limix Bot trên điện thoại", "Open Limix Bot on your phone")}</div>
         <p className="text-[13px] leading-relaxed text-ink-secondary">
-          Điện thoại dùng chung Wi-Fi với máy tính này có thể mở Limix Bot bằng trình duyệt (Safari, Chrome), không cần cài app.
-          Bật xong, Limix Bot khởi động lại một lần. Nếu Windows hỏi quyền mạng, chọn <b>Cho phép</b> (mạng riêng).
+          {lx(<>Điện thoại dùng chung Wi-Fi với máy tính này có thể mở Limix Bot bằng trình duyệt (Safari, Chrome), không cần cài app. Bật xong, Limix Bot khởi động lại một lần. Nếu Windows hỏi quyền mạng, chọn <b>Cho phép</b> (mạng riêng).</>,
+            <>A phone on the same Wi-Fi as this computer can open Limix Bot in its browser (Safari, Chrome), no app to install. After you turn it on, Limix Bot restarts once. If Windows asks about network access, choose <b>Allow</b> (private network).</>)}
         </p>
         <button type="button" className={`${button} w-fit`} disabled={busy} onClick={() => void turn(true)}>
-          {busy ? <Loader2 size={14} className="animate-spin" /> : <Wifi size={14} />}Bật và khởi động lại
+          {busy ? <Loader2 size={14} className="animate-spin" /> : <Wifi size={14} />}{lx("Bật và khởi động lại", "Turn on and restart")}
         </button>
         {error && <p className="text-[12px] text-danger">{error}</p>}
       </div>
@@ -78,8 +79,8 @@ function WifiPane() {
   if (!state.active) {
     return (
       <div className="flex flex-col gap-3 rounded-xl border border-hairline/40 bg-card px-4 py-4">
-        <p className="text-[13px] text-ink">Đã bật. Khởi động lại Limix Bot để điện thoại mở được.</p>
-        <button type="button" className={`${button} w-fit`} disabled={busy} onClick={() => void turn(true)}>Khởi động lại ngay</button>
+        <p className="text-[13px] text-ink">{lx("Đã bật. Khởi động lại Limix Bot để điện thoại mở được.", "Turned on. Restart Limix Bot so your phone can connect.")}</p>
+        <button type="button" className={`${button} w-fit`} disabled={busy} onClick={() => void turn(true)}>{lx("Khởi động lại ngay", "Restart now")}</button>
       </div>
     );
   }
@@ -87,26 +88,26 @@ function WifiPane() {
   const until = pairing ? new Date(pairing.expiresAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }) : "";
   return (
     <div className="flex flex-col gap-4 rounded-xl border border-hairline/40 bg-card px-4 py-4" data-limix-phone="on">
-      <div className="flex items-center gap-2 text-[14px] font-medium text-ink"><Smartphone size={16} />Mở Limix Bot trên điện thoại</div>
+      <div className="flex items-center gap-2 text-[14px] font-medium text-ink"><Smartphone size={16} />{lx("Mở Limix Bot trên điện thoại", "Open Limix Bot on your phone")}</div>
       <ol className="list-decimal space-y-1 pl-5 text-[13px] leading-relaxed text-ink-secondary">
-        <li>Điện thoại bắt cùng Wi-Fi với máy tính này.</li>
-        <li>Mở camera, quét mã bên dưới, chạm vào đường link hiện ra.</li>
-        <li>Trong trình duyệt: Chia sẻ → <b>Thêm vào Màn hình chính</b> để dùng như một app.</li>
+        <li>{lx("Điện thoại bắt cùng Wi-Fi với máy tính này.", "Connect your phone to the same Wi-Fi as this computer.")}</li>
+        <li>{lx("Mở camera, quét mã bên dưới, chạm vào đường link hiện ra.", "Open the camera, scan the code below, tap the link that appears.")}</li>
+        <li>{lx(<>Trong trình duyệt: Chia sẻ → <b>Thêm vào Màn hình chính</b> để dùng như một app.</>, <>In the browser: Share → <b>Add to Home Screen</b> to use it like an app.</>)}</li>
       </ol>
       {pairing?.url ? (
         <div className="flex flex-col items-center gap-2">
           <div className="rounded-2xl bg-white p-3"><QRCodeSVG value={pairing.url} size={220} level="M" marginSize={1} bgColor="#ffffff" fgColor="#111111" /></div>
-          <div className="text-[12px] text-ink-secondary">Mã dùng một lần, hết hạn lúc {until} · mã: <span className="font-mono text-ink">{pairing.code}</span></div>
+          <div className="text-[12px] text-ink-secondary">{lx("Mã dùng một lần, hết hạn lúc", "One-time code, expires at")} {until} · {lx("mã", "code")}: <span className="font-mono text-ink">{pairing.code}</span></div>
           <div className="max-w-full truncate font-mono text-[11px] text-ink-tertiary">{pairing.url.split("#")[0]}</div>
           <CopyRow url={pairing.url} code={pairing.code} />
         </div>
       ) : pairing ? (
-        <p className="text-[13px] text-warning">Máy tính chưa có địa chỉ Wi-Fi. Kiểm tra máy đã nối Wi-Fi hoặc mạng dây trong nhà, rồi tạo mã mới.</p>
+        <p className="text-[13px] text-warning">{lx("Máy tính chưa có địa chỉ Wi-Fi. Kiểm tra máy đã nối Wi-Fi hoặc mạng dây trong nhà, rồi tạo mã mới.", "This computer has no Wi-Fi address. Check it is on your home Wi-Fi or wired network, then create a new code.")}</p>
       ) : busy ? <Loader2 size={15} className="animate-spin text-ink-secondary" /> : null}
       {error && <p className="text-[12px] text-danger">{error}</p>}
       <div className="flex flex-wrap gap-2">
-        <button type="button" className={button} disabled={busy} onClick={() => void newCode()}><RefreshCw size={14} />Tạo mã mới</button>
-        <button type="button" className={button} disabled={busy} onClick={() => void turn(false)}>Tắt</button>
+        <button type="button" className={button} disabled={busy} onClick={() => void newCode()}><RefreshCw size={14} />{lx("Tạo mã mới", "New code")}</button>
+        <button type="button" className={button} disabled={busy} onClick={() => void turn(false)}>{lx("Tắt", "Turn off")}</button>
       </div>
     </div>
   );
@@ -131,14 +132,14 @@ function RemotePane() {
   const run = useCallback(async () => {
     const host = ogb();
     if (!host?.companion || !host.companionAccount) {
-      setError("Mở mục này trong ứng dụng Limix Bot trên máy tính.");
+      setError(lx("Mở mục này trong ứng dụng Limix Bot trên máy tính.", "Open this in the Limix Bot desktop app."));
       return;
     }
     setPhase("working");
     setError(null);
     setPairing(null);
     try {
-      setNote("Đang bật đường truyền từ xa cho máy tính này…");
+      setNote(lx("Đang bật đường truyền từ xa cho máy tính này…", "Turning on remote access for this computer…"));
       await host.companion.start();
       await host.companion.setRoute("https", true);
       let endpoint = "";
@@ -146,16 +147,16 @@ function RemotePane() {
       for (let i = 0; i < 45 && !endpoint; i++) {
         const account = await host.companionAccount.state();
         if (account.status === "ready" && account.endpoint && /\.limixmedia\.com$/.test(new URL(account.endpoint).hostname)) { endpoint = account.endpoint; break; }
-        if (account.status === "signed-out" && i >= 3) throw new Error("Máy này chưa đăng nhập tài khoản Limix. Đăng xuất rồi đăng nhập lại Limix Bot, sau đó thử lại.");
+        if (account.status === "signed-out" && i >= 3) throw new Error(lx("Máy này chưa đăng nhập tài khoản Limix. Đăng xuất rồi đăng nhập lại Limix Bot, sau đó thử lại.", "This computer is not signed in to a Limix account. Sign out, sign in to Limix Bot again, then retry."));
         if (account.status === "error") lastMessage = account.message ?? "";
         if (account.status === "ready") await host.companionAccount.prepare().catch(() => undefined);
-        setNote(i < 6 ? "Đang tạo địa chỉ riêng cho máy này trên Cloudflare…" : "Vẫn đang tạo địa chỉ, chờ thêm chút…");
+        setNote(i < 6 ? lx("Đang tạo địa chỉ riêng cho máy này trên Cloudflare…", "Creating a private address for this computer on Cloudflare…") : lx("Vẫn đang tạo địa chỉ, chờ thêm chút…", "Still creating the address, one moment…"));
         await pause(2000);
       }
-      if (!endpoint) throw new Error(lastMessage || "Chưa tạo được địa chỉ từ xa sau 90 giây. Kiểm tra máy có Internet rồi thử lại.");
+      if (!endpoint) throw new Error(lastMessage || lx("Chưa tạo được địa chỉ từ xa sau 90 giây. Kiểm tra máy có Internet rồi thử lại.", "Couldn't create the remote address within 90 seconds. Check the computer is online, then retry."));
       const made = await api<{ code: string; expiresAt: number }>("/api/auth/pairing", {
         method: "POST",
-        body: JSON.stringify({ label: "Điện thoại (từ xa)", ttlMs: 15 * 60_000 }),
+        body: JSON.stringify({ label: lx("Điện thoại (từ xa)", "Phone (remote)"), ttlMs: 15 * 60_000 }),
       });
       setPairing({ url: `${endpoint}/pair#code=${made.code}`, code: made.code, expiresAt: made.expiresAt });
       setPhase("ready");
@@ -168,13 +169,13 @@ function RemotePane() {
   if (phase !== "ready" || !pairing) {
     return (
       <div className="flex flex-col gap-3 rounded-xl border border-hairline/40 bg-card px-4 py-4" data-limix-remote={phase}>
-        <div className="flex items-center gap-2 text-[14px] font-medium text-ink"><Globe size={16} />Điều khiển từ xa (Internet)</div>
+        <div className="flex items-center gap-2 text-[14px] font-medium text-ink"><Globe size={16} />{lx("Điều khiển từ xa (Internet)", "Remote control (Internet)")}</div>
         <p className="text-[13px] leading-relaxed text-ink-secondary">
-          Điện thoại ở đâu cũng mở được Limix Bot của máy tính này.
-          Máy tính cần <b>đang bật, có Internet và đang chạy Limix Bot</b>.
+          {lx(<>Điện thoại ở đâu cũng mở được Limix Bot của máy tính này. Máy tính cần <b>đang bật, có Internet và đang chạy Limix Bot</b>.</>,
+            <>Your phone can open this computer's Limix Bot from anywhere. The computer must be <b>on, online and running Limix Bot</b>.</>)}
         </p>
         <button type="button" className={`${button} w-fit`} disabled={phase === "working"} onClick={() => void run()}>
-          {phase === "working" ? <Loader2 size={14} className="animate-spin" /> : <Globe size={14} />}Tạo mã QR từ xa
+          {phase === "working" ? <Loader2 size={14} className="animate-spin" /> : <Globe size={14} />}{lx("Tạo mã QR từ xa", "Create remote QR code")}
         </button>
         {phase === "working" && note && <p className="text-[12px] text-ink-secondary">{note}</p>}
         {error && <p className="text-[12px] text-danger">{error}</p>}
@@ -184,21 +185,21 @@ function RemotePane() {
   const until = new Date(pairing.expiresAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
   return (
     <div className="flex flex-col gap-4 rounded-xl border border-hairline/40 bg-card px-4 py-4" data-limix-remote="ready">
-      <div className="flex items-center gap-2 text-[14px] font-medium text-ink"><Globe size={16} />Điều khiển từ xa (Internet)</div>
+      <div className="flex items-center gap-2 text-[14px] font-medium text-ink"><Globe size={16} />{lx("Điều khiển từ xa (Internet)", "Remote control (Internet)")}</div>
       <ol className="list-decimal space-y-1 pl-5 text-[13px] leading-relaxed text-ink-secondary">
-        <li>Trên điện thoại (Internet), mở camera và quét mã bên dưới.</li>
-        <li>Chạm vào đường link hiện ra. Trình duyệt tự đăng nhập.</li>
-        <li>Chia sẻ → <b>Thêm vào Màn hình chính</b> để dùng như một app.</li>
+        <li>{lx("Trên điện thoại (Internet), mở camera và quét mã bên dưới.", "On your phone (any network), open the camera and scan the code below.")}</li>
+        <li>{lx("Chạm vào đường link hiện ra. Trình duyệt tự đăng nhập.", "Tap the link that appears. The browser signs in by itself.")}</li>
+        <li>{lx(<>Chia sẻ → <b>Thêm vào Màn hình chính</b> để dùng như một app.</>, <>Share → <b>Add to Home Screen</b> to use it like an app.</>)}</li>
       </ol>
       <div className="flex flex-col items-center gap-2">
         <div className="rounded-2xl bg-white p-3"><QRCodeSVG value={pairing.url} size={220} level="M" marginSize={1} bgColor="#ffffff" fgColor="#111111" /></div>
-        <div className="text-[12px] text-ink-secondary">Mã dùng một lần, hết hạn lúc {until} · mã: <span className="font-mono text-ink">{pairing.code}</span></div>
+        <div className="text-[12px] text-ink-secondary">{lx("Mã dùng một lần, hết hạn lúc", "One-time code, expires at")} {until} · {lx("mã", "code")}: <span className="font-mono text-ink">{pairing.code}</span></div>
         <div className="max-w-full truncate font-mono text-[11px] text-ink-tertiary">{pairing.url.split("#")[0]}</div>
         <CopyRow url={pairing.url} code={pairing.code} />
       </div>
       {error && <p className="text-[12px] text-danger">{error}</p>}
       <div className="flex flex-wrap gap-2">
-        <button type="button" className={button} onClick={() => void run()}><RefreshCw size={14} />Tạo mã mới</button>
+        <button type="button" className={button} onClick={() => void run()}><RefreshCw size={14} />{lx("Tạo mã mới", "New code")}</button>
       </div>
     </div>
   );
@@ -219,10 +220,10 @@ function CopyRow({ url, code }: { url: string; code: string }) {
   return (
     <div className="flex flex-col items-center gap-1.5">
       <div className="flex flex-wrap justify-center gap-2">
-        <button type="button" className={button} onClick={() => void copy("link", url)}>{copied === "link" ? <Check size={14} /> : <Copy size={14} />}{copied === "link" ? "Đã chép link" : "Chép link"}</button>
-        <button type="button" className={button} onClick={() => void copy("code", code)}>{copied === "code" ? <Check size={14} /> : <Copy size={14} />}{copied === "code" ? "Đã chép mã" : "Chép mã"}</button>
+        <button type="button" className={button} onClick={() => void copy("link", url)}>{copied === "link" ? <Check size={14} /> : <Copy size={14} />}{copied === "link" ? lx("Đã chép link", "Link copied") : lx("Chép link", "Copy link")}</button>
+        <button type="button" className={button} onClick={() => void copy("code", code)}>{copied === "code" ? <Check size={14} /> : <Copy size={14} />}{copied === "code" ? lx("Đã chép mã", "Code copied") : lx("Chép mã", "Copy code")}</button>
       </div>
-      <p className="text-center text-[11px] text-ink-tertiary">Dùng trên laptop: dán link vào trình duyệt là vào thẳng. Link chỉ dùng được một lần.</p>
+      <p className="text-center text-[11px] text-ink-tertiary">{lx("Dùng trên laptop: dán link vào trình duyệt là vào thẳng. Link chỉ dùng được một lần.", "On a laptop: paste the link into a browser to go straight in. The link works only once.")}</p>
     </div>
   );
 }
@@ -234,8 +235,8 @@ export function LimixPhoneBrowser() {
   return (
     <div className="flex flex-col gap-3">
       <div role="tablist" className="flex gap-1 rounded-xl border border-hairline/40 bg-card p-1">
-        <button type="button" role="tab" aria-selected={tab === "remote"} className={tabClass(tab === "remote")} onClick={() => setTab("remote")}>Từ Xa</button>
-        <button type="button" role="tab" aria-selected={tab === "wifi"} className={tabClass(tab === "wifi")} onClick={() => setTab("wifi")}>Nội Bộ</button>
+        <button type="button" role="tab" aria-selected={tab === "remote"} className={tabClass(tab === "remote")} onClick={() => setTab("remote")}>{lx("Từ Xa", "Remote")}</button>
+        <button type="button" role="tab" aria-selected={tab === "wifi"} className={tabClass(tab === "wifi")} onClick={() => setTab("wifi")}>{lx("Nội Bộ", "Local")}</button>
       </div>
       {tab === "remote" ? <RemotePane /> : <WifiPane />}
     </div>

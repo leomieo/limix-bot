@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, Download, Loader2, ScanSearch, X } from "lucide-react";
+import { lx } from "@/lib/limix-text";
 
 /** "Công cụ cho kỹ năng": what this computer still lacks for the default skills, the private computer and the
  * suggested MCP, with an Install button each (electron/limix-tools.mjs does the work). */
@@ -73,24 +74,24 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
   const missingRecommended = missing.filter((item) => item.recommended);
 
   const body = !limixTools() ? (
-    <p className="text-[13px] text-ink-secondary">Mở mục này trong ứng dụng Limix Bot trên máy tính.</p>
+    <p className="text-[13px] text-ink-secondary">{lx("Mở mục này trong ứng dụng Limix Bot trên máy tính.", "Open this in the Limix Bot desktop app.")}</p>
   ) : !state ? (
     <Loader2 size={15} className="animate-spin text-ink-secondary" />
   ) : !state.supported ? (
-    <p className="text-[13px] text-ink-secondary">Tự cài công cụ hiện chỉ có trên Windows.</p>
+    <p className="text-[13px] text-ink-secondary">{lx("Tự cài công cụ hiện chỉ có trên Windows.", "Installing tools automatically is only available on Windows for now.")}</p>
   ) : (
     <div className="flex flex-col gap-3">
       {asking && missingRecommended.length > 0 && (
         <p className="text-[13px] leading-relaxed text-ink">
-          Máy này còn thiếu {missingRecommended.length} công cụ mà các kỹ năng có sẵn của bot cần. Cài ngay?
+          {lx(`Máy này còn thiếu ${missingRecommended.length} công cụ mà các kỹ năng có sẵn của bot cần. Cài ngay?`, `This computer is missing ${missingRecommended.length} tools the bot's built-in skills need. Install them now?`)}
         </p>
       )}
       <div className="flex items-center justify-between gap-3">
         <p className="text-[12px] leading-relaxed text-ink-secondary">
-          Limix Bot dùng luôn công cụ đã có trên máy bạn; chỉ công cụ chưa có mới hiện nút Cài.
+          {lx("Limix Bot dùng luôn công cụ đã có trên máy bạn; chỉ công cụ chưa có mới hiện nút Cài.", "Limix Bot reuses tools you already have; only missing ones show an Install button.")}
         </p>
         <button type="button" className={`${button} shrink-0`} disabled={scanning || busy} onClick={() => void scan()}>
-          {scanning ? <Loader2 size={14} className="animate-spin" /> : <ScanSearch size={14} />}Quét máy
+          {scanning ? <Loader2 size={14} className="animate-spin" /> : <ScanSearch size={14} />}{lx("Quét máy", "Scan this computer")}
         </button>
       </div>
       <ul className="flex flex-col divide-y divide-hairline/40 rounded-xl border border-hairline/40 bg-card">
@@ -106,7 +107,7 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
                 <p className="mt-0.5 text-[12px] leading-relaxed text-ink-secondary">{item.why}</p>
                 {job?.status === "working" && (
                   <p className="mt-1 text-[12px] text-ink-secondary">
-                    {job.step ?? "Đang cài"}{typeof job.progress === "number" ? ` ${Math.round(job.progress * 100)}%` : "…"}
+                    {job.step ?? lx("Đang cài", "Installing")}{typeof job.progress === "number" ? ` ${Math.round(job.progress * 100)}%` : "…"}
                   </p>
                 )}
                 {job?.status === "error" && job.message && <p className="mt-1 text-[12px] text-danger">{job.message}</p>}
@@ -114,14 +115,14 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
               <div className="shrink-0 pt-0.5">
                 {item.installed ? (
                   <span className="inline-flex flex-col items-end text-[13px] text-ink-secondary" title={item.where ?? undefined}>
-                    <span className="inline-flex items-center gap-1"><Check size={14} />Đã có</span>
-                    <span className="text-[11px] text-ink-tertiary">{item.source === "system" ? "dùng bản trên máy" : "do Limix Bot cài"}</span>
+                    <span className="inline-flex items-center gap-1"><Check size={14} />{lx("Đã có", "Installed")}</span>
+                    <span className="text-[11px] text-ink-tertiary">{item.source === "system" ? lx("dùng bản trên máy", "using the copy on this computer") : lx("do Limix Bot cài", "installed by Limix Bot")}</span>
                   </span>
                 ) : job?.status === "working" ? (
                   <Loader2 size={15} className="animate-spin text-ink-secondary" />
                 ) : (
                   <button type="button" className={button} onClick={() => void install([item.id])}>
-                    <Download size={14} />{job?.status === "error" ? "Thử lại" : "Cài"}
+                    <Download size={14} />{job?.status === "error" ? lx("Thử lại", "Retry") : lx("Cài", "Install")}
                   </button>
                 )}
               </div>
@@ -133,19 +134,18 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
       <div className="flex flex-wrap items-center gap-2">
         {missingRecommended.length > 0 && (
           <button type="button" className={button} disabled={busy} onClick={() => void install(missingRecommended.map((item) => item.id))}>
-            <Download size={14} />Cài các công cụ cần cho kỹ năng có sẵn
+            <Download size={14} />{lx("Cài các công cụ cần cho kỹ năng có sẵn", "Install the tools the built-in skills need")}
           </button>
         )}
         {missing.length > 0 && (
           <button type="button" className={button} disabled={busy} onClick={() => void install(missing.map((item) => item.id))}>
-            Cài tất cả
+            {lx("Cài tất cả", "Install all")}
           </button>
         )}
-        {asking && <button type="button" className={button} onClick={onClose}>Để sau</button>}
+        {asking && <button type="button" className={button} onClick={onClose}>{lx("Để sau", "Later")}</button>}
       </div>
       <p className="text-[12px] text-ink-tertiary">
-        Công cụ được tải từ trang chính thức của từng dự án, kiểm tra mã an toàn, rồi đặt trong thư mục riêng của Limix Bot.
-        Bạn có thể đóng cửa sổ này, việc cài vẫn tiếp tục.
+        {lx("Công cụ được tải từ trang chính thức của từng dự án, kiểm tra mã an toàn, rồi đặt trong thư mục riêng của Limix Bot. Bạn có thể đóng cửa sổ này, việc cài vẫn tiếp tục.", "Tools are downloaded from each project's official site, checked with a hash, and kept in Limix Bot's own folder. You can close this window; installing carries on.")}
       </p>
     </div>
   );
@@ -154,8 +154,8 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <div role="dialog" aria-modal="true" aria-labelledby="limix-tools-title" className="max-h-full w-full max-w-[600px] overflow-y-auto rounded-2xl border border-hairline/50 bg-panel p-6 shadow-2xl">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 id="limix-tools-title" className="text-[17px] font-semibold text-ink">Công cụ cho kỹ năng</h2>
-          <button type="button" onClick={onClose} aria-label="Đóng" className="rounded-lg p-1.5 text-ink-secondary hover:bg-raised hover:text-ink"><X size={16} /></button>
+          <h2 id="limix-tools-title" className="text-[17px] font-semibold text-ink">{lx("Công cụ cho kỹ năng", "Tools for skills")}</h2>
+          <button type="button" onClick={onClose} aria-label={lx("Đóng", "Close")} className="rounded-lg p-1.5 text-ink-secondary hover:bg-raised hover:text-ink"><X size={16} /></button>
         </div>
         {body}
       </div>
