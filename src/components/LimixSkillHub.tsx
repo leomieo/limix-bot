@@ -17,10 +17,11 @@ interface HubSkill {
   dependencies: string[]; permissions: { runs_code: boolean; mcp: boolean; files: string[] };
   security_findings?: Array<{ rule: string; severity: string; file: string; line?: number }>;
   notes: string[]; last_checked: string | null;
-  installed: boolean; enabled: boolean; updateAvailable: boolean; blocked: string | null;
+  installed: boolean; enabled: boolean; updateAvailable: boolean; blocked: string | null; risky: string | null;
 }
 interface HubState { repo: string; settings: { autoSync: boolean; autoInstall: boolean; lastSync: string | null; lastError: string | null }; skills: HubSkill[] }
 
+const PAGE = 12;
 const TABS = [
   ["discover", "Khám phá"], ["recommended", "Khuyên dùng"], ["installed", "Đã cài"], ["updates", "Cập nhật"],
   ["security", "Bảo mật"], ["sources", "Nguồn"], ["settings", "Cài đặt"],
@@ -49,6 +50,9 @@ export function LimixSkillHub() {
   const [category, setCategory] = useState("");
   const [toolsOpen, setToolsOpen] = useState(false);
   const [guide, setGuide] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [shown, setShown] = useState(PAGE);
+  useEffect(() => setShown(PAGE), [tab, query, category]);
 
   const load = useCallback(async () => {
     try { setState(await call<HubState>("/api/limix/hub")); } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
@@ -69,10 +73,10 @@ export function LimixSkillHub() {
       if (q && !`${s.name} ${s.description} ${s.description_vi ?? ""} ${s.tags.join(" ")}`.toLowerCase().includes(q)) return false;
       switch (tab) {
         case "discover": return true;
-        case "recommended": return !s.blocked && (s.grade === "excellent" || s.grade === "recommended");
+        case "recommended": return !s.blocked && !s.risky && (s.grade === "excellent" || s.grade === "recommended");
         case "installed": return s.installed;
         case "updates": return s.updateAvailable;
-        case "security": return s.security_status !== "clean";
+        case "security": return s.security_status !== "clean" || Boolean(s.risky);
         default: return false;
       }
     });
@@ -80,95 +84,130 @@ export function LimixSkillHub() {
 
   const syncNow = () => run("sync", () => call("/api/limix/hub/sync", {}));
 
-  const card = (s: HubSkill) => (
-    <li key={s.id} className="px-4 py-3">
-      <div className="flex items-start gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            <span className="font-mono text-[13px] font-medium text-ink">{s.name}</span>
-            <span className="text-[12px] text-ink-secondary">{s.quality_score}/100 · {GRADE[s.grade] ?? s.grade}</span>
-            {typeof s.stars === "number" && <span className="inline-flex items-center gap-0.5 text-[12px] text-ink-secondary"><Star size={12} />{s.stars.toLocaleString("vi-VN")}</span>}
-          </div>
-          {(s.created_at || s.pushed_at) && (
-            <p className="text-[11px] text-ink-tertiary">
-              {s.created_at && `Tạo ${day(s.created_at)}`}{s.created_at && s.pushed_at && " · "}{s.pushed_at && `Cập nhật ${day(s.pushed_at)}`}
+  const GRADE_TONE: Record<string, string> = {
+    excellent: "bg-emerald-500/15 text-emerald-500", recommended: "bg-sky-500/15 text-sky-500",
+    review: "bg-amber-500/15 text-amber-500", rejected: "bg-danger/15 text-danger",
+  };
+  const chip = "rounded-md bg-ink/[0.06] px-1.5 py-0.5 text-[11px] text-ink-secondary";
+  const installRisky = (s: HubSkill) => {
+    if (!window.confirm(`CẢNH BÁO: "${s.name}" bị cách ly vì ${s.risky ?? "có dấu hiệu nguy hiểm"}\n\nKhông khuyến khích cài. Kỹ năng này có thể chứa mã độc hoặc lệnh nguy hiểm. Chỉ cài nếu bạn hiểu rõ và tin tưởng nguồn ${s.source.repository ?? "này"}.\n\nVẫn cài đặt (kỹ năng sẽ ở trạng thái tắt)?`)) return;
+    void run(s.id, () => call("/api/limix/hub/install", { id: s.id, allowRisky: true }));
+  };
+  const toggleEnabled = (s: HubSkill) => {
+    if (!s.enabled && s.risky && !window.confirm(`"${s.name}" bị cách ly (${s.risky}). Vẫn bật cho bot dùng?`)) return;
+    void run(s.id, () => call("/api/limix/hub/enable", { id: s.id, enabled: !s.enabled }));
+  };
+
+  const card = (s: HubSkill) => {
+    const text = s.description_vi || s.description;
+    const open = expanded === s.id;
+    const hasTools = (s.permissions.runs_code || s.permissions.mcp) && !s.blocked;
+    return (
+      <li key={s.id} className="px-4 py-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="font-mono text-[14px] font-semibold text-ink">{s.name}</span>
+              <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium ${GRADE_TONE[s.grade] ?? "bg-ink/10 text-ink-secondary"}`}>{s.quality_score}/100 · {GRADE[s.grade] ?? s.grade}</span>
+              {typeof s.stars === "number" && <span className="inline-flex items-center gap-0.5 text-[12px] text-ink-secondary"><Star size={12} />{s.stars.toLocaleString("vi-VN")}</span>}
+            </div>
+            <p className={`mt-1 text-[12.5px] leading-relaxed text-ink-secondary ${open ? "" : "line-clamp-3"}`}>{text}</p>
+            {text.length > 220 && (
+              <button type="button" className="mt-0.5 text-[12px] text-ink underline-offset-2 hover:underline" onClick={() => setExpanded(open ? null : s.id)}>{open ? "Thu gọn" : "Xem thêm"}</button>
+            )}
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span className={chip}>{KIND[s.kind] ?? s.kind}</span>
+              <span className={`${chip} ${s.security_status === "clean" ? "" : s.security_status === "quarantined" ? "!bg-danger/15 !text-danger" : "!bg-amber-500/15 !text-amber-500"}`}>Bảo mật: {SECURITY[s.security_status] ?? s.security_status}</span>
+              <span className={chip}>{s.license ?? "Chưa có giấy phép"}</span>
+              {s.dependencies.length > 0 && <span className={chip}>Cần: {s.dependencies.join(", ")}</span>}
+            </div>
+            <p className="mt-1.5 text-[11px] leading-relaxed text-ink-tertiary">
+              {s.source.repository ?? "Không rõ nguồn"}
+              {s.created_at && ` · Tạo ${day(s.created_at)}`}{s.pushed_at && ` · Cập nhật ${day(s.pushed_at)}`}
               {s.stats_checked && ` · số sao đo ngày ${day(s.stats_checked)}`}
             </p>
-          )}
-          <p className="mt-0.5 text-[12px] leading-relaxed text-ink-secondary">{s.description_vi || s.description}</p>
-          <p className="mt-1 text-[12px] text-ink-tertiary">
-            {KIND[s.kind] ?? s.kind} · Bảo mật: {SECURITY[s.security_status] ?? s.security_status} · {s.license ?? "Chưa có giấy phép"}{s.source.repository ? ` · ${s.source.repository}` : ""}
-            {s.dependencies.length > 0 && ` · Cần: ${s.dependencies.join(", ")}`}
-          </p>
-          {s.blocked && <p className="mt-1 flex items-center gap-1 text-[12px] text-danger"><ShieldAlert size={13} />{s.blocked}</p>}
-          {(s.permissions.runs_code || s.permissions.mcp) && !s.blocked && (
-            <div className="mt-1.5 rounded-lg border border-hairline/40 bg-raised/50 p-2.5 text-[12px] leading-relaxed text-ink-secondary">
-              <button type="button" className="text-ink underline-offset-2 hover:underline" onClick={() => setGuide(guide === s.id ? null : s.id)}>
-                {guide === s.id ? "Ẩn hướng dẫn cài đặt" : "Kỹ năng này có tool: xem hướng dẫn cài đặt"}
-              </button>
-              {guide === s.id && (
-                <ol className="mt-2 list-decimal space-y-1.5 pl-4">
-                  <li>
-                    <b className="text-ink">Cài kỹ năng:</b> bấm "Cài". Mặc định chỉ lấy phần hướng dẫn (SKILL.md). Kỹ năng được tải từ GitHub và kiểm tra SHA-256 từng file.
-                  </li>
-                  {s.compatibility.runtimes.length > 0 && (
-                    <li>
-                      <b className="text-ink">Chuẩn bị máy:</b> kỹ năng cần {s.compatibility.runtimes.map((r) => r.name).join(", ")}.
-                      {s.compatibility.runtimes.filter((r) => r.installerId).length > 0 && (<> Limix Bot cài được: {s.compatibility.runtimes.filter((r) => r.installerId).map((r) => r.name).join(", ")}. </>)}
-                      {s.compatibility.runtimes.some((r) => !r.installerId) && (<> Phải cài tay: {s.compatibility.runtimes.filter((r) => !r.installerId).map((r) => r.name).join(", ")} (Python: tải từ python.org, tick "Add python.exe to PATH"). </>)}
-                      {limixTools() && <button type="button" className="ml-1 text-ink underline" onClick={() => setToolsOpen(true)}>Mở "Công cụ cho kỹ năng"</button>}
-                    </li>
-                  )}
-                  {s.permissions.runs_code && (
-                    <li><b className="text-ink">Cài phần script:</b> bấm "Cài kèm tool". Các file script sẽ nằm trong thư mục kỹ năng và bot có thể chạy chúng. Chỉ làm khi bạn tin nguồn {s.source.repository ?? "này"} (đã quét: {SECURITY[s.security_status] ?? s.security_status}).</li>
-                  )}
-                  {s.permissions.mcp && (
-                    <li><b className="text-ink">MCP:</b> file cấu hình MCP chỉ được chép vào thư mục kỹ năng, không tự bật. Muốn dùng, thêm máy chủ MCP ở Cài đặt rồi bật.</li>
-                  )}
-                  <li><b className="text-ink">Bật:</b> sau khi cài, gạt công tắc "Đang tắt" sang bật, rồi gán cho bot ở thư viện bên dưới.</li>
-                </ol>
-              )}
-            </div>
-          )}
-          {tab === "security" && s.security_findings?.slice(0, 5).map((f, i) => (
-            <p key={i} className="text-[11px] text-ink-tertiary">{f.severity} · {f.rule} · {f.file}{f.line ? `:${f.line}` : ""}</p>
-          ))}
-          {s.notes.map((n) => <p key={n} className="text-[11px] text-ink-tertiary">{n}</p>)}
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-1.5">
-          {busy === s.id ? <Loader2 size={15} className="animate-spin text-ink-secondary" /> : !s.installed ? (
-            <>
-              <button type="button" className={button} disabled={Boolean(s.blocked) || busy !== null} onClick={() => void run(s.id, () => call("/api/limix/hub/install", { id: s.id }))}>
-                <Download size={14} />Cài (tắt sẵn)
-              </button>
-              {s.permissions.runs_code && !s.blocked && (
-                <button type="button" className={button} disabled={busy !== null} onClick={() => { if (window.confirm(`Cài cả script của "${s.name}"? Bot có thể chạy các script này. Chỉ làm khi bạn tin nguồn.`)) void run(s.id, () => call("/api/limix/hub/install", { id: s.id, allowTools: true })); }}>
-                  <Download size={14} />Cài kèm tool
+            {s.risky && (
+              <p className="mt-2 flex items-start gap-1.5 rounded-lg bg-danger/10 p-2 text-[12px] leading-relaxed text-danger"><ShieldAlert size={14} className="mt-0.5 shrink-0" /><span>{s.risky} Không khuyến khích cài.</span></p>
+            )}
+            {s.blocked && <p className="mt-1 flex items-center gap-1 text-[12px] text-danger"><ShieldAlert size={13} />{s.blocked}</p>}
+            {hasTools && (
+              <div className="mt-2 rounded-lg border border-hairline/40 bg-raised/50 p-2.5 text-[12px] leading-relaxed text-ink-secondary">
+                <button type="button" className="text-ink underline-offset-2 hover:underline" onClick={() => setGuide(guide === s.id ? null : s.id)}>
+                  {guide === s.id ? "Ẩn hướng dẫn cài đặt" : "Kỹ năng này có tool: xem hướng dẫn cài đặt"}
                 </button>
-              )}
-            </>
-          ) : (
-            <>
-              <label className="flex items-center gap-2 text-[12px] text-ink-secondary">
-                {s.enabled ? "Đang bật" : "Đang tắt"}
-                <Switch checked={s.enabled} disabled={busy !== null} onClick={() => void run(s.id, () => call("/api/limix/hub/enable", { id: s.id, enabled: !s.enabled }))} />
-              </label>
-              {s.updateAvailable && <button type="button" className={button} disabled={busy !== null} onClick={() => void run(s.id, () => call("/api/limix/hub/update", { id: s.id }))}><RefreshCw size={14} />Cập nhật</button>}
-              <button type="button" className={button} disabled={busy !== null} onClick={() => void run(s.id, () => call("/api/limix/hub/remove", { id: s.id }))}><Trash2 size={14} />Gỡ</button>
-            </>
-          )}
+                {guide === s.id && (
+                  <ol className="mt-2 list-decimal space-y-1.5 pl-4">
+                    <li><b className="text-ink">Cài kỹ năng:</b> bấm "Cài đặt". Mặc định chỉ lấy phần hướng dẫn (SKILL.md). Kỹ năng được tải từ GitHub và kiểm tra SHA-256 từng file.</li>
+                    {s.compatibility.runtimes.length > 0 && (
+                      <li>
+                        <b className="text-ink">Chuẩn bị máy:</b> kỹ năng cần {s.compatibility.runtimes.map((r) => r.name).join(", ")}.
+                        {s.compatibility.runtimes.filter((r) => r.installerId).length > 0 && (<> Limix Bot cài được: {s.compatibility.runtimes.filter((r) => r.installerId).map((r) => r.name).join(", ")}. </>)}
+                        {s.compatibility.runtimes.some((r) => !r.installerId) && (<> Phải cài tay: {s.compatibility.runtimes.filter((r) => !r.installerId).map((r) => r.name).join(", ")} (Python: tải từ python.org, tick "Add python.exe to PATH"). </>)}
+                        {limixTools() && <button type="button" className="ml-1 text-ink underline" onClick={() => setToolsOpen(true)}>Mở "Công cụ cho kỹ năng"</button>}
+                      </li>
+                    )}
+                    {s.permissions.runs_code && (
+                      <li><b className="text-ink">Cài phần script:</b> bấm "Cài đặt kèm tool". Các file script nằm trong thư mục kỹ năng và bot có thể chạy chúng. Chỉ làm khi bạn tin nguồn {s.source.repository ?? "này"} (đã quét: {SECURITY[s.security_status] ?? s.security_status}).</li>
+                    )}
+                    {s.permissions.mcp && (
+                      <li><b className="text-ink">MCP:</b> file cấu hình MCP chỉ được chép vào thư mục kỹ năng, không tự bật. Muốn dùng, thêm máy chủ MCP ở Cài đặt rồi bật.</li>
+                    )}
+                    <li><b className="text-ink">Bật:</b> sau khi cài, gạt công tắc "Đang tắt" sang bật, rồi gán cho bot ở thư viện bên dưới.</li>
+                  </ol>
+                )}
+              </div>
+            )}
+            {tab === "security" && s.security_findings?.slice(0, 5).map((f, i) => (
+              <p key={i} className="text-[11px] text-ink-tertiary">{f.severity} · {f.rule} · {f.file}{f.line ? `:${f.line}` : ""}</p>
+            ))}
+            {s.notes.map((n) => <p key={n} className="mt-0.5 text-[11px] text-ink-tertiary">{n}</p>)}
+          </div>
+          <div className="flex shrink-0 flex-row flex-wrap items-center gap-2 sm:w-[168px] sm:flex-col sm:items-stretch">
+            {busy === s.id ? <Loader2 size={15} className="animate-spin text-ink-secondary sm:self-end" /> : !s.installed ? (
+              <>
+                {s.risky ? (
+                  <button type="button" className={`${button} justify-center !border-danger/40 !text-danger`} disabled={Boolean(s.blocked) || busy !== null} onClick={() => installRisky(s)}>
+                    <Download size={14} />Cài đặt (không khuyến khích)
+                  </button>
+                ) : (
+                  <button type="button" className={`${button} justify-center`} disabled={Boolean(s.blocked) || busy !== null} onClick={() => void run(s.id, () => call("/api/limix/hub/install", { id: s.id }))}>
+                    <Download size={14} />Cài đặt
+                  </button>
+                )}
+                {s.permissions.runs_code && !s.blocked && !s.risky && (
+                  <button type="button" className={`${button} justify-center`} disabled={busy !== null} onClick={() => { if (window.confirm(`Cài cả script của "${s.name}"? Bot có thể chạy các script này. Chỉ làm khi bạn tin nguồn.`)) void run(s.id, () => call("/api/limix/hub/install", { id: s.id, allowTools: true })); }}>
+                    <Download size={14} />Cài đặt kèm tool
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <label className="flex items-center justify-between gap-2 text-[12px] text-ink-secondary">
+                  {s.enabled ? "Đang bật" : "Đang tắt"}
+                  <Switch checked={s.enabled} disabled={busy !== null} onClick={() => toggleEnabled(s)} />
+                </label>
+                {s.updateAvailable && <button type="button" className={`${button} justify-center`} disabled={busy !== null} onClick={() => void run(s.id, () => call("/api/limix/hub/update", { id: s.id, allowRisky: Boolean(s.risky) }))}><RefreshCw size={14} />Cập nhật</button>}
+                <button type="button" className={`${button} justify-center`} disabled={busy !== null} onClick={() => void run(s.id, () => call("/api/limix/hub/remove", { id: s.id }))}><Trash2 size={14} />Gỡ</button>
+              </>
+            )}
+          </div>
         </div>
-      </div>
-    </li>
-  );
+      </li>
+    );
+  };
 
   return (
     <Card title="Thư viện kỹ năng Limix" subtitle="Kho kỹ năng đã quét bảo mật và chấm điểm. Cài xong kỹ năng vẫn tắt; bạn bật rồi gán cho bot ở thư viện bên dưới.">
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap gap-1.5">
-          {TABS.map(([id, label]) => (
-            <button key={id} type="button" onClick={() => setTab(id)} className={`rounded-lg px-2.5 py-1 text-[13px] ${tab === id ? "bg-raised text-ink" : "text-ink-secondary hover:bg-raised-hover"}`}>{label}</button>
-          ))}
+          {TABS.map(([id, label]) => {
+            const count = id === "installed" ? skills.filter((s) => s.installed).length : id === "updates" ? skills.filter((s) => s.updateAvailable).length : id === "discover" ? skills.length : null;
+            return (
+              <button key={id} type="button" onClick={() => setTab(id)} className={`rounded-lg px-2.5 py-1 text-[13px] ${tab === id ? "bg-raised text-ink" : "text-ink-secondary hover:bg-raised-hover"}`}>
+                {label}{count ? <span className="ml-1 text-[11px] text-ink-tertiary">{count}</span> : null}
+              </button>
+            );
+          })}
         </div>
         {error && <p className="text-[12px] text-danger">{error}</p>}
         {!state ? <Loader2 size={15} className="animate-spin text-ink-secondary" /> : tab === "sources" ? (
@@ -206,7 +245,11 @@ export function LimixSkillHub() {
                 {skills.length === 0 ? "Chưa có danh mục. Bấm Đồng bộ ở mục Nguồn." : "Không có kỹ năng nào ở mục này."}
               </p>
             ) : (
-              <ul className="flex max-h-[520px] flex-col divide-y divide-hairline/40 overflow-y-auto rounded-xl border border-hairline/40 bg-card">{visible.map(card)}</ul>
+              <>
+                <p className="text-[12px] text-ink-tertiary">{visible.length} kỹ năng</p>
+                <ul className="flex flex-col divide-y divide-hairline/40 rounded-xl border border-hairline/40 bg-card">{visible.slice(0, shown).map(card)}</ul>
+                {visible.length > shown && <button type="button" className={`${button} w-fit self-center`} onClick={() => setShown((n) => n + PAGE)}>Xem thêm {Math.min(PAGE, visible.length - shown)} kỹ năng</button>}
+              </>
             )}
             {tab === "installed" && visible.length > 0 && <p className="flex items-center gap-1 text-[12px] text-ink-tertiary"><Check size={13} />Kỹ năng đã bật nằm trong thư viện kỹ năng bên dưới, nơi bạn gán cho từng bot hoặc mọi bot.</p>}
           </>

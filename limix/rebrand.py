@@ -1521,6 +1521,24 @@ def tools_menu(s):
                 "      {limixToolsOpen && <LimixToolsDialog asking={limixToolsOpen.asking} onClose={() => setLimixToolsOpen(null)} />}\n")
 edit("src/components/SidebarProfileMenu.tsx", tools_menu)
 
+# 10z5. Tools: "Quét" re-reads this computer (current Windows PATH, winget/choco/scoop folders) so tools the person already
+# installed count as present; the bridge gains scan().
+def tools_scan(s):
+    if "limix-tools:scan" in s:
+        return s
+    return must(s, 'ipcMain.handle("limix-tools:should-ask"', 'ipcMain.handle("limix-tools:scan", localOnly("limix-tools:scan", () => limixTools ? limixTools.scan() : { supported: false, items: [] }));\nipcMain.handle("limix-tools:should-ask"')
+edit("electron/main.mjs", tools_scan)
+edit("electron/preload.cjs", lambda s: s if "limix-tools:scan" in s else must(s, 'state: () => ipcRenderer.invoke("limix-tools:state"), ', 'state: () => ipcRenderer.invoke("limix-tools:state"), scan: () => ipcRenderer.invoke("limix-tools:scan"), '))
+
+# 10z6. Settings window (Simple mode) can be resized by dragging its edges, within a minimum and the app window.
+def settings_resize(s):
+    if "LimixResizeHandles" in s:
+        return s
+    s = s.replace('\nimport ', '\nimport { LimixResizeHandles } from "./LimixResizeHandles";\nimport ', 1)
+    return must(s, '          <span id="app-settings-title" className="sr-only">{t("settings.title")}</span>\n          <nav aria-label',
+                '          <span id="app-settings-title" className="sr-only">{t("settings.title")}</span>\n          <LimixResizeHandles />\n          <nav aria-label')
+edit("src/components/SettingsModal.tsx", settings_resize)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):

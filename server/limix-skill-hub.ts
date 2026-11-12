@@ -143,6 +143,7 @@ export interface HubSkillWire extends HubEntry {
   enabled: boolean;
   updateAvailable: boolean;
   blocked: string | null;
+  risky: string | null;
 }
 
 export function hubSkills(): HubSkillWire[] {
@@ -156,17 +157,18 @@ export function hubSkills(): HubSkillWire[] {
       // A same-named skill the owner imported by hand is not the hub's: never touched by sync.
       enabled: have?.reviewState === "approved",
       updateAvailable: Boolean(have && have.checksum !== entry.checksum),
-      blocked: hubSkillBlocked(entry) ?? (!have && library[entry.id] ? "Thư viện đã có kỹ năng cùng tên không đến từ Hub." : null),
+      blocked: !have && library[entry.id] ? "Thư viện đã có kỹ năng cùng tên không đến từ Hub." : null,
+      risky: hubSkillBlocked(entry),
     };
   });
 }
 
-export async function installHubSkill(id: string, options: { allowTools?: boolean } = {}): Promise<{ ok: true; skipped: string[] } | { error: string }> {
+export async function installHubSkill(id: string, options: { allowTools?: boolean; allowRisky?: boolean } = {}): Promise<{ ok: true; skipped: string[] } | { error: string }> {
   if (!isSkillName(id)) return { error: "Tên kỹ năng không hợp lệ" };
   const entry = hubCatalog().find((e) => e.id === id);
   if (!entry) return { error: "Không thấy kỹ năng này trong danh mục Hub. Hãy đồng bộ lại." };
   const blocked = hubSkillBlocked(entry);
-  if (blocked) return { error: blocked };
+  if (blocked && !options.allowRisky) return { error: blocked };
   const installed = installedFromHub().get(id);
   const existing = readSkillLibraryIndex()[id];
   if (existing && !installed) return { error: "Thư viện đã có kỹ năng cùng tên không đến từ Hub." };
@@ -179,7 +181,7 @@ export async function installHubSkill(id: string, options: { allowTools?: boolea
     if (!expected) return { error: `Danh mục thiếu mã kiểm tra cho ${path}` };
     let response: Response;
     try {
-      response = await fetchText(rawUrl(`skills/${id}/${path}`));
+      response = await fetchText(rawUrl(`${entry.area === "quarantine" ? "quarantine" : "skills"}/${id}/${path}`));
     } catch (cause) {
       return { error: `Không tải được ${path}: ${cause instanceof Error ? cause.message : String(cause)}` };
     }
@@ -214,8 +216,6 @@ export async function installHubSkill(id: string, options: { allowTools?: boolea
 
 export function setHubSkillEnabled(id: string, enabled: boolean): { ok: true } | { error: string } {
   if (!installedFromHub().has(id)) return { error: "Kỹ năng này chưa cài từ Hub" };
-  const entry = hubCatalog().find((e) => e.id === id);
-  if (enabled && entry && hubSkillBlocked(entry)) return { error: hubSkillBlocked(entry)! };
   const result = setLibrarySkillReviewState(id, enabled ? "approved" : "disabled");
   return "error" in result ? { error: result.error } : { ok: true };
 }
@@ -234,7 +234,7 @@ async function autoInstallEligible(): Promise<void> {
   let budget = 5;
   for (const skill of hubSkills()) {
     if (budget <= 0) return;
-    const eligible = !skill.blocked && skill.kind === "instructions-only" && skill.approval_status === "approved" && (skill.grade === "excellent" || skill.grade === "recommended");
+    const eligible = !skill.blocked && !skill.risky && skill.kind === "instructions-only" && skill.approval_status === "approved" && (skill.grade === "excellent" || skill.grade === "recommended");
     if (!eligible || (skill.installed && !skill.updateAvailable)) continue;
     budget -= 1;
     const done = await installHubSkill(skill.id);
@@ -264,7 +264,7 @@ export async function handleLimixHub(method: string, path: string, body: unknown
   }
   const id = typeof record.id === "string" ? record.id : "";
   if (method === "POST" && (path === "/api/limix/hub/install" || path === "/api/limix/hub/update")) {
-    const result = await installHubSkill(id, { allowTools: record.allowTools === true });
+    const result = await installHubSkill(id, { allowTools: record.allowTools === true, allowRisky: record.allowRisky === true });
     return "error" in result ? { status: 422, body: result } : { status: 200, body: result };
   }
   if (method === "POST" && path === "/api/limix/hub/enable") {

@@ -3210,6 +3210,7 @@ app.on("will-quit", () => limixGateway?.stop());
 let limixTools = null;
 ipcMain.handle("limix-tools:state", localOnly("limix-tools:state", () => limixTools ? limixTools.state() : { supported: false, items: [] }));
 ipcMain.handle("limix-tools:install", localOnly("limix-tools:install", (_event, ids) => limixTools ? limixTools.install(Array.isArray(ids) ? ids.map(String) : []) : { supported: false, items: [] }));
+ipcMain.handle("limix-tools:scan", localOnly("limix-tools:scan", () => limixTools ? limixTools.scan() : { supported: false, items: [] }));
 ipcMain.handle("limix-tools:should-ask", localOnly("limix-tools:should-ask", () => limixTools ? limixTools.shouldAsk() : false));
 ipcMain.handle("limix-tools:asked", localOnly("limix-tools:asked", () => limixTools?.markAsked()));
 app.on("render-process-gone", (_event, contents, details) => {
