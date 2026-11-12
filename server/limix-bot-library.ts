@@ -152,10 +152,11 @@ async function fetchJson(url: string, maxBytes: number): Promise<unknown> {
 
 let cached: { at: number; bots: LibraryBotListing[] } | null = null;
 
-async function listing(): Promise<LibraryBotListing[]> {
-  if (cached && Date.now() - cached.at < LIST_TTL_MS) return cached.bots;
+/** `fresh`: the "Cập nhật" button. Skips this cache and GitHub's (raw files are cached there for about five minutes). */
+async function listing(fresh = false): Promise<LibraryBotListing[]> {
+  if (!fresh && cached && Date.now() - cached.at < LIST_TTL_MS) return cached.bots;
   try {
-    const bots = parseBotListing(await fetchJson(`${TEAM_LIBRARY_RAW_ROOT}/catalog.json`, MAX_CATALOG_BYTES));
+    const bots = parseBotListing(await fetchJson(`${TEAM_LIBRARY_RAW_ROOT}/catalog.json${fresh ? `?t=${Date.now()}` : ""}`, MAX_CATALOG_BYTES));
     cached = { at: Date.now(), bots };
     return bots;
   } catch (error) {
@@ -164,16 +165,17 @@ async function listing(): Promise<LibraryBotListing[]> {
   }
 }
 
-/** /api/limix/bots and /api/limix/bots/<id>. Null for any other path. */
+/** GET /api/limix/bots, POST /api/limix/bots/refresh and GET /api/limix/bots/<id>. Null for any other path. */
 export async function handleLimixBotLibrary(method: string, path: string): Promise<{ status: number; body: unknown } | null> {
-  if (method !== "GET") return null;
   try {
+    if (method === "POST" && path === "/api/limix/bots/refresh") return { status: 200, body: { bots: await listing(true) } };
+    if (method !== "GET") return null;
     if (path === "/api/limix/bots") return { status: 200, body: { bots: await listing() } };
     const match = path.match(/^\/api\/limix\/bots\/([a-z0-9][a-z0-9-]{0,63})$/);
     if (!match) return null;
     const id = match[1]!;
     if (!(await listing()).some((bot) => bot.id === id)) return { status: 404, body: { error: "Không có bot mẫu này" } };
-    return { status: 200, body: { bot: parseLibraryBot(await fetchJson(`${TEAM_LIBRARY_RAW_ROOT}/bots/${id}.json`, MAX_BOT_BYTES), id) } };
+    return { status: 200, body: { bot: parseLibraryBot(await fetchJson(`${TEAM_LIBRARY_RAW_ROOT}/bots/${id}.json?t=${Date.now()}`, MAX_BOT_BYTES), id) } };
   } catch (error) {
     return { status: 502, body: { error: error instanceof Error ? error.message : String(error) } };
   }

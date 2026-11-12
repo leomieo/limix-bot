@@ -207,7 +207,7 @@ export function createTeamRoutes(deps: TeamRouteDeps): RouteHandler {
     }
     if (method === "GET" && path === "/api/team-library/catalog") {
       try {
-        return json(res, 200, await fetchTeamCatalog());
+        return json(res, 200, await fetchTeamCatalog(url.searchParams.get("fresh") ? ((input, init) => fetch(`${String(input)}?t=${Date.now()}`, init)) as typeof fetch : fetch));
       } catch (error) {
         return json(res, 502, { error: error instanceof Error ? error.message : "The team library is unavailable" });
       }
