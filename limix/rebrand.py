@@ -1249,6 +1249,17 @@ edit("electron/main.mjs", lambda s: s if "limix-tray.png" in s else must(s,
     "        Tray, Menu, nativeImage, iconPath: APP_ICON, t: nativeT,\n",
     "        Tray, Menu, nativeImage, iconPath: path.join(__dirname, \"resources/limix-tray.png\"), t: nativeT,\n"))
 
+# 10r. A main window whose page process died (killed in Task Manager, a GPU reset) loads its page again instead of
+# staying black; the app process itself is still running, so nothing else would bring the page back.
+edit("electron/main.mjs", lambda s: s if "limix: main window page went away" in s else must(s,
+    'app.on("will-quit", () => limixGateway?.stop());\n',
+    'app.on("will-quit", () => limixGateway?.stop());\n'
+    'app.on("render-process-gone", (_event, contents, details) => {\n'
+    '  if (desktopShutdownStarted || details?.reason === "clean-exit" || !mainWindow || mainWindow.isDestroyed() || contents !== mainWindow.webContents) return;\n'
+    '  slog(`limix: main window page went away (${details?.reason}); loading it again`);\n'
+    '  setTimeout(() => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.reload(); }, 1_000);\n'
+    '});\n'))
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):

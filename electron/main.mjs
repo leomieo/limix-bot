@@ -3203,6 +3203,11 @@ function releaseDesktopDataDirLease() {
 // before-quit is too early (this app defers it); will-quit is Electron's last boundary, and the process hook covers app.exit().
 ipcMain.handle("limix-gateway:open", localOnly("limix-gateway:open", () => limixGateway ? limixGateway.open() : Promise.reject(new Error("Chương trình kết nối chưa sẵn sàng."))));
 app.on("will-quit", () => limixGateway?.stop());
+app.on("render-process-gone", (_event, contents, details) => {
+  if (desktopShutdownStarted || details?.reason === "clean-exit" || !mainWindow || mainWindow.isDestroyed() || contents !== mainWindow.webContents) return;
+  slog(`limix: main window page went away (${details?.reason}); loading it again`);
+  setTimeout(() => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.reload(); }, 1_000);
+});
 ipcMain.handle("limix-phone:state", localOnly("limix-phone:state", () => ({ on: limixPhoneBrowserOn(app.getPath("userData")), active: limixLanActive })));
 ipcMain.handle("limix-phone:set", localOnly("limix-phone:set", (_event, on) => { setLimixPhoneBrowser(app.getPath("userData"), on === true); app.relaunch(); app.quit(); }));
 app.on("will-quit", releaseDesktopDataDirLease);
