@@ -15,7 +15,7 @@ on:
   push:
     branches: [main]
     tags: ["v*"]
-    paths-ignore: ["limix/docs/**", "limix/gateway/**", "**/*.md"]
+    paths-ignore: ["limix/docs/**", "limix/gateway/**", "limix/site/**", "**/*.md"]
 
 permissions:
   contents: write

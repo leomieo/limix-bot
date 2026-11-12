@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/icon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:title" content="Limix Bot">
+<meta property="og:description" content="Điều hành cả một đội bot AI ngay trên máy tính của bạn.">
+<meta property="og:image" content="https://limixmedia.com/icon-512.png">
+<meta property="og:url" content="https://limixmedia.com/">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Limix Bot · Đội bot AI trên máy tính của bạn</title>
+<meta name="description" content="Limix Bot: điều hành cả một đội bot AI ngay trên máy tính của bạn. Mỗi bot có máy tính riêng, tự học kỹ năng và trả lời khách trên Telegram, Zalo, Discord.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: two overlapping panes (the Limix mark) as the recurring device; hero pairs the pitch with a working app window. */
+:root {
+  --bg: #F3F4F6;
+  --surface: #FFFFFF;
+  --sunk: #E8EAEE;
+  --ink: #111318;
+  --ink-2: #4A4F5C;
+  --ink-3: #6B7180;
+  --line: #D9DCE3;
+  --accent: #D9431F;
+  --accent-ink: #FFFFFF;
+  --cyan: #0E8FA6;
+  --ok: #138A4E;
+  --shadow: 0 30px 60px -30px rgb(17 19 24 / .35), 0 2px 6px rgb(17 19 24 / .06);
+  --display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  --wrap: 1160px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D0E12; --surface: #16181E; --sunk: #1E2028; --ink: #F2F3F5; --ink-2: #B4B8C2; --ink-3: #8A8F9C;
+    --line: #2A2D36; --accent: #FF6A45; --accent-ink: #160A06; --cyan: #4CCFE6; --ok: #3DD68C;
+    --shadow: 0 40px 80px -30px rgb(0 0 0 / .8), 0 0 0 1px rgb(255 255 255 / .04);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D0E12; --surface: #16181E; --sunk: #1E2028; --ink: #F2F3F5; --ink-2: #B4B8C2; --ink-3: #8A8F9C;
+  --line: #2A2D36; --accent: #FF6A45; --accent-ink: #160A06; --cyan: #4CCFE6; --ok: #3DD68C;
+  --shadow: 0 40px 80px -30px rgb(0 0 0 / .8), 0 0 0 1px rgb(255 255 255 / .04);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation: none !important; transition: none !important; } }
+body { background: var(--bg); color: var(--ink); font: 16px/1.6 var(--body); -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+.wrap { max-width: var(--wrap); margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--display); letter-spacing: -0.02em; text-wrap: balance; margin: 0; }
+h2 { font-size: clamp(28px, 3.6vw, 44px); line-height: 1.1; font-weight: 600; }
+h3 { font-size: 19px; line-height: 1.3; font-weight: 600; }
+p { margin: 0; }
+.eyebrow { font: 600 12px/1 var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+.lead { font-size: 18px; color: var(--ink-2); max-width: 60ch; }
+
+/* Header */
+header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+.bar { display: flex; align-items: center; gap: 24px; height: 64px; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font: 600 18px/1 var(--display); }
+.mark { width: 28px; height: 28px; flex: none; }
+.mark rect { fill: var(--ink); }
+.mark path { fill: var(--bg); }
+nav.links { display: flex; gap: 22px; margin-left: auto; }
+nav.links a { text-decoration: none; color: var(--ink-2); font-size: 14.5px; }
+nav.links a:hover { color: var(--ink); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 20px; border-radius: 12px; font: 600 15px/1 var(--body); text-decoration: none; cursor: pointer; border: 1px solid transparent; transition: transform .15s ease, background-color .2s ease, border-color .2s ease; }
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-primary:hover { background: color-mix(in srgb, var(--accent) 88%, var(--ink)); }
+.btn-ghost { border-color: var(--line); color: var(--ink); background: var(--surface); }
+.btn-ghost:hover { border-color: var(--ink-3); }
+.btn svg { width: 18px; height: 18px; flex: none; }
+.bar .btn { min-height: 40px; padding: 0 16px; font-size: 14px; }
+@media (max-width: 860px) { nav.links { display: none; } .bar .btn { margin-left: auto; } }
+
+/* Hero */
+.hero { padding-block: clamp(48px, 8vw, 96px) clamp(40px, 6vw, 72px); }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: clamp(32px, 5vw, 64px); align-items: center; }
+.hero h1 { font-size: clamp(40px, 5.6vw, 72px); line-height: 1.02; font-weight: 700; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero .lead { margin-top: 20px; }
+.cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+.fine { margin-top: 14px; font-size: 13px; color: var(--ink-3); }
+.pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: 13px; color: var(--ink-2); margin-bottom: 22px; }
+.pill b { background: var(--ink); color: var(--bg); font: 600 11px/1 var(--body); padding: 4px 7px; border-radius: 999px; letter-spacing: .04em; }
+@media (max-width: 920px) { .hero-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* App mock: two overlapping panes */
+.stage { position: relative; padding: 28px 0 28px 28px; }
+.stage::before { content: ""; position: absolute; inset: 0 40px 56px 0; border-radius: 28px; background: var(--sunk); }
+.app { position: relative; display: grid; grid-template-columns: 172px minmax(0, 1fr); border-radius: 18px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); border: 1px solid var(--line); min-height: 380px; }
+.side { background: var(--sunk); padding: 14px 10px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid var(--line); }
+.side .t { font: 600 11px/1 var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); padding: 6px 8px 10px; }
+.bot { display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 10px; font-size: 13px; }
+.bot.on { background: var(--surface); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
+.bot svg { width: 30px; height: 30px; flex: none; }
+.bot small { display: block; font-size: 11px; color: var(--ink-3); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bot span { min-width: 0; line-height: 1.25; }
+.chat { display: flex; flex-direction: column; min-width: 0; }
+.chat-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); font-size: 13.5px; font-weight: 600; }
+.chat-head .src { margin-left: auto; font-weight: 500; font-size: 11.5px; color: var(--ink-3); display: inline-flex; gap: 6px; align-items: center; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+.msgs { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 10px; font-size: 13.5px; }
+.m { max-width: 86%; padding: 9px 12px; border-radius: 14px; line-height: 1.5; }
+.m.in { background: var(--sunk); border-bottom-left-radius: 4px; }
+.m.out { align-self: flex-end; background: var(--ink); color: var(--bg); border-bottom-right-radius: 4px; }
+.m .who { display: block; font-size: 11px; color: var(--ink-3); margin-bottom: 2px; }
+.m.out .who { color: color-mix(in srgb, var(--bg) 70%, transparent); }
+.tool { align-self: flex-end; display: inline-flex; gap: 8px; align-items: center; font: 500 11.5px/1.3 var(--mono); color: var(--ink-3); border: 1px dashed var(--line); border-radius: 10px; padding: 6px 10px; }
+.tool i { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); font-style: normal; }
+.typing { align-self: flex-end; display: inline-flex; gap: 4px; padding: 10px 12px; border-radius: 14px; background: var(--ink); }
+.typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--bg); opacity: .4; animation: blink 1.2s infinite; }
+.typing span:nth-child(2) { animation-delay: .15s; } .typing span:nth-child(3) { animation-delay: .3s; }
+@keyframes blink { 0%, 60%, 100% { opacity: .35; } 30% { opacity: 1; } }
+.compose { margin: 0 16px 16px; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 13px; color: var(--ink-3); }
+.float { position: absolute; right: -6px; bottom: -6px; width: min(260px, 62%); background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; box-shadow: var(--shadow); font-size: 12.5px; }
+.float .k { font: 500 12px/1.2 var(--mono); }
+.float .row { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.score { font: 600 11px/1 var(--body); padding: 4px 7px; border-radius: 6px; background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); white-space: nowrap; }
+.float p { color: var(--ink-3); margin-top: 6px; line-height: 1.45; }
+@media (max-width: 560px) { .app { grid-template-columns: minmax(0, 1fr); } .side { display: none; } .stage { padding-left: 12px; } .float { position: relative; right: auto; bottom: auto; width: 100%; margin-top: 12px; } }
+
+/* Strip */
+.strip { border-block: 1px solid var(--line); background: var(--surface); }
+.strip .wrap { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 48px; padding-block: 28px; }
+.strip h4 { margin: 0 0 12px; font: 600 12px/1 var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); font-size: 14px; color: var(--ink); background: var(--bg); }
+@media (max-width: 720px) { .strip .wrap { grid-template-columns: minmax(0, 1fr); } }
+
+section.block { padding-block: clamp(64px, 9vw, 112px); }
+.head { display: flex; flex-direction: column; gap: 14px; margin-bottom: 44px; max-width: 760px; }
+
+/* Bento */
+.bento { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 26px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.tile p { color: var(--ink-2); font-size: 15px; }
+.tile .ic { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; background: var(--sunk); margin-bottom: 6px; }
+.tile .ic svg { width: 20px; height: 20px; stroke: var(--ink); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.w3 { grid-column: span 3; } .w2 { grid-column: span 2; } .w4 { grid-column: span 4; }
+.tile.feature { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.tile.feature p { color: color-mix(in srgb, var(--bg) 72%, transparent); }
+.tile.feature .ic { background: color-mix(in srgb, var(--bg) 12%, transparent); }
+.tile.feature .ic svg { stroke: var(--bg); }
+.crew { display: flex; gap: 6px; margin-top: auto; padding-top: 14px; }
+.crew svg { width: 46px; height: 46px; }
+@media (max-width: 900px) { .w3, .w2, .w4 { grid-column: span 3; } }
+@media (max-width: 620px) { .bento { grid-template-columns: minmax(0, 1fr); } .w3, .w2, .w4 { grid-column: auto; } }
+
+/* Steps */
+.steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; counter-reset: s; border-top: 1px solid var(--line); }
+.step { padding: 26px 22px 6px 0; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.step + .step { padding-left: 22px; border-left: 1px solid var(--line); }
+.step .n { font: 600 13px/1 var(--mono); color: var(--accent); }
+.step p { color: var(--ink-2); font-size: 15px; }
+@media (max-width: 860px) { .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } .step:nth-child(3) { border-left: 0; padding-left: 0; } }
+@media (max-width: 520px) { .steps { grid-template-columns: minmax(0, 1fr); } .step + .step { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); } }
+
+/* Skill library */
+.lib { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(28px, 5vw, 64px); align-items: start; }
+.score-table { width: 100%; border-collapse: collapse; font-size: 15px; font-variant-numeric: tabular-nums; }
+.score-table td { padding: 12px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.score-table td:last-child { text-align: right; font: 600 15px/1.4 var(--mono); width: 64px; }
+.score-table small { display: block; color: var(--ink-3); font-size: 13px; }
+.bar-track { height: 6px; border-radius: 3px; background: var(--sunk); margin-top: 8px; overflow: hidden; }
+.bar-track span { display: block; height: 100%; background: var(--ink); border-radius: 3px; }
+.grades { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; font-size: 13px; }
+.grades span { padding: 5px 10px; border-radius: 8px; background: var(--sunk); color: var(--ink-2); }
+.grades b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.skillcard { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px; }
+.skillcard .top { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.skillcard .name { font: 500 15px/1 var(--mono); }
+.skillcard p { color: var(--ink-2); font-size: 14.5px; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tags span { font-size: 12px; padding: 4px 8px; border-radius: 6px; background: var(--sunk); color: var(--ink-2); }
+.skillcard .act { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-3); }
+.mini { min-height: 36px; padding: 0 14px; font-size: 13.5px; border-radius: 10px; }
+.tools-list { margin-top: 18px; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.tools-list div { display: flex; justify-content: space-between; gap: 12px; padding: 12px 16px; font-size: 14px; }
+.tools-list div + div { border-top: 1px solid var(--line); }
+.tools-list em { font-style: normal; font-size: 12.5px; color: var(--ok); white-space: nowrap; }
+.tools-list em.get { color: var(--accent); }
+@media (max-width: 860px) { .lib { grid-template-columns: minmax(0, 1fr); } }
+
+/* Phone */
+.phone-band { background: var(--ink); color: var(--bg); }
+.phone-band .lead { color: color-mix(in srgb, var(--bg) 72%, transparent); }
+.phone-band .eyebrow { color: color-mix(in srgb, var(--bg) 55%, transparent); }
+.phone-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 48px; align-items: center; }
+.phone-points { display: grid; gap: 16px; margin-top: 28px; padding: 0; list-style: none; }
+.phone-points li { display: flex; gap: 12px; font-size: 15.5px; }
+.phone-points li::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--accent); margin-top: 9px; flex: none; }
+.qr-card { justify-self: center; width: min(300px, 100%); background: var(--bg); color: var(--ink); border-radius: 24px; padding: 22px; display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center; }
+.qr { width: 172px; height: 172px; image-rendering: pixelated; border-radius: 10px; background: #fff; padding: 10px; }
+.qr-card small { color: var(--ink-3); font-size: 12.5px; }
+.code { font: 600 22px/1 var(--mono); letter-spacing: .18em; }
+@media (max-width: 820px) { .phone-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* Trust */
+.trust { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+.trust div { display: flex; flex-direction: column; gap: 8px; padding-top: 18px; border-top: 2px solid var(--ink); }
+.trust p { color: var(--ink-2); font-size: 15px; }
+@media (max-width: 820px) { .trust { grid-template-columns: minmax(0, 1fr); } }
+
+/* FAQ */
+.faq { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: 48px; }
+details { border-bottom: 1px solid var(--line); }
+summary { list-style: none; cursor: pointer; padding: 20px 36px 20px 0; position: relative; font: 600 17px/1.4 var(--display); }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: ""; position: absolute; right: 4px; top: 50%; width: 10px; height: 10px; border-right: 2px solid var(--ink-3); border-bottom: 2px solid var(--ink-3); transform: translateY(-70%) rotate(45deg); transition: transform .2s ease; }
+details[open] summary::after { transform: translateY(-30%) rotate(-135deg); }
+details p { padding: 0 0 20px; color: var(--ink-2); max-width: 64ch; }
+@media (max-width: 820px) { .faq { grid-template-columns: minmax(0, 1fr); gap: 16px; } }
+
+/* Final CTA + footer */
+.final { padding-block: clamp(64px, 9vw, 104px); }
+.final-box { position: relative; border-radius: 28px; background: var(--surface); border: 1px solid var(--line); padding: clamp(32px, 6vw, 64px); display: flex; flex-direction: column; align-items: flex-start; gap: 18px; overflow: hidden; }
+.final-box h2 { max-width: 18ch; }
+.final-box .ghost { position: absolute; right: -40px; bottom: -60px; width: 300px; opacity: .08; pointer-events: none; }
+.final-box .ghost rect { fill: var(--ink); } .final-box .ghost path { fill: var(--surface); }
+footer { border-top: 1px solid var(--line); padding-block: 32px; font-size: 14px; color: var(--ink-3); }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: center; justify-content: space-between; }
+footer nav { display: flex; flex-wrap: wrap; gap: 20px; }
+footer a { text-decoration: none; color: var(--ink-2); }
+footer a:hover { color: var(--ink); }
+
+/* Entrance: visible at rest, a gentle rise when motion is allowed */
+@media (prefers-reduced-motion: no-preference) {
+  .rise { animation: rise .7s cubic-bezier(.2, .7, .2, 1) both; }
+  .rise.d1 { animation-delay: .08s; } .rise.d2 { animation-delay: .16s; } .rise.d3 { animation-delay: .26s; }
+  @keyframes rise { from { transform: translateY(14px); opacity: .001; } to { transform: none; opacity: 1; } }
+}
+</style>
+</head>
+<body>
+
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<linearGradient id="limi-visor" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#24333F"/><stop offset="100%" stop-color="#05090D"/></linearGradient>
+<clipPath id="limi-clip" transform="translate(-37.1368 -35.6789) scale(1.514073)"><path d="M121.45 37.29C124.88 42.3 128.31 47.31 131.75 52.32C133.57 54.98 136.25 56.93 139.34 57.84C145.16 59.55 150.99 61.27 156.81 62.99C174.34 68.15 181.21 89.31 170.07 103.78C166.37 108.6 162.66 113.41 158.96 118.22C156.99 120.78 155.97 123.93 156.06 127.15C156.23 133.22 156.39 139.29 156.56 145.36C157.06 163.62 139.07 176.69 121.86 170.57C116.14 168.54 110.41 166.5 104.69 164.47C101.66 163.39 98.34 163.39 95.31 164.47C89.59 166.5 83.86 168.54 78.14 170.57C60.93 176.69 42.94 163.62 43.44 145.36C43.61 139.29 43.77 133.22 43.94 127.15C44.03 123.93 43.01 120.78 41.04 118.22C37.34 113.41 33.63 108.6 29.93 103.78C18.79 89.31 25.66 68.15 43.19 62.99C49.01 61.27 54.84 59.55 60.66 57.84C63.75 56.93 66.43 54.98 68.25 52.32C71.69 47.31 75.12 42.3 78.55 37.29C88.88 22.22 111.12 22.22 121.45 37.29Z"/></clipPath>
+<clipPath id="limi-vclip"><rect x="56" y="86.5" width="128" height="72" rx="36"/></clipPath>
+<g id="limi-face"><g clip-path="url(#limi-clip)"><g transform="translate(113.82 113.41) scale(1) translate(-120 -122.5)"><rect x="56" y="86.5" width="128" height="72" rx="36" fill="url(#limi-visor)" stroke="#ffffff" stroke-opacity="0.12" stroke-width="2"/><g clip-path="url(#limi-vclip)"><path d="M94.40 103.51L96.44 103.81L98.37 104.51L100.11 105.59L101.60 107.01L102.77 108.70L103.56 110.59L103.96 112.61L104.00 114.67L104.00 116.73L104.00 118.79L104.00 120.84L104.00 122.90L104.00 124.96L104.00 127.02L104.00 129.08L104.00 131.14L103.85 133.19L103.30 135.17L102.35 136.99L101.05 138.58L99.46 139.87L97.63 140.81L95.65 141.36L93.60 141.49L91.56 141.19L89.63 140.49L87.89 139.41L86.40 137.99L85.23 136.30L84.44 134.41L84.04 132.39L84.00 130.33L84.00 128.27L84.00 126.21L84.00 124.16L84.00 122.10L84.00 120.04L84.00 117.98L84.00 115.92L84.00 113.86L84.15 111.81L84.70 109.83L85.65 108.01L86.95 106.42L88.54 105.13L90.37 104.19L92.35 103.64ZM145.60 103.51L147.65 103.64L149.63 104.19L151.46 105.13L153.05 106.42L154.35 108.01L155.30 109.83L155.85 111.81L156.00 113.86L156.00 115.92L156.00 117.98L156.00 120.04L156.00 122.10L156.00 124.16L156.00 126.21L156.00 128.27L156.00 130.33L155.96 132.39L155.56 134.41L154.77 136.30L153.60 137.99L152.11 139.41L150.37 140.49L148.44 141.19L146.40 141.49L144.35 141.36L142.37 140.81L140.54 139.87L138.95 138.58L137.65 136.99L136.70 135.17L136.15 133.19L136.00 131.14L136.00 129.08L136.00 127.02L136.00 124.96L136.00 122.90L136.00 120.84L136.00 118.79L136.00 116.73L136.00 114.67L136.04 112.61L136.44 110.59L137.23 108.70L138.40 107.01L139.89 105.59L141.63 104.51L143.56 103.81Z" fill="#ffffff" stroke="#ffffff" stroke-width="12" stroke-opacity="0.16" stroke-linejoin="round"/></g></g></g></g>
+<path id="limi-body" transform="translate(-37.1368 -35.6789) scale(1.514073)" d="M121.45 37.29C124.88 42.3 128.31 47.31 131.75 52.32C133.57 54.98 136.25 56.93 139.34 57.84C145.16 59.55 150.99 61.27 156.81 62.99C174.34 68.15 181.21 89.31 170.07 103.78C166.37 108.6 162.66 113.41 158.96 118.22C156.99 120.78 155.97 123.93 156.06 127.15C156.23 133.22 156.39 139.29 156.56 145.36C157.06 163.62 139.07 176.69 121.86 170.57C116.14 168.54 110.41 166.5 104.69 164.47C101.66 163.39 98.34 163.39 95.31 164.47C89.59 166.5 83.86 168.54 78.14 170.57C60.93 176.69 42.94 163.62 43.44 145.36C43.61 139.29 43.77 133.22 43.94 127.15C44.03 123.93 43.01 120.78 41.04 118.22C37.34 113.41 33.63 108.6 29.93 103.78C18.79 89.31 25.66 68.15 43.19 62.99C49.01 61.27 54.84 59.55 60.66 57.84C63.75 56.93 66.43 54.98 68.25 52.32C71.69 47.31 75.12 42.3 78.55 37.29C88.88 22.22 111.12 22.22 121.45 37.29Z"/>
+
+<radialGradient id="limi-red" cx="0.36" cy="0.3" r="0.82" fx="0.32" fy="0.22"><stop offset="0%" stop-color="#eeaeb1"/><stop offset="45%" stop-color="#D94B52"/><stop offset="100%" stop-color="#7e2c30"/></radialGradient>
+<radialGradient id="limi-cyan" cx="0.36" cy="0.3" r="0.82" fx="0.32" fy="0.22"><stop offset="0%" stop-color="#93d7e5"/><stop offset="45%" stop-color="#0EA5C6"/><stop offset="100%" stop-color="#086073"/></radialGradient>
+<radialGradient id="limi-orange" cx="0.36" cy="0.3" r="0.82" fx="0.32" fy="0.22"><stop offset="0%" stop-color="#f4c8a2"/><stop offset="45%" stop-color="#E78531"/><stop offset="100%" stop-color="#864d1c"/></radialGradient>
+<radialGradient id="limi-purple" cx="0.36" cy="0.3" r="0.82" fx="0.32" fy="0.22"><stop offset="0%" stop-color="#c6b3e6"/><stop offset="45%" stop-color="#8057C8"/><stop offset="100%" stop-color="#4a3274"/></radialGradient>
+<radialGradient id="limi-green" cx="0.36" cy="0.3" r="0.82" fx="0.32" fy="0.22"><stop offset="0%" stop-color="#8cd1b3"/><stop offset="45%" stop-color="#009957"/><stop offset="100%" stop-color="#005932"/></radialGradient>
+<radialGradient id="limi-blue" cx="0.36" cy="0.3" r="0.82" fx="0.32" fy="0.22"><stop offset="0%" stop-color="#a5c5f4"/><stop offset="45%" stop-color="#377FE6"/><stop offset="100%" stop-color="#204a85"/></radialGradient>
+<radialGradient id="limi-coral" cx="0.36" cy="0.3" r="0.82" fx="0.32" fy="0.22"><stop offset="0%" stop-color="#f3b9af"/><stop offset="45%" stop-color="#E5634E"/><stop offset="100%" stop-color="#85392d"/></radialGradient>
+<radialGradient id="limi-yellow" cx="0.36" cy="0.3" r="0.82" fx="0.32" fy="0.22"><stop offset="0%" stop-color="#edd79f"/><stop offset="45%" stop-color="#D8A729"/><stop offset="100%" stop-color="#7d6118"/></radialGradient>
+</defs></svg>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="#top" aria-label="Limix Bot, về đầu trang">
+      <svg class="mark" viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" rx="224"/><path fill-rule="evenodd" d="M269 344H533C593 344 641 392 641 452V672C641 732 593 780 533 780H269C209 780 161 732 161 672V452C161 392 209 344 269 344ZM491 244H755C815 244 863 292 863 352V572C863 632 815 680 755 680H491C431 680 383 632 383 572V352C383 292 431 244 491 244Z"/></svg>
+      Limix Bot
+    </a>
+    <nav class="links" aria-label="Mục lục">
+      <a href="#tinh-nang">Tính năng</a>
+      <a href="#cach-dung">Cách dùng</a>
+      <a href="#ky-nang">Kỹ năng</a>
+      <a href="#hoi-dap">Hỏi đáp</a>
+      <a href="https://github.com/leomieo/limix-bot" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+    <a class="btn btn-primary" href="https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-setup.exe">Tải về</a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="pill rise"><b>BETA</b> Ứng dụng cho Windows 10 và 11</span>
+        <h1 class="rise d1">Cả một đội bot AI, <em>ngay trên máy bạn.</em></h1>
+        <p class="lead rise d2">Tạo nhiều bot, mỗi bot một việc. Bot có máy tính riêng để làm việc thật, tự học kỹ năng mới và trả lời khách trên Telegram, Zalo, Discord bằng tài khoản AI bạn đang có.</p>
+        <div class="cta-row rise d3">
+          <a class="btn btn-primary" href="https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-setup.exe">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+            Tải cho Windows
+          </a>
+          <a class="btn btn-ghost" href="#tinh-nang">Xem bot làm được gì</a>
+        </div>
+        <p class="fine">Miễn phí trong giai đoạn Beta. Dữ liệu nằm trên máy bạn.</p>
+      </div>
+
+      <div class="stage rise d2" aria-label="Ảnh minh họa cửa sổ Limix Bot">
+        <div class="app" aria-hidden="true">
+          <div class="side">
+            <div class="t">Đội bot</div>
+            <div class="bot on"><svg viewBox="-15 -15 258.541 258.541"><use href="#limi-body" fill="url(#limi-red)"/><use href="#limi-face"/></svg><span>Bán hàng<small>Đang trả lời Zalo</small></span></div>
+            <div class="bot"><svg viewBox="-15 -15 258.541 258.541"><use href="#limi-body" fill="url(#limi-cyan)"/><use href="#limi-face"/></svg><span>Nội dung<small>Viết bài tuần này</small></span></div>
+            <div class="bot"><svg viewBox="-15 -15 258.541 258.541"><use href="#limi-body" fill="url(#limi-orange)"/><use href="#limi-face"/></svg><span>Báo cáo<small>Hẹn 08:00 mỗi sáng</small></span></div>
+            <div class="bot"><svg viewBox="-15 -15 258.541 258.541"><use href="#limi-body" fill="url(#limi-purple)"/><use href="#limi-face"/></svg><span>Trợ lý<small>Điều phối cả nhóm</small></span></div>
+          </div>
+          <div class="chat">
+            <div class="chat-head"><span class="dot"></span>Bán hàng<span class="src">Zalo · Shop Hoa Mai</span></div>
+            <div class="msgs">
+              <div class="m in"><span class="who">Khách · Chị Lan</span>Shop ơi, váy hoa size M còn màu xanh không ạ? Ship về Đà Nẵng mấy ngày?</div>
+              <div class="tool"><i></i>tra_kho("váy hoa", size M)</div>
+              <div class="m out"><span class="who">Bot Bán hàng</span>Dạ còn 3 chiếc màu xanh size M chị nhé. Giao về Đà Nẵng 2–3 ngày, miễn phí ship đơn từ 300k ạ.</div>
+              <div class="typing"><span></span><span></span><span></span></div>
+            </div>
+            <div class="compose">Giao việc cho bot Bán hàng…</div>
+          </div>
+        </div>
+        <div class="float" aria-hidden="true">
+          <div class="row"><span class="k">socratic-tutor</span><span class="score">81/100</span></div>
+          <p>Kỹ năng mới từ Thư viện kỹ năng. Đã quét bảo mật, đã Việt hóa.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="strip">
+    <div class="wrap">
+      <div>
+        <h4>Dùng AI bạn đã có</h4>
+        <div class="chips"><span class="chip">Claude</span><span class="chip">ChatGPT / Codex</span><span class="chip">Google Gemini (Antigravity)</span><span class="chip">Grok</span><span class="chip">Khóa API</span></div>
+      </div>
+      <div>
+        <h4>Trả lời khách trên</h4>
+        <div class="chips"><span class="chip">Telegram</span><span class="chip">Zalo</span><span class="chip">Discord</span><span class="chip">Điện thoại của bạn</span></div>
+      </div>
+    </div>
+  </div>
+
+  <section class="block" id="tinh-nang">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Tính năng</span>
+        <h2>Giao việc như giao cho một đội nhân viên.</h2>
+        <p class="lead">Mỗi bot có tên, vai trò, AI và kỹ năng riêng. Bạn nói việc bằng tiếng Việt, bot tự làm và báo lại.</p>
+      </div>
+      <div class="bento">
+        <article class="tile feature w4">
+          <div class="ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M3.5 19c.6-3 2.8-4.6 5.5-4.6s4.9 1.6 5.5 4.6"/><path d="M15 14.6c2.4-.3 4.6 1 5.3 3.9"/></svg></div>
+          <h3>Một đội bot, mỗi bot một việc</h3>
+          <p>Bot bán hàng trả lời khách, bot nội dung viết bài, bot báo cáo tổng hợp số liệu mỗi sáng. Cho các bot làm chung trong một nhóm, hoặc để một bot điều phối các bot khác.</p>
+          <div class="crew" aria-hidden="true">
+            <svg viewBox="-15 -15 258.541 258.541"><use href="#limi-body" fill="url(#limi-red)"/><use href="#limi-face"/></svg>
+            <svg viewBox="-15 -15 258.541 258.541"><use href="#limi-body" fill="url(#limi-cyan)"/><use href="#limi-face"/></svg>
+            <svg viewBox="-15 -15 258.541 258.541"><use href="#limi-body" fill="url(#limi-orange)"/><use href="#limi-face"/></svg>
+            <svg viewBox="-15 -15 258.541 258.541"><use href="#limi-body" fill="url(#limi-purple)"/><use href="#limi-face"/></svg>
+          </div>
+        </article>
+        <article class="tile w2">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 6h16v10H4z"/><path d="M9 20h6"/><path d="M12 16v4"/></svg></div>
+          <h3>Máy tính riêng cho bot</h3>
+          <p>Bot mở trình duyệt, ứng dụng và làm việc thật trên máy ảo Docker, máy đám mây hoặc VPS của bạn.</p>
+        </article>
+        <article class="tile w2">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l2.4 5 5.6.6-4.2 3.8 1.2 5.5L12 15l-5 2.9 1.2-5.5L4 8.6 9.6 8z"/></svg></div>
+          <h3>Tự học kỹ năng</h3>
+          <p>Bot rút ra quy trình hay từ những lần làm việc và lưu lại để dùng tiếp, không phải dặn lại từ đầu.</p>
+        </article>
+        <article class="tile w2">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></div>
+          <h3>Trả lời khách 24/7</h3>
+          <p>Nối Telegram, Zalo, Discord từ một màn hình. Bot nhận tin, xử lý và gửi lại chữ, ảnh vào đúng cuộc trò chuyện.</p>
+        </article>
+        <article class="tile w2">
+          <div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg></div>
+          <h3>Hẹn lịch, chạy nền</h3>
+          <p>Giao việc định kỳ, theo dõi mức dùng từng AI, nhận thông báo từ khay hệ thống. Ứng dụng tự cập nhật.</p>
+        </article>
+        <article class="tile w3">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L4 16.8V20h3.2l5.3-5.3a4 4 0 0 0 5.2-5.4l-2.5 2.5-2.3-.7-.7-2.3z"/></svg></div>
+          <h3>Công cụ cài một chạm</h3>
+          <p>Limix Bot quét máy trước. Công cụ bạn đã có thì dùng luôn, còn thiếu Docker, Node.js, ffmpeg hay Java thì bấm Cài là xong.</p>
+        </article>
+        <article class="tile w3">
+          <div class="ic"><svg viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 18h2"/></svg></div>
+          <h3>Điều khiển từ điện thoại</h3>
+          <p>Quét mã QR là mở Limix Bot trong trình duyệt điện thoại, cùng Wi-Fi hay qua Internet. Có nút chép link để mở trên laptop.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="cach-dung" style="padding-top:0">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Cách dùng</span>
+        <h2>Từ lúc tải về đến bot đầu tiên: vài phút.</h2>
+      </div>
+      <div class="steps">
+        <div class="step"><span class="n">01</span><h3>Tải và cài</h3><p>Chạy LimixBot-setup.exe. Nếu Windows SmartScreen hỏi, chọn More info rồi Run anyway.</p></div>
+        <div class="step"><span class="n">02</span><h3>Kết nối AI</h3><p>Vào Cài đặt, mục AI, chọn Claude, ChatGPT, Gemini hay Grok và đăng nhập tài khoản của bạn.</p></div>
+        <div class="step"><span class="n">03</span><h3>Tạo bot</h3><p>Bấm dấu cộng ở thanh bên, đặt tên, chọn vai trò và giao việc ngay trong khung chat.</p></div>
+        <div class="step"><span class="n">04</span><h3>Nối kênh chat</h3><p>Kết nối Telegram, Zalo, Discord để bot trả lời khách thay bạn.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="ky-nang" style="padding-top:0">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Thư viện kỹ năng Limix</span>
+        <h2>Kỹ năng được chọn lọc, quét bảo mật và chấm điểm trước khi đến tay bạn.</h2>
+        <p class="lead">Mỗi kỹ năng trong thư viện được chấm trên thang 100 điểm. Cài xong kỹ năng vẫn tắt; bạn bật rồi gán cho bot nào cần.</p>
+      </div>
+      <div class="lib">
+        <div>
+          <table class="score-table" aria-label="Thang điểm 100 của Thư viện kỹ năng">
+            <tbody>
+              <tr><td>Chức năng và tài liệu<small>Mô tả rõ, khi nào dùng, hướng dẫn đủ chi tiết</small><div class="bar-track"><span style="width:100%"></span></div></td><td>25</td></tr>
+              <tr><td>Bảo mật và quyền<small>Quét mã nguy hiểm; kỹ năng có script bị trừ điểm</small><div class="bar-track"><span style="width:100%"></span></div></td><td>25</td></tr>
+              <tr><td>Tương thích<small>Chạy được trên máy Windows của bạn</small><div class="bar-track"><span style="width:80%"></span></div></td><td>20</td></tr>
+              <tr><td>Chạy thử thật<small>Được bot kiểm định chạy thử</small><div class="bar-track"><span style="width:60%"></span></div></td><td>15</td></tr>
+              <tr><td>Bảo trì và nguồn gốc<small>Giấy phép, cập nhật gần đây, số sao GitHub</small><div class="bar-track"><span style="width:40%"></span></div></td><td>10</td></tr>
+              <tr><td>Việt hóa<small>Có bản hướng dẫn tiếng Việt</small><div class="bar-track"><span style="width:20%"></span></div></td><td>5</td></tr>
+            </tbody>
+          </table>
+          <div class="grades"><span>Xuất sắc <b>90+</b></span><span>Khuyên dùng <b>80–89</b></span><span>Cần xem xét <b>65–79</b></span><span>Từ chối <b>dưới 65</b></span></div>
+        </div>
+        <div>
+          <div class="skillcard">
+            <div class="top"><span class="name">answer-me-with-html</span><span class="score">85/100 · Khuyên dùng</span></div>
+            <p>Trả lời câu hỏi khó bằng một trang HTML dễ đọc thay vì cả bức tường chữ: có mục lục, sơ đồ và ví dụ.</p>
+            <div class="tags"><span>Chỉ hướng dẫn</span><span>Bảo mật: Sạch</span><span>MIT</span><span>Đã Việt hóa</span></div>
+            <div class="act"><span>Kiểm tra SHA-256 từng file</span><span class="btn btn-ghost mini" aria-hidden="true">Cài đặt</span></div>
+          </div>
+          <div class="tools-list" aria-label="Ví dụ quét công cụ trên máy">
+            <div><span>Node.js</span><em>Đã có · dùng bản trên máy</em></div>
+            <div><span>ffmpeg</span><em>Đã có · dùng bản trên máy</em></div>
+            <div><span>Java (JDK 21)</span><em class="get">Chưa có · bấm Cài</em></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block phone-band">
+    <div class="wrap phone-grid">
+      <div>
+        <span class="eyebrow">Điều khiển từ xa</span>
+        <h2 style="margin-top:14px">Đi đâu cũng giao việc được cho bot.</h2>
+        <p class="lead" style="margin-top:16px">Máy tính ở nhà vẫn chạy, bạn điều khiển từ điện thoại hoặc laptop khác qua Internet.</p>
+        <ul class="phone-points">
+          <li>Quét mã QR là mở, không cần cài thêm ứng dụng.</li>
+          <li>Mỗi mã chỉ dùng một lần.</li>
+          <li>Chép link và mã để mở trên laptop khi cần.</li>
+        </ul>
+      </div>
+      <div class="qr-card" aria-hidden="true">
+        <canvas class="qr" id="qr" width="21" height="21"></canvas>
+        <span class="code">K7Q-42M</span>
+        <small>Mã minh họa. Mã thật nằm trong menu tài khoản, mục Kết nối điện thoại.</small>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="head">
+        <span class="eyebrow">Dùng yên tâm</span>
+        <h2>Máy của bạn, tài khoản của bạn, quyết định của bạn.</h2>
+      </div>
+      <div class="trust">
+        <div><h3>Dữ liệu ở trên máy</h3><p>Bot, kỹ năng và cuộc trò chuyện nằm trong thư mục .limixbot của bạn. Cập nhật ứng dụng không làm mất gì.</p></div>
+        <div><h3>Không cài lén</h3><p>Kỹ năng kèm script hay MCP không tự cài phần công cụ. Kỹ năng bị cách ly phải qua cảnh báo trước khi cài.</p></div>
+        <div><h3>Đúng điều khoản</h3><p>Limix Bot dùng tài khoản AI của chính bạn và không vượt hay né giới hạn của gói bạn đăng ký.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="hoi-dap" style="padding-top:0">
+    <div class="wrap faq">
+      <div class="head" style="margin:0"><span class="eyebrow">Hỏi đáp</span><h2>Câu hỏi thường gặp</h2></div>
+      <div>
+        <details><summary>Limix Bot có mất phí không?</summary><p>Limix Bot đang là bản Beta và được dùng miễn phí. Khi ra bản thương mại, ứng dụng sẽ tính phí. Phí dịch vụ AI (gói Claude, ChatGPT, Gemini… hoặc khóa API) bạn vẫn trả trực tiếp cho từng nhà cung cấp.</p></details>
+        <details><summary>Tôi không biết lập trình, có dùng được không?</summary><p>Được. Mọi việc làm bằng giao diện tiếng Việt: tạo bot, kết nối AI, nối Telegram, Zalo, Discord và cài kỹ năng đều bằng vài cú bấm.</p></details>
+        <details><summary>Máy cần cấu hình thế nào?</summary><p>Windows 10 hoặc 11, 64-bit. Muốn bot có máy ảo riêng thì cần thêm Docker Desktop; Limix Bot có nút cài sẵn. Bản macOS và Linux chưa phát hành.</p></details>
+        <details><summary>Ngữ cảnh trò chuyện đầy thì sao?</summary><p>Bot tự tóm tắt các tin nhắn cũ thành một ghi chú ngắn rồi làm tiếp. Toàn bộ cuộc trò chuyện vẫn được giữ để bạn xem lại; bạn cũng có thể bấm Thu gọn ngay.</p></details>
+        <details><summary>Vì sao Windows cảnh báo khi cài?</summary><p>Bộ cài chưa được ký số. Khi Windows SmartScreen hiện cảnh báo, chọn More info rồi Run anyway. Mã nguồn công khai trên GitHub để bạn kiểm tra.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="final">
+    <div class="wrap">
+      <div class="final-box">
+        <svg class="ghost" viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" rx="224"/><path fill-rule="evenodd" d="M269 344H533C593 344 641 392 641 452V672C641 732 593 780 533 780H269C209 780 161 732 161 672V452C161 392 209 344 269 344ZM491 244H755C815 244 863 292 863 352V572C863 632 815 680 755 680H491C431 680 383 632 383 572V352C383 292 431 244 491 244Z"/></svg>
+        <span class="eyebrow">Bắt đầu</span>
+        <h2>Tạo bot đầu tiên của bạn ngay hôm nay.</h2>
+        <p class="lead">Tải bộ cài cho Windows, kết nối AI bạn đang có và giao việc đầu tiên.</p>
+        <div class="cta-row" style="margin-top:8px">
+          <a class="btn btn-primary" href="https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-setup.exe">Tải Limix Bot cho Windows</a>
+          <a class="btn btn-ghost" href="https://github.com/leomieo/limix-bot/releases" target="_blank" rel="noopener">Có gì mới</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Leox ৹ Limix AI</span>
+    <nav aria-label="Liên kết cuối trang">
+      <a href="https://github.com/leomieo/limix-bot" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/leomieo/limix-skill-hub" target="_blank" rel="noopener">Thư viện kỹ năng</a>
+      <a href="https://github.com/leomieo/limix-bot/blob/main/SECURITY.md" target="_blank" rel="noopener">Bảo mật</a>
+      <a href="https://github.com/leomieo/limix-bot/blob/main/LICENSE" target="_blank" rel="noopener">Giấy phép</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+// Decorative QR-like pattern for the phone card (not a real code): finder squares plus a fixed pseudo-random fill.
+(function () {
+  var c = document.getElementById("qr"); if (!c) return;
+  var x = c.getContext("2d"), n = 21, seed = 7;
+  function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+  x.fillStyle = "#fff"; x.fillRect(0, 0, n, n); x.fillStyle = "#111318";
+  function finder(px, py) { x.fillRect(px, py, 7, 7); x.clearRect(px + 1, py + 1, 5, 5); x.fillStyle = "#fff"; x.fillRect(px + 1, py + 1, 5, 5); x.fillStyle = "#111318"; x.fillRect(px + 2, py + 2, 3, 3); }
+  for (var i = 0; i < n; i++) for (var j = 0; j < n; j++) {
+    var inF = (i < 8 && j < 8) || (i > 12 && j < 8) || (i < 8 && j > 12);
+    if (!inF && rnd() > 0.52) x.fillRect(i, j, 1, 1);
+  }
+  finder(0, 0); finder(14, 0); finder(0, 14);
+})();
+</script>
+
+</body>
+</html>

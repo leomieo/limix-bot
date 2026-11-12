@@ -87,12 +87,13 @@ edit(".gitignore", lambda s: s if "limix/__pycache__/" in s else s.rstrip("\n") 
 wf = ROOT / ".github/workflows"
 if wf.exists():
     for f in wf.glob("*.yml"):
-        if f.name not in ("limix-windows.yml", "limix-npm.yml", "limix-cloudflare.yml"):
+        if f.name not in ("limix-windows.yml", "limix-npm.yml", "limix-cloudflare.yml", "limix-site.yml"):
             f.unlink()
             changed.append(f".github/workflows/{f.name} (removed)")
 shutil.copy(ASSETS / "limix-windows.yml", wf / "limix-windows.yml")
 shutil.copy(ASSETS / "limix-npm.yml", wf / "limix-npm.yml")
 shutil.copy(ASSETS / "limix-cloudflare.yml", wf / "limix-cloudflare.yml")
+shutil.copy(ASSETS / "limix-site.yml", wf / "limix-site.yml")
 
 # 2c. The command-line package is published as `limixbot` (npx limixbot pair). The bundle keeps its file name.
 def npm_package(s):
