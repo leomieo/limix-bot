@@ -60,7 +60,11 @@ function json(status: number, body: unknown): Response {
 function boatError(status: number, body: any): Response {
   const code = typeof body?.error?.code === "string" ? body.error.code : undefined;
   const message = typeof body?.error?.message === "string" ? body.error.message : `Instabox ${status}`;
-  return json(status, { ok: false, message: `Instabox: ${message}`, error: { code, message } });
+  const scopes = Array.isArray(body?.error?.requiredScopes) ? ` (key needs: ${body.error.requiredScopes.join(", ")})` : "";
+  const hint = typeof body?.error?.hint === "string" ? ` ${body.error.hint}` : "";
+  // Boat's 403 means "wrong key" to the rest of the app; Instabox's 403 is a missing scope, unaccepted terms or a plan
+  // limit, so it travels as 409 and keeps Instabox's own words.
+  return json(status === 403 ? 409 : status, { ok: false, message: `Instabox: ${message}${scopes}${hint}${code ? ` [${code}]` : ""}`, error: { code, message } });
 }
 
 interface Call { method?: string; body?: unknown; idempotent?: boolean; headers?: Record<string, string>; signal?: AbortSignal | null }
