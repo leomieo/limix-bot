@@ -37,7 +37,7 @@ const sleep = (ms, signal) => new Promise((resolve, reject) => {
 });
 
 export class OpenMausBotEngine {
-  constructor({ endpoint, apiKey, fetchImpl = fetch, pollMs = 4000, maxWaitMs = 10 * 60_000, waitSeconds = 50, hooksPorts = [8800, 18800, 28800] }) {
+  constructor({ endpoint, apiKey, fetchImpl = fetch, pollMs = 4000, maxWaitMs = 10 * 60_000, waitSeconds = 50, hooksPorts = [8800, 18800, 28800], ownerLaneToken = process.env.LIMIX_OWNER_LANE_TOKEN }) {
     const url = new URL(endpoint);
     if (!/\/hooks\/api\/bots\/[\w-]+\/messages$/.test(url.pathname)) {
       throw new EngineError("bad_endpoint", "Địa chỉ phải có dạng …/hooks/api/bots/<botId>/messages (copy từ thẻ Bot API trong Limix Bot)");
@@ -50,6 +50,7 @@ export class OpenMausBotEngine {
     this.waitSeconds = waitSeconds;
     this.kind = "openmausbot";
     this.hooksPorts = hooksPorts;
+    this.ownerLaneToken = ownerLaneToken;
   }
 
   /** The app's receiver moves to the next port pair when 8799 is taken (8800, 18800, 28800), so a copied loopback
@@ -61,7 +62,7 @@ export class OpenMausBotEngine {
     return ports.map((port) => { const u = new URL(this.endpoint); u.port = port; return u.toString(); });
   }
 
-  async call(method, { body, thread, timeoutMs }) {
+  async call(method, { body, thread, timeoutMs, owner = false }) {
     let res;
     let lastError;
     for (const endpoint of this.candidates()) {
@@ -70,7 +71,7 @@ export class OpenMausBotEngine {
       try {
         res = await this.fetch(url, {
           method,
-          headers: { Authorization: `Bearer ${this.apiKey}`, ...(body ? { "Content-Type": "application/json" } : {}) },
+          headers: { Authorization: `Bearer ${this.apiKey}`, ...(body ? { "Content-Type": "application/json" } : {}), ...(owner && this.ownerLaneToken ? { "X-Limix-Owner": this.ownerLaneToken } : {}) },
           body: body ? JSON.stringify(body) : undefined,
           signal: AbortSignal.timeout(timeoutMs),
         });
@@ -97,19 +98,19 @@ export class OpenMausBotEngine {
   }
 
   /** Sends one message. Resolves {reply, thread} or {status: "needs_approval" | "working", thread}. */
-  async send({ message, thread, signal }) {
+  async send({ message, thread, signal, owner = false }) {
     const body = { message, wait: this.waitSeconds, ...(thread ? { thread } : {}) };
     let answer;
     try {
-      answer = await this.call("POST", { body, timeoutMs: (this.waitSeconds + 15) * 1000 });
+      answer = await this.call("POST", { body, owner, timeoutMs: (this.waitSeconds + 15) * 1000 });
     } catch (error) {
-      if (error.code === "thread_missing" && thread) return this.send({ message, signal });
+      if (error.code === "thread_missing" && thread) return this.send({ message, signal, owner });
       throw error;
     }
     const deadline = Date.now() + this.maxWaitMs;
     while (answer.status === "working" && Date.now() < deadline) {
       await sleep(this.pollMs, signal);
-      answer = await this.call("GET", { thread: answer.thread, timeoutMs: 30_000 });
+      answer = await this.call("GET", { thread: answer.thread, owner, timeoutMs: 30_000 });
     }
     return answer;
   }
@@ -117,7 +118,7 @@ export class OpenMausBotEngine {
   async check() {
     // A GET for a thread that cannot exist tells a wrong key (401) or a disabled API (403) from a working setup (404).
     try {
-      await this.call("GET", { thread: "limix-health-check", timeoutMs: 10_000 });
+      await this.call("GET", { thread: "limix-health-check", timeoutMs: 10_000, owner: Boolean(this.ownerLaneToken) });
       return { ok: true };
     } catch (error) {
       if (error.code === "thread_missing") return { ok: true };

@@ -10,7 +10,7 @@ import { randomBytes } from "node:crypto";
 const PORT = 8790;
 const URL_ = `http://127.0.0.1:${PORT}/`;
 
-export function createLimixGateway({ app, BrowserWindow, shell, resourcesPath, userData, iconPath, log = () => {} }) {
+export function createLimixGateway({ app, BrowserWindow, shell, resourcesPath, userData, iconPath, log = () => {}, ownerLaneToken }) {
   const entry = [path.join(resourcesPath, "limix-gateway", "src", "main.mjs"), path.join(app.getAppPath(), "limix", "gateway", "src", "main.mjs")]
     .find((candidate) => fs.existsSync(candidate));
   let child = null;
@@ -32,7 +32,7 @@ export function createLimixGateway({ app, BrowserWindow, shell, resourcesPath, u
     child = spawn(process.execPath, [entry], {
       windowsHide: true,
       stdio: ["ignore", "pipe", "pipe"],
-      env: { ...process.env, ELECTRON_RUN_AS_NODE: "1", LIMIX_DATA_DIR: dataDir, LIMIX_PORT: String(PORT), LIMIX_NO_BROWSER: "1", LIMIX_LAUNCHER_TOKEN: launcherToken },
+      env: { ...process.env, ELECTRON_RUN_AS_NODE: "1", LIMIX_DATA_DIR: dataDir, LIMIX_PORT: String(PORT), LIMIX_NO_BROWSER: "1", LIMIX_LAUNCHER_TOKEN: launcherToken, ...(ownerLaneToken ? { LIMIX_OWNER_LANE_TOKEN: ownerLaneToken } : {}) },
     });
     const note = (chunk) => { const line = String(chunk).trim().split("\n").pop(); if (line) log(`limix gateway: ${line.slice(0, 200)}`); };
     child.stdout.on("data", note);

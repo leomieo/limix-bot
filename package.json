@@ -1,7 +1,7 @@
 {
   "name": "limixbot",
   "private": true,
-  "version": "0.3.6",
+  "version": "0.3.7",
   "description": "Limix Bot: a local-first chat app for running a team of AI bots, connected to Telegram and Zalo.",
   "homepage": "https://github.com/leomieo/limix-bot",
   "repository": {
