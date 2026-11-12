@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 
 import { EchoEngine, OpenMausBotEngine } from "../engines/openmausbot.mjs";
+import { askApp, insideApp } from "../app-bridge.mjs";
 import { defaultMakeChannel } from "../gateway.mjs";
 import { hashCode, newCode } from "../pairing.mjs";
 import { maskToken, redact } from "../util/redact.mjs";
@@ -73,6 +74,11 @@ export function createApp({ store, secrets, pairing, gateway, makeChannel = defa
   }
 
   const routes = {
+    "GET /api/app/bots": async () => ({ inside: insideApp(), bots: insideApp() ? await askApp("bots") : [] }),
+    "POST /api/app/link": async (body) => {
+      if (typeof body.botId !== "string" || !/^[\w-]{1,128}$/.test(body.botId)) throw Object.assign(new Error("Chọn một bot"), { status: 400 });
+      return askApp("link", { botId: body.botId });
+    },
     "GET /api/state": () => ({
       connections: store.listConnections().map((c) => publicConnection(c, gateway)),
       pairing: pairing.list(),

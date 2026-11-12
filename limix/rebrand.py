@@ -1232,6 +1232,18 @@ def ib_error_words(s):
     return must(s, head, head + '  if (typeof body?.message === "string" && body.message.startsWith("Instabox:")) return `${what} failed. ${body.message}`;\n')
 edit("server/boat.ts", ib_error_words)
 
+# 10o. The connector lists the app's bots and gets a bot's Bot API address and key through the app (no copying).
+edit("electron/main.mjs", lambda s: s if "serverRequest: (route, init)" in s else must(s,
+    "ownerLaneToken: limixOwnerLaneToken });\n  limixGateway.start();",
+    "ownerLaneToken: limixOwnerLaneToken, serverRequest: (route, init) => localServerRequest(route, init) });\n  limixGateway.start();"))
+
+# 10p. The slow-first-reply row also prints its tool name as a sentence: in Limix Bot that sentence is Vietnamese.
+def rescue_words(s):
+    s = must(s, "  return `notice: ${botName} hasn't heard back from ${ai} yet.`;", "  return `notice: ${botName} vẫn chưa nhận được phản hồi từ ${ai}.`;")
+    s = must(s, "  return `notice: ${botName} didn't hear back from ${ai}.`;", "  return `notice: ${botName} không nhận được phản hồi từ ${ai}.`;")
+    return must(s, "  return `notice: ${ai} answered after a slow start.`;", "  return `notice: ${ai} đã trả lời, sau một lúc chậm.`;")
+edit("shared/first-reply-rescue.ts", rescue_words)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):

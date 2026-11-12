@@ -24,15 +24,15 @@ export interface FirstReplyRescue {
 
 /** The waiting row's words, for clients that print the tool name. */
 export function firstReplyWaitingName(botName: string, ai: string): string {
-  return `notice: ${botName} hasn't heard back from ${ai} yet.`;
+  return `notice: ${botName} vẫn chưa nhận được phản hồi từ ${ai}.`;
 }
 
 /** The same row once its turn ended without an answer: history, true as it stands. */
 export function firstReplyOverName(botName: string, ai: string): string {
-  return `notice: ${botName} didn't hear back from ${ai}.`;
+  return `notice: ${botName} không nhận được phản hồi từ ${ai}.`;
 }
 
 /** The same row once the AI's first output arrived. */
 export function firstReplySettledName(ai: string): string {
-  return `notice: ${ai} answered after a slow start.`;
+  return `notice: ${ai} đã trả lời, sau một lúc chậm.`;
 }
