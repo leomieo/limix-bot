@@ -10,7 +10,7 @@ import { randomBytes } from "node:crypto";
 const PORT = 8790;
 const URL_ = `http://127.0.0.1:${PORT}/`;
 
-export function createLimixGateway({ app, BrowserWindow, shell, resourcesPath, userData, iconPath, log = () => {}, ownerLaneToken }) {
+export function createLimixGateway({ app, BrowserWindow, shell, resourcesPath, userData, iconPath, log = () => {}, ownerLaneToken, serverRequest }) {
   const entry = [path.join(resourcesPath, "limix-gateway", "src", "main.mjs"), path.join(app.getAppPath(), "limix", "gateway", "src", "main.mjs")]
     .find((candidate) => fs.existsSync(candidate));
   let child = null;
@@ -31,10 +31,11 @@ export function createLimixGateway({ app, BrowserWindow, shell, resourcesPath, u
     fs.mkdirSync(dataDir, { recursive: true });
     child = spawn(process.execPath, [entry], {
       windowsHide: true,
-      stdio: ["ignore", "pipe", "pipe"],
+      stdio: ["ignore", "pipe", "pipe", "ipc"],
       env: { ...process.env, ELECTRON_RUN_AS_NODE: "1", LIMIX_DATA_DIR: dataDir, LIMIX_PORT: String(PORT), LIMIX_NO_BROWSER: "1", LIMIX_LAUNCHER_TOKEN: launcherToken, ...(ownerLaneToken ? { LIMIX_OWNER_LANE_TOKEN: ownerLaneToken } : {}) },
     });
     const note = (chunk) => { const line = String(chunk).trim().split("\n").pop(); if (line) log(`limix gateway: ${line.slice(0, 200)}`); };
+    child.on("message", (message) => void answerChild(child, message));
     child.stdout.on("data", note);
     child.stderr.on("data", note);
     child.on("exit", (code) => {
@@ -43,6 +44,39 @@ export function createLimixGateway({ app, BrowserWindow, shell, resourcesPath, u
       log(`limix gateway exited (${code})`);
       if (restarts++ < 5) setTimeout(start, 2000 * restarts).unref?.();
     });
+  }
+
+  /** The connector asks for the app's bots, or for one bot's Bot API address and key (switched on if it was off). */
+  async function appCall(message) {
+    if (!serverRequest) throw new Error("Limix Bot chưa sẵn sàng");
+    const call = async (route, body) => {
+      const res = await serverRequest(route, body === undefined ? {} : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || `Limix Bot trả lỗi ${res.status}`);
+      return data;
+    };
+    if (message.op === "bots") {
+      const { bots } = await call("/api/bots?messages=0");
+      return (Array.isArray(bots) ? bots : []).filter((bot) => !bot.hidden).map((bot) => ({ id: bot.id, name: bot.name }));
+    }
+    if (message.op === "link" && typeof message.botId === "string" && /^[\w-]{1,128}$/.test(message.botId)) {
+      const route = `/api/bots/${message.botId}/bot-api`;
+      const on = await call(route, { enabled: true });
+      // Already on: its key was shown once and is not kept, so a new one is made for the connector.
+      const key = on.key ?? (await call(`${route}/new-key`, {})).key;
+      if (typeof key !== "string" || typeof on.url !== "string") throw new Error("Limix Bot không đưa địa chỉ hoặc khóa Bot API");
+      return { endpoint: on.url, apiKey: key, canTakeCalls: on.canTakeCalls !== false };
+    }
+    throw new Error("Yêu cầu không hợp lệ");
+  }
+
+  async function answerChild(proc, message) {
+    if (!message || typeof message.id !== "number") return;
+    try {
+      proc.send({ id: message.id, result: await appCall(message) });
+    } catch (error) {
+      try { proc.send({ id: message.id, error: error?.message ?? String(error) }); } catch { /* child gone */ }
+    }
   }
 
   function stop() {

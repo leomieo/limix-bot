@@ -2872,7 +2872,7 @@ app.whenReady().then(async () => {
   }
   // Limix Bot: no app until this computer is signed in to a Limix account (closing the sign-in window quits).
   if (!(await limixAccountGate({ app, BrowserWindow, ipcMain, safeStorage, shell, dialog, iconPath: APP_ICON, log: slog, baseUrl: LIMIX_ACCOUNT_URL }))) { app.quit(); return; }
-  limixGateway = createLimixGateway({ app, BrowserWindow, shell, resourcesPath: process.resourcesPath, userData: app.getPath("userData"), iconPath: APP_ICON, log: slog, ownerLaneToken: limixOwnerLaneToken });
+  limixGateway = createLimixGateway({ app, BrowserWindow, shell, resourcesPath: process.resourcesPath, userData: app.getPath("userData"), iconPath: APP_ICON, log: slog, ownerLaneToken: limixOwnerLaneToken, serverRequest: (route, init) => localServerRequest(route, init) });
   limixGateway.start();
   hiddenStart = loginItem.startedHidden() || reopenedOutOfSight();
   startupScreen = hiddenStart ? null : createStartupScreen({

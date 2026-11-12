@@ -256,8 +256,11 @@ dialog .actions { display:flex; justify-content:flex-end; gap:8px; margin-top:6p
       </div>
     </div>
     <div id="ombFields">
+      <label class="field"><span>Bot AI trong Limix Bot</span><select name="appBot" data-appbot></select><span class="help">Chọn bot: Limix Bot tự bật Bot API, lấy địa chỉ và khóa. Không cần chép tay.</span></label>
+      <div class="manual">
       <label class="field"><span>Địa chỉ Bot API</span><input name="endpoint" class="mono" autocomplete="off" placeholder="http://127.0.0.1:…/hooks/api/bots/…/messages"></label>
       <label class="field"><span>Khóa Bot API</span><input name="apiKey" type="password" autocomplete="off" placeholder="bak_…"><span class="help">Limix Bot: mở bot → bánh răng → Advanced: Access → Bot API → bật “Let apps talk to this bot”, copy địa chỉ và khóa.</span></label>
+      </div>
     </div>
     <label class="field"><span>Ai được nhắn cho bot</span>
       <select name="accessPolicy">
@@ -286,6 +289,26 @@ const POLICY = {
   open: ["Mọi người", "Ai cũng nhắn được và dùng chung hạn mức AI của bạn."],
 };
 const PLATFORM = { telegram:"Telegram", zalo:"Zalo", discord:"Discord" };
+let APP_BOTS = { inside: false, bots: [] };
+function appBotOptions() {
+  if (!APP_BOTS.inside) return `<option value="">Nhập tay địa chỉ và khóa</option>`;
+  return APP_BOTS.bots.map((b) => `<option value="${esc(b.id)}">${esc(b.name)}</option>`).join("") + `<option value="">Nhập tay địa chỉ và khóa…</option>`;
+}
+async function loadAppBots() {
+  try { APP_BOTS = await api("/api/app/bots"); } catch { APP_BOTS = { inside: false, bots: [] }; }
+  document.querySelectorAll("select[data-appbot]").forEach((sel) => { const v = sel.value; sel.innerHTML = appBotOptions(); if (v) sel.value = v; syncManual(sel.form); });
+}
+function syncManual(f) {
+  const manual = f?.querySelector(".manual"); const sel = f?.querySelector("select[data-appbot]");
+  if (manual && sel) manual.hidden = Boolean(sel.value);
+}
+/** A picked bot: the app switches its Bot API on and hands back the address and a key. */
+async function fillFromApp(f) {
+  const botId = f.appBot?.value; if (!botId) return null;
+  const link = await api("/api/app/link", { botId });
+  f.endpoint.value = link.endpoint; f.apiKey.value = link.apiKey;
+  return link;
+}
 let S = { connections: [], pairing: [], activity: [] };
 let view = { name: "home" };
 let lastMain = "";
@@ -384,8 +407,11 @@ function botView(c) {
         <dt>Token bot</dt><dd class="mono">${esc(c.tokenMasked)}</dd></dl>
         <details style="margin-top:14px"><summary class="btn ghost" style="display:inline-flex">Đổi bộ não AI</summary>
           <form class="engineForm" data-id="${c.id}" style="margin-top:12px">
-            <label class="field"><span>Địa chỉ Bot API</span><input name="endpoint" class="mono" required autocomplete="off"></label>
-            <label class="field"><span>Khóa Bot API</span><input name="apiKey" type="password" required autocomplete="off"></label>
+            <label class="field"><span>Bot AI trong Limix Bot</span><select name="appBot" data-appbot>${appBotOptions()}</select><span class="help">Chọn bot: tự lấy địa chỉ và khóa mới. Khóa cũ của bot đó sẽ thôi dùng được.</span></label>
+            <div class="manual">
+            <label class="field"><span>Địa chỉ Bot API</span><input name="endpoint" class="mono" autocomplete="off"></label>
+            <label class="field"><span>Khóa Bot API</span><input name="apiKey" type="password" autocomplete="off"></label>
+            </div>
             <button class="btn primary" type="submit">${icon("check")}Lưu</button></form></details></section>
     </div>
     <section class="card"><h2>${icon("shield")}Ai được nhắn cho bot</h2><p class="sub">Áp dụng ngay, không cần chạy lại.</p>
@@ -472,7 +498,12 @@ document.addEventListener("change", async (ev) => {
 document.addEventListener("submit", async (ev) => {
   const f = ev.target.closest(".engineForm"); if (!f) return;
   ev.preventDefault();
-  try { await api(`/api/connections/${f.dataset.id}/engine`, { engineKind: "openmausbot", ...Object.fromEntries(new FormData(f)) }); toast("Đã đổi bộ não AI."); document.activeElement.blur(); await refresh(true); }
+  try {
+    await fillFromApp(f);
+    if (!f.endpoint.value.trim() || !f.apiKey.value.trim()) throw new Error("Chọn một bot hoặc nhập địa chỉ và khóa Bot API.");
+    await api(`/api/connections/${f.dataset.id}/engine`, { engineKind: "openmausbot", endpoint: f.endpoint.value.trim(), apiKey: f.apiKey.value.trim() });
+    toast("Đã đổi bộ não AI."); document.activeElement.blur(); await refresh(true);
+  }
   catch (e) { toast(e.message, true); }
 });
 
@@ -480,18 +511,22 @@ $("#q").addEventListener("input", renderList);
 
 const dlg = $("#addDialog"), form = $("#addForm");
 function syncForm() {
+  syncManual(form);
   $("#ombFields").hidden = form.engineKind.value !== "openmausbot";
   $("#tokenHelp").textContent = form.platform.value === "discord" ? "Discord: discord.com/developers → New Application → Bot → Reset Token → copy; bật Message Content Intent." : form.platform.value === "zalo" ? "Zalo: đăng nhập bot.zaloplatforms.com → tạo bot → copy token." : "Telegram: nhắn @BotFather → /newbot → copy token.";
 }
-function openAdd() { form.reset(); $("#addError").textContent = ""; syncForm(); dlg.showModal(); form.token.focus(); }
+function openAdd() { form.reset(); $("#addError").textContent = ""; void loadAppBots(); syncForm(); dlg.showModal(); form.token.focus(); }
 form.addEventListener("change", syncForm);
+document.addEventListener("change", (ev) => { if (ev.target.matches?.("select[data-appbot]")) syncManual(ev.target.form); });
+document.addEventListener("toggle", (ev) => { if (ev.target.matches?.("details") && ev.target.open) void loadAppBots(); }, true);
 form.addEventListener("submit", async (ev) => {
   ev.preventDefault();
   const err = $("#addError"); err.textContent = "";
   if (!form.token.value.trim()) { err.textContent = "Chưa nhập token của bot."; form.token.focus(); return; }
-  if (form.engineKind.value === "openmausbot" && (!form.endpoint.value.trim() || !form.apiKey.value.trim())) { err.textContent = "Cần địa chỉ và khóa Bot API của Limix Bot (hoặc chọn Chế độ thử)."; return; }
+  if (form.engineKind.value === "openmausbot" && !form.appBot.value && (!form.endpoint.value.trim() || !form.apiKey.value.trim())) { err.textContent = "Chọn bot AI trong Limix Bot, hoặc nhập địa chỉ và khóa Bot API (hoặc chọn Chế độ thử)."; return; }
   const btn = form.querySelector("[type=submit]"); btn.disabled = true; btn.lastChild.textContent = "Đang kiểm tra…";
   try {
+    if (form.engineKind.value === "openmausbot") await fillFromApp(form);
     const r = await api("/api/connections", Object.fromEntries(new FormData(form)));
     dlg.close();
     toast(r.engineCheck && !r.engineCheck.ok ? `Đã kết nối, nhưng AI báo: ${r.engineCheck.message}` : "Đã kết nối. Tạo mã liên kết để xác nhận bạn là chủ bot.", r.engineCheck && !r.engineCheck.ok);
@@ -501,6 +536,7 @@ form.addEventListener("submit", async (ev) => {
 });
 
 refresh(true);
+void loadAppBots();
 setInterval(() => refresh(false), 4000);
 </script>
 </body>
