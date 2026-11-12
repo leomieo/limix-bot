@@ -420,7 +420,7 @@ export function CloudComputersCard({
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="truncate text-[14px] font-medium text-ink">
-                    {instance.orphaned ? t("vm.cloud.orphan") : instance.ownerName}
+                    {instance.orphaned ? t("vm.cloud.orphan") : t("vm.cloud.ofBot", { name: instance.ownerName ?? "" })}
                   </span>
                   <span
                     className={cn(
@@ -436,7 +436,7 @@ export function CloudComputersCard({
                   </span>
                 </div>
                 <div className="mt-1 break-all text-[12px] text-ink-secondary">
-                  {instance.orphaned ? t("vm.owner.gone") : t("vm.owner.owned")} · {instance.name}
+                  {instance.orphaned ? t("vm.owner.gone") : t("vm.cloud.machineId", { id: instance.name })}
                 </div>
                 {instance.inUse && (
                   <div className="mt-1 text-[12px] text-ink-secondary">{t("vm.cloud.stopFirst")}</div>

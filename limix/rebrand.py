@@ -1260,6 +1260,34 @@ edit("electron/main.mjs", lambda s: s if "limix: main window page went away" in 
     '  setTimeout(() => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.reload(); }, 1_000);\n'
     '});\n'))
 
+# 10s. A cloud computer says which bot it belongs to, in words ("Máy của bot X"), and its machine id is a small line.
+def cc_label(s):
+    if "vm.cloud.ofBot" in s:
+        return s
+    s = must(s, '{instance.orphaned ? t("vm.cloud.orphan") : instance.ownerName}',
+             '{instance.orphaned ? t("vm.cloud.orphan") : t("vm.cloud.ofBot", { name: instance.ownerName ?? "" })}')
+    return must(s, '{instance.orphaned ? t("vm.owner.gone") : t("vm.owner.owned")} · {instance.name}\n                </div>\n                {instance.inUse && (\n                  <div className="mt-1 text-[12px] text-ink-secondary">{t("vm.cloud.stopFirst")}',
+                '{instance.orphaned ? t("vm.owner.gone") : t("vm.cloud.machineId", { id: instance.name })}\n                </div>\n                {instance.inUse && (\n                  <div className="mt-1 text-[12px] text-ink-secondary">{t("vm.cloud.stopFirst")}')
+edit("src/components/LocalComputerSection.tsx", cc_label)
+def cc_en(s):
+    d = json.loads(s)
+    d["vm.cloud.ofBot"] = "Computer of bot {name}"
+    d["vm.cloud.machineId"] = "Machine ID: {id}"
+    return json.dumps(d, indent=2, ensure_ascii=False) + "\n"
+edit("src/locales/en.json", cc_en)
+
+# 10t. "Connect your phone" opens a window in the middle of the screen (LimixPhoneDialog) instead of a page inside Settings.
+def phone_dialog(s):
+    if "LimixPhoneDialog" in s:
+        return s
+    s = must(s, 'import { PhoneAppDialog } from "./lazy-screens";\n', 'import { PhoneAppDialog } from "./lazy-screens";\nimport { LimixPhoneDialog } from "./LimixPhoneDialog";\n')
+    s = must(s, "  const [phoneAppOpen, setPhoneAppOpen] = useState(false);\n", "  const [phoneAppOpen, setPhoneAppOpen] = useState(false);\n  const [limixPhoneOpen, setLimixPhoneOpen] = useState(false);\n")
+    s = must(s, "  const connectTo = (destination: PhoneDestination) => selectPhoneDestination(destination, { bridge: cloudPhone.bridge, dispatch });",
+             "  const connectTo = (destination: PhoneDestination) => LIMIX_PHONE_APPS_ENABLED ? selectPhoneDestination(destination, { bridge: cloudPhone.bridge, dispatch }) : setLimixPhoneOpen(true);")
+    return must(s, "      <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />\n",
+                "      <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />\n      {limixPhoneOpen && <LimixPhoneDialog onClose={() => setLimixPhoneOpen(false)} />}\n")
+edit("src/components/SidebarProfileMenu.tsx", phone_dialog)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):
