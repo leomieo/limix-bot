@@ -88,5 +88,4 @@ Limix Bot kết nối tới dịch vụ của các nhà cung cấp AI và ứng 
 
 [Thư viện kỹ năng](https://github.com/leomieo/limix-skill-hub) · [Bảo mật](SECURITY.md) · [Quy tắc ứng xử](CODE_OF_CONDUCT.md) · [Giấy phép](LICENSE) · [Ghi công](NOTICE)
 
-Limix Bot do **Leox ৹ Limix AI** phát triển, dựa trên mã nguồn mở [OpenMausBot](https://github.com/milind-soni/OpenMausBot) (Apache 2.0).
-OpenMausBot và MausBot là nhãn hiệu của Supamaus Software Private Limited; Limix Bot không liên kết với họ. Các tên Claude, ChatGPT, Gemini, Grok, Telegram, Zalo, Discord thuộc về chủ sở hữu tương ứng.
+Limix Bot do **Leox ৹ Limix AI** phát triển.
