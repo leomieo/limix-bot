@@ -50,6 +50,22 @@ export async function sendWithRetry(channel, chatId, text, attempts = 3) {
   throw lastError;
 }
 
+/** The names a group member may call the bot by: its @username and its display name. */
+function callNames(conn) {
+  return [conn.botIdentity?.username, conn.botIdentity?.name, conn.name].filter((n) => typeof n === "string" && n.trim()).map((n) => n.trim().toLowerCase());
+}
+
+export function calledIn(conn, text) {
+  const lower = text.toLowerCase();
+  return callNames(conn).some((n) => lower.includes(`@${n}`)) || /^\/\w+/.test(text);
+}
+
+export function stripCall(conn, text) {
+  let out = text;
+  for (const n of callNames(conn)) out = out.replace(new RegExp(`@${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "gi"), " ");
+  return out.replace(/\s+/g, " ").trim();
+}
+
 export function roleOf(conn, senderId) {
   if (conn.ownerIds.includes(senderId)) return "owner";
   if (conn.allowedIds.includes(senderId)) return "member";
@@ -83,7 +99,7 @@ export class Router {
   }
 
   async process({ conn, channel, engine, event }) {
-    if (event.chatType !== "private") return "ignored_group";
+    if (event.chatType !== "private") return this.processGroup({ conn, channel, engine, event });
     if (event.text === undefined) {
       await this.reply(channel, event.chatId, TEXT.textOnly);
       return "unsupported";
@@ -152,6 +168,26 @@ export class Router {
 
     if (role === "unknown") return this.decline({ conn, channel, event, explicit: false });
     return this.enqueue(sessionKey, () => this.runTurn({ conn, channel, engine, event, text, sessionKey }));
+  }
+
+  /** A group chat: the bot answers when called by name (or every message, if the owner chose it), only for people it
+   * already serves; a stranger in a group is never sent a pairing code there. One shared conversation per group. */
+  async processGroup({ conn, channel, engine, event }) {
+    const mode = conn.groupMode ?? "mention";
+    if (mode === "off" || event.text === undefined) return "ignored_group";
+    const raw = event.text.trim();
+    const called = calledIn(conn, raw);
+    if (mode !== "all" && !called && !event.replyToBot) return "ignored_group";
+    const text = stripCall(conn, raw);
+    if (!text) return "ignored_group";
+    if (/^\/(link|approve|pair)\b/i.test(text)) {
+      await this.reply(channel, event.chatId, "Lệnh này chỉ dùng khi nhắn riêng cho bot.");
+      return "command";
+    }
+    if (roleOf(conn, event.senderId) === "unknown") return "ignored_group";
+    const sessionKey = Store.sessionKey(conn.id, event.chatId, "group");
+    const said = event.senderName ? `${event.senderName}: ${text}` : text;
+    return this.enqueue(sessionKey, () => this.runTurn({ conn, channel, engine, event, text: said, sessionKey }));
   }
 
   async decline({ conn, channel, event, explicit }) {

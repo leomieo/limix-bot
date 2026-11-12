@@ -288,6 +288,11 @@ const POLICY = {
   owner_only: ["Chỉ chủ bot", "Chỉ người đã liên kết bằng /link mới dùng được bot."],
   open: ["Mọi người", "Ai cũng nhắn được và dùng chung hạn mức AI của bạn."],
 };
+const GROUP = {
+  mention: ["Khi được gọi tên", "Trả lời khi có người gõ @tên bot trong tin nhắn (khuyên dùng)."],
+  all: ["Mọi tin nhắn", "Trả lời mọi tin trong nhóm. Dễ bị ồn và tốn lượt AI."],
+  off: ["Không trả lời trong nhóm", "Bot chỉ trả lời khi nhắn riêng."],
+};
 const PLATFORM = { telegram:"Telegram", zalo:"Zalo", discord:"Discord" };
 let APP_BOTS = { inside: false, bots: [] };
 function appBotOptions() {
@@ -414,6 +419,8 @@ function botView(c) {
             </div>
             <button class="btn primary" type="submit">${icon("check")}Lưu</button></form></details></section>
     </div>
+    <section class="card"><h2>${icon("users")}Trong nhóm chat</h2><p class="sub">Khi bạn thêm bot vào một nhóm Zalo, Telegram hoặc kênh Discord. Bot chỉ trả lời người đã được phép nhắn cho bot.</p>
+      <div class="seg" role="radiogroup" aria-label="Trong nhóm chat">${Object.entries(GROUP).map(([k, [t, d]]) => `<label><input type="radio" name="group-${c.id}" value="${k}" data-group="${c.id}" ${k === (c.groupMode || "mention") ? "checked" : ""}><span><b>${t}</b><span>${d}</span></span></label>`).join("")}</div></section>
     <section class="card"><h2>${icon("shield")}Ai được nhắn cho bot</h2><p class="sub">Áp dụng ngay, không cần chạy lại.</p>
       <div class="seg" role="radiogroup" aria-label="Quyền truy cập">${Object.entries(POLICY).map(([k, [t, d]]) => `<label><input type="radio" name="policy-${c.id}" value="${k}" data-policy="${c.id}" ${k === c.accessPolicy ? "checked" : ""}><span><b>${t}</b><span>${d}</span></span></label>`).join("")}</div></section>
     <section class="card"><h2>${icon("users")}Người dùng có quyền</h2><p class="sub">Gỡ quyền thì người đó phải xin mã lại.</p>
@@ -492,6 +499,8 @@ document.addEventListener("click", async (ev) => {
 document.addEventListener("change", async (ev) => {
   const p = ev.target.closest("[data-policy]");
   if (p) { try { await api(`/api/connections/${p.dataset.policy}/policy`, { accessPolicy: p.value }); toast("Đã cập nhật quyền."); p.blur(); await refresh(true); } catch (e) { toast(e.message, true); } }
+  const g = ev.target.closest("[data-group]");
+  if (g) { try { await api(`/api/connections/${g.dataset.group}/group`, { groupMode: g.value }); toast("Đã cập nhật cách trả lời trong nhóm."); g.blur(); await refresh(true); } catch (e) { toast(e.message, true); } }
   const t = ev.target.closest("[data-theme-pick]"); if (t) { applyTheme(t.value); }
 });
 

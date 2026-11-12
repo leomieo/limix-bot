@@ -47,7 +47,7 @@ function sameSecret(a, b) {
 export function publicConnection(conn, gateway) {
   return {
     id: conn.id, platform: conn.platform, name: conn.name, botIdentity: conn.botIdentity,
-    tokenMasked: conn.tokenMasked, accessPolicy: conn.accessPolicy,
+    tokenMasked: conn.tokenMasked, accessPolicy: conn.accessPolicy, groupMode: conn.groupMode ?? "mention",
     ownerIds: conn.ownerIds, allowedIds: conn.allowedIds, enabled: conn.enabled,
     status: conn.status, statusDetail: redact(conn.statusDetail), running: gateway.isRunning(conn.id),
     engine: conn.engine?.kind === "openmausbot"
@@ -147,6 +147,12 @@ export function createApp({ store, secrets, pairing, gateway, makeChannel = defa
       return { code, expiresInMinutes: LINK_CODE_TTL_MS / 60_000 };
     },
 
+    "POST /api/connections/:id/group": (body, id) => {
+      if (!["mention", "all", "off"].includes(body.groupMode)) throw Object.assign(new Error("Chế độ nhóm không hợp lệ"), { status: 400 });
+      store.updateConnection(id, { groupMode: body.groupMode });
+      store.log(id, "policy", `Trong nhóm chat: ${body.groupMode}`);
+      return publicConnection(store.getConnection(id), gateway);
+    },
     "POST /api/connections/:id/policy": (body, id) => {
       if (!["owner_only", "pairing", "open"].includes(body.accessPolicy)) throw Object.assign(new Error("Chế độ không hợp lệ"), { status: 400 });
       store.updateConnection(id, { accessPolicy: body.accessPolicy });
