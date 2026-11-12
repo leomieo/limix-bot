@@ -4,6 +4,10 @@
 // deletion operations, /exec instead of /commands. The answers come back in Boat's shape, so the rest of the app is
 // unchanged. Instabox cannot rename a machine, so the create carries the name (see `instaboxCreateName`).
 import { createHash, randomUUID } from "node:crypto";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+
+import { DATA_DIR } from "./config.ts";
 
 export const INSTABOX_API = "https://api.instabox.sh";
 /** Instabox's free plan creates only from agent-browser, android, omarchy or ci (refused with template_not_allowed, seen
@@ -31,10 +35,38 @@ export function boatStateFromInstabox(state: unknown): string {
   }
 }
 
+/** A machine the person made in Instabox themselves, taken over by a bot: Instabox names cannot change, so the bot's
+ * computer name is remembered here, by machine id. */
+const adoptedFile = () => join(DATA_DIR, "limix-instabox-adopted.json");
+function adopted(): Record<string, string> {
+  try {
+    const saved: unknown = JSON.parse(readFileSync(adoptedFile(), "utf8"));
+    return saved && typeof saved === "object" && !Array.isArray(saved) ? saved as Record<string, string> : {};
+  } catch {
+    return {};
+  }
+}
+function adopt(machineId: string, name: string): void {
+  writeFileSync(adoptedFile(), JSON.stringify({ ...adopted(), [machineId]: name }));
+}
+const MANAGED_NAME = /^ogb-/;
+
+/** The one machine in the account that no bot uses yet and that Limix did not make, else null: with several, none is
+ * taken, since the others may be for something else. */
+async function adoptable(token: string, signal?: AbortSignal | null): Promise<any | null> {
+  const listed = await ib(token, "/v1/machines?limit=100", { signal });
+  if (!listed.ok || !Array.isArray(listed.body?.machines)) return null;
+  const taken = adopted();
+  const free = listed.body.machines.filter((m: any) => typeof m?.id === "string" && !taken[m.id] && !MANAGED_NAME.test(String(m?.name ?? ""))
+    && !["deleting", "error"].includes(m?.state));
+  return free.length === 1 ? free[0] : null;
+}
+
 function sandboxFrom(machine: any) {
+  const id = String(machine?.id ?? "");
   return {
-    id: String(machine?.id ?? ""),
-    name: typeof machine?.name === "string" ? machine.name : "",
+    id,
+    name: adopted()[id] ?? (typeof machine?.name === "string" ? machine.name : ""),
     state: boatStateFromInstabox(machine?.state),
     desktopAvailable: true,
     createdAt: machine?.createdAt ?? null,
@@ -198,6 +230,11 @@ export async function instaboxFetch(rawToken: string, path: string, opts: Reques
     }
     if (method === "POST") {
       const name = typeof reqBody?.name === "string" ? reqBody.name : undefined;
+      const existing = name ? await adoptable(token, signal) : null;
+      if (existing && name) {
+        adopt(existing.id, name);
+        return json(201, { sandbox: sandboxFrom(existing) });
+      }
       const key = reqHeaders.get("Idempotency-Key");
       let created!: Awaited<ReturnType<typeof ib>>;
       for (const templateId of INSTABOX_TEMPLATES) {
@@ -233,7 +270,7 @@ export async function instaboxFetch(rawToken: string, path: string, opts: Reques
       // The name was given at create; Instabox names cannot change afterwards.
       const got = await ib(token, `/v1/machines/${machineId}`, { signal });
       if (!got.ok) return boatError(got.status, got.body);
-      if (typeof reqBody?.name === "string" && got.body?.name !== reqBody.name) {
+      if (typeof reqBody?.name === "string" && sandboxFrom(got.body).name !== reqBody.name) {
         return json(409, { ok: false, message: "Instabox cannot rename a machine; delete it and let Limix Bot create a new one" });
       }
       return json(200, { sandbox: sandboxFrom(got.body) });
