@@ -8,6 +8,7 @@ import { botSkillTemplateSchema } from "../new-bot-defaults.ts";
 import { fetchSkillFromSource } from "../skill-fetch.ts";
 import { readLocalSkills } from "../limix-skill-folder.ts";
 import { loadBundledSkills } from "../skill-library.ts";
+import { handleLimixHub } from "../limix-skill-hub.ts";
 import { skillImportSummary } from "../skill-folder.ts";
 import { installLibrarySkill, librarySkillOptOuts, listLibrarySkills, readLibrarySkillFile, readSkillLibraryIndex, setLibrarySkillEveryBot, setLibrarySkillOptOut, setLibrarySkillReviewState, skillsLibraryEnabled, unassignLibrarySkill } from "../skill-library.ts";
 import {
@@ -29,6 +30,10 @@ export function createBotSkillsRoutes(deps: BotSkillsRouteDeps): RouteHandler {
   const { store, cfg, listBotSkills, readBotSkillFile, stagedSkillListing } = deps;
   return async ({ req, res, url, path, method, json, readBody }) => {
     let m: RegExpMatchArray | null = null;
+    if (path.startsWith("/api/limix/hub")) {
+      const hub = await handleLimixHub(method, path, method === "POST" ? await readBody(req) : undefined);
+      if (hub) return json(res, hub.status, hub.body);
+    }
     if (method === "GET" && path === "/api/limix/bundled-skills") {
       const skills = loadBundledSkills().map(({ manifest }) => ({ id: manifest.id, name: manifest.name, description: manifest.description, defaultEnabled: manifest.defaultEnabled, triggerTerms: manifest.triggerTerms }));
       return json(res, 200, { skills });

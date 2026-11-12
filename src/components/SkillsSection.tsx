@@ -6,6 +6,7 @@ import { useModalDialog } from "@/hooks/use-modal-dialog";
 import { useStore } from "@/state/store";
 import { Card, Switch } from "./SettingsPrimitives";
 import { LimixBundledSkills } from "./LimixBundledSkills";
+import { LimixSkillHub } from "./LimixSkillHub";
 import type { SkillsLibrarySkillWire } from "../../shared/wire";
 import { Layer } from "./Layer";
 import { Select } from "./Select";
@@ -210,6 +211,7 @@ export function SkillsSection() {
   return (
     <div className="flex flex-col gap-4">
       <LimixBundledSkills />
+      <LimixSkillHub />
       <Card title={t("skills.library.title")} subtitle={t("skills.library.subtitle")}>
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">

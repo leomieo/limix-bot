@@ -1357,6 +1357,33 @@ def tools_settings(s):
     s = must(s, 'import { Card, Switch } from "./SettingsPrimitives";\n', 'import { Card, Switch } from "./SettingsPrimitives";\nimport { LimixBundledSkills } from "./LimixBundledSkills";\n')
     return must(s, '    <div className="flex flex-col gap-4">\n      <Card title={t("skills.library.title")}', '    <div className="flex flex-col gap-4">\n      <LimixBundledSkills />\n      <Card title={t("skills.library.title")}')
 edit("src/components/SkillsSection.tsx", tools_settings)
+# 10w. Limix Skill Hub client (server/limix-skill-hub.ts, LimixSkillHub card in Settings > Skills): catalog sync,
+# SHA-256 pinned installs that land disabled, Auto Sync on / Auto Install off.
+def hub_route(s):
+    if "handleLimixHub" in s:
+        return s
+    s = must(s, 'import { loadBundledSkills } from "../skill-library.ts";\n', 'import { loadBundledSkills } from "../skill-library.ts";\nimport { handleLimixHub } from "../limix-skill-hub.ts";\n')
+    return must(s, "    let m: RegExpMatchArray | null = null;\n",
+                "    let m: RegExpMatchArray | null = null;\n"
+                "    if (path.startsWith(\"/api/limix/hub\")) {\n"
+                "      const hub = await handleLimixHub(method, path, method === \"POST\" ? await readBody(req) : undefined);\n"
+                "      if (hub) return json(res, hub.status, hub.body);\n"
+                "    }\n")
+edit("server/routes/bot-skills.ts", hub_route)
+def hub_index(s):
+    if "startHubAutoSync" in s:
+        return s
+    s = must(s, 'import { createBotSkillsRoutes } from "./routes/bot-skills.ts";\n', 'import { createBotSkillsRoutes } from "./routes/bot-skills.ts";\nimport { startHubAutoSync } from "./limix-skill-hub.ts";\n')
+    return must(s, "ROUTES.push(createBotSkillsRoutes({ store, cfg, listBotSkills, readBotSkillFile, stagedSkillListing }));\n",
+                "ROUTES.push(createBotSkillsRoutes({ store, cfg, listBotSkills, readBotSkillFile, stagedSkillListing }));\nstartHubAutoSync();\n")
+edit("server/index.ts", hub_index)
+def hub_settings(s):
+    if "LimixSkillHub" in s:
+        return s
+    s = must(s, 'import { LimixBundledSkills } from "./LimixBundledSkills";\n', 'import { LimixBundledSkills } from "./LimixBundledSkills";\nimport { LimixSkillHub } from "./LimixSkillHub";\n')
+    return must(s, "      <LimixBundledSkills />\n", "      <LimixBundledSkills />\n      <LimixSkillHub />\n")
+edit("src/components/SkillsSection.tsx", hub_settings)
+
 def tools_main(s):
     if "limix-tools.mjs" in s:
         return s
