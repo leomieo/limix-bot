@@ -19,7 +19,7 @@ const ERRORS = {
   409: ["busy", "Bot đang bận trả lời tin trước"],
   413: ["too_large", "Tin nhắn quá dài"],
   429: ["rate_limited", "Quá 10 tin/phút cho khóa này"],
-  502: ["engine_failed", "Bot không trả lời được (xem chi tiết trong OpenMausBot)"],
+  502: ["engine_failed", "Bot không trả lời được (xem chi tiết trong Limix Bot)"],
 };
 
 const sleep = (ms, signal) => new Promise((resolve, reject) => {
@@ -28,10 +28,10 @@ const sleep = (ms, signal) => new Promise((resolve, reject) => {
 });
 
 export class OpenMausBotEngine {
-  constructor({ endpoint, apiKey, fetchImpl = fetch, pollMs = 4000, maxWaitMs = 10 * 60_000, waitSeconds = 50 }) {
+  constructor({ endpoint, apiKey, fetchImpl = fetch, pollMs = 4000, maxWaitMs = 10 * 60_000, waitSeconds = 50, hooksPorts = [8800, 18800, 28800] }) {
     const url = new URL(endpoint);
     if (!/\/hooks\/api\/bots\/[\w-]+\/messages$/.test(url.pathname)) {
-      throw new EngineError("bad_endpoint", "Địa chỉ phải có dạng …/hooks/api/bots/<botId>/messages (copy từ thẻ Bot API trong OpenMausBot)");
+      throw new EngineError("bad_endpoint", "Địa chỉ phải có dạng …/hooks/api/bots/<botId>/messages (copy từ thẻ Bot API trong Limix Bot)");
     }
     this.endpoint = url.toString();
     this.apiKey = apiKey;
@@ -40,21 +40,41 @@ export class OpenMausBotEngine {
     this.maxWaitMs = maxWaitMs;
     this.waitSeconds = waitSeconds;
     this.kind = "openmausbot";
+    this.hooksPorts = hooksPorts;
+  }
+
+  /** The app's receiver moves to the next port pair when 8799 is taken (8800, 18800, 28800), so a copied loopback
+   * address is tried on each of them; the one that answers is kept. */
+  candidates() {
+    const url = new URL(this.endpoint);
+    if (!["127.0.0.1", "localhost", "[::1]"].includes(url.hostname)) return [this.endpoint];
+    const ports = [url.port || "80", ...this.hooksPorts.map(String).filter((p) => p !== url.port)];
+    return ports.map((port) => { const u = new URL(this.endpoint); u.port = port; return u.toString(); });
   }
 
   async call(method, { body, thread, timeoutMs }) {
-    const url = new URL(this.endpoint);
-    if (method === "GET") url.searchParams.set("thread", thread);
     let res;
-    try {
-      res = await this.fetch(url, {
-        method,
-        headers: { Authorization: `Bearer ${this.apiKey}`, ...(body ? { "Content-Type": "application/json" } : {}) },
-        body: body ? JSON.stringify(body) : undefined,
-        signal: AbortSignal.timeout(timeoutMs),
-      });
-    } catch (error) {
-      throw new EngineError("engine_unreachable", `Không kết nối được OpenMausBot (${error.name === "TimeoutError" ? "hết thời gian chờ" : "app có đang mở?"})`);
+    let lastError;
+    for (const endpoint of this.candidates()) {
+      const url = new URL(endpoint);
+      if (method === "GET") url.searchParams.set("thread", thread);
+      try {
+        res = await this.fetch(url, {
+          method,
+          headers: { Authorization: `Bearer ${this.apiKey}`, ...(body ? { "Content-Type": "application/json" } : {}) },
+          body: body ? JSON.stringify(body) : undefined,
+          signal: AbortSignal.timeout(timeoutMs),
+        });
+        this.endpoint = endpoint;
+        break;
+      } catch (error) {
+        lastError = error;
+        if (error.name === "TimeoutError") break;
+      }
+    }
+    if (!res) {
+      const why = lastError?.name === "TimeoutError" ? "hết thời gian chờ" : `${lastError?.cause?.code ?? lastError?.name ?? "lỗi mạng"} — app Limix Bot có đang mở?`;
+      throw new EngineError("engine_unreachable", `Không kết nối được bộ não AI trong Limix Bot (${why})`);
     }
     let data = {};
     try {
@@ -63,7 +83,7 @@ export class OpenMausBotEngine {
       // Error bodies are not always JSON.
     }
     if (res.status === 200 || res.status === 202) return data;
-    const [code, message] = ERRORS[res.status] ?? ["engine_error", `OpenMausBot trả lỗi ${res.status}`];
+    const [code, message] = ERRORS[res.status] ?? ["engine_error", `Limix Bot trả lỗi ${res.status}`];
     throw new EngineError(code, message, res.status);
   }
 

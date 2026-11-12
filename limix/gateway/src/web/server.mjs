@@ -62,7 +62,7 @@ export function createApp({ store, secrets, pairing, gateway, makeChannel = defa
 
   function buildEngine(body) {
     if (body.engineKind === "openmausbot") {
-      if (!body.endpoint || !body.apiKey) throw Object.assign(new Error("Cần địa chỉ Bot API và khóa (key) của bot OpenMausBot"), { status: 400 });
+      if (!body.endpoint || !body.apiKey) throw Object.assign(new Error("Cần địa chỉ Bot API và khóa (key) của bot Limix Bot"), { status: 400 });
       try {
         return new OpenMausBotEngine({ endpoint: String(body.endpoint).trim(), apiKey: String(body.apiKey).trim() });
       } catch (error) {

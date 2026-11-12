@@ -197,7 +197,7 @@ export class Router {
         return "replied";
       }
       if (answer.status === "needs_approval") {
-        this.store.log(conn.id, "approval", "Bot dừng ở bước cần duyệt — mở OpenMausBot để duyệt");
+        this.store.log(conn.id, "approval", "Bot dừng ở bước cần duyệt — mở Limix Bot để duyệt");
         await this.reply(channel, event.chatId, TEXT.needsApproval);
         return "needs_approval";
       }
