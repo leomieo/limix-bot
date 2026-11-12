@@ -1121,12 +1121,11 @@ async function startServerOn(port, dataDir = runningDataDir ?? startupEnvironmen
     // The parent owns the data-dir lease; a child only validates it, so fallback-port children never replace it.
     ...desktopDataDirLease.utilityServerLeaseEnvironment(),
     ...limixRuntimeEnv({ resourcesPath: process.resourcesPath, userData: app.getPath("userData") }),
-    LIMIX_OWNER_LANE_TOKEN: limixOwnerLaneToken,
-    ...limixRuntimeEnv({ resourcesPath: process.resourcesPath, userData: app.getPath("userData") }),
     ...((lan) => { limixLanActive = Boolean(lan.OMB_LAN); return lan; })(limixPhoneBrowserEnv(app.getPath("userData"))),
     OMB_DATA_DIR: dataDir,
     // Fail-closed until this process sends the private connection; never a descriptor inherited from the shell.
     OMB_DESKTOP_PARENT: "1",
+    LIMIX_OWNER_LANE_TOKEN: limixOwnerLaneToken,
     OMB_DESKTOP_LAUNCH_ID: desktopLaunchId,
     OMB_STATIC_DIR: path.join(process.resourcesPath, "ui"),
     OMB_RESOURCES_PATH: process.resourcesPath,
