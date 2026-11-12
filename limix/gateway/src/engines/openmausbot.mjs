@@ -22,6 +22,15 @@ const ERRORS = {
   502: ["engine_failed", "Bot không trả lời được (xem chi tiết trong Limix Bot)"],
 };
 
+/** The app says which of its three refusals a 403 is. */
+function forbidden(reason) {
+  const text = String(reason ?? "");
+  if (/is off/i.test(text)) return ["api_off", "Bot API đang tắt cho bot AI này: mở bot trong Limix Bot → bánh răng → Advanced: Access → Bot API → bật “Let apps talk to this bot”"];
+  if (/can't take Bot API/i.test(text)) return ["engine_unsupported", "AI của bot này không nhận được tin từ ngoài (Bot API). Trong Limix Bot, đổi AI của bot sang Claude, Codex hoặc một AI kiểu OpenAI"];
+  if (/higher plan/i.test(text)) return ["plan", "Gói hiện tại chưa có Bot API"];
+  return ERRORS[403];
+}
+
 const sleep = (ms, signal) => new Promise((resolve, reject) => {
   const t = setTimeout(resolve, ms);
   signal?.addEventListener("abort", () => { clearTimeout(t); reject(new EngineError("aborted", "Đã dừng")); }, { once: true });
@@ -83,7 +92,7 @@ export class OpenMausBotEngine {
       // Error bodies are not always JSON.
     }
     if (res.status === 200 || res.status === 202) return data;
-    const [code, message] = ERRORS[res.status] ?? ["engine_error", `Limix Bot trả lỗi ${res.status}`];
+    const [code, message] = res.status === 403 ? forbidden(data?.error) : ERRORS[res.status] ?? ["engine_error", `Limix Bot trả lỗi ${res.status}`];
     throw new EngineError(code, message, res.status);
   }
 
