@@ -1124,6 +1124,8 @@ async function startServerOn(port, dataDir = runningDataDir ?? startupEnvironmen
     ...limixRuntimeEnv({ resourcesPath: process.resourcesPath, userData: app.getPath("userData") }),
     ...((lan) => { limixLanActive = Boolean(lan.OMB_LAN); return lan; })(limixPhoneBrowserEnv(app.getPath("userData"))),
     OMB_DATA_DIR: dataDir,
+    // The language picked in this app, so the first greeting and the starting choices are written in it (empty: follow the system).
+    OMB_UI_LANGUAGE: nativeText.prefs?.language() ?? "",
     // Fail-closed until this process sends the private connection; never a descriptor inherited from the shell.
     OMB_DESKTOP_PARENT: "1",
     LIMIX_OWNER_LANE_TOKEN: limixOwnerLaneToken,

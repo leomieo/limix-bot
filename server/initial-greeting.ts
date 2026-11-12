@@ -9,6 +9,7 @@ const GREETINGS: { en: Greeting } & Record<string, Greeting> = {
   es: (name, person) => `Hola${person ? ` ${person}` : ""}, soy ${name}. ¿Qué te gustaría que hiciera?`,
   "pt-br": (name, person) => `Oi${person ? ` ${person}` : ""}, eu sou ${name}. O que você gostaria que eu fizesse?`,
   ko: (name, person) => `안녕하세요${person ? `, ${person}님` : ""}. 저는 ${name}입니다. 무엇을 도와드릴까요?`,
+  vi: (name, person) => `Xin chào${person ? ` ${person}` : ""}, mình là ${name}. Bạn muốn mình giúp việc gì?`,
   "zh-tw": (name, person) => `嗨${person ? ` ${person}` : ""}，我是 ${name}。你想要我幫你做什麼？`,
 };
 
@@ -18,6 +19,7 @@ const SETUP_REQUEST_LINES: { en: string } & Record<string, string> = {
   es: "Genial. Cuéntame con tus propias palabras en qué te gustaría que te ayude y me prepararé para ello. Por ejemplo: \"ordena mi bandeja de entrada cada mañana\" o \"investiga a nuestros competidores cada semana\".",
   "pt-br": "Ótimo. Me conte com suas palavras em que você gostaria de ajuda e eu me preparo para isso. Por exemplo: \"organize minha caixa de entrada toda manhã\" ou \"pesquise nossos concorrentes toda semana\".",
   ko: "좋아요. 도움이 필요한 일을 편하게 말씀해 주시면 거기에 맞게 제가 설정할게요. 예: \"매일 아침 받은편지함 정리해 줘\", \"매주 경쟁사 조사해 줘\".",
+  vi: "Tuyệt. Bạn cứ kể bằng lời của mình về việc cần giúp, mình sẽ tự thiết lập để làm việc đó. Ví dụ: \"sắp xếp hộp thư của tôi mỗi sáng\" hoặc \"tìm hiểu đối thủ của chúng tôi mỗi tuần\".",
   "zh-tw": "好的。用你自己的話告訴我想要幫忙的事，我會照著設定好自己。例如：「每天早上整理我的收件匣」或「每週研究我們的競爭對手」。",
 };
 
@@ -32,6 +34,8 @@ const SETUP_CHOICES: { en: readonly string[] } & Record<string, readonly string[
     "Reservas, compras e tarefas", "Dados, planilhas e relatórios"],
   ko: ["리서치와 주제 깊이 파고들기", "이것저것 지켜보기", "이메일, 캘린더, 메시지",
     "예약, 쇼핑, 심부름", "데이터, 스프레드시트, 보고서"],
+  vi: ["Nghiên cứu và tìm hiểu sâu một chủ đề", "Theo dõi mọi việc giúp tôi", "Email, lịch và tin nhắn",
+    "Đặt chỗ, mua sắm và việc vặt", "Dữ liệu, bảng tính và báo cáo"],
   "zh-tw": ["研究與深入探討主題", "幫我留意各種事情", "電子郵件、行事曆和訊息",
     "預約、購物和跑腿", "資料、試算表和報告"],
 };
