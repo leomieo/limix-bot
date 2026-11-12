@@ -13,7 +13,7 @@ import { createPortal } from "react-dom";
 import { catalogCopy, catalogMatches, type TeamCatalog, type TeamCatalogEntry } from "@/lib/team-catalog";
 
 import { TEAM_GLYPHS, TeamImportDetails } from "./TeamImportDetails";
-import { ReadyBotGallery } from "./ReadyBotGallery";
+import { LimixBotGallery } from "./LimixBotGallery";
 import { ShareTeamDialog } from "./ShareTeamDialog";
 import { OrgLibraryTab } from "./TeamLibraryPanelOrg";
 import { MAX_TEAM_BACKUP_BYTES } from "../../shared/team-backup";
@@ -663,7 +663,7 @@ export function TeamLibraryPanel({
               )}
               {tab === "explore" && (
                 <div>
-                  <ReadyBotGallery search={search} onDialog={setNestedDialog} onAdded={onClose} />
+                  <LimixBotGallery search={search} onDialog={setNestedDialog} onAdded={onClose} />
                   <div className="mb-3 text-[12px] font-medium text-ink-secondary">
                     {search ? t("templates.searchResults") : t("templates.communityTemplates")}
                   </div>
