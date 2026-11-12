@@ -29,6 +29,7 @@ import type { useBotSettingsDerived } from "../bot-settings/useBotSettingsDerive
 import { RoutineList } from "../routines/RoutineList";
 import { BrowserLogins } from "./browser-logins";
 import { useOpenComputer, WherePage } from "./ComputerTab";
+import { LimixSkillStoreDialog } from "../LimixSkillStore";
 import { SettingsPage } from "./SettingsPage";
 import { panelMemoryNotes, withMemoryNote, withoutMemoryNote, type PanelMemoryNote } from "./memory-notes";
 import type { SimplePageId } from "./page-registry";
@@ -414,10 +415,15 @@ export function SkillsPage({ bot }: PageContext) {
       setImporting(false);
     }
   };
+  const [storeOpen, setStoreOpen] = useState(false);
+  const openSkillSettings = () => {
+    setStoreOpen(false);
+    dispatch({ type: "toggleSettings", open: false });
+    dispatch({ type: "toggleAppSettings", open: true, section: "skills" });
+  };
   const browse = () => {
     if (libraryOn) {
-      dispatch({ type: "toggleSettings", open: false });
-      dispatch({ type: "toggleAppSettings", open: true, section: "skills" });
+      setStoreOpen(true);
       return;
     }
     void openExternalLink(SKILLS_SITE);
@@ -439,9 +445,9 @@ export function SkillsPage({ bot }: PageContext) {
             label={t("botSettings.simple.skillToggle", { name: skill.name })}
             color={bot.color}
             checked={skillSwitchOn(skill)}
-            disabled={Boolean(skills.working)}
+            disabled={Boolean(skills.working) || (skill as { core?: boolean }).core === true}
             onChange={() => void skills.toggle(skill)}
-            extra={skill.origin === "imported" || skill.origin === "native" ? undefined : <TrashButton data-panel-action={`remove-skill:${skill.name}`} label={t("botPanel.skills.remove", { name: skill.name })} disabled={Boolean(skills.working)} onClick={() => void remove(skill)} />}
+            extra={skill.origin === "imported" || skill.origin === "native" || (skill.origin as string) === "bundled" ? undefined : <TrashButton data-panel-action={`remove-skill:${skill.name}`} label={t("botPanel.skills.remove", { name: skill.name })} disabled={Boolean(skills.working)} onClick={() => void remove(skill)} />}
           />
         ))}
         {skills.error && !skills.reviewing && <NoteRow tone="warn">{skills.error}</NoteRow>}
@@ -463,6 +469,7 @@ export function SkillsPage({ bot }: PageContext) {
         <LinkRow data-panel-link="browse-skills" onClick={browse}>{t("botPanel.skills.bundled")}</LinkRow>
         {window.ogb?.pickFolder && <LinkRow data-panel-link="skills-folder" onClick={() => void importFolder()}>{t("botPanel.skills.fromFolder")}</LinkRow>}
       </Card>
+      {storeOpen && <LimixSkillStoreDialog botId={bot.id} botName={bot.name} onOpenSettings={openSkillSettings} onClose={() => { setStoreOpen(false); void skills.refresh(); }} />}
       {skills.reviewing && (
         <SkillReviewDialog
           skill={skills.reviewing.skill}

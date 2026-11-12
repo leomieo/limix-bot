@@ -54,6 +54,8 @@ const choicesSchema = z.object({
   off: z.array(z.string()),
   on: z.record(z.string(), sha256Hex).default({}),
   listed: z.array(z.string()).optional(),
+  /** Limix Bot: skills from this computer are off for a bot until a person adds one from its store. */
+  picked: z.array(z.string()).optional(),
 });
 type Choices = z.infer<typeof choicesSchema>;
 
@@ -295,6 +297,7 @@ export interface ImportedSkillView {
 
 function enabledFor(name: string, entry: ImportedSkillEntry, choices: Choices): boolean {
   if (choices.off.includes(name)) return false;
+  if (!(choices.picked ?? []).includes(name)) return false;
   return entry.warnings.length === 0 || choices.on[name] === entry.filesSha256;
 }
 
@@ -379,9 +382,10 @@ export function setImportedSkillEnabled(botId: string, name: string, enabled: bo
   const off = choices.off.filter((other) => other !== name);
   const { [name]: _read, ...on } = choices.on;
   const listed = choices.listed?.filter((other) => other !== name);
+  const picked = (choices.picked ?? []).filter((other) => other !== name);
   const next: Choices = enabled
-    ? { off, on: entry.warnings.length ? { ...on, [name]: entry.filesSha256 } : on, ...(listed ? { listed: [...listed, name].sort() } : {}) }
-    : { off: [...off, name].sort(), on, ...(listed ? { listed } : {}) };
+    ? { off, on: entry.warnings.length ? { ...on, [name]: entry.filesSha256 } : on, ...(listed ? { listed: [...listed, name].sort() } : {}), picked: [...picked, name].sort() }
+    : { off: [...off, name].sort(), on, ...(listed ? { listed } : {}), picked };
   mkdirSync(dirname(choicesPath(botId)), { recursive: true, mode: 0o700 });
   writeFileAtomic(choicesPath(botId), `${JSON.stringify(next, null, 2)}\n`, { mode: 0o600 });
   return importedSkillListings(botId, new Set()).find((skill) => skill.name === name)!;

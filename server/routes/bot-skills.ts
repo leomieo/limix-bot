@@ -10,6 +10,7 @@ import { fetchSkillFromSource } from "../skill-fetch.ts";
 import { readLocalSkills } from "../limix-skill-folder.ts";
 import { loadBundledSkills } from "../skill-library.ts";
 import { handleLimixHub } from "../limix-skill-hub.ts";
+import { handleLimixSkillStore, LIMIX_CORE_SKILLS, limixBundledListings, limixBundledSwitch } from "../limix-skill-store.ts";
 import { skillImportSummary } from "../skill-folder.ts";
 import { installLibrarySkill, librarySkillOptOuts, listLibrarySkills, readLibrarySkillFile, readSkillLibraryIndex, setLibrarySkillEveryBot, setLibrarySkillOptOut, setLibrarySkillReviewState, skillsLibraryEnabled, unassignLibrarySkill } from "../skill-library.ts";
 import {
@@ -39,8 +40,12 @@ export function createBotSkillsRoutes(deps: BotSkillsRouteDeps): RouteHandler {
       const hub = await handleLimixHub(method, path, method === "POST" ? await readBody(req) : undefined);
       if (hub) return json(res, hub.status, hub.body);
     }
+    if (path.startsWith("/api/limix/skill-store/")) {
+      const skillStore = handleLimixSkillStore(store, method, path, method === "POST" ? await readBody(req) : undefined);
+      if (skillStore) return json(res, skillStore.status, skillStore.body);
+    }
     if (method === "GET" && path === "/api/limix/bundled-skills") {
-      const skills = loadBundledSkills().map(({ manifest }) => ({ id: manifest.id, name: manifest.name, description: manifest.description, defaultEnabled: manifest.defaultEnabled, triggerTerms: manifest.triggerTerms }));
+      const skills = loadBundledSkills().map(({ manifest }) => ({ id: manifest.id, name: manifest.name, description: manifest.description, defaultEnabled: manifest.defaultEnabled, triggerTerms: manifest.triggerTerms, core: LIMIX_CORE_SKILLS.has(manifest.id) }));
       return json(res, 200, { skills });
     }
     // Imports land DISABLED: a person enables one after reading SKILL.md and its scan warnings.
@@ -71,14 +76,15 @@ export function createBotSkillsRoutes(deps: BotSkillsRouteDeps): RouteHandler {
         const { skills, library } = listBotSkillsWithOrigin(m[1]!, store.bot(m[1])!.assignedSkills);
         const names = new Set(skills.map((skill) => skill.name));
         return json(res, 200, {
-          skills: [...skills, ...listBotSkills(bot, threadId).filter((skill) => !names.has(skill.name))],
+          skills: [...skills, ...listBotSkills(bot, threadId).filter((skill) => !names.has(skill.name)),
+            ...limixBundledListings(bot.id).filter((skill) => !names.has(skill.name) && !listBotSkills(bot, threadId).some((other) => other.name === skill.name))],
           library,
           assignedSkills: store.bot(m[1])!.assignedSkills,
           staged: listStagedSkillWrites(m[1]).map(stagedSkillListing),
         });
       }
       return json(res, 200, {
-        skills: listBotSkills(bot, threadId),
+        skills: [...listBotSkills(bot, threadId), ...limixBundledListings(bot.id)],
         staged: listStagedSkillWrites(m[1]).map(stagedSkillListing),
       });
     }
@@ -120,7 +126,11 @@ export function createBotSkillsRoutes(deps: BotSkillsRouteDeps): RouteHandler {
         return json(res, 200, { skill });
       }
       const result = setSkillEnabled(m[1]!, m[2]!, parsed.data.enabled);
-      if ("error" in result) return json(res, 404, { error: result.error });
+      if ("error" in result) {
+        const shipped = limixBundledSwitch(m[1]!, m[2]!, parsed.data.enabled);
+        if (shipped) return json(res, shipped.status, shipped.body);
+        return json(res, 404, { error: result.error });
+      }
       return json(res, 200, { skill: result });
     }
     if (m && method === "DELETE") {

@@ -4,9 +4,9 @@ import { Wrench } from "lucide-react";
 import { Card } from "./SettingsPrimitives";
 import { LimixToolsDialog, limixTools } from "./LimixToolsDialog";
 
-/** Settings > Skills: the skills that ship with Limix Bot (skills/<id>). Every bot uses one by itself when a message
- * contains one of its trigger words, so they need no assigning; this card shows them and the programs they need. */
-interface Bundled { id: string; name: string; description: string; defaultEnabled: boolean; triggerTerms: string[] }
+/** Settings > Skills: the skills that ship with Limix Bot (skills/<id>). Core ones are on for every bot; the others are
+ * added to one bot at a time from its store (server/limix-skill-store.ts). A bot uses one when a message has a trigger word or /id. */
+interface Bundled { id: string; name: string; description: string; defaultEnabled: boolean; triggerTerms: string[]; core?: boolean }
 
 export function LimixBundledSkills() {
   const [skills, setSkills] = useState<Bundled[] | null>(null);
@@ -18,7 +18,7 @@ export function LimixBundledSkills() {
   }, []);
 
   return (
-    <Card title="Kỹ năng có sẵn của Limix Bot" subtitle="Đi kèm ứng dụng. Mọi bot tự dùng khi tin nhắn có từ khóa liên quan, không cần gán cho từng bot.">
+    <Card title="Kĩ năng có sẵn của Limix Bot" subtitle="Đi kèm ứng dụng. Kĩ năng gốc luôn bật cho mọi bot; các kĩ năng khác nằm trong kho, thêm cho từng bot ở mục Kĩ Năng (Skills) của bot.">
       <div className="flex flex-col gap-3">
         {skills === null ? null : skills.length === 0 ? (
           <p className="text-[13px] text-ink-secondary">Chưa thấy kỹ năng có sẵn nào trong bản cài này.</p>
@@ -28,7 +28,7 @@ export function LimixBundledSkills() {
               <li key={skill.id} className="px-3 py-2.5">
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-[13px] text-ink">{skill.id}</span>
-                  {!skill.defaultEnabled && <span className="text-[12px] text-ink-tertiary">tắt sẵn</span>}
+                  <span className="text-[12px] text-ink-tertiary">{skill.core ? "Kĩ năng gốc · mọi bot" : "Trong kho · thêm cho từng bot"}</span>
                 </div>
                 <p className="mt-0.5 text-[12px] leading-relaxed text-ink-secondary">{skill.description}</p>
                 {skill.triggerTerms.length > 0 && (

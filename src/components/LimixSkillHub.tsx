@@ -197,7 +197,7 @@ export function LimixSkillHub() {
   };
 
   return (
-    <Card title="Thư viện kỹ năng Limix" subtitle="Kho kỹ năng đã quét bảo mật và chấm điểm. Cài xong kỹ năng vẫn tắt; bạn bật rồi gán cho bot ở thư viện bên dưới.">
+    <Card title="Thư viện kỹ năng Limix" subtitle="Kĩ năng đã quét bảo mật và chấm điểm. Cài xong, kĩ năng nằm sẵn trong kho nhưng chưa bot nào dùng: mở bot → Kĩ Năng (Skills) → Kho Kĩ Năng (Skills) để thêm cho từng bot.">
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap gap-1.5">
           {TABS.map(([id, label]) => {

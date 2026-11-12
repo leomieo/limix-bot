@@ -490,7 +490,6 @@ import {
   loadUserSkills,
   mergeSkills,
   renderSkillInstructions,
-  selectBundledSkills,
   skillsLibraryEnabled, readSkillLibraryIndex, type BundledSkill,
 } from "./skill-library.ts";
 import { runSkillsLibraryBootSweep } from "./skills-library-migration.ts";
@@ -591,6 +590,7 @@ import { createBotOrderRoutes } from "./routes/bot-order.ts";
 import { createBotLifecycleRoutes } from "./routes/bot-lifecycle.ts";
 import { createBotSkillsRoutes } from "./routes/bot-skills.ts";
 import { startHubAutoSync } from "./limix-skill-hub.ts";
+import { limixBundledFor, limixSelectBundled, limixSkillDefaultsMigration } from "./limix-skill-store.ts";
 import { createSkillShareRoutes } from "./routes/skill-share.ts";
 import { createTeamContextRoutes } from "./routes/team-context.ts";
 import { createAppSuggestions } from "./host/app-suggestions.ts"; import { createAppFindRoute, createAppSuggestionRoutes } from "./routes/app-suggestions.ts"; import { appPickAvailable } from "./decider/app-picks.ts"; import { managedConnectorUnavailableReason } from "../shared/connector-availability.ts"; import { createDeciderRoutes } from "./routes/decider.ts"; import { createCloudSendRoutes } from "./routes/cloud-send.ts"; import { claudeCodeSkillInputs } from "./setup-import.ts"; import { createCloudConnectionsHost } from "./cloud-connections-host.ts";
@@ -1410,6 +1410,7 @@ function resyncOpenCodeProviderKeys(): void {
 const firstEngineRead = holdUntilFirstEngineRead();
 await registry.load(providerConfigs(), decorateHostedProvider);
 const bundledSkills = loadBundledSkills();
+limixSkillDefaultsMigration();
 const availableSkills = () => mergeSkills(bundledSkills, loadUserSkills(join(DATA_DIR, "skills")));
 /** Every turn the engine can mount it, whatever its words: they pick only the skill's instructions. A Cloud home or a hosted workspace has no USB port. */
 const usbPhoneOffered = (instance: { adapter: { capabilities: { phoneMcp?: boolean } } }, skills: readonly BundledSkill[]) => instance.adapter.capabilities.phoneMcp === true &&
@@ -7913,8 +7914,8 @@ async function beginTurn(
 
       const integrations: NonNullable<Parameters<typeof instance.adapter.sendTurn>[0]["integrations"]> = {};
       let browser: Awaited<ReturnType<typeof browserIntegration>> = null;
-      const skills = availableSkills(), phoneOffered = usbPhoneOffered(instance, skills) && !proactive.fence.confines(threadId) && !botApiThread(threadId);
-      const selectedSkills = selectBundledSkills(
+      const skills = limixBundledFor(bot.id, availableSkills()), phoneOffered = usbPhoneOffered(instance, skills) && !proactive.fence.confines(threadId) && !botApiThread(threadId);
+      const selectedSkills = limixSelectBundled(
         providerText,
         [
           ...(phoneOffered ? ["phoneMcp"] : []),
@@ -9816,14 +9817,14 @@ async function runClaimedGroupMemberTurn(
   );
   const roomContext = roomWindow.text;
   const turnImages = usesNativeImageInput ? [...burstImages, ...resolvedLatestImages.images, ...await videoFramesWithin(burstImages.length + resolvedLatestImages.images.length, resolvedLatestImages.videos)] : [];
-  const skills = availableSkills(), phoneOffered = usbPhoneOffered(instance, skills);
+  const skills = limixBundledFor(bot.id, availableSkills()), phoneOffered = usbPhoneOffered(instance, skills);
   const selectedSkills = mergeSkills(
-    selectBundledSkills(
+    limixSelectBundled(
       roomContext,
       phoneOffered ? ["phoneMcp"] : [],
       skills,
     ),
-    selectBundledSkills(
+    limixSelectBundled(
       latestUser?.text ?? "",
       skillAuthoring ? ["skillAuthoring"] : [],
       skills,

@@ -39,6 +39,8 @@ export interface LibraryBot {
   apps: string[];
   notes?: Record<string, string>;
   routines?: Array<{ name: string; prompt: string; schedule: { type: "daily"; time: string; weekdays: number[] }; enabled: false; overlap: "skip" }>;
+  /** Skills from the store ("Kho Kĩ Năng (Skills)") the new bot gets, by name. Names not installed here are skipped. */
+  skills?: string[];
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -134,6 +136,12 @@ export function parseLibraryBot(value: unknown, expectedId: string): LibraryBot 
       return { name: text(raw.name, `${field}.name`, 80), prompt: text(raw.prompt, `${field}.prompt`, 2_000),
         schedule: { type: "daily" as const, time, weekdays: [...new Set(weekdays as number[])].sort() }, enabled: false as const, overlap: "skip" as const };
     });
+  }
+  if (value.skills !== undefined) {
+    if (!Array.isArray(value.skills) || value.skills.length > 20 || value.skills.some((name) => typeof name !== "string" || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name) || name.length > 64)) {
+      throw new Error("skills is invalid");
+    }
+    bot.skills = [...new Set(value.skills as string[])];
   }
   return bot;
 }

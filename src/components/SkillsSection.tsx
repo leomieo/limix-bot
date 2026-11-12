@@ -278,6 +278,7 @@ export function SkillsSection() {
                     />
                   </div>
                   <LibrarySkillMeta skill={skill} />
+                  {skill.everyBot && (
                   <div className="mt-2 flex items-center justify-between gap-3 rounded-lg bg-inset px-2.5 py-2">
                     <div>
                       <div className="text-[12px] font-medium text-ink">{t("skills.library.everyBot")}</div>
@@ -290,6 +291,7 @@ export function SkillsSection() {
                       onClick={() => void toggleEveryBot(skill)}
                     />
                   </div>
+                  )}
                   {skill.warnings.length > 0 && (
                     <div className="mt-1 text-[11px] text-warning">{skill.warnings.join(" · ")}</div>
                   )}

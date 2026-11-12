@@ -1,6 +1,6 @@
 // Limix Skill Hub client: keeps a cached copy of the hub catalog, installs a skill only after every file matches the
 // SHA-256 the catalog pins, and never installs scripts, binaries or MCP files unless the owner allows tools for that
-// one skill. Installed skills land DISABLED; the owner turns them on. Auto Sync (catalog refresh) is on by default,
+// one skill. Installed skills wait in the store ("Kho Kĩ Năng (Skills)"), switched on but on no bot until one is added to it. Auto Sync (catalog refresh) is on by default,
 // Auto Install is off by default.
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
@@ -207,7 +207,7 @@ export async function installHubSkill(id: string, options: { allowTools?: boolea
     ...(entry.tags.length ? { tags: entry.tags } : {}),
     warnings: entry.notes,
     skippedFiles: skipped,
-    reviewState: "disabled",
+    reviewState: "approved",
     ...(files.length ? { files } : {}),
   });
   if ("error" in result) return { error: result.error };
