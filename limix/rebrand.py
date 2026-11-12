@@ -1171,7 +1171,7 @@ def ol_main(s):
     if "LIMIX_OWNER_LANE_TOKEN" in s:
         return s
     s = must(s, "let limixGateway = null;\n", "let limixGateway = null;\nconst limixOwnerLaneToken = randomBytes(32).toString(\"base64url\");\n")
-    s = must(s, '    ...limixRuntimeEnv({ resourcesPath: process.resourcesPath, userData: app.getPath("userData") }),\n', '    LIMIX_OWNER_LANE_TOKEN: limixOwnerLaneToken,\n    ...limixRuntimeEnv({ resourcesPath: process.resourcesPath, userData: app.getPath("userData") }),\n')
+    s = must(s, '    OMB_DESKTOP_PARENT: "1",\n', '    OMB_DESKTOP_PARENT: "1",\n    LIMIX_OWNER_LANE_TOKEN: limixOwnerLaneToken,\n')
     return must(s, "iconPath: APP_ICON, log: slog });\n  limixGateway.start();", "iconPath: APP_ICON, log: slog, ownerLaneToken: limixOwnerLaneToken });\n  limixGateway.start();")
 edit("electron/main.mjs", ol_main)
 
