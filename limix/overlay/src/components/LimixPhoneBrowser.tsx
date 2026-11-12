@@ -167,7 +167,7 @@ function RemotePane() {
   if (phase !== "ready" || !pairing) {
     return (
       <div className="flex flex-col gap-3 rounded-xl border border-hairline/40 bg-card px-4 py-4" data-limix-remote={phase}>
-        <div className="flex items-center gap-2 text-[14px] font-medium text-ink"><Globe size={16} />Điều khiển từ xa (4G, mạng khác)</div>
+        <div className="flex items-center gap-2 text-[14px] font-medium text-ink"><Globe size={16} />Điều khiển từ xa (Internet)</div>
         <p className="text-[13px] leading-relaxed text-ink-secondary">
           Điện thoại ở đâu cũng mở được Limix Bot của máy tính này.
           Máy tính cần <b>đang bật, có Internet và đang chạy Limix Bot</b>.
@@ -183,9 +183,9 @@ function RemotePane() {
   const until = new Date(pairing.expiresAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
   return (
     <div className="flex flex-col gap-4 rounded-xl border border-hairline/40 bg-card px-4 py-4" data-limix-remote="ready">
-      <div className="flex items-center gap-2 text-[14px] font-medium text-ink"><Globe size={16} />Điều khiển từ xa (4G, mạng khác)</div>
+      <div className="flex items-center gap-2 text-[14px] font-medium text-ink"><Globe size={16} />Điều khiển từ xa (Internet)</div>
       <ol className="list-decimal space-y-1 pl-5 text-[13px] leading-relaxed text-ink-secondary">
-        <li>Trên điện thoại (Wi-Fi hay 4G đều được), mở camera và quét mã bên dưới.</li>
+        <li>Trên điện thoại (Internet), mở camera và quét mã bên dưới.</li>
         <li>Chạm vào đường link hiện ra. Trình duyệt tự đăng nhập.</li>
         <li>Chia sẻ → <b>Thêm vào Màn hình chính</b> để dùng như một app.</li>
       </ol>

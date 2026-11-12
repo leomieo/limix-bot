@@ -6,6 +6,7 @@
 //   :8799  127.0.0.1  the harness spoken to as this machine, unmodified
 //   UDS/pipe            one Electron-owned sidecar generation, never TCP
 import { createServer } from "node:http";
+import { forwardToLimixWeb, forwardUpgradeToLimixWeb, isLimixWebRequest } from "./limix-web.ts";
 
 import { createAddressWatcher } from "./advertise-watch.ts";
 import { createControlServer, hostCandidates, initialControlToken } from "./control.ts";
@@ -187,8 +188,9 @@ async function syncDirectListener(): Promise<void> {
 companion.on("upgrade", (req, socket, head) =>
   isE2EUpgrade(req) ? handleDirectUpgrade(req, socket, head, e2e, e2eOrigin) : proxy.upgrade(req, socket, head, "lan"));
 // Large JSON replies go gzipped here: this is the only listener whose replies go up the home connection to Cloudflare.
-const managedOrigin = PRIVATE_ORIGIN ? createServer(gzipTunnelReplies((req, res) => proxy(req, res, "origin"))) : null;
-managedOrigin?.on("upgrade", (req, socket, head) => proxy.upgrade(req, socket, head, "origin"));
+const limixOriginReplies = gzipTunnelReplies((req, res) => proxy(req, res, "origin"));
+const managedOrigin = PRIVATE_ORIGIN ? createServer((req, res) => (isLimixWebRequest(req) ? forwardToLimixWeb(req, res) : limixOriginReplies(req, res))) : null;
+managedOrigin?.on("upgrade", (req, socket, head) => (isLimixWebRequest(req) ? forwardUpgradeToLimixWeb(req, socket, head) : proxy.upgrade(req, socket, head, "origin")));
 
 function applyRelay(config: RelayConfig | null): void {
   const sameHost = relay && config && e2e.relay?.hostId.equals(config.hostId);
