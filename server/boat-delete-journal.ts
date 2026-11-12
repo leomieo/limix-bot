@@ -13,7 +13,7 @@ const LOCK_RETRY_MS = 20;
 const MAX_REAPER_GENERATIONS = 128;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const BOT_ID = /^[A-Za-z0-9_-]{1,120}$/;
-const BOAT_ID = /^bx_[23456789abcdefghjkmnpqrstuvwxyz]{8}$/;
+const BOAT_ID = /^(?:bx_[23456789abcdefghjkmnpqrstuvwxyz]{8}|m_[a-z0-9]{20,40})$/;
 const OPERATION_ID = /^bdop_[a-f0-9]{32}$/;
 const PROVIDER_STATUSES = new Set(["pending", "processing", "blocked", "completed"]);
 
