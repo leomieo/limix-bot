@@ -1244,6 +1244,11 @@ def rescue_words(s):
     return must(s, "  return `notice: ${ai} answered after a slow start.`;", "  return `notice: ${ai} đã trả lời, sau một lúc chậm.`;")
 edit("shared/first-reply-rescue.ts", rescue_words)
 
+# 10q. The tray icon is the light mark: the black app icon disappears on Windows' dark tray.
+edit("electron/main.mjs", lambda s: s if "limix-tray.png" in s else must(s,
+    "        Tray, Menu, nativeImage, iconPath: APP_ICON, t: nativeT,\n",
+    "        Tray, Menu, nativeImage, iconPath: path.join(__dirname, \"resources/limix-tray.png\"), t: nativeT,\n"))
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):
