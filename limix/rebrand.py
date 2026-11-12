@@ -1563,6 +1563,17 @@ def plus_menu_clamp(s):
     return s
 edit("src/components/Sidebar.tsx", plus_menu_clamp)
 
+# 10z8. A narrow window (under 960 px, e.g. Windows 10 at 125 %) shows the sidebar as its column of avatars, the way it
+# already did with a side panel open, instead of a full sidebar whose names and menus get cut.
+def narrow_icons(s):
+    if "limixSidebarFits" in s:
+        return s
+    s = must(s, "  const sidebarAndPanelFit = useMediaQuery(SIDEBAR_AND_PANEL_FIT, true);\n",
+                "  const sidebarAndPanelFit = useMediaQuery(SIDEBAR_AND_PANEL_FIT, true);\n  const limixSidebarFits = useMediaQuery(\"(min-width: 960px)\", true);\n")
+    return must(s, "  const collapseSidebar = sidePanelOpen && !sidebarAndPanelFit;\n",
+                "  const collapseSidebar = (sidePanelOpen && !sidebarAndPanelFit) || (sidebarInline && !limixSidebarFits);\n")
+edit("src/App.tsx", narrow_icons)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):

@@ -96,6 +96,7 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
   const remoteClient = window.ogb?.remoteClient?.active === true;
   const twoSidePanelsFit = useMediaQuery(TWO_SIDE_PANELS_FIT, true);
   const sidebarAndPanelFit = useMediaQuery(SIDEBAR_AND_PANEL_FIT, true);
+  const limixSidebarFits = useMediaQuery("(min-width: 960px)", true);
   const sidebarInline = useMediaQuery(SIDEBAR_INLINE, false);
   useEffect(() => {
     if (!window.ogb?.environments) return;
@@ -154,7 +155,7 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
   const advanced = useAdvancedMode();
   const roomPanelOpen = useRoomPanelShown({ group, state, simple: !advanced && !remoteClient });
   const sidePanelOpen = (Boolean(bot) && (state.settingsOpen || state.computerOpen || state.inspectorOpen || state.activityOpen)) || roomPanelOpen || (notificationFeed && state.notificationsOpen) || inboxShown;
-  const collapseSidebar = sidePanelOpen && !sidebarAndPanelFit;
+  const collapseSidebar = (sidePanelOpen && !sidebarAndPanelFit) || (sidebarInline && !limixSidebarFits);
   const calendarFocus = state.activeView === "routines" && state.routinesFocus.view === "calendar";
   const notificationTray = notificationFeed && !calendarFocus;
 
