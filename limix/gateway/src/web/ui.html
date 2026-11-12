@@ -315,7 +315,7 @@ const lastActivity = (id) => S.activity.find((a) => a.connectionId === id);
 
 function avatar(c, size) {
   const st = size ? `style="width:${size}px;height:${size}px;font-size:${Math.round(size * .4)}px"` : "";
-  return `<span class="avatar ${c.platform}" ${st} aria-hidden="true">${esc(initial(c))}<span class="dot ${c.status}"></span></span>`;
+  return `<span class="avatar ${c.platform}" ${st} aria-hidden="true">${esc(initial(c))}</span>`;
 }
 
 function renderList() {
@@ -326,7 +326,7 @@ function renderList() {
     return `<button class="item" data-bot="${c.id}" ${view.name === "bot" && view.id === c.id ? 'aria-current="page"' : ""}>
       ${avatar(c)}
       <span class="meta"><span class="t"><span>${esc(c.name)}</span><span class="help">${last ? esc(fmtTime(last.at).split(" ")[0]) : ""}</span></span>
-      <span class="s">${esc(PLATFORM[c.platform])} · ${esc(STATUS[c.status] || c.status)}</span></span>
+      <span class="s">${esc(PLATFORM[c.platform])}${c.status === "running" ? "" : ` · ${esc(STATUS[c.status] || c.status)}`}</span></span>
     </button>`;
   }).join("") : `<div class="empty" style="padding:6px 10px">${q ? "Không tìm thấy bot." : "Chưa có bot nào."}</div>`);
   const n = S.pairing.length; const b = $("#pendingBadge"); b.hidden = !n; b.textContent = n;
@@ -368,10 +368,9 @@ function botView(c) {
   if (!c) return pageTop("Không tìm thấy") + `<div class="content"><div class="card">Bot này không còn.</div></div>`;
   const who = c.botIdentity?.username ? "@" + c.botIdentity.username : c.botIdentity?.id;
   const bad = ["conflict", "credential_invalid", "error"].includes(c.status);
-  const actions = `<span class="pill"><span class="dot ${c.status}"></span>${esc(STATUS[c.status] || c.status)}</span>
-    ${c.running ? `<button class="btn" data-act="stop" data-id="${c.id}">${icon("pause")}Dừng</button>` : `<button class="btn primary" data-act="start" data-id="${c.id}">${icon("play")}Chạy</button>`}`;
+  const actions = `${c.running ? `<button class="btn" data-act="stop" data-id="${c.id}">${icon("pause")}Dừng</button>` : `<button class="btn primary" data-act="start" data-id="${c.id}">${icon("play")}Chạy</button>`}`;
   const people = [...c.ownerIds.map((id) => [id, "Chủ bot"]), ...c.allowedIds.map((id) => [id, "Đã duyệt"])];
-  return `<div class="top">${avatar(c, 36)}<div><h1>${esc(c.name)}</h1><div class="help">${esc(PLATFORM[c.platform])} · ${esc(who)}</div></div><span class="grow"></span>${actions}</div>
+  return `<div class="top">${avatar(c, 36)}<div><h1>${esc(c.name)}</h1><div class="help">${esc(PLATFORM[c.platform])} · ${esc(who)}${c.status === "running" ? "" : ` · ${esc(STATUS[c.status] || c.status)}`}</div></div><span class="grow"></span>${actions}</div>
   <div class="content">
     ${c.statusDetail ? `<div class="note ${bad ? "bad" : "warn"}">${icon("alert")}<span>${esc(c.statusDetail)}</span></div>` : ""}
     ${c.ownerIds.length ? "" : `<div class="note warn">${icon("shield")}<span>Bot chưa có chủ. Tạo mã liên kết bên dưới rồi gửi từ điện thoại để xác nhận bạn là chủ bot.</span></div>`}
