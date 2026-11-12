@@ -237,7 +237,7 @@ function showLoginWindow({ BrowserWindow, ipcMain, shell, iconPath, client, noti
       ? client.removeMachine(String(u ?? ""), String(p ?? ""), Number(id)) : { ok: false, error: "bad_request" });
     ipcMain.handle("limix-account:open", (event, which) => {
       if (!own(event)) return;
-      void shell.openExternal(which === "register" ? `${SITE}/register` : `${SITE}/login`);
+      void shell.openExternal(which === "register" ? "https://limixmedia.com/dang-ky" : `${SITE}/login`);
     });
     win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
     win.webContents.on("will-navigate", event => event.preventDefault());
