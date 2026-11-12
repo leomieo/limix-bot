@@ -8,7 +8,7 @@ import { Check, Download, Loader2, X } from "lucide-react";
 interface ToolJob { status: "working" | "error"; step?: string | null; progress?: number | null; message?: string | null }
 interface ToolItem { id: string; name: string; why: string; size: string; recommended?: boolean; needs: string[]; installed: boolean; job: ToolJob | null }
 interface ToolsState { supported: boolean; items: ToolItem[] }
-type Bridge = { state(): Promise<ToolsState>; install(ids: string[]): Promise<ToolsState>; markAsked(): Promise<void> };
+type Bridge = { state(): Promise<ToolsState>; install(ids: string[]): Promise<ToolsState>; shouldAsk(): Promise<boolean>; markAsked(): Promise<void> };
 
 export const limixTools = (): Bridge | undefined => (window as unknown as { ogb?: { limixTools?: Bridge } }).ogb?.limixTools;
 
