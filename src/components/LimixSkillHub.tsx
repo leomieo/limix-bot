@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, Download, Loader2, RefreshCw, ShieldAlert, Trash2 } from "lucide-react";
+import { Check, Download, Loader2, RefreshCw, ShieldAlert, Star, Trash2 } from "lucide-react";
 
 import { Card, Switch } from "./SettingsPrimitives";
 import { LimixToolsDialog, limixTools } from "./LimixToolsDialog";
@@ -10,6 +10,7 @@ import { LimixToolsDialog, limixTools } from "./LimixToolsDialog";
 interface HubSkill {
   id: string; name: string; description: string; description_vi?: string | null; version: string;
   source: { repository: string | null; commit: string | null; path: string | null };
+  stars?: number | null; created_at?: string | null; pushed_at?: string | null; stats_checked?: string | null;
   license: string | null; language: string; category: string; tags: string[];
   quality_score: number; grade: string; security_status: string; approval_status: string; kind: string;
   compatibility: { text: string | null; runtimes: Array<{ name: string; installerId: string | null }> };
@@ -26,6 +27,7 @@ const TABS = [
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
+const day = (iso: string): string => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("vi-VN"); };
 const GRADE: Record<string, string> = { excellent: "Xuất sắc", recommended: "Khuyên dùng", review: "Cần xem xét", rejected: "Từ chối" };
 const KIND: Record<string, string> = { "instructions-only": "Chỉ hướng dẫn", "skill-with-tools": "Kèm tool/script", "mcp-bundle": "Kèm MCP" };
 const SECURITY: Record<string, string> = { clean: "Sạch", warning: "Có cảnh báo", quarantined: "Cách ly" };
@@ -85,11 +87,17 @@ export function LimixSkillHub() {
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <span className="font-mono text-[13px] font-medium text-ink">{s.name}</span>
             <span className="text-[12px] text-ink-secondary">{s.quality_score}/100 · {GRADE[s.grade] ?? s.grade}</span>
-            <span className="text-[12px] text-ink-tertiary">v{s.version}</span>
+            {typeof s.stars === "number" && <span className="inline-flex items-center gap-0.5 text-[12px] text-ink-secondary"><Star size={12} />{s.stars.toLocaleString("vi-VN")}</span>}
           </div>
+          {(s.created_at || s.pushed_at) && (
+            <p className="text-[11px] text-ink-tertiary">
+              {s.created_at && `Tạo ${day(s.created_at)}`}{s.created_at && s.pushed_at && " · "}{s.pushed_at && `Cập nhật ${day(s.pushed_at)}`}
+              {s.stats_checked && ` · số sao đo ngày ${day(s.stats_checked)}`}
+            </p>
+          )}
           <p className="mt-0.5 text-[12px] leading-relaxed text-ink-secondary">{s.description_vi || s.description}</p>
           <p className="mt-1 text-[12px] text-ink-tertiary">
-            {KIND[s.kind] ?? s.kind} · Bảo mật: {SECURITY[s.security_status] ?? s.security_status} · {s.license ?? "Chưa có giấy phép"} · {s.source.repository ?? "nguồn ?"}
+            {KIND[s.kind] ?? s.kind} · Bảo mật: {SECURITY[s.security_status] ?? s.security_status} · {s.license ?? "Chưa có giấy phép"}{s.source.repository ? ` · ${s.source.repository}` : ""}
             {s.dependencies.length > 0 && ` · Cần: ${s.dependencies.join(", ")}`}
           </p>
           {s.blocked && <p className="mt-1 flex items-center gap-1 text-[12px] text-danger"><ShieldAlert size={13} />{s.blocked}</p>}

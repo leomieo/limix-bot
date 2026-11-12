@@ -10,8 +10,6 @@ interface Bundled { id: string; name: string; description: string; defaultEnable
 
 export function LimixBundledSkills() {
   const [skills, setSkills] = useState<Bundled[] | null>(null);
-  const [toolsOpen, setToolsOpen] = useState(false);
-
   useEffect(() => {
     void fetch("/api/limix/bundled-skills")
       .then((response) => (response.ok ? response.json() : { skills: [] }))
@@ -40,13 +38,24 @@ export function LimixBundledSkills() {
             ))}
           </ul>
         )}
-        {limixTools() && (
-          <button type="button" onClick={() => setToolsOpen(true)} className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-hairline/60 bg-raised px-3 py-1.5 text-[13px] text-ink hover:bg-raised-hover">
-            <Wrench size={14} />Công cụ cho kỹ năng (cài phần còn thiếu)
-          </button>
-        )}
       </div>
-      {toolsOpen && <LimixToolsDialog onClose={() => setToolsOpen(false)} />}
+    </Card>
+  );
+}
+
+/** Settings > Skills, first card: the programs skills need (Docker, Node, ffmpeg, Java…), installed with one click. */
+export function LimixToolsCard() {
+  const [open, setOpen] = useState(false);
+  return (
+    <Card title="Công cụ cho kỹ năng" subtitle="Chương trình mà các kỹ năng cần để chạy: Docker, Node.js, ffmpeg, Java, JADX, Ghidra, Agent-Reach… Thiếu gì thì bấm cài.">
+      {limixTools() ? (
+        <button type="button" onClick={() => setOpen(true)} className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-hairline/60 bg-raised px-3 py-1.5 text-[13px] text-ink hover:bg-raised-hover">
+          <Wrench size={14} />Xem và cài công cụ còn thiếu
+        </button>
+      ) : (
+        <p className="text-[13px] text-ink-secondary">Mở mục này trong ứng dụng Limix Bot trên máy tính.</p>
+      )}
+      {open && <LimixToolsDialog onClose={() => setOpen(false)} />}
     </Card>
   );
 }

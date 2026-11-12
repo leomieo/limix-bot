@@ -152,3 +152,4 @@
 - 2026-11-12 0.3.18: chủ dự án tự làm bot dịch/chấm riêng, đẩy kết quả lên kho Hub; app người dùng chỉ xem và tải skill (bỏ tab Việt hóa và dòng 'chưa có bản dịch'). Mô tả tiếng Việt hiện khi kho có description_vi.
 - 2026-11-12 0.3.19: Antigravity làn nhanh: AI Antigravity đầu tiên dùng Antigravity CLI có sẵn (%LOCALAPPDATA%\agy\bin\agy.exe hoặc PATH, lệnh `agy acp`, đăng nhập theo agy), các AI khác dùng runtime như cũ. Tắt bằng LIMIX_AGY_CLI=0. Chủ làn lưu ở DATA_DIR/limix-agy-cli.json, đăng xuất AI đó thì nhả làn (rebrand 10y).
 - 2026-11-12 0.3.20: Cài đặt (chế độ đơn giản) có mục Kỹ năng riêng, nằm dưới AI, trên Máy tính (rebrand 10z).
+- 2026-11-12 0.3.21: 'Công cụ cho kỹ năng' rời menu tài khoản, thành thẻ đầu tiên trong Cài đặt > Kỹ năng (rebrand 10z2, LimixToolsCard); thẻ Hub hiện số sao, ngày tạo, ngày cập nhật (kho tự làm mới hằng ngày bằng tools/refresh-stats.mjs). Kho: tự tìm skill chỉ chạy khi bấm tay; bot của chủ kho chọn skill.

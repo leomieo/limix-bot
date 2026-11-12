@@ -1421,6 +1421,14 @@ def skills_page(s):
     return must(s, '["backups", "experimental", "workspaces", "skills", "decisionModel", "imageGeneration"]', '["backups", "experimental", "workspaces", "decisionModel", "imageGeneration"]')
 edit("src/components/SettingsModal.tsx", skills_page)
 
+# 10z2. "Công cụ cho kỹ năng" is a card at the top of Settings > Skills (it left the account menu).
+def tools_card(s):
+    if "LimixToolsCard" in s:
+        return s
+    s = must(s, 'import { LimixBundledSkills } from "./LimixBundledSkills";\n', 'import { LimixBundledSkills, LimixToolsCard } from "./LimixBundledSkills";\n')
+    return must(s, "      <LimixBundledSkills />\n", "      <LimixToolsCard />\n      <LimixBundledSkills />\n")
+edit("src/components/SkillsSection.tsx", tools_card)
+
 def tools_main(s):
     if "limix-tools.mjs" in s:
         return s
@@ -1441,15 +1449,7 @@ edit("electron/preload.cjs", lambda s: s if "limix-tools:state" in s else must(s
 def tools_menu(s):
     if "limix:tools-open" in s:
         return s
-    s = must(s, "  Link2,\n", "  Link2,\n  Wrench,\n")
-    s = must(s, '  const settings: SidebarMenuItem = { key: "settings",',
-             '  const toolsItem: SidebarMenuItem | null = typeof window !== "undefined" && (window as unknown as { ogb?: { limixTools?: unknown } }).ogb?.limixTools ? {\n'
-             '    key: "limix-tools", label: "Công cụ cho kỹ năng", icon: <Wrench size={18} />,\n'
-             '    onSelect: () => { window.dispatchEvent(new CustomEvent("limix:tools-open")); },\n'
-             '  } : null;\n'
-             '  const settings: SidebarMenuItem = { key: "settings",')
-    s = must(s, "...phone, ...present(connectItem), support, settings,", "...phone, ...present(connectItem), ...present(toolsItem), support, settings,")
-    s = must(s, "    [...present(usageItem), ...present(connectItem), settings],", "    [...present(usageItem), ...present(connectItem), ...present(toolsItem), settings],")
+    # 0.3.21: no menu item any more; the tools live in Settings > Skills (LimixToolsCard). The ask-once dialog stays.
     s = must(s, 'import { LimixPhoneDialog } from "./LimixPhoneDialog";\n', 'import { LimixPhoneDialog } from "./LimixPhoneDialog";\nimport { LimixToolsDialog, limixTools } from "./LimixToolsDialog";\n')
     s = must(s, "  const [limixPhoneOpen, setLimixPhoneOpen] = useState(false);\n",
              "  const [limixPhoneOpen, setLimixPhoneOpen] = useState(false);\n"
