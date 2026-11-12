@@ -15,6 +15,7 @@ import {
   Laptop,
   LifeBuoy,
   Link2,
+  Wrench,
   Loader2,
   RefreshCw,
   Settings as SettingsIcon,
@@ -31,6 +32,7 @@ import { ZaloIcon } from "./ZaloIcon";
 import { AboutDialog } from "./AboutDialog";
 import { PhoneAppDialog } from "./lazy-screens";
 import { LimixPhoneDialog } from "./LimixPhoneDialog";
+import { LimixToolsDialog, limixTools } from "./LimixToolsDialog";
 import { CloudTile } from "./cloud-buy/parts";
 import { usageBridge } from "./CloudUsageMeter";
 import { useCloudPlanSnapshot } from "./CloudTrialNotice";
@@ -512,11 +514,15 @@ export function profileMenuItems({
     key: "connect", label: t("sidebar.menu.connect"), icon: <Link2 size={18} />,
     onSelect: () => { void window.ogb?.limixGateway?.open().catch((error: unknown) => window.alert(String((error as Error)?.message ?? error).replace(/^Error invoking remote method '[^']*': (Error: )?/, ""))); },
   } : null;
+  const toolsItem: SidebarMenuItem | null = typeof window !== "undefined" && (window as unknown as { ogb?: { limixTools?: unknown } }).ogb?.limixTools ? {
+    key: "limix-tools", label: "Công cụ cho kỹ năng", icon: <Wrench size={18} />,
+    onSelect: () => { window.dispatchEvent(new CustomEvent("limix:tools-open")); },
+  } : null;
   const settings: SidebarMenuItem = { key: "settings", label: t("sidebar.menu.settings"), icon: <SettingsIcon size={18} />, onSelect: onSettings };
   const accountItem: SidebarMenuItem | null = account ? { key: "account", label: account, icon: <CircleUserRound size={18} />, onSelect: onAccount } : null;
   const present = (...items: Array<SidebarMenuItem | null | false>) => items.filter((item): item is SidebarMenuItem => Boolean(item));
   if (!simple) {
-    const rest = [...present(usageItem), ...phone, ...present(connectItem), support, settings, ...present(update), ...(accountItem ? [{ ...accountItem, separatorBefore: true }] : []), ...accounts.map((item, index) => (index === 0 ? { ...item, separatorBefore: true } : item))];
+    const rest = [...present(usageItem), ...phone, ...present(connectItem), ...present(toolsItem), support, settings, ...present(update), ...(accountItem ? [{ ...accountItem, separatorBefore: true }] : []), ...accounts.map((item, index) => (index === 0 ? { ...item, separatorBefore: true } : item))];
     return [...move, ...rest.map((item, index) => (move.length && index === 0 ? { ...item, separatorBefore: true } : item))];
   }
   const raised: SidebarMenuItem | null = update && updateTop ? {
@@ -531,7 +537,7 @@ export function profileMenuItems({
     present(raised),
     // Places you go first, then the app's own settings, then getting the phone app and help.
     simple.tools,
-    [...present(usageItem), ...present(connectItem), settings],
+    [...present(usageItem), ...present(connectItem), ...present(toolsItem), settings],
     [...phone, { ...support, submenu: raised ? help : [...help, ...present(update)] }],
     [...simple.places, ...present(accountItem)],
     accounts,
@@ -574,6 +580,14 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
   const [aboutOpen, setAboutOpen] = useState(false);
   const [phoneAppOpen, setPhoneAppOpen] = useState(false);
   const [limixPhoneOpen, setLimixPhoneOpen] = useState(false);
+  const [limixToolsOpen, setLimixToolsOpen] = useState<null | { asking: boolean }>(null);
+  useEffect(() => {
+    const open = () => setLimixToolsOpen({ asking: false });
+    window.addEventListener("limix:tools-open", open);
+    // A new computer: ask once, a little after start, whether to install what the default skills need.
+    const timer = setTimeout(() => { void limixTools()?.shouldAsk().then((ask) => { if (ask) setLimixToolsOpen((now) => now ?? { asking: true }); }).catch(() => undefined); }, 8000);
+    return () => { window.removeEventListener("limix:tools-open", open); clearTimeout(timer); };
+  }, []);
   const [session, setSession] = useState<SessionState | null>(null);
   const triggerRef = useRef<HTMLSpanElement>(null);
 
@@ -708,6 +722,7 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
       />
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
       {limixPhoneOpen && <LimixPhoneDialog onClose={() => setLimixPhoneOpen(false)} />}
+      {limixToolsOpen && <LimixToolsDialog asking={limixToolsOpen.asking} onClose={() => setLimixToolsOpen(null)} />}
       {accounts.sheet && <AccountsSheet adding={accounts.sheet.email} note={accounts.sheet.note} onClose={accounts.closeSheet} />}
       {LIMIX_PHONE_APPS_ENABLED && phoneAppOpen && <PhoneAppDialog
         open

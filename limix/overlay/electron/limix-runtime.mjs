@@ -18,6 +18,12 @@ export function limixRuntimeEnv({ resourcesPath, userData, env = process.env, ex
     path.join(root, "uv"),
     path.join(tools, "bin"),
     path.join(userBase, "Python312", "Scripts"),
+    // Installed later from "Công cụ cho kỹ năng" (limix-tools.mjs); listed now so a tool works without a restart.
+    path.join(tools, "node"),
+    path.join(tools, "ffmpeg", "bin"),
+    path.join(tools, "jdk", "bin"),
+    path.join(tools, "jadx", "bin"),
+    path.join(tools, "ghidra", "support"),
   ];
   return {
     OMB_EXTRA_PATH: [...dirs, env.OMB_EXTRA_PATH].filter(Boolean).join(path.delimiter),
@@ -28,5 +34,6 @@ export function limixRuntimeEnv({ resourcesPath, userData, env = process.env, ex
     UV_CACHE_DIR: path.join(tools, "uv-cache"),
     PYTHONUSERBASE: userBase,
     PYTHONUTF8: "1",
+    ...(exists(path.join(tools, "jdk", "bin")) && !env.JAVA_HOME ? { JAVA_HOME: path.join(tools, "jdk") } : {}),
   };
 }
