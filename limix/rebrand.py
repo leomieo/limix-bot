@@ -1314,6 +1314,29 @@ def phone_dialog(s):
                 "      <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />\n      {limixPhoneOpen && <LimixPhoneDialog onClose={() => setLimixPhoneOpen(false)} />}\n")
 edit("src/components/SidebarProfileMenu.tsx", phone_dialog)
 
+# 10u. The tray icon follows the app's theme (Settings: light / dark / system): white on dark, near-black on light.
+def tray_theme(s):
+    if "setLight" in s:
+        return s
+    s = must(s, "export function createSystemTray({ Tray, Menu, nativeImage, iconPath, getWindow, onQuit, t = nativeText.englishText.t }) {\n  const tray = new Tray(nativeImage.createFromPath(iconPath).resize({ width: 20, height: 20 }),",
+             "export function createSystemTray({ Tray, Menu, nativeImage, iconPath, lightIconPath = iconPath, light = false, getWindow, onQuit, t = nativeText.englishText.t }) {\n"
+             "  const image = (onLight) => nativeImage.createFromPath(onLight ? lightIconPath : iconPath).resize({ width: 20, height: 20 });\n"
+             "  let shownLight = light;\n"
+             "  const tray = new Tray(image(light),")
+    return must(s, "    relabel() { if (!tray.isDestroyed()) label(); },\n",
+                "    relabel() { if (!tray.isDestroyed()) label(); },\n"
+                "    setLight(onLight) { if (tray.isDestroyed() || onLight === shownLight) return; shownLight = onLight; tray.setImage(image(onLight)); },\n")
+edit("electron/system-tray.mjs", tray_theme)
+def tray_main(s):
+    if "limix-tray-light.png" in s:
+        return s
+    s = must(s, 'import { isKnownSkin, skinChrome } from "./skin-overlay.cjs";', 'import { isKnownSkin, skinChrome, skinIsLight } from "./skin-overlay.cjs";')
+    s = must(s, '        Tray, Menu, nativeImage, iconPath: path.join(__dirname, "resources/limix-tray.png"), t: nativeT,\n',
+             '        Tray, Menu, nativeImage, iconPath: path.join(__dirname, "resources/limix-tray.png"), lightIconPath: path.join(__dirname, "resources/limix-tray-light.png"), light: !nativeTheme.shouldUseDarkColors, t: nativeT,\n')
+    return must(s, "    talk.skin(skin); const { color } = skinChrome(skin);\n",
+                "    talk.skin(skin); const { color } = skinChrome(skin);\n    if (mainWindow && event.sender === mainWindow.webContents) desktopTray?.setLight?.(skinIsLight(skin));\n")
+edit("electron/main.mjs", tray_main)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):
