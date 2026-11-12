@@ -47,6 +47,7 @@ jobs:
             curl -sS "${auth[@]}" "$api/zones/$zone/dns_records?name=$host" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{for(const r of JSON.parse(s).result??[]) if(["A","AAAA","CNAME"].includes(r.type)) console.log(r.id+" "+r.type+" "+r.content+" proxied="+r.proxied)})' > /tmp/old.txt
             while read -r id type content proxied; do
               [ -n "$id" ] || continue
+              [ "$content" = "100::" ] && continue # the record Cloudflare keeps for this site's own Worker domain
               echo "removing $host $type $content $proxied"
               curl -sS -X DELETE "${auth[@]}" "$api/zones/$zone/dns_records/$id" | head -c 200; echo
             done < /tmp/old.txt

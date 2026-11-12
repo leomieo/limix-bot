@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths-ignore: ["limix/docs/**", "limix/gateway/**", "**/*.md"]
+    paths-ignore: ["limix/docs/**", "limix/gateway/**", "limix/site/**", ".github/workflows/limix-site.yml", "limix/brand-assets/limix-site.yml", "**/*.md"]
 
 permissions:
   contents: read
