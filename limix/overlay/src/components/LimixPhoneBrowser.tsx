@@ -144,7 +144,7 @@ function RemotePane() {
       let lastMessage = "";
       for (let i = 0; i < 45 && !endpoint; i++) {
         const account = await host.companionAccount.state();
-        if (account.status === "ready" && account.endpoint) { endpoint = account.endpoint; break; }
+        if (account.status === "ready" && account.endpoint && /\.limixmedia\.com$/.test(new URL(account.endpoint).hostname)) { endpoint = account.endpoint; break; }
         if (account.status === "signed-out" && i >= 3) throw new Error("Máy này chưa đăng nhập tài khoản Limix. Đăng xuất rồi đăng nhập lại Limix Bot, sau đó thử lại.");
         if (account.status === "error") lastMessage = account.message ?? "";
         if (account.status === "ready") await host.companionAccount.prepare().catch(() => undefined);
@@ -169,7 +169,7 @@ function RemotePane() {
       <div className="flex flex-col gap-3 rounded-xl border border-hairline/40 bg-card px-4 py-4" data-limix-remote={phase}>
         <div className="flex items-center gap-2 text-[14px] font-medium text-ink"><Globe size={16} />Điều khiển từ xa (4G, mạng khác)</div>
         <p className="text-[13px] leading-relaxed text-ink-secondary">
-          Điện thoại ở đâu cũng mở được Limix Bot của máy tính này. Dữ liệu đi qua Cloudflare, không đi qua VPS của bạn.
+          Điện thoại ở đâu cũng mở được Limix Bot của máy tính này.
           Máy tính cần <b>đang bật, có Internet và đang chạy Limix Bot</b>.
         </p>
         <button type="button" className={`${button} w-fit`} disabled={phase === "working"} onClick={() => void run()}>
@@ -209,8 +209,8 @@ export function LimixPhoneBrowser() {
   return (
     <div className="flex flex-col gap-3">
       <div role="tablist" className="flex gap-1 rounded-xl border border-hairline/40 bg-card p-1">
-        <button type="button" role="tab" aria-selected={tab === "remote"} className={tabClass(tab === "remote")} onClick={() => setTab("remote")}>Từ xa (4G)</button>
-        <button type="button" role="tab" aria-selected={tab === "wifi"} className={tabClass(tab === "wifi")} onClick={() => setTab("wifi")}>Cùng Wi-Fi</button>
+        <button type="button" role="tab" aria-selected={tab === "remote"} className={tabClass(tab === "remote")} onClick={() => setTab("remote")}>Từ Xa</button>
+        <button type="button" role="tab" aria-selected={tab === "wifi"} className={tabClass(tab === "wifi")} onClick={() => setTab("wifi")}>Nội Bộ</button>
       </div>
       {tab === "remote" ? <RemotePane /> : <WifiPane />}
     </div>

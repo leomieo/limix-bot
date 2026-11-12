@@ -700,6 +700,18 @@ export function createCompanionAccountService({
     user: { id: credential.userId, email: credential.email },
   }));
 
+  const forgetForeign = () => serialize(async () => {
+    const document = credentials();
+    const account = storedAccount(document);
+    if (!account) return false;
+    const access = managedCompanionTunnelAccess(document);
+    let host = "";
+    try { host = access?.endpoint ? new URL(access.endpoint).hostname : ""; } catch { host = ""; }
+    if (account.userId.startsWith("limix:") && (!host || host.endsWith(".limixmedia.com"))) return false;
+    await clearAfterCleanup();
+    return true;
+  });
+
   const retryWork = async () => {
     if (!configured) return settledState();
     const account = storedAccount(credentials());
@@ -999,6 +1011,7 @@ export function createCompanionAccountService({
     requestCode,
     verifyCode,
     connectLimix,
+    forgetForeign,
     retry,
     prepare,
     signOut,

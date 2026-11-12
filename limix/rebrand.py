@@ -906,6 +906,25 @@ def svc_limix(s):
              "    accountToken: credential.bearer,\n    user: { id: credential.userId, email: credential.email },\n  }));\n\n  const retryWork = async () => {")
     return must(s, "    verifyCode,\n", "    verifyCode,\n    connectLimix,\n")
 edit("electron/companion-account-service.mjs", svc_limix)
+# 10b2. An older Limix build signed remote access in to the OpenMausBot service (c-….openmausbot.com addresses). Such a
+# leftover account is forgotten on this computer only, and remote access signs in again with the Limix account.
+def svc_forget(s):
+    if "forgetForeign" in s:
+        return s
+    s = must(s, "\n  const retryWork = async () => {",
+             "\n  const forgetForeign = () => serialize(async () => {\n"
+             "    const document = credentials();\n"
+             "    const account = storedAccount(document);\n"
+             "    if (!account) return false;\n"
+             "    const access = managedCompanionTunnelAccess(document);\n"
+             "    let host = \"\";\n"
+             "    try { host = access?.endpoint ? new URL(access.endpoint).hostname : \"\"; } catch { host = \"\"; }\n"
+             "    if (account.userId.startsWith(\"limix:\") && (!host || host.endsWith(\".limixmedia.com\"))) return false;\n"
+             "    await clearAfterCleanup();\n"
+             "    return true;\n"
+             "  });\n\n  const retryWork = async () => {", )
+    return must(s, "    connectLimix,\n", "    connectLimix,\n    forgetForeign,\n")
+edit("electron/companion-account-service.mjs", svc_forget)
 edit("electron/companion-account-service.mjs", lambda s: must(s, 'DEFAULT_COMPANION_CONTROL_PLANE_URL = "https://accounts.openmausbot.com"', 'DEFAULT_COMPANION_CONTROL_PLANE_URL = "https://accounts.limixmedia.com"'))
 edit("electron/desktop-companion-client.mjs", lambda s: must(s, '["openmausbot.com", "mausbot.si", NEXT_MANAGED_COMPANION_HOST_SUFFIX]', '["limixmedia.com", "openmausbot.com", "mausbot.si", NEXT_MANAGED_COMPANION_HOST_SUFFIX]'))
 def main_limix(s):
@@ -927,6 +946,13 @@ def main_limix(s):
         'ipcMain.handle("companion-account:state", localOnly("companion-account:state", async () => { await limixAutoConnect().catch(() => {}); return ensureCompanionAccountService().state(); }));')
     return s
 edit("electron/main.mjs", main_limix)
+
+def main_forget(s):
+    if "forgetForeign" in s:
+        return s
+    return must(s, "  const service = ensureCompanionAccountService();\n  const current = await service.state();\n",
+                "  const service = ensureCompanionAccountService();\n  if (await service.forgetForeign().catch(() => false)) limixConnectAt = 0;\n  const current = await service.state();\n")
+edit("electron/main.mjs", main_forget)
 
 # 10c. Settings > General: e-mail and name come from the Limix account until the owner types their own.
 def profile_fallback(s):
