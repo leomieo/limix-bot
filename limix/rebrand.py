@@ -1104,6 +1104,40 @@ def ib_en(s):
     return json.dumps(d, indent=2, ensure_ascii=False) + "\n"
 edit("src/locales/en.json", ib_en)
 
+# 10j. Phone access without a phone app: Settings → Phone & devices shows a QR with a plain web link to this computer on
+# the Wi-Fi (electron/limix-phone-browser.mjs turns on the server's LAN listener; the code signs that browser in once).
+def pb_main(s):
+    if "limix-phone-browser.mjs" not in s:
+        s = must(s, 'import { createLimixGateway } from "./limix-gateway.mjs";\n',
+                 'import { createLimixGateway } from "./limix-gateway.mjs";\nimport { limixPhoneBrowserEnv, limixPhoneBrowserOn, setLimixPhoneBrowser } from "./limix-phone-browser.mjs";\n')
+    s = must(s, '    ...limixRuntimeEnv({ resourcesPath: process.resourcesPath, userData: app.getPath("userData") }),\n    OMB_DATA_DIR: dataDir,',
+             '    ...limixRuntimeEnv({ resourcesPath: process.resourcesPath, userData: app.getPath("userData") }),\n'
+             '    ...((lan) => { limixLanActive = Boolean(lan.OMB_LAN); return lan; })(limixPhoneBrowserEnv(app.getPath("userData"))),\n    OMB_DATA_DIR: dataDir,')
+    if "let limixLanActive" in s:
+        return s
+    s = must(s, "let limixGateway = null;\n", "let limixGateway = null;\nlet limixLanActive = false;\n")
+    return must(s, 'app.on("will-quit", () => limixGateway?.stop());\n',
+        'app.on("will-quit", () => limixGateway?.stop());\n'
+        'ipcMain.handle("limix-phone:state", localOnly("limix-phone:state", () => ({ on: limixPhoneBrowserOn(app.getPath("userData")), active: limixLanActive })));\n'
+        'ipcMain.handle("limix-phone:set", localOnly("limix-phone:set", (_event, on) => { setLimixPhoneBrowser(app.getPath("userData"), on === true); app.relaunch(); app.quit(); }));\n')
+edit("electron/main.mjs", pb_main)
+edit("electron/preload.cjs", lambda s: s if "limix-phone:state" in s else must(s,
+    '  limixGateway: { open: () => ipcRenderer.invoke("limix-gateway:open") },\n',
+    '  limixGateway: { open: () => ipcRenderer.invoke("limix-gateway:open") },\n'
+    '  limixPhone: { state: () => ipcRenderer.invoke("limix-phone:state"), set: (on) => ipcRenderer.invoke("limix-phone:set", on === true) },\n'))
+edit("src/types/ogb.d.ts", lambda s: s if "limixPhone" in s else must(s,
+    "      limixGateway?: { open(): Promise<void> };\n",
+    "      limixGateway?: { open(): Promise<void> };\n      /** Limix Bot: this computer's Limix Bot in a phone browser on the same Wi-Fi. */\n"
+    "      limixPhone?: { state(): Promise<{ on: boolean; active: boolean }>; set(on: boolean): Promise<void> };\n"))
+def pb_section(s):
+    if "LimixPhoneBrowser" not in s:
+        s = must(s, 'import { useStore } from "@/state/store";\n',
+                 'import { useStore } from "@/state/store";\nimport { LIMIX_PHONE_APPS_ENABLED } from "../../shared/limix-features";\nimport { LimixPhoneBrowser } from "./LimixPhoneBrowser";\n')
+    head = 'export function PhoneDevicesSection({ profileEmail = "", focusRequest = 0, simple = false }: { profileEmail?: string; focusRequest?: number; simple?: boolean }) {\n'
+    return must(s, head + "  const c = usePhoneSetupController(profileEmail);\n",
+                head + "  if (!LIMIX_PHONE_APPS_ENABLED) return <LimixPhoneBrowser />;\n  const c = usePhoneSetupController(profileEmail);\n")
+edit("src/components/PhoneDevicesSection.tsx", pb_section)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):

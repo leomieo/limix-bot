@@ -25,6 +25,8 @@ import { Card, Switch } from "./SettingsPrimitives";
 import { Layer } from "./Layer";
 import { productName } from "../lib/brand";
 import { useStore } from "@/state/store";
+import { LIMIX_PHONE_APPS_ENABLED } from "../../shared/limix-features";
+import { LimixPhoneBrowser } from "./LimixPhoneBrowser";
 
 export {
   companionAccountActionError,
@@ -324,6 +326,7 @@ export function reachLine(state: Pick<CompanionState, "routes">): string {
 }
 
 export function PhoneDevicesSection({ profileEmail = "", focusRequest = 0, simple = false }: { profileEmail?: string; focusRequest?: number; simple?: boolean }) {
+  if (!LIMIX_PHONE_APPS_ENABLED) return <LimixPhoneBrowser />;
   const c = usePhoneSetupController(profileEmail);
   const state = c.state;
   const pairingFlow = useRef<HTMLDivElement>(null);

@@ -432,6 +432,8 @@ const __APP_VERSION__: string;
       pickFolder?(current?: string): Promise<string | null>;
       /** Limix Bot: opens the Telegram / Zalo / Discord connector window. */
       limixGateway?: { open(): Promise<void> };
+      /** Limix Bot: this computer's Limix Bot in a phone browser on the same Wi-Fi. */
+      limixPhone?: { state(): Promise<{ on: boolean; active: boolean }>; set(on: boolean): Promise<void> };
       /** Writes the redacted diagnostics report to a user-chosen file;
        * resolves the path, or null when cancelled. */
       exportDiagnostics?(): Promise<string | null>;

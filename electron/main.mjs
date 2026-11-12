@@ -3,6 +3,7 @@ import { LIMIX_ACCOUNT_URL, LIMIX_CLOUD_ENABLED, LIMIX_ORGANIZATION_ENABLED } fr
 import { limixAccountGate, limixRemoteCredential } from "./limix-account.mjs";
 import { limixRuntimeEnv } from "./limix-runtime.mjs";
 import { createLimixGateway } from "./limix-gateway.mjs";
+import { limixPhoneBrowserEnv, limixPhoneBrowserOn, setLimixPhoneBrowser } from "./limix-phone-browser.mjs";
 import { createRequire } from "node:module";
 import { randomBytes, randomUUID } from "node:crypto";
 import fs from "node:fs";
@@ -1120,6 +1121,7 @@ async function startServerOn(port, dataDir = runningDataDir ?? startupEnvironmen
     // The parent owns the data-dir lease; a child only validates it, so fallback-port children never replace it.
     ...desktopDataDirLease.utilityServerLeaseEnvironment(),
     ...limixRuntimeEnv({ resourcesPath: process.resourcesPath, userData: app.getPath("userData") }),
+    ...((lan) => { limixLanActive = Boolean(lan.OMB_LAN); return lan; })(limixPhoneBrowserEnv(app.getPath("userData"))),
     OMB_DATA_DIR: dataDir,
     // Fail-closed until this process sends the private connection; never a descriptor inherited from the shell.
     OMB_DESKTOP_PARENT: "1",
@@ -2830,6 +2832,7 @@ setCuaStateListener((connection) => {
 });
 
 let limixGateway = null;
+let limixLanActive = false;
 app.whenReady().then(async () => {
   // Limix Bot: a damaged install (no UI files, e.g. after an interrupted update) explains itself instead of showing
   // a bare "no route" page.
@@ -3198,6 +3201,8 @@ function releaseDesktopDataDirLease() {
 // before-quit is too early (this app defers it); will-quit is Electron's last boundary, and the process hook covers app.exit().
 ipcMain.handle("limix-gateway:open", localOnly("limix-gateway:open", () => limixGateway ? limixGateway.open() : Promise.reject(new Error("Chương trình kết nối chưa sẵn sàng."))));
 app.on("will-quit", () => limixGateway?.stop());
+ipcMain.handle("limix-phone:state", localOnly("limix-phone:state", () => ({ on: limixPhoneBrowserOn(app.getPath("userData")), active: limixLanActive })));
+ipcMain.handle("limix-phone:set", localOnly("limix-phone:set", (_event, on) => { setLimixPhoneBrowser(app.getPath("userData"), on === true); app.relaunch(); app.quit(); }));
 app.on("will-quit", releaseDesktopDataDirLease);
 app.on("will-quit", () => { desktopTray?.destroy(); void tailnetShare.stop(); });
 // Limix Bot: Quit ends every helper process the app started. The orderly stop above runs first; this clears any
