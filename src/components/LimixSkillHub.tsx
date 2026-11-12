@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, Download, Loader2, RefreshCw, ShieldAlert, Trash2 } from "lucide-react";
 
 import { Card, Switch } from "./SettingsPrimitives";
+import { LimixToolsDialog, limixTools } from "./LimixToolsDialog";
 
 /** Settings > Kỹ năng > "Thư viện kỹ năng Limix": the Limix Skill Hub catalog (leomieo/limix-skill-hub). Skills are
  * installed disabled and verified by SHA-256; skills that bring scripts or MCP never get those parts without a click. */
@@ -44,6 +45,8 @@ export function LimixSkillHub() {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const [guide, setGuide] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try { setState(await call<HubState>("/api/limix/hub")); } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
@@ -93,7 +96,33 @@ export function LimixSkillHub() {
           </p>
           {s.blocked && <p className="mt-1 flex items-center gap-1 text-[12px] text-danger"><ShieldAlert size={13} />{s.blocked}</p>}
           {(s.permissions.runs_code || s.permissions.mcp) && !s.blocked && (
-            <p className="mt-1 text-[12px] text-ink-secondary">Có phần tool ({s.permissions.mcp ? "MCP" : "script"}). Khi cài chỉ lấy phần hướng dẫn; phần tool không tự cài.</p>
+            <div className="mt-1.5 rounded-lg border border-hairline/40 bg-raised/50 p-2.5 text-[12px] leading-relaxed text-ink-secondary">
+              <button type="button" className="text-ink underline-offset-2 hover:underline" onClick={() => setGuide(guide === s.id ? null : s.id)}>
+                {guide === s.id ? "Ẩn hướng dẫn cài đặt" : "Kỹ năng này có tool: xem hướng dẫn cài đặt"}
+              </button>
+              {guide === s.id && (
+                <ol className="mt-2 list-decimal space-y-1.5 pl-4">
+                  <li>
+                    <b className="text-ink">Cài kỹ năng:</b> bấm "Cài". Mặc định chỉ lấy phần hướng dẫn (SKILL.md). Kỹ năng được tải từ GitHub và kiểm tra SHA-256 từng file.
+                  </li>
+                  {s.compatibility.runtimes.length > 0 && (
+                    <li>
+                      <b className="text-ink">Chuẩn bị máy:</b> kỹ năng cần {s.compatibility.runtimes.map((r) => r.name).join(", ")}.
+                      {s.compatibility.runtimes.filter((r) => r.installerId).length > 0 && (<> Limix Bot cài được: {s.compatibility.runtimes.filter((r) => r.installerId).map((r) => r.name).join(", ")}. </>)}
+                      {s.compatibility.runtimes.some((r) => !r.installerId) && (<> Phải cài tay: {s.compatibility.runtimes.filter((r) => !r.installerId).map((r) => r.name).join(", ")} (Python: tải từ python.org, tick "Add python.exe to PATH"). </>)}
+                      {limixTools() && <button type="button" className="ml-1 text-ink underline" onClick={() => setToolsOpen(true)}>Mở "Công cụ cho kỹ năng"</button>}
+                    </li>
+                  )}
+                  {s.permissions.runs_code && (
+                    <li><b className="text-ink">Cài phần script:</b> bấm "Cài kèm tool". Các file script sẽ nằm trong thư mục kỹ năng và bot có thể chạy chúng. Chỉ làm khi bạn tin nguồn {s.source.repository ?? "này"} (đã quét: {SECURITY[s.security_status] ?? s.security_status}).</li>
+                  )}
+                  {s.permissions.mcp && (
+                    <li><b className="text-ink">MCP:</b> file cấu hình MCP chỉ được chép vào thư mục kỹ năng, không tự bật. Muốn dùng, thêm máy chủ MCP ở Cài đặt rồi bật.</li>
+                  )}
+                  <li><b className="text-ink">Bật:</b> sau khi cài, gạt công tắc "Đang tắt" sang bật, rồi gán cho bot ở thư viện bên dưới.</li>
+                </ol>
+              )}
+            </div>
           )}
           {tab === "security" && s.security_findings?.slice(0, 5).map((f, i) => (
             <p key={i} className="text-[11px] text-ink-tertiary">{f.severity} · {f.rule} · {f.file}{f.line ? `:${f.line}` : ""}</p>
@@ -102,9 +131,16 @@ export function LimixSkillHub() {
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           {busy === s.id ? <Loader2 size={15} className="animate-spin text-ink-secondary" /> : !s.installed ? (
-            <button type="button" className={button} disabled={Boolean(s.blocked) || busy !== null} onClick={() => void run(s.id, () => call("/api/limix/hub/install", { id: s.id }))}>
-              <Download size={14} />Cài (tắt sẵn)
-            </button>
+            <>
+              <button type="button" className={button} disabled={Boolean(s.blocked) || busy !== null} onClick={() => void run(s.id, () => call("/api/limix/hub/install", { id: s.id }))}>
+                <Download size={14} />Cài (tắt sẵn)
+              </button>
+              {s.permissions.runs_code && !s.blocked && (
+                <button type="button" className={button} disabled={busy !== null} onClick={() => { if (window.confirm(`Cài cả script của "${s.name}"? Bot có thể chạy các script này. Chỉ làm khi bạn tin nguồn.`)) void run(s.id, () => call("/api/limix/hub/install", { id: s.id, allowTools: true })); }}>
+                  <Download size={14} />Cài kèm tool
+                </button>
+              )}
+            </>
           ) : (
             <>
               <label className="flex items-center gap-2 text-[12px] text-ink-secondary">
@@ -170,6 +206,7 @@ export function LimixSkillHub() {
           </>
         )}
       </div>
+      {toolsOpen && <LimixToolsDialog onClose={() => setToolsOpen(false)} />}
     </Card>
   );
 }
