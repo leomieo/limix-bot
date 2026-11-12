@@ -2478,6 +2478,7 @@ async function limixAutoConnect() {
   const credential = limixRemoteCredential();
   if (!credential || Date.now() - limixConnectAt < 60_000) return;
   const service = ensureCompanionAccountService();
+  if (await service.forgetForeign().catch(() => false)) limixConnectAt = 0;
   const current = await service.state();
   if (current?.status !== "signed-out" || managedRemoteAccessRefusal()) return;
   limixConnectAt = Date.now();
