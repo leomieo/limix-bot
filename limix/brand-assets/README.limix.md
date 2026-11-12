@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="limix/brand-assets/limix-logo-horizontal.svg" alt="Limix Bot" width="420">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="limix/brand-assets/limix-logo-horizontal-dark.svg">
+    <img src="limix/brand-assets/limix-logo-horizontal.svg" alt="Limix Bot" width="420">
+  </picture>
 </p>
 
 <p align="center">
