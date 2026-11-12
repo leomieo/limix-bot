@@ -10215,5 +10215,7 @@
   "phoneUpdate.body": "{phone} đang dùng phiên bản cũ của ứng dụng Limix Bot, nên không thể kết nối với máy tính này khi ở ngoài Wi-Fi của bạn nữa. Hãy cập nhật ứng dụng trên điện thoại đó, rồi mở nó một lần khi ở cùng Wi-Fi với máy tính này. Nếu vẫn không kết nối lại, hãy ghép nối lại.",
   "phoneUpdate.bodyMany": "{count} điện thoại của bạn đang dùng phiên bản cũ của ứng dụng Limix Bot, nên không thể kết nối với máy tính này khi ở ngoài Wi-Fi của bạn nữa. Hãy cập nhật ứng dụng trên từng điện thoại, rồi mở nó một lần khi ở cùng Wi-Fi với máy tính này. Nếu vẫn không kết nối lại, hãy ghép nối lại.",
   "phoneUpdate.open": "Mở Điện thoại và thiết bị",
-  "remote.devices.pairAgain": "Ghép nối lại"
+  "remote.devices.pairAgain": "Ghép nối lại",
+  "vm.cloud.ofBot": "Máy tính của bot {name}",
+  "vm.cloud.machineId": "Mã máy: {id}"
 }

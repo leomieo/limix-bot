@@ -30,6 +30,7 @@ import { InitialsAvatar } from "./Avatar";
 import { ZaloIcon } from "./ZaloIcon";
 import { AboutDialog } from "./AboutDialog";
 import { PhoneAppDialog } from "./lazy-screens";
+import { LimixPhoneDialog } from "./LimixPhoneDialog";
 import { CloudTile } from "./cloud-buy/parts";
 import { usageBridge } from "./CloudUsageMeter";
 import { useCloudPlanSnapshot } from "./CloudTrialNotice";
@@ -572,6 +573,7 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
   const update = desktopUpdate ?? serverUpdate;
   const [aboutOpen, setAboutOpen] = useState(false);
   const [phoneAppOpen, setPhoneAppOpen] = useState(false);
+  const [limixPhoneOpen, setLimixPhoneOpen] = useState(false);
   const [session, setSession] = useState<SessionState | null>(null);
   const triggerRef = useRef<HTMLSpanElement>(null);
 
@@ -585,7 +587,7 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
 
   const profile = profileForSession(state.config?.profile, session);
   const name = profileLabel(profile);
-  const connectTo = (destination: PhoneDestination) => selectPhoneDestination(destination, { bridge: cloudPhone.bridge, dispatch });
+  const connectTo = (destination: PhoneDestination) => LIMIX_PHONE_APPS_ENABLED ? selectPhoneDestination(destination, { bridge: cloudPhone.bridge, dispatch }) : setLimixPhoneOpen(true);
   const remote = window.ogb?.remoteClient?.active === true;
   const besideRail = railShown(usePlaces());
   const filesReady = useCloudFilesReady();
@@ -705,6 +707,7 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
         )}
       />
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
+      {limixPhoneOpen && <LimixPhoneDialog onClose={() => setLimixPhoneOpen(false)} />}
       {accounts.sheet && <AccountsSheet adding={accounts.sheet.email} note={accounts.sheet.note} onClose={accounts.closeSheet} />}
       {LIMIX_PHONE_APPS_ENABLED && phoneAppOpen && <PhoneAppDialog
         open

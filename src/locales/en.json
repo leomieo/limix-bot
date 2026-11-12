@@ -10215,5 +10215,7 @@
   "phoneUpdate.body": "{phone} has an older version of the Limix Bot app, which can no longer connect to this computer away from your Wi-Fi. Update the app on that phone, then open it once on the same Wi-Fi as this computer. If that doesn't reconnect it, pair it again.",
   "phoneUpdate.bodyMany": "{count} of your phones have an older version of the Limix Bot app, which can no longer connect to this computer away from your Wi-Fi. Update the app on each phone, then open it once on the same Wi-Fi as this computer. If that doesn't reconnect it, pair it again.",
   "phoneUpdate.open": "Open Phone & devices",
-  "remote.devices.pairAgain": "Pair again"
+  "remote.devices.pairAgain": "Pair again",
+  "vm.cloud.ofBot": "Computer of bot {name}",
+  "vm.cloud.machineId": "Machine ID: {id}"
 }

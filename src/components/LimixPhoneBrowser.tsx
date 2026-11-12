@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { Loader2, RefreshCw, Smartphone, Wifi } from "lucide-react";
+import { Globe, Loader2, RefreshCw, Smartphone, Wifi } from "lucide-react";
 
 import { api } from "@/state/api";
 
@@ -14,7 +14,7 @@ const bridge = (): Bridge | undefined => (window as unknown as { ogb?: { limixPh
 
 const button = "inline-flex items-center gap-1.5 rounded-lg border border-hairline/60 bg-raised px-3 py-1.5 text-[13px] text-ink hover:bg-raised-hover disabled:opacity-50";
 
-export function LimixPhoneBrowser() {
+function WifiPane() {
   const [state, setState] = useState<{ on: boolean; active: boolean } | null>(null);
   const [pairing, setPairing] = useState<Pairing | null>(null);
   const [busy, setBusy] = useState(false);
@@ -107,6 +107,112 @@ export function LimixPhoneBrowser() {
         <button type="button" className={button} disabled={busy} onClick={() => void newCode()}><RefreshCw size={14} />Tạo mã mới</button>
         <button type="button" className={button} disabled={busy} onClick={() => void turn(false)}>Tắt</button>
       </div>
+    </div>
+  );
+}
+
+/** From anywhere (4G, another Wi-Fi): this computer's Limix address on limixmedia.com (a Cloudflare tunnel made for this
+ * computer by the control plane, signed in with the Limix account). The phone opens it in a browser and pairs with a code. */
+type AccountState = { status: "signed-out" | "connecting" | "ready" | "error"; endpoint?: string; message?: string };
+type Ogb = {
+  companion?: { setRoute(route: string, on: boolean): Promise<unknown>; start(routes?: string[]): Promise<unknown> };
+  companionAccount?: { state(): Promise<AccountState>; prepare(): Promise<AccountState> };
+};
+const ogb = (): Ogb | undefined => (window as unknown as { ogb?: Ogb }).ogb;
+const pause = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+
+function RemotePane() {
+  const [phase, setPhase] = useState<"idle" | "working" | "ready">("idle");
+  const [note, setNote] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pairing, setPairing] = useState<{ url: string; code: string; expiresAt: number } | null>(null);
+
+  const run = useCallback(async () => {
+    const host = ogb();
+    if (!host?.companion || !host.companionAccount) {
+      setError("Mở mục này trong ứng dụng Limix Bot trên máy tính.");
+      return;
+    }
+    setPhase("working");
+    setError(null);
+    setPairing(null);
+    try {
+      setNote("Đang bật đường truyền từ xa cho máy tính này…");
+      await host.companion.start();
+      await host.companion.setRoute("https", true);
+      let endpoint = "";
+      let lastMessage = "";
+      for (let i = 0; i < 45 && !endpoint; i++) {
+        const account = await host.companionAccount.state();
+        if (account.status === "ready" && account.endpoint) { endpoint = account.endpoint; break; }
+        if (account.status === "signed-out" && i >= 3) throw new Error("Máy này chưa đăng nhập tài khoản Limix. Đăng xuất rồi đăng nhập lại Limix Bot, sau đó thử lại.");
+        if (account.status === "error") lastMessage = account.message ?? "";
+        if (account.status === "ready") await host.companionAccount.prepare().catch(() => undefined);
+        setNote(i < 6 ? "Đang tạo địa chỉ riêng cho máy này trên Cloudflare…" : "Vẫn đang tạo địa chỉ, chờ thêm chút…");
+        await pause(2000);
+      }
+      if (!endpoint) throw new Error(lastMessage || "Chưa tạo được địa chỉ từ xa sau 90 giây. Kiểm tra máy có Internet rồi thử lại.");
+      const made = await api<{ code: string; expiresAt: number }>("/api/auth/pairing", {
+        method: "POST",
+        body: JSON.stringify({ label: "Điện thoại (từ xa)", ttlMs: 15 * 60_000 }),
+      });
+      setPairing({ url: `${endpoint}/pair#code=${made.code}`, code: made.code, expiresAt: made.expiresAt });
+      setPhase("ready");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+      setPhase("idle");
+    }
+  }, []);
+
+  if (phase !== "ready" || !pairing) {
+    return (
+      <div className="flex flex-col gap-3 rounded-xl border border-hairline/40 bg-card px-4 py-4" data-limix-remote={phase}>
+        <div className="flex items-center gap-2 text-[14px] font-medium text-ink"><Globe size={16} />Điều khiển từ xa (4G, mạng khác)</div>
+        <p className="text-[13px] leading-relaxed text-ink-secondary">
+          Điện thoại ở đâu cũng mở được Limix Bot của máy tính này. Dữ liệu đi qua Cloudflare, không đi qua VPS của bạn.
+          Máy tính cần <b>đang bật, có Internet và đang chạy Limix Bot</b>.
+        </p>
+        <button type="button" className={`${button} w-fit`} disabled={phase === "working"} onClick={() => void run()}>
+          {phase === "working" ? <Loader2 size={14} className="animate-spin" /> : <Globe size={14} />}Tạo mã QR từ xa
+        </button>
+        {phase === "working" && note && <p className="text-[12px] text-ink-secondary">{note}</p>}
+        {error && <p className="text-[12px] text-danger">{error}</p>}
+      </div>
+    );
+  }
+  const until = new Date(pairing.expiresAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return (
+    <div className="flex flex-col gap-4 rounded-xl border border-hairline/40 bg-card px-4 py-4" data-limix-remote="ready">
+      <div className="flex items-center gap-2 text-[14px] font-medium text-ink"><Globe size={16} />Điều khiển từ xa (4G, mạng khác)</div>
+      <ol className="list-decimal space-y-1 pl-5 text-[13px] leading-relaxed text-ink-secondary">
+        <li>Trên điện thoại (Wi-Fi hay 4G đều được), mở camera và quét mã bên dưới.</li>
+        <li>Chạm vào đường link hiện ra. Trình duyệt tự đăng nhập.</li>
+        <li>Chia sẻ → <b>Thêm vào Màn hình chính</b> để dùng như một app.</li>
+      </ol>
+      <div className="flex flex-col items-center gap-2">
+        <div className="rounded-2xl bg-white p-3"><QRCodeSVG value={pairing.url} size={220} level="M" marginSize={1} bgColor="#ffffff" fgColor="#111111" /></div>
+        <div className="text-[12px] text-ink-secondary">Mã dùng một lần, hết hạn lúc {until} · mã: <span className="font-mono text-ink">{pairing.code}</span></div>
+        <div className="max-w-full truncate font-mono text-[11px] text-ink-tertiary">{pairing.url.split("#")[0]}</div>
+      </div>
+      {error && <p className="text-[12px] text-danger">{error}</p>}
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className={button} onClick={() => void run()}><RefreshCw size={14} />Tạo mã mới</button>
+      </div>
+    </div>
+  );
+}
+
+/** Both ways to open Limix Bot on a phone, as two tabs. */
+export function LimixPhoneBrowser() {
+  const [tab, setTab] = useState<"remote" | "wifi">("remote");
+  const tabClass = (on: boolean) => `flex-1 rounded-lg px-3 py-1.5 text-[13px] ${on ? "bg-raised text-ink font-medium" : "text-ink-secondary hover:text-ink"}`;
+  return (
+    <div className="flex flex-col gap-3">
+      <div role="tablist" className="flex gap-1 rounded-xl border border-hairline/40 bg-card p-1">
+        <button type="button" role="tab" aria-selected={tab === "remote"} className={tabClass(tab === "remote")} onClick={() => setTab("remote")}>Từ xa (4G)</button>
+        <button type="button" role="tab" aria-selected={tab === "wifi"} className={tabClass(tab === "wifi")} onClick={() => setTab("wifi")}>Cùng Wi-Fi</button>
+      </div>
+      {tab === "remote" ? <RemotePane /> : <WifiPane />}
     </div>
   );
 }
