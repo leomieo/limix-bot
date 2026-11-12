@@ -1060,6 +1060,50 @@ def list_locale(s):
     return s
 edit("src/components/PhoneDevicesSection.tsx", list_locale)
 
+# 10i. Instabox as the cloud computer service: an ibk_ key in the Boat key slot sends Boat's calls to Instabox
+# (server/limix-instabox.ts translates them and answers in Boat's shape). Instabox machine ids are m_…, and a machine
+# cannot be renamed, so the create carries the bot's computer name.
+IB_ID = r"/^(?:bx_[23456789abcdefghjkmnpqrstuvwxyz]{8}|m_[a-z0-9]{20,40})$/"
+def ib_ids(s):
+    return must(s, "const BOAT_ID = /^bx_[23456789abcdefghjkmnpqrstuvwxyz]{8}$/;", f"const BOAT_ID = {IB_ID};")
+for rel in ("server/boat.ts", "server/boat-create-idempotency.ts", "server/boat-delete-journal.ts"):
+    edit(rel, ib_ids)
+
+def ib_boat(s):
+    if 'from "./limix-instabox.ts"' not in s:
+        s = must(s, 'import { relayBody, relayPath } from "./boat-relay.ts";',
+                 'import { relayBody, relayPath } from "./boat-relay.ts";\nimport { instaboxFetch, isInstaboxKey, verifyInstaboxKey } from "./limix-instabox.ts";')
+    s = must(s, """  const account = boatAccount(cfg);
+  return fetch(`${account?.api ?? boatProviderApi()}${relayPath(account, path)}`, {""",
+             """  const account = boatAccount(cfg);
+  if (isInstaboxKey(account?.token)) return instaboxFetch(account!.token, path, opts);
+  return fetch(`${account?.api ?? boatProviderApi()}${relayPath(account, path)}`, {""")
+    s = must(s, """export async function verifyToken(token: string): Promise<{ ok: true } | { ok: false; message: string; rejected?: true }> {
+  try {""", """export async function verifyToken(token: string): Promise<{ ok: true } | { ok: false; message: string; rejected?: true }> {
+  if (isInstaboxKey(token)) return verifyInstaboxKey(token);
+  try {""")
+    s = must(s, "  const body = JSON.stringify({ ttlSeconds, noEnv: true });",
+             "  const body = JSON.stringify({ ttlSeconds, noEnv: true, ...(isInstaboxKey(boatAccount(cfg)?.token) ? { name: await boatNameFor(botId) } : {}) });")
+    return s
+edit("server/boat.ts", ib_boat)
+
+def ib_catalog(s):
+    s = must(s, 'name: "boat.dev", env: ["BOX_TOKEN"],\n    words: ["boat", "box",',
+             'name: "boat.dev / Instabox", env: ["BOX_TOKEN"],\n    words: ["boat", "instabox", "box",')
+    return must(s, 'placeholder: "boat_…", href: "https://docs.boat.dev/api-keys", analytics: "boat", shape: /^(boat|box)_/,',
+                'placeholder: "boat_… / ibk_…", href: "https://docs.boat.dev/api-keys", analytics: "boat", shape: /^(boat|box|ibk)_/,')
+edit("src/components/keys/key-catalog.ts", ib_catalog)
+
+def ib_en(s):
+    d = json.loads(s)
+    d["keys.boat.label"] = "Boat or Instabox API key"
+    d["keys.boat.placeholder"] = "Paste a Boat (boat_…) or Instabox (ibk_…) API key"
+    d["vm.cloud.subtitle"] = "Your bots' cloud desktops, by Boat or Instabox. Deleting one erases it and its files for good."
+    d["vm.cloud.needsKey"] = "Cloud desktops come from Boat or Instabox, both paid services. Paste a Boat or Instabox API key in Settings → API keys to create and manage them."
+    d["vm.cloud.notConnected"] = "No Boat or Instabox key is connected."
+    return json.dumps(d, indent=2, ensure_ascii=False) + "\n"
+edit("src/locales/en.json", ib_en)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):

@@ -8,6 +8,7 @@ import { DATA_DIR, type AppConfig } from "./config.ts";
 import { loadEnvironmentId } from "./environment.ts";
 import { boatCredential, boatProviderApi, type ServiceCredential } from "./included-services.ts";
 import { relayBody, relayPath } from "./boat-relay.ts";
+import { instaboxFetch, isInstaboxKey, verifyInstaboxKey } from "./limix-instabox.ts";
 import {
   blockedUntilBoatFinishes,
   boatDeletionOperation,
@@ -70,7 +71,7 @@ const BOAT_INVENTORY_PAGE_SIZE = 200;
 const MAX_BOAT_INVENTORY_PAGES = 10;
 const LEGACY_MANAGED_BOAT_NAME = /^ogb-[a-z0-9]{1,8}-[a-f0-9]{6}$/;
 const SCOPED_MANAGED_BOAT_NAME = /^ogb-[a-f0-9]{12}-[a-z0-9]{1,8}-[a-f0-9]{6}$/;
-const BOAT_ID = /^bx_[23456789abcdefghjkmnpqrstuvwxyz]{8}$/;
+const BOAT_ID = /^(?:bx_[23456789abcdefghjkmnpqrstuvwxyz]{8}|m_[a-z0-9]{20,40})$/;
 /** Sandbox.state in v1, plus OpenMausBot's own `removing` for a sandbox whose deletion is under way. */
 const BOAT_STATES = new Set([
   "init", "provisioning", "provisioned", "cloning", "ready", "idle", "running", "archiving", "archived", "error", "cancelled", "removing",
@@ -138,6 +139,7 @@ function snapshotBoatConfig(cfg: AppConfig): AppConfig {
 /** An own token goes to Boat; Cloud Pro's included token only to its relay. */
 export function boatFetch(cfg: AppConfig, path: string, opts: RequestInit = {}) {
   const account = boatAccount(cfg);
+  if (isInstaboxKey(account?.token)) return instaboxFetch(account!.token, path, opts);
   return fetch(`${account?.api ?? boatProviderApi()}${relayPath(account, path)}`, {
     ...opts,
     headers: {
@@ -902,6 +904,7 @@ export function describeBoatAccount(cfg: AppConfig): { configured: boolean; incl
 }
 
 export async function verifyToken(token: string): Promise<{ ok: true } | { ok: false; message: string; rejected?: true }> {
+  if (isInstaboxKey(token)) return verifyInstaboxKey(token);
   try {
     const res = await fetch(`${boatProviderApi()}/sandboxes?limit=1`, {
       headers: { authorization: `Bearer ${token}` },
@@ -973,7 +976,7 @@ function idempotentCreateInProgress(result: Awaited<ReturnType<typeof boatJson>>
 
 async function requestBoatCreate(cfg: AppConfig, botId: string, ttlSeconds: number): Promise<BoatCreateResult> {
   // noEnv: no key this server holds ever reaches the computer. A trial-TTL retry needs a different idempotency key.
-  const body = JSON.stringify({ ttlSeconds, noEnv: true });
+  const body = JSON.stringify({ ttlSeconds, noEnv: true, ...(isInstaboxKey(boatAccount(cfg)?.token) ? { name: await boatNameFor(botId) } : {}) });
   let attempt = beginBoatCreate(botId, body);
   let request = attempt.request;
   let createdThisAttempt = attempt.startedNow;
