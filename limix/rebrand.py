@@ -1429,6 +1429,28 @@ def tools_card(s):
     return must(s, "      <LimixBundledSkills />\n", "      <LimixToolsCard />\n      <LimixBundledSkills />\n")
 edit("src/components/SkillsSection.tsx", tools_card)
 
+# 10z3. Remote (4G) in a phone browser: the tunnel ends at the companion's private origin, which only speaks to the native
+# app. Browser requests there go on to the app server's tunnel listener (companion/src/limix-web.ts, OMB_TUNNEL_SOCKET).
+def web_origin_companion(s):
+    if "isLimixWebRequest" in s:
+        return s
+    s = must(s, 'import { createServer } from "node:http";\n', 'import { createServer } from "node:http";\nimport { forwardToLimixWeb, forwardUpgradeToLimixWeb, isLimixWebRequest } from "./limix-web.ts";\n')
+    return must(s,
+        'const managedOrigin = PRIVATE_ORIGIN ? createServer(gzipTunnelReplies((req, res) => proxy(req, res, "origin"))) : null;\n'
+        'managedOrigin?.on("upgrade", (req, socket, head) => proxy.upgrade(req, socket, head, "origin"));\n',
+        'const limixOriginReplies = gzipTunnelReplies((req, res) => proxy(req, res, "origin"));\n'
+        'const managedOrigin = PRIVATE_ORIGIN ? createServer((req, res) => (isLimixWebRequest(req) ? forwardToLimixWeb(req, res) : limixOriginReplies(req, res))) : null;\n'
+        'managedOrigin?.on("upgrade", (req, socket, head) => (isLimixWebRequest(req) ? forwardUpgradeToLimixWeb(req, socket, head) : proxy.upgrade(req, socket, head, "origin")));\n')
+edit("companion/src/index.ts", web_origin_companion)
+def web_origin_env(s):
+    if "LIMIX_WEB_ORIGIN" in s:
+        return s
+    s = must(s, "  childEnvironment.OMB_COMPANION_INTERNAL_ORIGIN = allocatedOrigin.socketPath;\n",
+                "  childEnvironment.OMB_COMPANION_INTERNAL_ORIGIN = allocatedOrigin.socketPath;\n  childEnvironment.LIMIX_WEB_ORIGIN = limixWebSocketPath();\n")
+    first_import = s.index("import ")
+    return s[:first_import] + 'import { limixWebSocketPath } from "./limix-phone-browser.mjs";\n' + s[first_import:]
+edit("electron/companion.mjs", web_origin_env)
+
 def tools_main(s):
     if "limix-tools.mjs" in s:
         return s

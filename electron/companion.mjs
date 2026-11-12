@@ -1,4 +1,5 @@
 // The companion sidecar is the only part of the app that listens off-machine; the renderer never reaches its control port.
+import { limixWebSocketPath } from "./limix-phone-browser.mjs";
 import { app, utilityProcess } from "electron";
 import { randomBytes } from "node:crypto";
 import fs from "node:fs";
@@ -219,6 +220,7 @@ async function start({ resourcesPath, harnessPort, mutationToken, hostedUrl = nu
   if (direct.tailscale && settings.routes.tailscale.name) childEnvironment.OMB_COMPANION_TAILNET_NAME = settings.routes.tailscale.name;
   if (hostedUrl) childEnvironment.OMB_COMPANION_HOSTED_URL = hostedUrl;
   childEnvironment.OMB_COMPANION_INTERNAL_ORIGIN = allocatedOrigin.socketPath;
+  childEnvironment.LIMIX_WEB_ORIGIN = limixWebSocketPath();
   if (/^[A-Za-z0-9_-]{87}$/.test(String(secretPublicKey ?? ""))) {
     childEnvironment.OMB_PHONE_SECRET_PUBLIC_KEY = secretPublicKey;
   }
