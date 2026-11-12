@@ -1411,6 +1411,16 @@ def agy_cli(s):
                 "        await removeAntigravitySignIn(input.instanceId);\n        releaseAgyCli(input.instanceId);\n")
 edit("server/drivers/antigravity.ts", agy_cli)
 
+# 10z. Simple mode: Skills is its own page in Settings, right under AI (it was hidden among "more settings").
+def skills_page(s):
+    if '{ id: "skills", labelKey: "settings.section.skills"' in s:
+        return s
+    s = must(s, '  { id: "ai", labelKey: "settings.group.ai", icon: Sparkles, sections: ["engines", "connections"], keywords: ["new bots", "defaults", "effort"] },\n',
+                '  { id: "ai", labelKey: "settings.group.ai", icon: Sparkles, sections: ["engines", "connections"], keywords: ["new bots", "defaults", "effort"] },\n'
+                '  { id: "skills", labelKey: "settings.section.skills", icon: BookOpen, sections: ["skills"], keywords: ["skills", "skill hub", "library", "kỹ năng", "thư viện"] },\n')
+    return must(s, '["backups", "experimental", "workspaces", "skills", "decisionModel", "imageGeneration"]', '["backups", "experimental", "workspaces", "decisionModel", "imageGeneration"]')
+edit("src/components/SettingsModal.tsx", skills_page)
+
 def tools_main(s):
     if "limix-tools.mjs" in s:
         return s
