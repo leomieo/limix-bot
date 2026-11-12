@@ -8,6 +8,13 @@ import { READY_BOT_CATEGORIES, READY_BOTS, readyBotCopy, type ReadyBot, type Rea
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
 import type { LocaleKey } from "@/locales";
+
+/** A template's own skills go on the new bot from the store; one not installed on this computer is skipped. */
+async function addTemplateSkills(botId: string, names: string[] | undefined): Promise<void> {
+  for (const name of names ?? []) {
+    await fetch(`/api/limix/skill-store/${encodeURIComponent(botId)}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, add: true }) }).catch(() => undefined);
+  }
+}
 import { api, useStore, type Bot } from "@/state/store";
 import type { MascotBodyId } from "../../shared/mascot-bodies";
 import type { MausColor } from "../../shared/wire";
@@ -66,7 +73,7 @@ export function LimixBotGallery({ search, onDialog, onAdded, onRefresh }: {
   const [offline, setOffline] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [adding, setAdding] = useState<{ id: string; data?: ReadyBot } | null>(null);
+  const [adding, setAdding] = useState<{ id: string; data?: ReadyBot; skills?: string[] } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshed, setRefreshed] = useState("");
 
@@ -115,7 +122,7 @@ export function LimixBotGallery({ search, onDialog, onAdded, onRefresh }: {
     setBusy(card.id);
     try {
       const { bot } = await api<{ bot: ReadyBot }>(`/api/limix/bots/${card.id}`);
-      setAdding({ id: card.id, data: bot });
+      setAdding({ id: card.id, data: bot, skills: (bot as ReadyBot & { skills?: string[] }).skills });
       onDialog(true);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -170,6 +177,6 @@ export function LimixBotGallery({ search, onDialog, onAdded, onRefresh }: {
         </p>}
       </article>)}
     </div>
-    {adding && createPortal(<NewBotDialog readyBotId={adding.id} readyBotData={adding.data} onClose={close} onCreated={(bot) => { onDialog(false); onAdded(bot); }} />, document.body)}
+    {adding && createPortal(<NewBotDialog readyBotId={adding.id} readyBotData={adding.data} onClose={close} onCreated={(bot) => { onDialog(false); void addTemplateSkills(bot.id, adding.skills); onAdded(bot); }} />, document.body)}
   </section>;
 }

@@ -1686,6 +1686,106 @@ def sign_out_menu(s):
     return must(s, "    onAccount: openCloudAccount,\n  });\n  const noteworthy", "    onAccount: openCloudAccount,\n  }));\n  const noteworthy")
 edit("src/components/SidebarProfileMenu.tsx", sign_out_menu)
 
+# 11d. Skills per bot (owner's choice 2026-11-13). A new bot gets only Limix's core skills (learning skills, Agent
+# Reach, Windows automation, the phone helpers) plus what it learns; everything else waits in the store and is added to
+# one bot at a time from Bot → Kĩ Năng (Skills) → "Kho Kĩ Năng (Skills)" (limix/overlay/server/limix-skill-store.ts,
+# limix/overlay/src/components/LimixSkillStore.tsx). Settings → Kĩ Năng (Skills) only downloads skills; its "every bot"
+# switch is gone (shown only on a skill still set that way). Skills from this computer are opt-in per bot. /id calls a
+# shipped skill too. Templates may list "skills" (limix/overlay/server/limix-bot-library.ts).
+def skills_index(s):
+    if "limixBundledFor" in s:
+        return s
+    s = must(s, 'import { startHubAutoSync } from "./limix-skill-hub.ts";\n',
+                'import { startHubAutoSync } from "./limix-skill-hub.ts";\n'
+                'import { limixBundledFor, limixSelectBundled, limixSkillDefaultsMigration } from "./limix-skill-store.ts";\n')
+    s = must(s, "const bundledSkills = loadBundledSkills();\n", "const bundledSkills = loadBundledSkills();\nlimixSkillDefaultsMigration();\n")
+    s = must(s, "const skills = availableSkills(), phoneOffered = usbPhoneOffered(instance, skills) && !proactive",
+                "const skills = limixBundledFor(bot.id, availableSkills()), phoneOffered = usbPhoneOffered(instance, skills) && !proactive")
+    s = must(s, "const skills = availableSkills(), phoneOffered = usbPhoneOffered(instance, skills);",
+                "const skills = limixBundledFor(bot.id, availableSkills()), phoneOffered = usbPhoneOffered(instance, skills);")
+    s = must(s, "const selectedSkills = selectBundledSkills(\n", "const selectedSkills = limixSelectBundled(\n")
+    s = must(s, "    selectBundledSkills(\n      roomContext,", "    limixSelectBundled(\n      roomContext,")
+    s = must(s, "    selectBundledSkills(\n      latestUser?.text", "    limixSelectBundled(\n      latestUser?.text")
+    if s.count("selectBundledSkills") == 1:
+        s = must(s, "  selectBundledSkills,\n", "")
+    return s
+edit("server/index.ts", skills_index)
+def skills_routes(s):
+    if "handleLimixSkillStore" in s:
+        return s
+    s = must(s, 'import { handleLimixHub } from "../limix-skill-hub.ts";\n',
+                'import { handleLimixHub } from "../limix-skill-hub.ts";\n'
+                'import { handleLimixSkillStore, LIMIX_CORE_SKILLS, limixBundledListings, limixBundledSwitch } from "../limix-skill-store.ts";\n')
+    s = must(s, '    if (method === "GET" && path === "/api/limix/bundled-skills") {\n',
+                '    if (path.startsWith("/api/limix/skill-store/")) {\n'
+                '      const skillStore = handleLimixSkillStore(store, method, path, method === "POST" ? await readBody(req) : undefined);\n'
+                '      if (skillStore) return json(res, skillStore.status, skillStore.body);\n'
+                '    }\n'
+                '    if (method === "GET" && path === "/api/limix/bundled-skills") {\n')
+    s = must(s, "triggerTerms: manifest.triggerTerms }));", "triggerTerms: manifest.triggerTerms, core: LIMIX_CORE_SKILLS.has(manifest.id) }));")
+    s = must(s, "          skills: [...skills, ...listBotSkills(bot, threadId).filter((skill) => !names.has(skill.name))],\n",
+                "          skills: [...skills, ...listBotSkills(bot, threadId).filter((skill) => !names.has(skill.name)),\n"
+                "            ...limixBundledListings(bot.id).filter((skill) => !names.has(skill.name) && !listBotSkills(bot, threadId).some((other) => other.name === skill.name))],\n")
+    s = must(s, "        skills: listBotSkills(bot, threadId),\n", "        skills: [...listBotSkills(bot, threadId), ...limixBundledListings(bot.id)],\n")
+    s = must(s, "      const result = setSkillEnabled(m[1]!, m[2]!, parsed.data.enabled);\n      if (\"error\" in result) return json(res, 404, { error: result.error });\n",
+                "      const result = setSkillEnabled(m[1]!, m[2]!, parsed.data.enabled);\n"
+                "      if (\"error\" in result) {\n"
+                "        const shipped = limixBundledSwitch(m[1]!, m[2]!, parsed.data.enabled);\n"
+                "        if (shipped) return json(res, shipped.status, shipped.body);\n"
+                "        return json(res, 404, { error: result.error });\n"
+                "      }\n")
+    return s
+edit("server/routes/bot-skills.ts", skills_routes)
+def skills_imported(s):
+    if "picked: z.array" in s:
+        return s
+    s = must(s, "  listed: z.array(z.string()).optional(),\n});", "  listed: z.array(z.string()).optional(),\n  /** Limix Bot: skills from this computer are off for a bot until a person adds one from its store. */\n  picked: z.array(z.string()).optional(),\n});")
+    s = must(s, "  if (choices.off.includes(name)) return false;\n", "  if (choices.off.includes(name)) return false;\n  if (!(choices.picked ?? []).includes(name)) return false;\n")
+    s = must(s, "  const listed = choices.listed?.filter((other) => other !== name);\n  const next: Choices = enabled\n    ? { off, on: entry.warnings.length ? { ...on, [name]: entry.filesSha256 } : on, ...(listed ? { listed: [...listed, name].sort() } : {}) }\n    : { off: [...off, name].sort(), on, ...(listed ? { listed } : {}) };",
+                "  const listed = choices.listed?.filter((other) => other !== name);\n  const picked = (choices.picked ?? []).filter((other) => other !== name);\n  const next: Choices = enabled\n    ? { off, on: entry.warnings.length ? { ...on, [name]: entry.filesSha256 } : on, ...(listed ? { listed: [...listed, name].sort() } : {}), picked: [...picked, name].sort() }\n    : { off: [...off, name].sort(), on, ...(listed ? { listed } : {}), picked };")
+    return s
+edit("server/imported-skills.ts", skills_imported)
+def skills_panel(s):
+    if "LimixSkillStoreDialog" in s:
+        return s
+    s = must(s, 'import { useOpenComputer, WherePage } from "./ComputerTab";\n',
+                'import { useOpenComputer, WherePage } from "./ComputerTab";\nimport { LimixSkillStoreDialog } from "../LimixSkillStore";\n')
+    s = must(s, '  const browse = () => {\n    if (libraryOn) {\n      dispatch({ type: "toggleSettings", open: false });\n      dispatch({ type: "toggleAppSettings", open: true, section: "skills" });\n      return;\n    }\n    void openExternalLink(SKILLS_SITE);\n  };\n',
+                '  const [storeOpen, setStoreOpen] = useState(false);\n'
+                '  const openSkillSettings = () => {\n    setStoreOpen(false);\n    dispatch({ type: "toggleSettings", open: false });\n    dispatch({ type: "toggleAppSettings", open: true, section: "skills" });\n  };\n'
+                '  const browse = () => {\n    if (libraryOn) {\n      setStoreOpen(true);\n      return;\n    }\n    void openExternalLink(SKILLS_SITE);\n  };\n')
+    s = must(s, "            disabled={Boolean(skills.working)}\n            onChange={() => void skills.toggle(skill)}\n            extra={skill.origin === \"imported\" || skill.origin === \"native\" ? undefined",
+                "            disabled={Boolean(skills.working) || (skill as { core?: boolean }).core === true}\n            onChange={() => void skills.toggle(skill)}\n            extra={skill.origin === \"imported\" || skill.origin === \"native\" || (skill.origin as string) === \"bundled\" ? undefined")
+    s = must(s, "      {skills.reviewing && (\n        <SkillReviewDialog",
+                "      {storeOpen && <LimixSkillStoreDialog botId={bot.id} botName={bot.name} onOpenSettings={openSkillSettings} onClose={() => { setStoreOpen(false); void skills.refresh(); }} />}\n"
+                "      {skills.reviewing && (\n        <SkillReviewDialog")
+    return s
+edit("src/components/bot-panel/pages.tsx", skills_panel)
+def skills_settings(s):
+    if "{skill.everyBot && (" in s:
+        return s
+    s = must(s, '                  <div className="mt-2 flex items-center justify-between gap-3 rounded-lg bg-inset px-2.5 py-2">\n                    <div>\n                      <div className="text-[12px] font-medium text-ink">{t("skills.library.everyBot")}</div>',
+                '                  {skill.everyBot && (\n                  <div className="mt-2 flex items-center justify-between gap-3 rounded-lg bg-inset px-2.5 py-2">\n                    <div>\n                      <div className="text-[12px] font-medium text-ink">{t("skills.library.everyBot")}</div>')
+    return must(s, "                      onClick={() => void toggleEveryBot(skill)}\n                    />\n                  </div>\n",
+                   "                      onClick={() => void toggleEveryBot(skill)}\n                    />\n                  </div>\n                  )}\n")
+edit("src/components/SkillsSection.tsx", skills_settings)
+SKILL_LABELS = {
+    '"botSettings.simple.skills": "Kỹ năng"': '"botSettings.simple.skills": "Kĩ Năng (Skills)"',
+    '"settings.section.skills": "Kỹ năng"': '"settings.section.skills": "Kĩ Năng (Skills)"',
+    '"botSettings.sections.skills": "Kỹ năng"': '"botSettings.sections.skills": "Kĩ Năng (Skills)"',
+    '"botPanel.skills.bundled": "Kỹ năng có sẵn của Limix Bot"': '"botPanel.skills.bundled": "Kho Kĩ Năng (Skills)"',
+    '"skills.library.allAssigned": "Mọi kỹ năng trong thư viện đều đã được gán cho bot này."': '"skills.library.allAssigned": "Bot này đã có mọi kĩ năng trong kho."',
+    '"skills.library.manageHint": "Nhập và quản lý kỹ năng thư viện trong Cài đặt → Kỹ năng."': '"skills.library.manageHint": "Tải kĩ năng mới trong Cài đặt → Kĩ Năng (Skills), rồi thêm cho từng bot ở mục Kĩ Năng (Skills) của bot."',
+    '"botSettings.simple.skillsHint": "Những việc {name} đã học được. Hãy tắt một kỹ năng nếu không muốn {name} tiếp tục dùng."':
+        '"botSettings.simple.skillsHint": "Kĩ năng {name} đang dùng: kĩ năng gốc của Limix Bot, kĩ năng {name} tự học và kĩ năng bạn thêm từ Kho. Tắt một kĩ năng để bỏ khỏi {name}. Gõ /tên-kĩ-năng trong chat để gọi."',
+}
+def skills_vi(s):
+    for old, new in SKILL_LABELS.items():
+        if new not in s:
+            s = must(s, old, new)
+    return s
+edit("src/locales/vi.json", skills_vi)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):
