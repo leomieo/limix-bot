@@ -15,6 +15,7 @@ import { join } from "node:path";
 import { isSkillName } from "../shared/skill-md.ts";
 import { writeFileAtomic } from "./atomic.ts";
 import { DATA_DIR } from "./config.ts";
+import type { Store } from "./store.ts";
 import { importedSkillListings, setImportedSkillEnabled } from "./imported-skills.ts";
 import {
   listLibrarySkills, loadBundledSkills, mergeSkills, readSkillLibraryIndex, selectBundledSkills, setLibrarySkillEveryBot,
@@ -90,17 +91,14 @@ export function limixBundledSwitch(botId: string, name: string, enabled: boolean
   return { status: 200, body: { skill: { ...limixBundledListings(botId).find((skill) => skill.name === name), name, enabled } } };
 }
 
-export interface StoreBots {
-  bot(id: string | undefined): { id: string; name?: string; description?: string; assignedSkills?: string[] } | undefined;
-  patchBot(id: string, patch: { assignedSkills: string[] }): unknown;
-}
+export type StoreBots = Pick<Store, "bot" | "patchBot">;
 
 type Kind = "bundled" | "library" | "imported";
 interface StoreItem { name: string; description: string; kind: Kind; added: boolean; core: boolean; ready: boolean; warnings: number; source: string }
 
 function storeItems(bots: StoreBots, botId: string): StoreItem[] {
   const bot = bots.bot(botId)!;
-  const assigned = new Set(bot.assignedSkills ?? []);
+  const assigned = new Set<string>(bot.assignedSkills ?? []);
   const picks = bundledPicks(botId);
   const items = new Map<string, StoreItem>();
   for (const { manifest } of loadBundledSkills()) {
