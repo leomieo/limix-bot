@@ -82,7 +82,7 @@ import {
   withDesktopCompanionAccess,
   withoutDesktopCompanionAccess,
 } from "./desktop-companion-client.mjs";
-import { isKnownSkin, skinChrome } from "./skin-overlay.cjs";
+import { isKnownSkin, skinChrome, skinIsLight } from "./skin-overlay.cjs";
 import { installCredentialStoreIpc, readSecureCredentials } from "./secure-credentials.mjs";
 import { createControlPlaneClient } from "./control-plane-client.mjs";
 import {
@@ -2289,6 +2289,7 @@ ipcMain.handle("desktop:skin", (event, skin) => {
   if (chromeRail.owns(event)) return true;
   try {
     talk.skin(skin); const { color } = skinChrome(skin);
+    if (mainWindow && event.sender === mainWindow.webContents) desktopTray?.setLight?.(skinIsLight(skin));
     const win = BrowserWindow.fromWebContents(event.sender) ?? mainWindow;
     if (win && !win.isDestroyed()) {
       try { win.setBackgroundColor(color); } catch {}
@@ -2863,7 +2864,7 @@ app.whenReady().then(async () => {
   if (process.platform === "win32") {
     try {
       desktopTray = createSystemTray({
-        Tray, Menu, nativeImage, iconPath: path.join(__dirname, "resources/limix-tray.png"), t: nativeT,
+        Tray, Menu, nativeImage, iconPath: path.join(__dirname, "resources/limix-tray.png"), lightIconPath: path.join(__dirname, "resources/limix-tray-light.png"), light: !nativeTheme.shouldUseDarkColors, t: nativeT,
         getWindow: () => startupScreen?.window ?? mainWindow ?? (openWindowForLink?.(), mainWindow),
         onQuit: () => app.quit(),
       });
