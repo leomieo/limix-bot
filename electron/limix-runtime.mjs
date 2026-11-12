@@ -34,6 +34,8 @@ export function limixRuntimeEnv({ resourcesPath, userData, env = process.env, ex
     UV_CACHE_DIR: path.join(tools, "uv-cache"),
     PYTHONUSERBASE: userBase,
     PYTHONUTF8: "1",
+    // Antigravity unpacks 0.3-1.3 GB on every launch (slow on Windows); keep an idle engine warm 45 min, not 10.
+    ...(env.OMB_ACP_SESSION_IDLE_MS || env.OMB_SESSION_IDLE_MS ? {} : { OMB_ACP_SESSION_IDLE_MS: String(45 * 60_000) }),
     ...(exists(path.join(tools, "jdk", "bin")) && !env.JAVA_HOME ? { JAVA_HOME: path.join(tools, "jdk") } : {}),
   };
 }
