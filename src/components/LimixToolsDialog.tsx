@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Download, Loader2, X } from "lucide-react";
+import { Check, Download, Loader2, ScanSearch, X } from "lucide-react";
 
 /** "Công cụ cho kỹ năng": what this computer still lacks for the default skills, the private computer and the
  * suggested MCP, with an Install button each (electron/limix-tools.mjs does the work). */
 
 interface ToolJob { status: "working" | "error"; step?: string | null; progress?: number | null; message?: string | null }
-interface ToolItem { id: string; name: string; why: string; size: string; recommended?: boolean; needs: string[]; installed: boolean; job: ToolJob | null }
+interface ToolItem { id: string; name: string; why: string; size: string; recommended?: boolean; needs: string[]; installed: boolean; source?: "limix" | "system" | null; where?: string | null; job: ToolJob | null }
 interface ToolsState { supported: boolean; items: ToolItem[] }
-type Bridge = { state(): Promise<ToolsState>; install(ids: string[]): Promise<ToolsState>; shouldAsk(): Promise<boolean>; markAsked(): Promise<void> };
+type Bridge = { state(): Promise<ToolsState>; scan?(): Promise<ToolsState>; install(ids: string[]): Promise<ToolsState>; shouldAsk(): Promise<boolean>; markAsked(): Promise<void> };
 
 export const limixTools = (): Bridge | undefined => (window as unknown as { ogb?: { limixTools?: Bridge } }).ogb?.limixTools;
 
@@ -27,10 +27,24 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
     }
   }, []);
 
+  const [scanning, setScanning] = useState(false);
+  const scan = useCallback(async () => {
+    setScanning(true);
+    try {
+      const bridge = limixTools();
+      const next = await (bridge?.scan ? bridge.scan() : bridge?.state());
+      if (next) setState(next);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setScanning(false);
+    }
+  }, []);
+
   useEffect(() => {
-    void refresh();
+    void scan();
     if (asking) void limixTools()?.markAsked().catch(() => undefined);
-  }, [refresh, asking]);
+  }, [scan, asking]);
 
   const busy = Boolean(state?.items.some((item) => item.job?.status === "working"));
   useEffect(() => {
@@ -71,6 +85,14 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
           Máy này còn thiếu {missingRecommended.length} công cụ mà các kỹ năng có sẵn của bot cần. Cài ngay?
         </p>
       )}
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[12px] leading-relaxed text-ink-secondary">
+          Limix Bot dùng luôn công cụ đã có trên máy bạn; chỉ công cụ chưa có mới hiện nút Cài.
+        </p>
+        <button type="button" className={`${button} shrink-0`} disabled={scanning || busy} onClick={() => void scan()}>
+          {scanning ? <Loader2 size={14} className="animate-spin" /> : <ScanSearch size={14} />}Quét máy
+        </button>
+      </div>
       <ul className="flex flex-col divide-y divide-hairline/40 rounded-xl border border-hairline/40 bg-card">
         {state.items.map((item) => {
           const job = item.job;
@@ -91,7 +113,10 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
               </div>
               <div className="shrink-0 pt-0.5">
                 {item.installed ? (
-                  <span className="inline-flex items-center gap-1 text-[13px] text-ink-secondary"><Check size={14} />Đã có</span>
+                  <span className="inline-flex flex-col items-end text-[13px] text-ink-secondary" title={item.where ?? undefined}>
+                    <span className="inline-flex items-center gap-1"><Check size={14} />Đã có</span>
+                    <span className="text-[11px] text-ink-tertiary">{item.source === "system" ? "dùng bản trên máy" : "do Limix Bot cài"}</span>
+                  </span>
                 ) : job?.status === "working" ? (
                   <Loader2 size={15} className="animate-spin text-ink-secondary" />
                 ) : (
@@ -127,7 +152,7 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
 
   const overlay = (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div role="dialog" aria-modal="true" aria-labelledby="limix-tools-title" className="max-h-full w-full max-w-[560px] overflow-y-auto rounded-2xl border border-hairline/50 bg-panel p-6 shadow-2xl">
+      <div role="dialog" aria-modal="true" aria-labelledby="limix-tools-title" className="max-h-full w-full max-w-[600px] overflow-y-auto rounded-2xl border border-hairline/50 bg-panel p-6 shadow-2xl">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 id="limix-tools-title" className="text-[17px] font-semibold text-ink">Công cụ cho kỹ năng</h2>
           <button type="button" onClick={onClose} aria-label="Đóng" className="rounded-lg p-1.5 text-ink-secondary hover:bg-raised hover:text-ink"><X size={16} /></button>

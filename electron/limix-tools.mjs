@@ -6,7 +6,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
-import { spawn } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 
 import { limixRuntimeEnv } from "./limix-runtime.mjs";
 
@@ -66,31 +66,82 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
     }
   };
 
-  const onPath = (name) => (process.env.PATH ?? "").split(path.delimiter).filter(Boolean)
-    .some((dir) => fs.existsSync(path.join(dir, exe(name))));
-  const installed = async (id) => {
-    const has = (file) => fs.existsSync(file);
+  // Tools the person already has: Limix Bot uses them where they are and never installs a second copy.
+  // The PATH of a running app is frozen at launch, so a rescan also reads the current Machine and User PATH from Windows.
+  let freshPath = [];
+  const expandVars = (text) => text.replace(/%([^%]+)%/g, (_m, name) => process.env[name] ?? "");
+  async function rescan() {
+    if (process.platform !== "win32") { freshPath = []; return; }
+    const text = await new Promise((resolve) => {
+      execFile("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", "[Environment]::GetEnvironmentVariable('Path','Machine')+';'+[Environment]::GetEnvironmentVariable('Path','User')"],
+        { timeout: 8000, windowsHide: true }, (error, stdout) => resolve(error ? "" : String(stdout)));
+    });
+    freshPath = expandVars(text).split(";").map((dir) => dir.trim()).filter(Boolean);
+  }
+  const home = process.env.USERPROFILE ?? process.env.HOME ?? "";
+  const extraDirs = () => [
+    path.join(process.env.ProgramFiles ?? "C:\\Program Files", "nodejs"),
+    path.join(process.env.LOCALAPPDATA ?? "", "Microsoft", "WinGet", "Links"),
+    path.join(process.env.ProgramData ?? "C:\\ProgramData", "chocolatey", "bin"),
+    path.join(home, "scoop", "shims"),
+    path.join(home, ".local", "bin"),
+    path.join(process.env.APPDATA ?? "", "npm"),
+    ...(process.env.JAVA_HOME ? [path.join(process.env.JAVA_HOME, "bin")] : []),
+    ...(process.env.GHIDRA_INSTALL_DIR ? [path.join(process.env.GHIDRA_INSTALL_DIR, "support")] : []),
+  ];
+  const searchDirs = () => [...(process.env.PATH ?? "").split(path.delimiter), ...freshPath, ...extraDirs()].filter(Boolean);
+  const winExts = process.platform === "win32" ? [".exe", ".cmd", ".bat", ".com"] : [""];
+  /** First place on this computer where `name` runs, or null. */
+  const findOnSystem = (name) => {
+    for (const dir of searchDirs()) {
+      for (const ext of winExts) {
+        const file = path.join(dir, name + ext);
+        try { if (fs.statSync(file).isFile()) return file; } catch { /* not here */ }
+      }
+    }
+    return null;
+  };
+  const javaMajor = (file) => new Promise((resolve) => {
+    execFile(file, ["-version"], { timeout: 6000, windowsHide: true }, (error, stdout, stderr) => {
+      const m = /version "(\d+)(?:\.(\d+))?/.exec(`${stderr}${stdout}`);
+      resolve(m ? (m[1] === "1" ? Number(m[2]) : Number(m[1])) : 0);
+    });
+  });
+  const exeIn = (dir, name) => { for (const ext of winExts) { const f = path.join(dir, name + ext); if (fs.existsSync(f)) return f; } return null; };
+
+  /** Where a tool is: { from: "limix" | "system", where } or null. Limix's own copy wins; otherwise what the person installed. */
+  const locate = async (id) => {
+    const own = (file) => (file && fs.existsSync(file) ? { from: "limix", where: file } : null);
+    const sys = (file) => (file ? { from: "system", where: file } : null);
     switch (id) {
-      case "docker": return onPath("docker") || onPath("podman")
-        || has(path.join(process.env.ProgramFiles ?? "C:\\Program Files", "Docker", "Docker", "resources", "bin", "docker.exe"))
-        || has(path.join(process.env.ProgramFiles ?? "C:\\Program Files", "RedHat", "Podman", "podman.exe"));
-      case "node": return has(path.join(p.node, exe("node")));
-      case "ffmpeg": return has(path.join(p.ffmpeg, "bin", exe("ffmpeg")));
-      case "agent-reach": return has(path.join(p.bin, exe("agent-reach")));
-      case "rea-video": return has(path.join(p.bin, exe("rea-video")));
-      case "jdk": return has(path.join(p.jdk, "bin", exe("java")));
-      case "jadx": return has(path.join(p.jadx, "bin", process.platform === "win32" ? "jadx.bat" : "jadx"));
-      case "ghidra": return has(path.join(p.ghidra, "support", process.platform === "win32" ? "analyzeHeadless.bat" : "analyzeHeadless"));
-      case "rea": return reaAdded();
-      default: return false;
+      case "docker": return sys(findOnSystem("docker") ?? findOnSystem("podman")
+        ?? [path.join(process.env.ProgramFiles ?? "C:\\Program Files", "Docker", "Docker", "resources", "bin", "docker.exe"),
+            path.join(process.env.ProgramFiles ?? "C:\\Program Files", "RedHat", "Podman", "podman.exe")].find((f) => fs.existsSync(f)) ?? null);
+      case "node": return own(path.join(p.node, exe("node"))) ?? sys(findOnSystem("node"));
+      case "ffmpeg": return own(path.join(p.ffmpeg, "bin", exe("ffmpeg"))) ?? sys(findOnSystem("ffmpeg"));
+      case "agent-reach": return own(path.join(p.bin, exe("agent-reach"))) ?? sys(findOnSystem("agent-reach"));
+      case "rea-video": return own(path.join(p.bin, exe("rea-video"))) ?? sys(findOnSystem("rea-video"));
+      case "jdk": {
+        const mine = own(path.join(p.jdk, "bin", exe("java")));
+        if (mine) return mine;
+        const theirs = findOnSystem("java");
+        return theirs && (await javaMajor(theirs)) >= 17 ? sys(theirs) : null; // JADX and Ghidra need Java 17 or newer
+      }
+      case "jadx": return own(exeIn(path.join(p.jadx, "bin"), "jadx")) ?? sys(findOnSystem("jadx"));
+      case "ghidra": return own(exeIn(path.join(p.ghidra, "support"), "analyzeHeadless")) ?? sys(findOnSystem("analyzeHeadless"));
+      case "rea": return (await reaAdded()) ? { from: "limix", where: "MCP" } : null;
+      default: return null;
     }
   };
+  const installed = async (id) => Boolean(await locate(id));
 
-  const state = async () => {
+  const state = async ({ rescanPath = false } = {}) => {
+    if (rescanPath || freshPath.length === 0) await rescan();
     const items = [];
     for (const tool of CATALOG) {
       const job = jobs.get(tool.id);
-      items.push({ ...tool, needs: tool.needs ?? [], installed: await installed(tool.id), job: job ?? null });
+      const found = await locate(tool.id);
+      items.push({ ...tool, needs: tool.needs ?? [], installed: Boolean(found), source: found?.from ?? null, where: found?.where ?? null, job: job ?? null });
     }
     return { supported: process.platform === "win32" && Boolean(python), items };
   };
@@ -286,5 +337,5 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
     await fsp.writeFile(promptFile, JSON.stringify({ at: new Date().toISOString() }));
   }
 
-  return { state, install, shouldAsk, markAsked };
+  return { state, scan: () => state({ rescanPath: true }), install, shouldAsk, markAsked };
 }

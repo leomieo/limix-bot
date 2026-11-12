@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { LimixResizeHandles } from "./LimixResizeHandles";
 import { LIMIX_CLOUD_ENABLED } from "../../shared/limix-features";
 import { Archive, Cloud, Gauge, CloudDownload, Coins, Download, FlaskConical, KeyRound, LockKeyhole, Monitor, Palette, ScrollText, Search, Settings, Sparkles, TabletSmartphone, Terminal, User, Users, X, Building2, Zap, BookOpen, ImagePlus } from "lucide-react";
 import { useStore, type AppSettingsSection } from "@/state/store";
@@ -526,6 +527,7 @@ function SettingsDialog() {
           className="glass-surface glass-popup animate-pop-in relative flex overflow-hidden rounded-2xl text-ink"
         >
           <span id="app-settings-title" className="sr-only">{t("settings.title")}</span>
+          <LimixResizeHandles />
           <nav aria-label={t("settings.title")} className="glass-rail hidden min-h-0 w-[198px] shrink-0 flex-col gap-0.5 overflow-y-auto px-3 py-4 sm:flex">
             {searchField(
               "mb-2 flex h-8 shrink-0 items-center gap-2 rounded-lg bg-ink/[0.05] px-[9px] text-[13px] focus-within:ring-2 focus-within:ring-focus/60",
