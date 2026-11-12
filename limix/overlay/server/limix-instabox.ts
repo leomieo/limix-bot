@@ -6,7 +6,9 @@
 import { createHash, randomUUID } from "node:crypto";
 
 export const INSTABOX_API = "https://api.instabox.sh";
-export const INSTABOX_TEMPLATE = "universal";
+/** Instabox's free plan creates only from agent-browser, android, omarchy or ci (refused with template_not_allowed, seen
+ * 2026-11-12): universal first, then agent-browser, a Linux desktop with a browser. */
+export const INSTABOX_TEMPLATES = ["universal", "agent-browser"] as const;
 const DESKTOP_WIDTH = 1280;
 const DESKTOP_HEIGHT = 800;
 const EXEC_MAX_SECONDS = 600;
@@ -196,13 +198,18 @@ export async function instaboxFetch(rawToken: string, path: string, opts: Reques
     }
     if (method === "POST") {
       const name = typeof reqBody?.name === "string" ? reqBody.name : undefined;
-      const created = await ib(token, "/v1/machines", {
-        method: "POST",
-        idempotent: true,
-        headers: reqHeaders.get("Idempotency-Key") ? { "Idempotency-Key": reqHeaders.get("Idempotency-Key")! } : {},
-        body: { ...(name ? { name } : {}), templateId: INSTABOX_TEMPLATE, autoSuspendAfterSeconds: IDLE_SUSPEND_SECONDS, desiredState: "running" },
-        signal,
-      });
+      const key = reqHeaders.get("Idempotency-Key");
+      let created!: Awaited<ReturnType<typeof ib>>;
+      for (const templateId of INSTABOX_TEMPLATES) {
+        created = await ib(token, "/v1/machines", {
+          method: "POST",
+          idempotent: true,
+          headers: key ? { "Idempotency-Key": `${key}-${templateId}` } : {},
+          body: { ...(name ? { name } : {}), templateId, autoSuspendAfterSeconds: IDLE_SUSPEND_SECONDS, desiredState: "running" },
+          signal,
+        });
+        if (created.body?.error?.code !== "template_not_allowed") break;
+      }
       if (!created.ok) {
         if (created.status === 409 && created.body?.error?.code === "idempotency_in_progress") return json(409, { ok: false, error: { code: "idempotency_in_progress" } });
         return boatError(created.status, created.body);
