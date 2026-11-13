@@ -1,0 +1,68 @@
+# Chạy Limix Bot trên máy chủ riêng (VPS) 24/7
+
+Tắt máy tính, đóng ứng dụng Limix Bot: bot trên máy chủ vẫn trả lời Telegram, Zalo, Discord và chạy việc định kỳ.
+
+## Cần chuẩn bị
+
+- Một VPS Ubuntu 22.04 hoặc 24.04, x86-64, tối thiểu 2 CPU, 4 GB RAM (nên 8 GB), 20 GB ổ trống.
+- Một tên miền (ví dụ `bot.tenmien.com`) đã trỏ bản ghi A về địa chỉ IP của VPS.
+- Cổng 80 và 443 trên VPS còn trống.
+
+## Bước 1. Cài lên VPS (một lệnh)
+
+Đăng nhập VPS bằng SSH, dán:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/leomieo/limix-bot/main/deploy/install.sh | sudo sh -s -- --domain bot.tenmien.com
+```
+
+Trình cài kiểm tra máy trước (không đổi gì nếu chưa đạt), rồi cài Docker (hỏi trước), tải bản Limix Bot mới nhất
+(`ghcr.io/leomieo/limix-bot`), bật HTTPS và in ra một đường link. Mọi thứ nằm ở `/opt/limixbot`; dữ liệu ở
+`/opt/limixbot/data` và không bị đụng tới khi cài lại hay cập nhật.
+
+Chỉ muốn kiểm tra máy: thêm `--check`. Cập nhật: chạy lại đúng lệnh trên.
+
+## Bước 2. Nối ứng dụng trên máy tính với máy chủ
+
+Trong Limix Bot: **＋ → Kết nối với máy chủ**, dán link trình cài vừa in. Thanh bên trái sẽ có thêm máy chủ.
+
+Muốn chuyển bot đang có sang máy chủ: trên thanh bên trái, chọn máy chủ → **Đặt … làm nơi chính** (chuyển bot,
+cuộc trò chuyện, bộ nhớ và việc định kỳ).
+
+## Bước 3. Đăng nhập AI trên máy chủ
+
+Khi đang chọn máy chủ, vào phần AI của bot và đăng nhập như trên máy tính:
+
+- **ChatGPT / Codex (gói Plus, Pro…)**: bản cài có sẵn Codex CLI; đăng nhập bằng mã thiết bị (mở link, nhập mã).
+  Phiên đăng nhập lưu trên máy chủ và tự gia hạn.
+- **API key** (OpenRouter, DeepSeek, OpenAI, Anthropic, Gemini…): dán key như bình thường.
+
+Lưu ý: mỗi người tự đăng nhập tài khoản AI của chính mình. Không dùng chung một tài khoản gói cho nhiều khách.
+
+## Bước 4. Kết nối Telegram / Zalo / Discord trên máy chủ
+
+Trên máy chủ, chương trình kết nối luôn chạy cùng Limix Bot. Mở trang của nó bằng trình duyệt (đã đăng nhập máy chủ):
+
+```
+https://bot.tenmien.com/api/limix/gateway/
+```
+
+Thêm kết nối như trên máy tính, chọn bot của máy chủ trong danh sách.
+
+Quan trọng: một bot Telegram/Zalo chỉ nên được kết nối ở **một nơi**. Khi đã kết nối trên máy chủ, hãy xóa kết nối
+đó trong ứng dụng trên máy tính, nếu không hai nơi sẽ tranh nhau tin nhắn.
+
+## Máy chủ tự lo những gì
+
+- Tự chạy lại khi Limix Bot lỗi hoặc VPS khởi động lại (Docker `restart: unless-stopped`).
+- Chương trình kết nối Telegram/Zalo/Discord tự chạy lại nếu dừng.
+- Mỗi bot giữ bộ nhớ, cấu hình, quyền và việc định kỳ riêng.
+
+## Giới hạn hiện tại
+
+- Bản máy chủ chưa có "hộp cát" (sandbox) cứng cho từng bot như bản OpenMausBot mới nhất; trình cài sẽ báo. Chỉ
+  dùng VPS riêng cho Limix Bot.
+- Trang kết nối Telegram/Zalo/Discord hiện chỉ có tiếng Việt.
+- Không khuyến khích đăng nhập Google Antigravity (gói Google AI) trên máy chủ: Google đã khóa quyền dùng của các
+  tài khoản đưa phiên đăng nhập Antigravity vào công cụ bên thứ ba. Trên máy chủ nên dùng API key Gemini (AI Studio
+  hoặc Vertex).
