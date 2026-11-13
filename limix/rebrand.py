@@ -1868,6 +1868,28 @@ def limix_installer(s):
     return re.sub(r"(?<![A-Za-z/])MausBot(?![A-Za-z])", "Limix Bot", s)
 edit("deploy/install.sh", limix_installer)
 
+# 11j. Skills in the app's language: shipped skills show their description in Vietnamese or English (limixSkillText),
+# skills a bot writes itself are written in the app's language (Vietnamese app → Vietnamese text, name stays ASCII),
+# and the phone skills no longer say MausBot.
+def skills_text_route(s):
+    if "limixSkillText" in s:
+        return s
+    s = must(s, 'import { handleLimixSkillStore, LIMIX_CORE_SKILLS, ', 'import { handleLimixSkillStore, LIMIX_CORE_SKILLS, limixSkillText, ')
+    return must(s, "name: manifest.name, description: manifest.description, defaultEnabled:", "name: manifest.name, description: limixSkillText(manifest.id, manifest.description), defaultEnabled:")
+edit("server/routes/bot-skills.ts", skills_text_route)
+def skills_learn_language(s):
+    if "limix-lang.ts" in s:
+        return s
+    s = must(s, 'import { SAVE_RUN_AS_SKILL_LINE } from "../shared/learn-request.ts";\n',
+             'import { SAVE_RUN_AS_SKILL_LINE } from "../shared/learn-request.ts";\nimport { lxs } from "./limix-lang.ts";\n')
+    return must(s, "- Frame work through tools this bot actually has: file tools, terminal, browser, phone, or skill_manage. Do not name shell utilities the file tools already wrap.`;",
+                "- Frame work through tools this bot actually has: file tools, terminal, browser, phone, or skill_manage. Do not name shell utilities the file tools already wrap.${lxs(\"\\n\\nLanguage: write the description and all prose of SKILL.md (title, sections, steps) in Vietnamese, the language of this app. Keep `name` lowercase-hyphenated ASCII, and keep commands, paths, tool names and code exactly as they are.\", \"\")}`;")
+edit("server/skill-learn.ts", skills_learn_language)
+def phone_skill_names(s):
+    return s.replace("OpenMausBot", "Limix Bot").replace("MausBot Relay", "Limix Bot Relay").replace("MausBot", "Limix Bot")
+for f in ["skills/phone-connection/SKILL.md", "skills/phone-connection/manifest.json", "skills/phone-harness/SKILL.md", "skills/phone-harness/agents/openai.yaml"]:
+    edit(f, phone_skill_names)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):
