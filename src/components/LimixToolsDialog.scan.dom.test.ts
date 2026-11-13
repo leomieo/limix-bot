@@ -41,3 +41,32 @@ it("scans again on demand and shows requirements, evidence and incomplete checks
     else Reflect.deleteProperty(window, "ogb");
   }
 });
+
+it("reviews missing packages and the destination before starting the batch installer", async () => {
+  setLocale("en");
+  const snapshot = { supported: true, items: [], skillScan: { skillCount: 1, requirements: [
+    { id: "req-remotion", installable: true, packages: ["remotion", "@remotion/cli"], optional: true, skill: "video", directory: "/skills/video", kind: "npm", name: "remotion", status: "missing", evidence: "Code rendering" },
+  ] } };
+  const scan = vi.fn().mockResolvedValue(snapshot);
+  const installRequirements = vi.fn().mockResolvedValue(snapshot);
+  const original = Object.getOwnPropertyDescriptor(window, "ogb");
+  Object.defineProperty(window, "ogb", { configurable: true, value: { pickFolder: vi.fn().mockResolvedValue("C:/Video project"), limixTools: { scan, installRequirements } } });
+  const host = document.createElement("div");
+  document.body.append(host);
+  const root = createRoot(host);
+  const button = (text: string) => [...document.querySelectorAll("button")].find((node) => node.textContent === text)!;
+  try {
+    flushSync(() => root.render(createElement(LimixToolsDialog, { onClose: vi.fn() })));
+    await vi.waitFor(() => expect(button("Install all missing requirements")).toBeDefined());
+    flushSync(() => button("Install all missing requirements").click());
+    await vi.waitFor(() => expect(document.body.textContent).toContain("C:/Video project"));
+    expect(installRequirements).not.toHaveBeenCalled();
+    flushSync(() => button("Install packages").click());
+    await vi.waitFor(() => expect(installRequirements).toHaveBeenCalledWith(["req-remotion"], "C:/Video project"));
+  } finally {
+    flushSync(() => root.unmount());
+    host.remove();
+    if (original) Object.defineProperty(window, "ogb", original);
+    else Reflect.deleteProperty(window, "ogb");
+  }
+});

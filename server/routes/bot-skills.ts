@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isAbsolute } from "node:path";
 
 import { handleLimixBotLibrary } from "../limix-bot-library.ts";
 import type { SkillsLibrarySkillWire } from "../../shared/wire.ts";
@@ -36,6 +37,11 @@ export function createBotSkillsRoutes(deps: BotSkillsRouteDeps): RouteHandler {
     let m: RegExpMatchArray | null = null;
     if (method === "GET" && path === "/api/limix/skill-requirements") {
       return json(res, 200, await scanSkillRequirements(store.bots, cfg.mcpServers));
+    }
+    if (method === "POST" && path === "/api/limix/skill-requirements/scan") {
+      const input = z.object({ projects: z.array(z.string().max(4096).refine(isAbsolute)).max(200) }).safeParse(await readBody(req));
+      if (!input.success) return json(res, 400, { error: "Choose valid project folders" });
+      return json(res, 200, await scanSkillRequirements(store.bots, cfg.mcpServers, input.data.projects));
     }
     if (path.startsWith("/api/limix/gateway") && proxyLimixGateway(req, res, path)) return;
     if (path.startsWith("/api/limix/bots")) {

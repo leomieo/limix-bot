@@ -173,3 +173,7 @@
 - Bản mẫu: tab Bản mẫu Nhóm tách khỏi Khám phá; Cập nhật chung tải lại hai kho, xử lý lỗi từng kho. Tạo và đẩy 16 Bot mẫu lên repo công khai leomieo/limix-bot-templates theo yêu cầu chủ dự án. Workflow cập nhật danh mục đã thành công; fixture control:omb tải thật 16 Bot + 2 nhóm, Dev có mô tả Việt và soul Anh. Repo nhóm vẫn leomieo/limix-bot-teams.
 
 - 0.3.29 bổ sung theo yêu cầu mới: Quét máy đọc yêu cầu skill tích hợp, thư viện, skill riêng từng Bot và các thư mục .agents/.codex/.claude; đọc SKILL.md và tài liệu phụ trợ, metadata, package.json, requirements.txt/pyproject. Kiểm tra CLI/npm/Python/env trên host; ràng buộc phiên bản/MCP/yêu cầu không tự kiểm được báo cần kiểm tra. Fixture riêng đã nhận Remotion có sẵn và CLI còn thiếu; 8 test liên quan đạt, typecheck đạt.
+
+- 0.3.30: quét chỉ skill tích hợp và đã tải/cài vào Limix Bot, bỏ skill ngoài app và kho chưa tải. Sửa parser không tách văn xuôi thành tên gói. Thêm cài từng mục/tất cả thiếu, chọn và xem lại dự án đích, npm/Python .venv, công cụ cơ bản dùng installer hiện có. Thử thật Remotion + CLI 4.0.543 và packaging 26.3 trong project tạm: rescan nhận đầy đủ. Sửa Update Codex trước cài lại pin 0.167.0: update lấy npm latest, chuyển đúng CLI và xác minh phiên bản thực tế; 23 test registry/route/UI đạt.
+
+- 0.3.30 bổ sung giao diện Hub: bỏ tab Nguồn, chuyển Đồng bộ ngay sang Khám phá, giữ thời điểm/lỗi đồng bộ ở đó; test DOM đạt. Luồng Update Codex đã thử tải thật vào prefix tạm: expected 0.169.0, CLI báo codex-cli 0.169.0.

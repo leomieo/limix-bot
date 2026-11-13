@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync, realpathSync, existsSync } from "node:fs";
+import { readdirSync, readFileSync, statSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve, relative, isAbsolute, delimiter } from "node:path";
 import { execFile } from "node:child_process";
@@ -12,7 +12,7 @@ import { workspaceDir } from "./workspace.ts";
 import type { BotRecord } from "./store.ts";
 
 type Kind = "bin" | "npm" | "python" | "env" | "mcp" | "review";
-export interface SkillRequirement { kind: Kind; name: string; required?: string; evidence: string }
+export interface SkillRequirement { kind: Kind; name: string; required?: string; evidence: string; optional?: boolean }
 interface Source { name: string; directory: string; projects: string[] }
 export interface SkillRequirementResult extends SkillRequirement {
   skill: string;
@@ -63,14 +63,34 @@ export function extractSkillRequirements(text: string): SkillRequirement[] {
       add("review", "SKILL.md metadata", "Could not parse the requirements metadata");
     }
   }
-  for (const match of body.matchAll(/\b(npm\s+(?:install|i)|pnpm\s+add|yarn\s+add|bun\s+add|pip3?\s+install|uv\s+(?:pip\s+install|add|tool\s+install))\s+([^\n`]+)/gi)) {
-    const kind = /pip|^uv/i.test(match[1]!) ? "python" : "npm";
-    for (const token of match[2]!.split(/\s+/)) if (!token.startsWith("-") && !/^[;&|#]/.test(token)) add(kind, token, match[0]!);
+  const requirementLines = [front?.[1] ?? "", ...body.split(/\r?\n/).filter((line) => /requires?|prerequisit|dependenc|compatibility|yêu cầu|cần cài/i.test(line))].join("\n");
+  for (const [pattern, name] of [[/\bffmpeg\b/i, "ffmpeg"], [/\bnode(?:\.js)?\b/i, "node"], [/\bdocker\b/i, "docker"], [/\bjava\b/i, "java"]] as const) {
+    if (pattern.test(requirementLines) && !out.some((r) => r.kind === "bin" && r.name === name)) add("bin", name, "Mentioned in requirements / compatibility; check version in source");
   }
-  for (const match of body.matchAll(/\b(?:npx|bunx|pnpm\s+(?:exec|dlx))\s+(?:--?[\w-]+(?:=[^\s]+)?\s+)*((?:@[\w.-]+\/)?[\w.-]+(?:@[\w.^~+-]+)?)/g)) {
+  const commands = [...body.matchAll(/```[^\n]*\n([\s\S]*?)```/g), ...body.matchAll(/`([^`\n]+)`/g)].map((m) => m[1]!).join("\n") + "\n" + body.split(/\r?\n/).filter((line) => /^\s*(?:\$\s*)?(?:npm|pnpm|yarn|bun|pip3?|uv|npx|bunx)\s/.test(line)).join("\n");
+  for (const match of commands.matchAll(/\b(npm\s+(?:install|i)|pnpm\s+add|yarn\s+add|bun\s+add|pip3?\s+install|uv\s+(?:pip\s+install|add|tool\s+install))\s+([^\n`]+)/gi)) {
+    const kind = /pip|^uv/i.test(match[1]!) ? "python" : "npm";
+    for (const raw of match[2]!.match(/"[^"]*"|'[^']*'|\S+/g) ?? []) {
+      const token = raw.replace(/^["']|["']$/g, "");
+      if (/^[;&|#\\]/.test(token)) break;
+      if (token.startsWith("-")) {
+        if (["--save", "--save-dev", "--save-exact", "--no-audit", "--no-fund", "-D", "-g", "--global", "--user", "--upgrade", "-U"].includes(token)) continue;
+        add("review", match[0], "Install command needs review");
+        break;
+      }
+      if (!/^(?:@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*(?:(?:@|>=|<=|==|~=|>|<|=)[\w.^~*+<>=|,-]+)?$/i.test(token)) {
+        add("review", match[0], "Install command needs review");
+        break;
+      }
+      add(kind, token, match[0]!);
+    }
+  }
+  for (const match of commands.matchAll(/\b(?:npx|bunx|pnpm\s+(?:exec|dlx))\s+(?:--?[\w-]+(?:=[^\s]+)?\s+)*((?:@[\w.-]+\/)?[\w.-]+(?:@[\w.^~+-]+)?)/g)) {
     add("npm", match[1] === "remotion" ? "@remotion/cli" : match[1], match[0]);
   }
-  if (/\bremotion\b/i.test(text)) { add("npm", "remotion", "Remotion"); add("npm", "@remotion/cli", "Remotion CLI"); }
+  if (/\bremotion\b/i.test(text)) {
+    for (const name of ["remotion", "@remotion/cli"]) if (!out.some((r) => r.kind === "npm" && r.name === name)) out.push({ kind: "npm", name, evidence: "Remotion code-rendering workflow", optional: true });
+  }
   let section = false;
   for (const line of body.split(/\r?\n/)) {
     if (/^#{1,6}\s/.test(line)) section = /prerequisit|requirement|dependenc|installation|setup|yêu cầu|cài đặt|phụ thuộc/i.test(line);
@@ -128,7 +148,7 @@ export function findSkillPythonPackage(name: string, roots: string[]): { version
   return null;
 }
 
-export async function scanSkillRequirements(bots: readonly Pick<BotRecord, "id" | "name" | "cwd" | "computer">[], mcpServers: Record<string, unknown> = {}) {
+export async function scanSkillRequirements(bots: readonly Pick<BotRecord, "id" | "name" | "cwd" | "computer">[], mcpServers: Record<string, unknown> = {}, projects: string[] = []) {
   const sources = new Map<string, Source>();
   const warnings: string[] = [];
   const add = (name: string, directory: string, projects: string[] = []) => {
@@ -146,18 +166,6 @@ export async function scanSkillRequirements(bots: readonly Pick<BotRecord, "id" 
     if (skill.directory) add(`${skill.name} (${bot.name})`, skill.directory, [bot.cwd ?? workspaceDir(bot.id)]);
   }
   const home = homedir();
-  const walkSkills = (root: string, depth = 0, projects: string[] = []) => {
-    if (depth > 3 || !existsSync(root)) return;
-    try {
-      if (statSync(join(root, "SKILL.md"), { throwIfNoEntry: false })?.isFile()) { add(root.split(/[\\/]/).at(-1)!, root, projects); return; }
-      for (const entry of readdirSync(root, { withFileTypes: true })) if (entry.name !== "node_modules" && entry.name !== ".git" && (entry.isDirectory() || entry.isSymbolicLink())) walkSkills(join(root, entry.name), depth + 1, projects);
-    } catch { warnings.push(`Could not enumerate ${root}`); }
-  };
-  for (const root of [join(home, ".agents", "skills"), join(process.env.CODEX_HOME ?? join(home, ".codex"), "skills"), join(process.env.CLAUDE_CONFIG_DIR ?? join(home, ".claude"), "skills"), join(home, ".gemini", "skills"), join(home, ".gemini", "antigravity", "skills")]) walkSkills(root);
-  for (const bot of bots.filter((b) => !b.computer || b.computer === "local")) {
-    const cwd = bot.cwd ?? workspaceDir(bot.id);
-    for (const folder of [".agents", ".claude", ".codex", ".gemini"]) walkSkills(join(cwd, folder, "skills"), 0, [cwd]);
-  }
   const dirs = `${process.env.OMB_EXTRA_PATH ?? ""}${delimiter}${process.env.PATH ?? ""}`.split(delimiter).filter(Boolean);
   if (process.platform === "win32") {
     try {
@@ -213,12 +221,12 @@ export async function scanSkillRequirements(bots: readonly Pick<BotRecord, "id" 
         result.status = where ? req.required ? "review" : "found" : "missing";
         if (where) result.where = where;
       } else if (req.kind === "npm") {
-        const pkg = findSkillNpmPackage(req.name, [source.directory, ...source.projects, ...bots.filter((b) => !b.computer || b.computer === "local").map((b) => b.cwd ?? workspaceDir(b.id)), join(process.env.APPDATA ?? home, "npm")]);
+        const pkg = findSkillNpmPackage(req.name, [source.directory, ...source.projects, ...projects, ...bots.filter((b) => !b.computer || b.computer === "local").map((b) => b.cwd ?? workspaceDir(b.id)), join(process.env.APPDATA ?? home, "npm")]);
         result.status = pkg ? req.required && req.required !== "*" ? "review" : "found" : "missing";
         if (pkg) Object.assign(result, pkg);
       } else if (req.kind === "env") result.status = process.env[req.name] ? "found" : "missing";
       else if (req.kind === "python") {
-        const pkg = findSkillPythonPackage(req.name, [source.directory, ...source.projects, ...bots.filter((b) => !b.computer || b.computer === "local").map((b) => b.cwd ?? workspaceDir(b.id))]);
+        const pkg = findSkillPythonPackage(req.name, [source.directory, ...source.projects, ...projects, ...bots.filter((b) => !b.computer || b.computer === "local").map((b) => b.cwd ?? workspaceDir(b.id))]);
         if (pkg) { Object.assign(result, pkg); result.status = req.required ? "review" : "found"; }
       }
       else if (req.kind === "mcp") result.where = Object.hasOwn(mcpServers, req.name) ? "Configured; connection needs checking" : "No matching MCP configuration";

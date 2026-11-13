@@ -25,7 +25,7 @@ interface HubState { repo: string; settings: { autoSync: boolean; autoInstall: b
 const PAGE = 12;
 const TABS = [
   ["discover", () => lx("Khám phá", "Discover")], ["recommended", () => lx("Khuyên dùng", "Recommended")], ["installed", () => lx("Đã cài", "Installed")], ["updates", () => lx("Cập nhật", "Updates")],
-  ["security", () => lx("Bảo mật", "Security")], ["sources", () => lx("Nguồn", "Sources")], ["settings", () => lx("Cài đặt", "Settings")],
+  ["security", () => lx("Bảo mật", "Security")], ["settings", () => lx("Cài đặt", "Settings")],
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
@@ -212,17 +212,7 @@ export function LimixSkillHub() {
           })}
         </div>
         {error && <p className="text-[12px] text-danger">{error}</p>}
-        {!state ? <Loader2 size={15} className="animate-spin text-ink-secondary" /> : tab === "sources" ? (
-          <div className="flex flex-col gap-1 text-[13px] text-ink-secondary">
-            <p>{lx("Kho", "Repository")}: <span className="font-mono text-ink">{state.repo}</span> ({skills.length} {lx("kỹ năng trong danh mục", "skills in the catalog")})</p>
-            <p>{lx("Hub tự tìm kỹ năng mỗi ngày lúc 03:00 giờ Việt Nam, quét an toàn và chấm điểm trước khi đưa vào danh mục.", "The hub looks for new skills every day at 03:00 (Vietnam time), scans them for safety and scores them before adding them to the catalog.")}</p>
-            <p>{lx("Đồng bộ gần nhất", "Last sync")}: {state.settings.lastSync ? new Date(state.settings.lastSync).toLocaleString(lx("vi-VN", "en-US")) : lx("chưa lần nào", "never")}</p>
-            {state.settings.lastError && <p className="text-danger">{lx("Lỗi gần nhất", "Last error")}: {state.settings.lastError}</p>}
-            <button type="button" className={`${button} w-fit`} disabled={busy !== null} onClick={() => void syncNow()}>
-              {busy === "sync" ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}{lx("Đồng bộ ngay", "Sync now")}
-            </button>
-          </div>
-        ) : tab === "settings" ? (
+        {!state ? <Loader2 size={15} className="animate-spin text-ink-secondary" /> : tab === "settings" ? (
           <div className="flex flex-col gap-3 text-[13px] text-ink">
             <label className="flex items-center justify-between gap-3">
               <span>{lx("Tự đồng bộ danh mục", "Sync the catalog automatically")}<span className="block text-[12px] text-ink-secondary">{lx("Chỉ cập nhật danh sách, không cài gì.", "Only refreshes the list, installs nothing.")}</span></span>
@@ -241,10 +231,17 @@ export function LimixSkillHub() {
                 <option value="">{lx("Mọi nhóm", "All categories")}</option>
                 {categories.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
+              {tab === "discover" && <button type="button" className={`${button} shrink-0`} disabled={busy !== null} onClick={() => void syncNow()}>
+                {busy === "sync" ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}{lx("Đồng bộ ngay", "Sync now")}
+              </button>}
             </div>
+            {tab === "discover" && <>
+              <p className="text-[12px] text-ink-tertiary" role="status">{lx("Đồng bộ gần nhất", "Last sync")}: {state.settings.lastSync ? new Date(state.settings.lastSync).toLocaleString(lx("vi-VN", "en-US")) : lx("chưa lần nào", "never")}</p>
+              {state.settings.lastError && <p className="text-[12px] text-danger">{lx("Lỗi đồng bộ gần nhất", "Last sync error")}: {state.settings.lastError}</p>}
+            </>}
             {visible.length === 0 ? (
               <p className="text-[13px] text-ink-secondary">
-                {skills.length === 0 ? lx("Chưa có danh mục. Bấm Đồng bộ ở mục Nguồn.", "No catalog yet. Press Sync under Sources.") : lx("Không có kỹ năng nào ở mục này.", "No skills in this tab.")}
+                {skills.length === 0 ? lx("Chưa có danh mục. Mở Khám phá và bấm Đồng bộ ngay.", "No catalog yet. Open Discover and press Sync now.") : lx("Không có kỹ năng nào ở mục này.", "No skills in this tab.")}
               </p>
             ) : (
               <>

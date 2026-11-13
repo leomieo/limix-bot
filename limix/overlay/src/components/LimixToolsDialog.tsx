@@ -6,12 +6,12 @@ import { lx } from "@/lib/limix-text";
 /** "Công cụ cho kỹ năng": what this computer still lacks for the default skills, the private computer and the
  * suggested MCP, with an Install button each (electron/limix-tools.mjs does the work). */
 
-interface ToolJob { status: "working" | "error"; step?: string | null; progress?: number | null; message?: string | null }
+interface ToolJob { status: "working" | "error" | "done"; step?: string | null; progress?: number | null; message?: string | null; project?: string }
 interface ToolItem { id: string; name: string; why: string; size: string; recommended?: boolean; needs: string[]; installed: boolean; source?: "limix" | "system" | null; where?: string | null; job: ToolJob | null }
-interface SkillRequirement { skill: string; directory: string; kind: string; name: string; required?: string; evidence: string; status: "found" | "missing" | "review"; version?: string; where?: string }
+interface SkillRequirement { id?: string; installable?: boolean; packages?: string[]; job?: ToolJob | null; optional?: boolean; skill: string; directory: string; kind: string; name: string; required?: string; evidence: string; status: "found" | "missing" | "review"; version?: string; where?: string }
 interface SkillScan { error?: string; skillCount?: number; scannedAt?: string; requirements?: SkillRequirement[]; warnings?: string[] }
 interface ToolsState { supported: boolean; items: ToolItem[]; skillScan?: SkillScan | null }
-type Bridge = { state(): Promise<ToolsState>; scan?(): Promise<ToolsState>; install(ids: string[]): Promise<ToolsState>; shouldAsk(): Promise<boolean>; markAsked(): Promise<void> };
+type Bridge = { state(): Promise<ToolsState>; scan?(): Promise<ToolsState>; install(ids: string[]): Promise<ToolsState>; installRequirements?(ids: string[], project: string): Promise<ToolsState>; shouldAsk(): Promise<boolean>; markAsked(): Promise<void> };
 
 export const limixTools = (): Bridge | undefined => (window as unknown as { ogb?: { limixTools?: Bridge } }).ogb?.limixTools;
 
@@ -20,6 +20,7 @@ const button = "inline-flex items-center gap-1.5 rounded-lg border border-hairli
 export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => void; asking?: boolean }) {
   const [state, setState] = useState<ToolsState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [installation, setInstallation] = useState<{ rows: SkillRequirement[]; project: string; baseIds: string[] } | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -50,7 +51,7 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
     if (asking) void limixTools()?.markAsked().catch(() => undefined);
   }, [scan, asking]);
 
-  const busy = Boolean(state?.items.some((item) => item.job?.status === "working"));
+  const busy = Boolean(state?.items.some((item) => item.job?.status === "working") || state?.skillScan?.requirements?.some((item) => item.job?.status === "working"));
   useEffect(() => {
     if (!busy) return;
     const timer = setInterval(() => void refresh(), 1000);
@@ -75,6 +76,27 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
 
   const missing = state?.items.filter((item) => !item.installed) ?? [];
   const missingRecommended = missing.filter((item) => item.recommended);
+  const missingPackages = (state?.skillScan?.requirements ?? []).filter((row) => row.id && row.installable && row.status === "missing");
+  const prepareInstall = async (rows: SkillRequirement[], baseIds: string[] = []) => {
+    setError(null);
+    try {
+      const project = await window.ogb?.pickFolder?.();
+      if (project) setInstallation({ rows, project, baseIds });
+    } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+  };
+  const confirmInstall = async () => {
+    if (!installation) return;
+    const selected = installation;
+    setInstallation(null);
+    setError(null);
+    try {
+      const bridge = limixTools();
+      if (!bridge?.installRequirements) throw new Error(lx("Hãy cập nhật Limix Bot để cài gói kỹ năng.", "Update Limix Bot to install skill packages."));
+      if (selected.baseIds.length) await bridge.install(selected.baseIds);
+      const next = await bridge.installRequirements(selected.rows.map((row) => row.id!), selected.project);
+      setState(next);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+  };
 
   const body = !limixTools() ? (
     <p className="text-[13px] text-ink-secondary">{lx("Mở mục này trong ứng dụng Limix Bot trên máy tính.", "Open this in the Limix Bot desktop app.")}</p>
@@ -149,16 +171,28 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
       </div>
       {state.skillScan && <section className="mt-2 border-t border-hairline/40 pt-4" aria-label={lx("Yêu cầu của kỹ năng đã cài", "Installed skill requirements")}>
         <h3 className="text-[14px] font-medium text-ink">{lx("Yêu cầu của kỹ năng đã cài", "Installed skill requirements")}</h3>
+        {missingPackages.length > 0 && limixTools()?.installRequirements && <button type="button" className={`${button} mt-3`} disabled={busy || scanning} onClick={() => void prepareInstall(missingPackages, missing.map((item) => item.id))}><Download size={14} />{lx("Cài tất cả còn thiếu", "Install all missing requirements")}</button>}
+        {installation && <div className="my-3 rounded-xl border border-hairline/40 bg-raised p-3 text-[12px]">
+          <p className="font-medium text-ink">{lx("Cài vào thư mục dự án", "Install into project folder")}</p>
+          <p className="mt-1 break-all text-ink-secondary">{installation.project}</p>
+          <p className="mt-1 break-words text-ink-secondary">{[...new Set(installation.rows.flatMap((row) => row.packages ?? [row.name]))].join(", ")}{installation.baseIds.length > 0 && ` · ${installation.baseIds.join(", ")}`}</p>
+          <p className="mt-2 text-ink-tertiary">{lx("npm lưu gói vào dự án; Python dùng .venv. Công cụ cơ bản dùng bản cài của Limix Bot. Các gói đánh dấu Tùy chọn chỉ cần cho chức năng tương ứng.", "npm saves packages in the project; Python uses .venv. Base tools use the Limix Bot installer. Optional packages are needed only for the corresponding workflow.")}</p>
+          <div className="mt-3 flex gap-2"><button type="button" className={button} onClick={() => void confirmInstall()}>{lx("Cài đặt", "Install packages")}</button><button type="button" className={button} onClick={() => setInstallation(null)}>{lx("Hủy", "Cancel")}</button></div>
+        </div>}
         {state.skillScan.error ? <p role="alert" className="mt-2 text-[12px] text-danger">{lx("Chưa đọc được yêu cầu kỹ năng: ", "Could not read skill requirements: ")}{state.skillScan.error}</p> : <>
           <p className="mt-1 text-[12px] text-ink-secondary">{lx(`Đã đọc ${state.skillScan.skillCount ?? 0} kỹ năng. Kết quả kiểm tra trên máy chạy Limix Bot; môi trường Docker và cloud cần kiểm tra riêng.`, `Read ${state.skillScan.skillCount ?? 0} skills. Checks apply to the computer running Limix Bot; Docker and cloud environments need separate checks.`)}</p>
           <p className="mt-1 text-[12px] text-ink-tertiary">{lx("Gồm yêu cầu khai báo và công cụ được nhắc trong hướng dẫn. Xem nguồn để phân biệt yêu cầu bắt buộc và ví dụ; ràng buộc phiên bản chưa xác minh sẽ hiện Cần kiểm tra.", "Includes declared requirements and tools mentioned in instructions. Inspect the source to distinguish prerequisites from examples; unverified version constraints are marked Needs review.")}</p>
           <ul className="mt-3 flex flex-col divide-y divide-hairline/40 rounded-xl border border-hairline/40">
             {(state.skillScan.requirements ?? []).map((req, index) => <li key={`${req.directory}:${index}`} className="px-3 py-2 text-[12px]">
               <div className="flex items-start justify-between gap-3">
-                <span className="min-w-0 break-words font-medium text-ink">{req.name}{req.required && ` ${req.required}`}</span>
+                <span className="min-w-0 break-words font-medium text-ink">{req.name}{req.required && ` ${req.required}`}{req.optional && <span className="ms-1 font-normal text-ink-tertiary">· {lx("Tùy chọn", "Optional")}</span>}</span>
                 <span className={req.status === "missing" ? "shrink-0 text-danger" : "shrink-0 text-ink-secondary"}>{req.status === "found" ? lx("Đã tìm thấy", "Found") : req.status === "missing" ? lx("Chưa tìm thấy", "Not found") : lx("Cần kiểm tra", "Needs review")}</span>
               </div>
               <p className="mt-1 break-words text-ink-secondary" title={req.directory}>{req.skill} · {req.kind}{req.version && ` · ${req.version}`}</p>
+              {req.status === "review" && <p className="mt-1 text-ink-tertiary">{lx("Chưa xác minh tự động: có thể là hướng dẫn, yêu cầu cấu hình hoặc giới hạn phiên bản. Xem nguồn bên dưới.", "Not automatically verified: this may be setup guidance, configuration or a version constraint. See the source below.")}</p>}
+              {req.job?.status === "working" ? <p className="mt-1 flex items-center gap-1 text-ink-secondary"><Loader2 size={12} className="animate-spin" />{req.job.step ?? lx("Đang cài", "Installing")}</p> : req.installable && req.id && req.status === "missing" && limixTools()?.installRequirements ? <button type="button" className={`${button} mt-2`} disabled={busy || scanning} onClick={() => void prepareInstall([req])}><Download size={12} />{req.job?.status === "error" ? lx("Thử lại", "Retry") : lx("Cài", "Install")}</button> : null}
+              {req.job?.status === "error" && <p role="alert" className="mt-1 text-danger">{req.job.message}</p>}
+              {req.job?.status === "done" && <p className="mt-1 break-all text-ink-secondary">{lx("Đã chạy cài đặt tại ", "Installation completed in ")}{req.job.project}</p>}
               <details className="mt-1 text-ink-tertiary"><summary className="cursor-pointer">{lx("Xem nguồn yêu cầu", "Requirement source")}</summary><pre className="mt-1 whitespace-pre-wrap break-words font-sans">{req.evidence}{req.where && `\n${req.where}`}</pre></details>
             </li>)}
           </ul>

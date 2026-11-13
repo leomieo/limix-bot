@@ -141,14 +141,14 @@ describe("an engine's check", () => {
 });
 
 describe("installing an engine's own build from Settings", () => {
-  async function serveInstall(options: { useCli?: string; busy?: boolean }) {
+  async function serveInstall(options: { useCli?: string; busy?: boolean; expectedVersion?: string; activeVersion?: string }) {
     const persisted: Array<{ instanceId: string; instances: unknown }> = [];
     const deps = {
       store: { bots: [], tasks: () => [] },
       cfg: { instances: { opencode: { driver: "opencodeGo" } } } as unknown as AppConfig,
       registry: {
-        installRuntime: async () => options.useCli ? { useCli: options.useCli } : true,
-        get: () => null,
+        installRuntime: async () => options.useCli ? { useCli: options.useCli, expectedVersion: options.expectedVersion } : true,
+        get: () => options.activeVersion ? { snapshot: async () => ({ state: "available", version: options.activeVersion }) } : null,
         forgetSnapshots: () => {},
         refreshModels: async () => true,
         cliTarget: () => null,
@@ -195,6 +195,15 @@ describe("installing an engine's own build from Settings", () => {
     const { body, persisted } = await serveInstall({});
     expect(body.usingAppCopy).toBeUndefined();
     expect(persisted).toEqual([]);
+  });
+  it("rejects a successful download when the active CLI still reports an older version", async () => {
+    const { status, body } = await serveInstall({ useCli: "/fixture/codex", expectedVersion: "0.169.0", activeVersion: "codex-cli 0.167.0" });
+    expect(status).toBe(502);
+    expect(body.error).toContain("could not be verified as 0.169.0");
+  });
+  it("accepts the update only when the selected CLI reports the expected version", async () => {
+    const { status } = await serveInstall({ useCli: "/fixture/codex", expectedVersion: "0.169.0", activeVersion: "codex-cli 0.169.0" });
+    expect(status).toBe(200);
   });
 });
 

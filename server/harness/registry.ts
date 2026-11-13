@@ -1,6 +1,7 @@
 // Provider instance registry — port of upstream's ProviderInstanceRegistryLive behavior, minus Effect.
 import { findCliCandidates } from "../env-path.ts";
-import { installNpmEngine, npmAvailable, serverInstallFor, standaloneLookupPath } from "../engine-install.ts";
+import { installNpmEngine, npmAvailable, npmLatestVersion, serverInstallFor, standaloneLookupPath, enginesBinDir } from "../engine-install.ts";
+import { join } from "node:path";
 import { installStandaloneEngine, isAppStandaloneCopy, type StandaloneInstalled } from "../engine-standalone.ts";
 import { pinnedNpmVersion } from "../engine-versions.ts";
 import { withEngineMemory } from "../engine-memory.ts";
@@ -49,7 +50,7 @@ function withServerInstall(install: AnyProviderDriver["install"], npmPresent: bo
 type InstallStandalone = (release: StandaloneRelease, options: { baseDir?: string }) => Promise<StandaloneInstalled>;
 
 /** Installed; `useCli` when the copy this engine's CLI finds does not start and it should run the app's own copy instead. */
-export type InstallResult = true | { useCli: string };
+export type InstallResult = true | { useCli: string; expectedVersion?: string };
 
 function cliDefaultOf(driver: AnyProviderDriver | undefined): string | undefined {
   if (!driver) return undefined;
@@ -346,7 +347,7 @@ export class ProviderRegistry {
     return true;
   }
 
-  async installRuntime(instanceId: InstanceId): Promise<InstallResult | false> {
+  async installRuntime(instanceId: InstanceId, options: { update?: boolean } = {}): Promise<InstallResult | false> {
     const entry = this.byId.get(instanceId);
     if (!entry) return false;
     // A failed install changes the status too: Antigravity reports the failure as its reason.
@@ -363,7 +364,10 @@ export class ProviderRegistry {
         return (await this.appCopyAdvice(instanceId, driver, installed)) ?? true;
       }
       if (!server?.package) return false;
-      await installNpmEngine(server.package, { baseDir: this.enginesBaseDir, cli: cliDefaultOf(driver), version: driver ? pinnedNpmVersion(driver.driverKind) : undefined });
+      const updateCodex = options.update && driver?.driverKind === "codex";
+      const version = updateCodex ? await npmLatestVersion(server.package, this.enginesBaseDir) : driver ? pinnedNpmVersion(driver.driverKind) : undefined;
+      await installNpmEngine(server.package, { baseDir: this.enginesBaseDir, cli: cliDefaultOf(driver), version });
+      if (updateCodex) return { useCli: join(enginesBinDir(this.enginesBaseDir), process.platform === "win32" ? "codex.cmd" : "codex"), expectedVersion: version };
       return true;
     } finally {
       this.forgetSnapshots();
