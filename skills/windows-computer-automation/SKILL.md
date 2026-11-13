@@ -1,53 +1,53 @@
 ---
 name: windows-computer-automation
-description: Điều phối AI Agent hoặc Bot điều khiển Windows trong Herionix qua Agent Desktop và Windows-MCP. Dùng khi cần đọc màn hình, thao tác cửa sổ, nhập liệu, trình duyệt, quản lý ứng dụng, file hoặc tiến trình; lựa chọn tool phù hợp, quản lý quyền, tránh bot giành chuột, xác minh kết quả và chống lặp thao tác. Hỗ trợ thiết kế hoặc khắc phục tích hợp hai MCP Server vào ứng dụng AI nhiều agent.
+description: Coordinate an AI agent or bot that controls Windows through Agent Desktop and Windows-MCP. Use it to read the screen, work windows, type, drive a browser, and manage apps, files or processes; pick the right tool, respect permissions, keep bots from fighting over the mouse, verify results and never repeat an action blindly. Also helps design or fix the integration of these two MCP servers into a multi-agent AI app. (vi: điều khiển máy tính, tự động hóa Windows, thao tác cửa sổ, chụp màn hình)
 ---
 
-# Windows Computer Automation — Herionix
+# Windows Computer Automation
 
-## Mục tiêu
+## Goal
 
-Dùng **Agent Desktop** cho phần tử giao diện Windows dựa trên accessibility tree; dùng **Windows-MCP** cho công cụ hệ thống, filesystem, app, process và dự phòng UI khi thích hợp. Đây là Skill hướng dẫn điều phối: **không tự cài MCP Server hoặc cấp quyền cho máy**. Chỉ thực thi khi Herionix đã kết nối thực tế với các MCP Server và tool được cấp phép.
+Use **Agent Desktop** for Windows UI elements found through the accessibility tree; use **Windows-MCP** for system tools, the filesystem, apps, processes, and as a UI fallback where it fits. This skill is orchestration guidance: it **never installs an MCP server or grants permissions on the machine by itself**. Act only when the host app is actually connected to these MCP servers and the tools are permitted.
 
-## Quy trình bắt buộc
+## Required procedure
 
-1. **Xác định nhiệm vụ và giới hạn:** Xác nhận ứng dụng/cửa sổ, đầu vào/đầu ra, đường dẫn file, hành động cuối cùng có được phép thực hiện không. Phân biệt chỉ đọc với thay đổi hệ thống.
-2. **Khám phá năng lực thật:** Lấy `list_tools` của hai MCP Server; không giả định tool có mặt chỉ vì tài liệu có tên. Kiểm tra trạng thái desktop, hệ điều hành, phiên đăng nhập và quyền. Nếu thiếu connector, dừng và thông báo cụ thể; không giả vờ đã thao tác.
-3. **Kiểm tra rủi ro:** Đọc [references/security.md](references/security.md). Những tác vụ xóa/ghi đè, chạy lệnh, sửa Registry, gửi nội dung ra ngoài, thanh toán, đổi quyền hoặc tắt tiến trình cần quyết định theo policy của host. Model **không tự phê duyệt**. Host phải chặn hành động trước khi gọi tool.
-4. **Điều phối một desktop:** Một `desktop_id` chỉ được có **một agent giữ quyền ghi/nhập liệu** tại một thời điểm; khóa ở backend Herionix, không chỉ trong prompt. Nhiều agent có thể lập kế hoạch/đọc nếu đọc không cản trở; việc ghi phải đi qua hàng đợi.
-5. **Quan sát trước khi thao tác:** Ưu tiên accessibility tree, ref và window ID; tránh tọa độ nếu còn lựa chọn định danh ổn định. Chọn provider theo bảng dưới đây và [references/routing.md](references/routing.md).
-6. **Thực thi tối thiểu:** Mỗi lần chỉ thực thi bước cần thiết. Không gọi song song hai tool nhập liệu. Sử dụng key chống trùng `task_id + step_id + target + desired_effect` do backend cấp.
-7. **Xác minh sau thao tác:** Đọc lại phần tử/trạng thái/file hoặc kết quả tương ứng, xác nhận hậu điều kiện. `tool returned success` không đồng nghĩa công việc đã hoàn thành.
-8. **Phục hồi có giới hạn:** Với `STALE_REF`/`AMBIGUOUS_TARGET`, làm mới snapshot và định vị lại. Chỉ retry khi upstream công bố an toàn hoặc hậu điều kiện chứng minh chưa xảy ra tác dụng phụ. Dừng sau tối đa **1 retry kỹ thuật** cho một bước, hoặc **2 chu kỳ không tiến triển**; không gọi vòng lặp vô hạn, không tự `microcompact` để che lỗi.
-9. **Báo cáo:** Trả lời ngắn bằng tiếng Việt: việc đã làm/đã xác minh, file được tạo (nếu có), bước chưa hoàn tất, các phê duyệt cần thiết, lỗi và bằng chứng không nhạy cảm. Không ghi log ảnh/chụp clipboard chứa bí mật.
+1. **Define the task and its limits:** confirm the app/window, inputs and outputs, file paths, and whether the final action is allowed. Tell read-only work apart from changes to the system.
+2. **Discover the real capabilities:** call `list_tools` on both MCP servers; never assume a tool exists because a document names it. Check the desktop state, the OS, the signed-in session and permissions. If a connector is missing, stop and say exactly which; never pretend an action happened.
+3. **Check the risk:** read [references/security.md](references/security.md). Deleting/overwriting, running commands, editing the Registry, sending content out, payments, permission changes or killing processes are decided by the host's policy. The model **never approves itself**. The host must block the action before the tool is called.
+4. **One desktop, one writer:** a `desktop_id` has **one agent holding write/input rights** at a time; the lock lives in the host backend, not only in the prompt. Several agents may plan or read when reading does not interfere; writes go through a queue.
+5. **Observe before acting:** prefer the accessibility tree, refs and window IDs; avoid coordinates while a stable identifier exists. Pick the provider with the table below and [references/routing.md](references/routing.md).
+6. **Do the minimum:** run only the step that is needed. Never call two input tools in parallel. Use the dedupe key `task_id + step_id + target + desired_effect` issued by the backend.
+7. **Verify after acting:** read the element/state/file or matching result again and confirm the postcondition. `tool returned success` does not mean the work is done.
+8. **Bounded recovery:** on `STALE_REF`/`AMBIGUOUS_TARGET`, refresh the snapshot and locate again. Retry only when upstream says it is safe or the postcondition proves no side effect happened. Stop after at most **1 technical retry** per step, or **2 cycles without progress**; never loop forever, never `microcompact` to hide an error.
+9. **Report:** answer briefly in the user's language: what was done and verified, files created (if any), steps not finished, approvals needed, errors and non-sensitive evidence. Never log screenshots or clipboard content that holds secrets.
 
-## Chọn công cụ
+## Choosing the tool
 
-| Tình huống | Ưu tiên | Dự phòng / điều kiện |
+| Situation | Prefer | Fallback / condition |
 |---|---|---|
-| Đọc/nhấn/nhập trên UI có ref định danh | Agent Desktop: `desktop_snapshot`, `desktop_click`, `desktop_type`... | Windows-MCP `Snapshot` + `Click`/`Type` sau khi định vị mới |
-| Giao diện không xuất accessibility hoặc điều khiển tọa độ | Windows-MCP `Snapshot` / `Screenshot`, `Click`, `Type` | Agent Desktop `--headed` chỉ khi cần và được phép |
-| Khởi động, chuyển cửa sổ ứng dụng | Windows-MCP `App` | Agent Desktop `desktop_launch` / window tools nếu có |
-| Xem, ghi file trong thư mục được cho phép | Windows-MCP `FileSystem` | Không thay bằng UI nếu có API/file-tool tin cậy |
-| Kiểm tra tiến trình | Windows-MCP `Process` (chỉ list) | Terminate yêu cầu xác nhận từ host |
-| PowerShell / Registry | **Mặc định không mở quyền** | Chỉ bật có chủ đích trong môi trường kiểm soát, qua host approval |
-| Trang web cần DOM | Windows-MCP `Snapshot` (`use_dom` nếu phiên bản hỗ trợ) | Với luồng web phức tạp, cân nhắc browser automation chuyên biệt |
+| Read/click/type on UI with an identifying ref | Agent Desktop: `desktop_snapshot`, `desktop_click`, `desktop_type`... | Windows-MCP `Snapshot` + `Click`/`Type` after locating again |
+| UI without accessibility, or coordinate control | Windows-MCP `Snapshot` / `Screenshot`, `Click`, `Type` | Agent Desktop `--headed` only when needed and allowed |
+| Launch or switch app windows | Windows-MCP `App` | Agent Desktop `desktop_launch` / window tools if present |
+| Read or write files in allowed folders | Windows-MCP `FileSystem` | Never replace with UI clicks when a trusted API/file tool exists |
+| Inspect processes | Windows-MCP `Process` (list only) | Terminate needs confirmation from the host |
+| PowerShell / Registry | **Not enabled by default** | Only enabled on purpose in a controlled environment, through host approval |
+| Web pages that need the DOM | Windows-MCP `Snapshot` (`use_dom` if the version supports it) | For complex web flows, consider a dedicated browser automation |
 
-**Không chuyển provider để retry mù:** Sau lỗi của một thao tác có tác dụng phụ, phải quan sát và xác minh trạng thái trước khi quyết định bước tiếp theo.
+**Never switch providers to retry blindly:** after a failed action that has side effects, observe and verify the state before choosing the next step.
 
-## Luồng chống tốn token
+## Token-saving loop
 
-- Lưu `window_id`, `snapshot_id`, mục tiêu và tóm tắt trạng thái ngắn; **vô hiệu** ref cũ sau mỗi thay đổi UI.
-- Không gửi ảnh toàn màn hình ở mọi bước; dùng tree compact, vùng chụp nhỏ hoặc snapshot theo app.
-- Chỉ tiếp tục khi có `progress marker` mới (trạng thái thay đổi, file xuất hiện, nút đổi trạng thái, trang chuyển); nếu hai lần không có tiến triển, dừng và báo lỗi.
-- Nếu hai agent cùng xin điều khiển, chỉ một agent thực thi; agent còn lại chờ hoặc làm việc không tác động desktop.
+- Keep `window_id`, `snapshot_id`, the goal and a short state summary; **invalidate** old refs after every UI change.
+- Do not send a full-screen image at every step; use the compact tree, a small region capture or a per-app snapshot.
+- Continue only on a new `progress marker` (state changed, a file appeared, a button changed state, the page moved on); after two rounds without progress, stop and report.
+- If two agents ask for control at once, only one acts; the other waits or does work that does not touch the desktop.
 
-## Kết nối và kiểm thử
+## Connecting and testing
 
-- Tham khảo [references/herionix-integration.md](references/herionix-integration.md) để cài và kết nối hai MCP Server qua stdio.
-- Dùng [assets/mcp-servers.example.json](assets/mcp-servers.example.json) làm cấu hình minh họa, **không coi là file cấu hình Herionix chính thức**.
-- Có thể dùng `scripts/policy_engine.py` làm ví dụ bộ định tuyến/rào chắn **không có quyền tự thực thi OS**; backend phải thực hiện kiểm tra policy, khóa và approval thật. Ví dụ và kiểm thử: [references/scenarios.md](references/scenarios.md).
+- See [references/herionix-integration.md](references/herionix-integration.md) to install and connect the two MCP servers over stdio.
+- Use [assets/mcp-servers.example.json](assets/mcp-servers.example.json) as an illustrative config, **not as an official host config file**.
+- `scripts/policy_engine.py` is an example router/guard **with no power to execute anything on the OS**; the backend must do the real policy checks, locks and approvals. Examples and tests: [references/scenarios.md](references/scenarios.md).
 
-## Cách ứng xử khi không có quyền điều khiển máy
+## Without permission to control the machine
 
-Trình bày kế hoạch, lệnh cấu hình hoặc code phù hợp; nói rõ chưa thi hành và chưa xác minh trên Windows thật. Không tuyên bố đã tích hợp vào máy hay Herionix nếu chưa có truy cập đến mã nguồn và runtime của ứng dụng.
+Present the plan, config commands or code; say clearly that nothing was executed or verified on a real Windows machine. Never claim an integration into the machine or the host app without access to the app's source and runtime.

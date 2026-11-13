@@ -7,7 +7,13 @@
   "triggerTerms": [
     "/create-verification-skill",
     "create a verification skill",
-    "make a verification skill"
+    "make a verification skill",
+    "tạo kĩ năng kiểm chứng",
+    "tạo kỹ năng kiểm chứng",
+    "viết kĩ năng kiểm tra",
+    "viết kỹ năng kiểm tra"
   ],
-  "requiredCapabilities": ["skillAuthoring"]
+  "requiredCapabilities": [
+    "skillAuthoring"
+  ]
 }

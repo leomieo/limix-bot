@@ -29,7 +29,12 @@
     "agent reach",
     "đọc link",
     "đọc giúp link",
-    "read this link"
+    "read this link",
+    "tìm trên reddit",
+    "tìm trên twitter",
+    "đọc bài trên",
+    "tóm tắt video youtube",
+    "xem phụ đề"
   ],
   "requiredCapabilities": [],
   "source": {

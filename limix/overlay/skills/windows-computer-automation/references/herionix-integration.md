@@ -1,35 +1,35 @@
-# Hướng dẫn tích hợp vào Herionix (Windows 10/11)
+# Integrating into a host app (Windows 10/11)
 
-## 1. Chuẩn bị công cụ
+## 1. Prepare the tools
 
-Cài Node.js/npm và Agent Desktop:
+Install Node.js/npm and Agent Desktop:
 
 ```powershell
 npm install -g agent-desktop
 agent-desktop status
 ```
 
-Cài `uv` và Python phiên bản phù hợp theo trang Windows-MCP (README hiện nêu Python 3.14+). Với Windows-MCP, dùng lệnh sau để kiểm tra server và lưu ý nó sẽ tiếp tục chạy cho đến khi client/terminal đóng:
+Install `uv` and the Python version the Windows-MCP page asks for (its README currently says Python 3.14+). For Windows-MCP, use this command to check the server; note that it keeps running until the client/terminal closes:
 
 ```powershell
 uvx windows-mcp serve --exclude-tools "PowerShell,Registry" --control-policy balanced
 ```
 
-Tài liệu nguồn:
+Sources:
 - https://github.com/vercel-labs/agent-desktop
 - https://github.com/CursorTouch/Windows-MCP
 
-## 2. Đăng ký hai MCP Server vào backend
+## 2. Register the two MCP servers in the backend
 
-Xem `assets/mcp-servers.example.json`. Đây là **MCP client config mẫu**, không phải định dạng config Herionix đã được xác nhận. Nếu Herionix dùng định dạng khác, chuyển hai `command` + `args` tương ứng vào cấu hình app. Chạy server trong phiên người dùng đang đăng nhập Windows và dùng stdio local.
+See `assets/mcp-servers.example.json`. It is a **sample MCP client config**, not a confirmed config format of the host app. If the host uses another format, move the two `command` + `args` into the app's config. Run the servers in the signed-in Windows user session and use local stdio.
 
-Backend phải hỗ trợ startup/healthcheck, khám phá `list_tools`, chuẩn hóa lỗi, timeout, shutdown; không spawn bản sao MCP server cho từng bot nếu chúng cùng điều khiển một session. Nếu máy có nhiều interactive sessions, phân biệt bằng `desktop_id` thực tế.
+The backend must support startup/healthcheck, `list_tools` discovery, normalized errors, timeouts and shutdown; never spawn a copy of an MCP server per bot when they all drive one session. With several interactive sessions on the machine, tell them apart by the real `desktop_id`.
 
-## 3. Gắn Skill
+## 3. Attach the skill
 
-Đặt thư mục `windows-computer-automation` vào **skills directory mà Herionix thực sự tải**. Gắn Skill cho các Bot/Teammate được cho quyền computer-use. Nếu Herionix chưa có skill loader, cần thêm parser `SKILL.md` và entrypoints tương ứng — chỉ sao chép thư mục chưa biến thành kết nối MCP.
+Put the `windows-computer-automation` folder in the **skills directory the host actually loads**. Attach the skill to the bots/teammates allowed to use the computer. If the host has no skill loader yet, it needs a `SKILL.md` parser and the matching entry points — copying the folder alone does not create an MCP connection.
 
-## 4. Component đề xuất
+## 4. Suggested components
 
 ```text
 Bot / Teammate
@@ -44,29 +44,29 @@ ComputerControlManager (orchestrator)
     +-- WindowsMcpAdapter --------> windows-mcp MCP
 ```
 
-Các module và trách nhiệm:
-- `ToolRegistry`: khám phá tên, schema và trạng thái tool của hai server.
-- `Planner/Router`: chọn provider theo tác vụ, không tự tạo lại tác dụng phụ khi chuyển provider.
-- `AuthorizationService`: người dùng cấp quyền, allowlist path, risk classification và token một lần.
-- `DesktopSessionScheduler`: khóa input per desktop/session và hàng đợi công bằng.
-- `ExecutionLedger`: task ID, step ID, state digest, trạng thái hoàn thành, idempotency.
-- `Verifier`: hậu điều kiện sau thao tác; phản hồi lỗi có phân loại để tránh vòng lặp.
+Modules and responsibilities:
+- `ToolRegistry`: discovers the names, schemas and status of both servers' tools.
+- `Planner/Router`: picks the provider per task; never recreates side effects when switching providers.
+- `AuthorizationService`: user-granted permissions, path allowlist, risk classification and one-time tokens.
+- `DesktopSessionScheduler`: input lock per desktop/session and a fair queue.
+- `ExecutionLedger`: task ID, step ID, state digest, completion status, idempotency.
+- `Verifier`: postconditions after each action; classified error feedback to avoid loops.
 
-## 5. Cấu hình UI khuyến nghị
+## 5. Suggested UI settings
 
-Trong `Herionix > Tools > Windows Computer Automation`: bật/tắt cả hai providers; ưu tiên Agent Desktop cho UI; hiển thị số bot đang chờ quyền desktop; cho phép chọn thư mục ghi; quyền admin tools mặc định off; số lần retry tối đa 1; giới hạn 2 vòng không tiến triển; nút Stop/Emergency Release; audit log đã che dữ liệu nhạy cảm.
+Under `Tools > Windows Computer Automation`: switch each provider on/off; prefer Agent Desktop for UI; show how many bots wait for the desktop; choose the writable folders; admin tools off by default; at most 1 retry; stop after 2 rounds without progress; a Stop/Emergency Release button; an audit log with sensitive data masked.
 
-## 6. Kiểm thử chấp nhận
+## 6. Acceptance tests
 
-1. Bot A nhấn nút trong Notepad bằng ref; Bot B chờ, không can thiệp bàn phím.
-2. Ref UI hết hạn → snapshot mới; không dùng lại ref cũ và không spam retry.
-3. Bot liệt kê file đọc-only; ghi `.txt` trong thư mục cho phép và xác minh file.
-4. Xóa file / chạy PowerShell / Registry bị block hoặc yêu cầu host approval tương ứng.
-5. MCP Server tắt giữa tác vụ → dừng có trạng thái rõ, không tự lặp thao tác.
-6. Cùng một `step_id` gửi hai lần → tác dụng phụ chỉ thực thi tối đa một lần ở host.
-7. No progress hai chu kỳ → dừng và báo lý do, không clear context để lặp vô hạn.
-8. Không có desktop session/unlock → báo bị chặn, không giả thành công.
+1. Bot A presses a button in Notepad by ref; Bot B waits and does not touch the keyboard.
+2. A UI ref expires → new snapshot; the old ref is not reused and retries are not spammed.
+3. The bot lists files read-only; writes a `.txt` in an allowed folder and verifies the file.
+4. Deleting a file / running PowerShell / Registry is blocked or asks for the matching host approval.
+5. The MCP server stops mid-task → a clear stopped state, no repeated actions.
+6. The same `step_id` sent twice → the side effect runs at most once on the host.
+7. No progress for two cycles → stop and report why; never clear the context to loop forever.
+8. No desktop session/unlocked screen → reported as blocked, never a fake success.
 
-## 7. Phạm vi bản đóng gói
+## 7. What this package is
 
-Skill này bao gồm quy trình, policy router có thể kiểm thử và cấu hình MCP mẫu. **Chưa phải bản cài đặt Herionix hoặc proxy MCP chạy sẵn**; thực thi connector, mutex liên tiến trình, duyệt quyền và xác minh file thật phải được hiện thực trong Herionix backend.
+This skill holds the procedure, a testable policy router and a sample MCP config. **It is not a host installer or a ready-made MCP proxy**; the connector, cross-process mutex, approvals and real file verification must be implemented in the host backend.
