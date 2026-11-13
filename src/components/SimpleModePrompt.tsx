@@ -61,7 +61,7 @@ export function SimpleModePrompt({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="ui-scrim ui-scrim-light fixed inset-0 z-50 flex items-center justify-center p-4 motion-reduce:animate-none"
-      onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
+      onMouseDown={(event) => event.stopPropagation()}>
       <div role="dialog" aria-modal="true" aria-labelledby={TITLE} aria-describedby="simple-mode-prompt-body" data-simple-mode-prompt=""
         className="ui-modal animate-pop-in relative w-[min(440px,calc(100vw-32px))] border-0 px-6 pb-5 pt-6 text-ink motion-reduce:animate-none">
         {/* Focus lands on the title, which is no control: it shows no ring. */}

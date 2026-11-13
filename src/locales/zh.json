@@ -609,7 +609,7 @@
   "connect.lede": "粘贴服务器显示的链接，或输入它的地址和配对码。它的机器人会留在服务器上。",
   "connect.signedInLede": "它已登录你的账号。粘贴它的链接，或输入它的地址和配对码。",
   "connect.address": "链接或地址",
-  "connect.addressPlaceholder": "https://maus.example.com 或 192.168.1.20:8799",
+  "connect.addressPlaceholder": "https://limix.example.com 或 192.168.1.20:8799",
   "connect.code": "配对码",
   "connect.noCode": "没有配对码？在服务器上运行：",
   "connect.addAddress": "现在添加服务器的地址，例如 {example}。",

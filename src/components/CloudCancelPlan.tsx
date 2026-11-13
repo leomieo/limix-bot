@@ -108,7 +108,7 @@ export function CloudCancelSheet({ renewal, actions, onClose }: { renewal: Cloud
   const box = "mt-1.5 w-full rounded-lg border border-hairline/50 bg-inset px-3 py-2 text-[14px] text-ink disabled:opacity-60";
   const alert = failed && <p role="alert" className="mt-3 text-[13px] text-danger">{t("cloudCancel.failed")}</p>;
   return createPortal(
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4" onMouseDown={event => { if (event.target === event.currentTarget) close(); }}>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4" onMouseDown={(event) => event.stopPropagation()}>
       <div ref={dialog} role="dialog" aria-modal="true" aria-labelledby="cloud-cancel-title" aria-busy={busy} tabIndex={-1} data-cloud-cancel-sheet={state.step}
         className="flex max-h-[90vh] w-full max-w-[480px] flex-col overflow-hidden rounded-2xl border border-hairline/50 bg-panel text-ink shadow-2xl outline-none"
         onKeyDown={event => {

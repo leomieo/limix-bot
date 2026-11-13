@@ -1,4 +1,4 @@
-// Limix bot templates: the "Bot dựng sẵn" list in Templates comes from github.com/leomieo/limix-bot-teams.
+// Limix bot templates: the "Bot dựng sẵn" list in Templates comes from github.com/leomieo/limix-bot-templates.
 // GET /api/limix/bots reads only the light list in catalog.json (cached ten minutes); GET /api/limix/bots/<id> fetches
 // that one bot's file when the person presses "Dùng mẫu". Everything is checked here before it reaches the page, and a
 // template only describes who the bot is: its routines always arrive paused and nothing is connected for the person.
@@ -6,7 +6,7 @@ import { MASCOT_BODY_IDS } from "../shared/mascot-bodies.ts";
 import { MAUS_COLOR_NAMES } from "../shared/wire.ts";
 import { lxs } from "./limix-lang.ts";
 
-const TEAM_LIBRARY_RAW_ROOT = "https://raw.githubusercontent.com/leomieo/limix-bot-teams/main";
+const BOT_LIBRARY_RAW_ROOT = "https://raw.githubusercontent.com/leomieo/limix-bot-templates/main";
 
 const LIST_TTL_MS = 10 * 60 * 1000;
 const MAX_CATALOG_BYTES = 256_000;
@@ -160,16 +160,18 @@ async function fetchJson(url: string, maxBytes: number): Promise<unknown> {
 }
 
 let cached: { at: number; bots: LibraryBotListing[] } | null = null;
+let listingRequest = 0;
 
 /** `fresh`: the "Cập nhật" button. Skips this cache and GitHub's (raw files are cached there for about five minutes). */
 async function listing(fresh = false): Promise<LibraryBotListing[]> {
   if (!fresh && cached && Date.now() - cached.at < LIST_TTL_MS) return cached.bots;
+  const request = ++listingRequest;
   try {
-    const bots = parseBotListing(await fetchJson(`${TEAM_LIBRARY_RAW_ROOT}/catalog.json${fresh ? `?t=${Date.now()}` : ""}`, MAX_CATALOG_BYTES));
-    cached = { at: Date.now(), bots };
+    const bots = parseBotListing(await fetchJson(`${BOT_LIBRARY_RAW_ROOT}/catalog.json${fresh ? `?t=${Date.now()}` : ""}`, MAX_CATALOG_BYTES));
+    if (request === listingRequest) cached = { at: Date.now(), bots };
     return bots;
   } catch (error) {
-    if (cached) return cached.bots; // an older list beats none while GitHub is unreachable
+    if (cached && !fresh) return cached.bots; // an older list beats none while GitHub is unreachable
     throw error;
   }
 }
@@ -184,7 +186,7 @@ export async function handleLimixBotLibrary(method: string, path: string): Promi
     if (!match) return null;
     const id = match[1]!;
     if (!(await listing()).some((bot) => bot.id === id)) return { status: 404, body: { error: lxs("Không có bot mẫu này", "No such template bot") } };
-    return { status: 200, body: { bot: parseLibraryBot(await fetchJson(`${TEAM_LIBRARY_RAW_ROOT}/bots/${id}.json?t=${Date.now()}`, MAX_BOT_BYTES), id) } };
+    return { status: 200, body: { bot: parseLibraryBot(await fetchJson(`${BOT_LIBRARY_RAW_ROOT}/bots/${id}.json?t=${Date.now()}`, MAX_BOT_BYTES), id) } };
   } catch (error) {
     return { status: 502, body: { error: error instanceof Error ? error.message : String(error) } };
   }

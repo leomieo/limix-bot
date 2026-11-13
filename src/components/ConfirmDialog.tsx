@@ -80,7 +80,7 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
   return createPortal(
     <div
       className={`fixed inset-0 ${props.layer ?? "z-50"} flex items-center justify-center bg-black/55 p-6`}
-      onMouseDown={(event) => event.target === event.currentTarget && onCancel()}
+      onMouseDown={(event) => event.stopPropagation()}
     >
       <ConfirmDialogCard ref={dialogRef} cancelRef={cancelRef} {...props} />
     </div>,

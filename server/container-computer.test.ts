@@ -606,7 +606,7 @@ describe("containerComputerStatus", () => {
 
     expect(status.managed).toBe(false);
     expect(status.ready).toBe(false);
-    expect(status.problem).toContain("not created by OpenMausBot");
+    expect(status.problem).toContain("not created by Limix Bot");
   });
 
   it("prefers a running runtime over an earlier installed but stopped one", async () => {
@@ -981,7 +981,7 @@ describe("Cua integration", () => {
     expect(dockerfile).toContain("6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2");
     expect(dockerfile).toContain("/usr/local/share/licenses/noto-cjk/OFL.txt");
     expect(dockerfile).toContain("fc-cache -f");
-    expect(IMAGE_LAYER_VERSION).toBe("8");
+    expect(IMAGE_LAYER_VERSION).toBe("9");
   });
 
   it("starts the driver's Chrome without its own sandbox inside the hardened container", () => {
@@ -1071,7 +1071,7 @@ describe("containerComputerAction", () => {
     });
 
     await expect(containerComputerAction("remove", fake.run, "linux")).rejects.toThrow(
-      /not created by OpenMausBot.*remove it manually/i,
+      /not created by Limix Bot.*remove it manually/i,
     );
     expect(fake.calls).not.toContain(`docker rm -f ${CONTAINER}`);
   });

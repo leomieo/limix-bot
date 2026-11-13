@@ -241,7 +241,7 @@ function FilesDialog({ label, children, actions, onClose }: { label: string; chi
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-  return createPortal(<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-6" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+  return createPortal(<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-6" onMouseDown={(event) => event.stopPropagation()}>
     <div role="dialog" aria-modal="true" aria-labelledby="files-dialog-label" className="w-full max-w-[440px] rounded-2xl border border-hairline/50 bg-panel p-5 shadow-2xl">
       <h2 id="files-dialog-label" className="text-[15px] font-semibold text-ink">{label}</h2>
       {children}

@@ -54,7 +54,7 @@ export function BotInstructionsDialog({ bot, onClose, inline = false }: { bot: B
   const content = (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-[2px] sm:p-6"
-      onMouseDown={(event) => event.target === event.currentTarget && close()}
+      onMouseDown={(event) => event.stopPropagation()}
     >
       <div
         ref={dialogRef}

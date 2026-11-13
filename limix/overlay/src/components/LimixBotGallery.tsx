@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Loader2, Plus, RefreshCw } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { stoppedAtBotLimit } from "@/lib/bot-limit";
 import { MausAvatar } from "./Avatar";
 import { NewBotDialog } from "./lazy-screens";
@@ -20,7 +20,7 @@ import type { MascotBodyId } from "../../shared/mascot-bodies";
 import type { MausColor } from "../../shared/wire";
 import { lx } from "@/lib/limix-text";
 
-/** Templates > Khám phá > Bot dựng sẵn, read from github.com/leomieo/limix-bot-teams: the page loads only the light list,
+/** Templates > Khám phá > Bot dựng sẵn, read from github.com/leomieo/limix-bot-templates: the page loads only the light list,
  * and a bot's full template is fetched when the person presses "Dùng mẫu". Offline, the bots built into the app show. */
 
 const APP_LABELS: Record<string, string> = {
@@ -55,15 +55,20 @@ const builtInCards = (): Card[] => READY_BOTS.map((bot) => {
 
 let remembered: Card[] | null = null;
 
+export async function refreshTemplateBots(): Promise<number> {
+  const { bots } = await api<{ bots: Omit<Card, "builtIn">[] }>("/api/limix/bots/refresh", { method: "POST" });
+  remembered = bots.length ? bots.map((bot) => ({ ...bot, builtIn: false })) : null;
+  return bots.length;
+}
+
 const matches = (card: Card, query: string) => {
   const needle = query.trim().toLowerCase();
   return !needle || [card.name, card.title, card.description, card.category].some((field) => field.toLowerCase().includes(needle));
 };
 
-export function LimixBotGallery({ search, onDialog, onAdded, onRefresh }: {
+export function LimixBotGallery({ search, onDialog, onAdded, revision = 0 }: {
   search: string;
-  /** "Cập nhật" also reloads the team templates listed under this section. */
-  onRefresh?: () => void;
+  revision?: number;
   /** The New bot dialog is open over Templates, so Templates must leave its keys alone. */
   onDialog: (open: boolean) => void;
   onAdded: (bot: Bot) => void;
@@ -75,10 +80,13 @@ export function LimixBotGallery({ search, onDialog, onAdded, onRefresh }: {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [adding, setAdding] = useState<{ id: string; data?: ReadyBot; skills?: string[] } | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [refreshed, setRefreshed] = useState("");
 
   useEffect(() => {
+    if (revision > 0) {
+      setCards(remembered ?? builtInCards());
+      setOffline(false);
+      return;
+    }
     let live = true;
     api<{ bots: Omit<Card, "builtIn">[] }>("/api/limix/bots")
       .then(({ bots }) => {
@@ -90,30 +98,9 @@ export function LimixBotGallery({ search, onDialog, onAdded, onRefresh }: {
       })
       .catch(() => { if (live) { setCards(remembered ?? builtInCards()); setOffline(!remembered); } });
     return () => { live = false; };
-  }, []);
+  }, [revision]);
 
   const close = () => { setAdding(null); onDialog(false); };
-
-  const refresh = async () => {
-    if (refreshing) return;
-    setRefreshing(true);
-    setError("");
-    setRefreshed("");
-    onRefresh?.();
-    try {
-      const { bots } = await api<{ bots: Omit<Card, "builtIn">[] }>("/api/limix/bots/refresh", { method: "POST" });
-      const next = bots.length ? bots.map((bot) => ({ ...bot, builtIn: false })) : builtInCards();
-      remembered = bots.length ? next : null;
-      setCards(next);
-      setOffline(false);
-      setRefreshed(lx(`Đã cập nhật: ${bots.length} bot mẫu`, `Updated: ${bots.length} template bots`));
-    } catch (cause) {
-      const why = cause instanceof Error ? cause.message : String(cause);
-      setError(lx(`Chưa cập nhật được kho mẫu: ${why}`, `Couldn't update the template library: ${why}`));
-    } finally {
-      setRefreshing(false);
-    }
-  };
 
   const use = async (card: Card) => {
     if (busy || stoppedAtBotLimit(state)) return;
@@ -142,11 +129,7 @@ export function LimixBotGallery({ search, onDialog, onAdded, onRefresh }: {
     <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
       <h3 id="ready-bots-title" className="text-[12px] font-medium text-ink-secondary">{t("readyBots.title")}</h3>
       <div className="flex flex-wrap items-center gap-3">
-        <p className="text-[12px] text-ink-tertiary" role="status" aria-live="polite">{refreshed || (offline ? lx("Đang dùng bản có sẵn trong ứng dụng (chưa tải được kho mẫu).", "Showing the bots built into the app (the template library could not be loaded).") : t("readyBots.subtitle"))}</p>
-        <button type="button" onClick={() => void refresh()} disabled={refreshing} title={lx("Tải lại danh sách bot mẫu và nhóm mẫu mới nhất từ kho", "Reload the newest template bots and teams from the library")}
-          className="flex h-8 items-center gap-1.5 rounded-full bg-raised px-3 text-[12px] font-medium text-ink hover:bg-raised-hover disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-accent">
-          <RefreshCw size={13} aria-hidden="true" className={refreshing ? "animate-spin" : undefined} />{refreshing ? lx("Đang cập nhật", "Updating") : lx("Cập nhật", "Update")}
-        </button>
+        <p className="text-[12px] text-ink-tertiary" role="status" aria-live="polite">{offline ? lx("Đang dùng bản có sẵn trong ứng dụng (chưa tải được kho mẫu).", "Showing the bots built into the app (the template library could not be loaded).") : t("readyBots.subtitle")}</p>
       </div>
     </div>
     <div className="mb-3 mt-2 flex flex-wrap gap-1.5" role="group" aria-label={t("readyBots.categories")}>

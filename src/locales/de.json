@@ -2817,7 +2817,7 @@
   "connect.lede": "Füge den Link ein, den der Server ausgegeben hat, oder gib seine Adresse und den Kopplungscode ein. Seine Bots bleiben auf dem Server.",
   "connect.signedInLede": "Er ist bereits mit deinem Konto angemeldet. Füge seinen Link ein oder gib seine Adresse und einen Kopplungscode ein.",
   "connect.address": "Link oder Adresse",
-  "connect.addressPlaceholder": "https://maus.example.com oder 192.168.1.20:8799",
+  "connect.addressPlaceholder": "https://limix.example.com oder 192.168.1.20:8799",
   "connect.code": "Kopplungscode",
   "connect.noCode": "Kein Code? Führe auf dem Server aus:",
   "connect.addAddress": "Gib jetzt die Adresse des Servers ein, z. B. {example}.",

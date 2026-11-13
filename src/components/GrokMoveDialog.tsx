@@ -237,7 +237,7 @@ export function GrokMoveDialog({ onClose, inline = false }: { onClose: () => voi
   );
   if (inline) return panel;
   return (
-    <div className="ui-scrim fixed inset-0 z-[60] flex items-center justify-center p-4" onMouseDown={(event) => { if (event.target === event.currentTarget && !importing) onClose(); }}>
+    <div className="ui-scrim fixed inset-0 z-[60] flex items-center justify-center p-4" onMouseDown={(event) => event.stopPropagation()}>
       {panel}
     </div>
   );

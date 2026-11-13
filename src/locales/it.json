@@ -553,7 +553,7 @@
   "connect.lede": "Incolla il link mostrato dal server, oppure scrivi il suo indirizzo e il codice di abbinamento. I suoi bot restano sul server.",
   "connect.signedInLede": "Ha già effettuato l'accesso con il tuo account. Incolla il suo link, oppure scrivi il suo indirizzo e un codice di abbinamento.",
   "connect.address": "Link o indirizzo",
-  "connect.addressPlaceholder": "https://maus.example.com o 192.168.1.20:8799",
+  "connect.addressPlaceholder": "https://limix.example.com o 192.168.1.20:8799",
   "connect.code": "Codice di abbinamento",
   "connect.noCode": "Nessun codice? Sul server, esegui:",
   "connect.addAddress": "Ora aggiungi l'indirizzo del server, ad esempio {example}.",

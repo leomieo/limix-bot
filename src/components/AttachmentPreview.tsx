@@ -541,7 +541,7 @@ export function AttachmentPreviewDialog({
   return createPortal(
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-6"
-      onMouseDown={(event) => event.target === event.currentTarget && onClose()}
+      onMouseDown={(event) => event.stopPropagation()}
     >
       <div
         ref={dialogRef}

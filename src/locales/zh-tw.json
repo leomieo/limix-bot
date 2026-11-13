@@ -682,7 +682,7 @@
   "connect.lede": "貼上伺服器顯示的連結，或輸入它的位址和配對碼。它的機器人會留在伺服器上。",
   "connect.signedInLede": "它已經登入你的帳號。貼上它的連結，或輸入它的位址和配對碼。",
   "connect.address": "連結或位址",
-  "connect.addressPlaceholder": "https://maus.example.com 或 192.168.1.20:8799",
+  "connect.addressPlaceholder": "https://limix.example.com 或 192.168.1.20:8799",
   "connect.code": "配對碼",
   "connect.noCode": "沒有配對碼？在伺服器上執行：",
   "connect.addAddress": "現在加上伺服器的位址，例如 {example}。",

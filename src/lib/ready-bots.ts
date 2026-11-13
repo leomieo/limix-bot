@@ -1,7 +1,6 @@
 import type { BotRoutineTemplate, NewBotDefaults } from "../../shared/new-bot-defaults";
 import type { MascotBodyId } from "../../shared/mascot-bodies";
 import type { MausColor } from "../../shared/wire";
-import { t, tFromServer } from "@/lib/i18n";
 
 export type ReadyBotCategory = "everyday" | "work" | "writing" | "design" | "sales" | "personal";
 
@@ -33,7 +32,7 @@ export const READY_BOTS: ReadyBot[] = [
     category: "everyday",
     name: "Assistant",
     title: "General assistant",
-    description: "Answers questions, drafts text, and takes on whatever you hand it.",
+    description: "Trả lời câu hỏi, soạn văn bản và nhận mọi việc bạn giao.",
     soul: [
       "You are a capable, plain-spoken assistant.",
       "Ask one clarifying question when a request is ambiguous; otherwise do the work and show the result.",
@@ -50,7 +49,7 @@ export const READY_BOTS: ReadyBot[] = [
     category: "work",
     name: "Inbox",
     title: "Email triage",
-    description: "Reads your inbox, flags what needs you, and drafts replies for approval.",
+    description: "Đọc hộp thư, đánh dấu những gì cần bạn và soạn câu trả lời để bạn duyệt.",
     soul: [
       "You manage the user's email.",
       "Each run: list unread mail and group it into Needs a reply, FYI, and Noise, in that order, with one line per message (sender, subject, why it is in that group).",
@@ -68,7 +67,7 @@ export const READY_BOTS: ReadyBot[] = [
     category: "everyday",
     name: "Scout",
     title: "Researcher",
-    description: "Digs through the web and your files, and comes back with a sourced brief.",
+    description: "Tìm hiểu trên web và trong tệp của bạn, rồi trả về bản tóm tắt có dẫn nguồn.",
     soul: [
       "You research questions and return a brief: the answer first, then the evidence with links, then what you could not verify.",
       "Prefer primary sources and date every claim that can change. Say clearly when sources disagree, and show both sides.",
@@ -84,7 +83,7 @@ export const READY_BOTS: ReadyBot[] = [
     category: "work",
     name: "Dev",
     title: "Coding partner",
-    description: "Works inside a project folder: reads, edits, runs tests, explains changes.",
+    description: "Làm việc trong thư mục dự án: đọc, sửa, chạy test, giải thích thay đổi.",
     soul: [
       "You are a careful engineer working in the user's project folder.",
       "Read before you edit, and follow the project's existing style. Keep diffs small and focused on what was asked.",
@@ -100,7 +99,7 @@ export const READY_BOTS: ReadyBot[] = [
     category: "work",
     name: "Watch",
     title: "Community monitor",
-    description: "Watches Discord, Slack, or forums and reports what matters, on a schedule.",
+    description: "Theo dõi Discord, Slack hoặc diễn đàn và báo cáo điều quan trọng theo lịch.",
     soul: [
       "You monitor the user's community channels.",
       "Each run: read new messages since last time; pull out unanswered questions, bug reports, and anything urgent; and summarise them with links, most urgent first.",
@@ -117,7 +116,7 @@ export const READY_BOTS: ReadyBot[] = [
     category: "work",
     name: "Buzz",
     title: "Social media manager",
-    description: "Plans your posts and adds them to Postiz as drafts or scheduled posts, ready for you to review.",
+    description: "Lên kế hoạch bài đăng và thêm vào Postiz dưới dạng nháp hoặc bài hẹn giờ, sẵn sàng để bạn duyệt.",
     soul: [
       "You manage the user's social media through Postiz, with the postiz tools.",
       "Before writing for a channel, list the connected channels (integrationList) and read that platform's rules and settings (integrationSchema). Never guess a channel id.",
@@ -143,7 +142,7 @@ export const READY_BOTS: ReadyBot[] = [
     category: "work",
     name: "Ops",
     title: "Operations",
-    description: "Keeps calendars, tasks, and follow-ups moving; nudges you before things slip.",
+    description: "Giữ lịch, công việc và việc cần theo dõi luôn trôi chảy; nhắc bạn trước khi có gì bị trễ.",
     soul: [
       "You keep the user's week on track.",
       "Each run: check the calendar and open tasks, list today's commitments and anything overdue, and propose the next action for each.",
@@ -160,7 +159,7 @@ export const READY_BOTS: ReadyBot[] = [
     category: "writing",
     name: "Quill",
     title: "Writer",
-    description: "Drafts and edits posts, emails, and docs in your voice, from a rough note to a final draft.",
+    description: "Soạn và sửa bài đăng, email, tài liệu theo giọng văn của bạn, từ ghi chú thô tới bản cuối.",
     soul: [
       "You are a writing partner.",
       "Before a long draft, confirm the audience, the goal, and the length in one short question if they are unclear.",
@@ -177,7 +176,7 @@ export const READY_BOTS: ReadyBot[] = [
     category: "work",
     name: "Sigma",
     title: "Data analyst",
-    description: "Answers questions about spreadsheets and CSVs with numbers, tables, and charts you can check.",
+    description: "Trả lời câu hỏi về bảng tính và CSV bằng số liệu, bảng và biểu đồ bạn có thể kiểm tra.",
     soul: [
       "You analyse data the user gives you: spreadsheets, CSV files, exports.",
       "Start by describing the data: rows, columns, date range, and anything missing or odd.",
@@ -194,7 +193,7 @@ export const READY_BOTS: ReadyBot[] = [
     category: "work",
     name: "Minutes",
     title: "Meeting notes",
-    description: "Turns transcripts and rough notes into decisions, owners, and follow-ups.",
+    description: "Biến bản ghi lời và ghi chú thô thành quyết định, người phụ trách và việc cần làm tiếp.",
     soul: [
       "You turn meeting transcripts and rough notes into clean minutes.",
       "Structure: a two-line summary, Decisions, Action items (owner, task, due date), Open questions.",
@@ -210,7 +209,7 @@ export const READY_BOTS: ReadyBot[] = [
     category: "personal",
     name: "Atlas",
     title: "Travel planner",
-    description: "Plans trips day by day around your budget and pace, and keeps the details in one place.",
+    description: "Lên kế hoạch chuyến đi từng ngày theo ngân sách và nhịp độ của bạn, giữ mọi chi tiết ở một chỗ.",
     soul: [
       "You plan trips.",
       "Ask for dates, budget, pace, and must-dos if they are missing, then propose a day-by-day plan with travel times between places.",
@@ -230,7 +229,7 @@ export const READY_BOTS: ReadyBot[] = [
     category: "personal",
     name: "Sage",
     title: "Study buddy",
-    description: "Explains topics step by step, quizzes you, and tracks what you still need to review.",
+    description: "Giải thích từng bước, đố bạn và ghi lại những gì bạn còn cần ôn.",
     soul: [
       "You help the user learn.",
       "Explain step by step with a simple example first, then the general idea. Check understanding with one short question before moving on.",
@@ -250,7 +249,7 @@ export const READY_BOTS: ReadyBot[] = [
     category: "writing",
     name: "Echo",
     title: "Humanizer",
-    description: "Rewrites stiff or AI-sounding drafts so they read like you, and shows every change.",
+    description: "Viết lại bản nháp cứng nhắc hoặc giống AI cho tự nhiên như bạn viết, và chỉ rõ mọi thay đổi.",
     soul: [
       "You rewrite drafts so they sound like a person wrote them, in the user's own voice.",
       "Keep the meaning and every fact exactly as given. Never add claims, numbers, names, or examples that were not in the draft.",
@@ -270,7 +269,7 @@ export const READY_BOTS: ReadyBot[] = [
     category: "design",
     name: "Lens",
     title: "Design critic",
-    description: "Gives a ranked critique of a screenshot or page: hierarchy, type, colour, copy, and accessibility.",
+    description: "Nhận xét có xếp hạng cho ảnh chụp màn hình hoặc trang: bố cục, chữ, màu, nội dung và khả năng tiếp cận.",
     soul: [
       "You critique designs from screenshots, images, or links. You never edit the user's files.",
       "Start with one line on what the design is trying to do, then list issues ranked by impact, most important first.",
@@ -287,7 +286,7 @@ export const READY_BOTS: ReadyBot[] = [
     category: "sales",
     name: "Coach",
     title: "Sales call coach",
-    description: "Scores a sales call from its transcript and suggests the three changes that would help most.",
+    description: "Chấm điểm cuộc gọi bán hàng từ bản ghi lời và gợi ý ba thay đổi hữu ích nhất.",
     soul: [
       "You coach sales calls from transcripts or notes the user shares.",
       "Score the call from 1 to 5 on: discovery questions, listening (talk-time balance), handling objections, clear next step, and value framed in the buyer's words.",
@@ -304,7 +303,7 @@ export const READY_BOTS: ReadyBot[] = [
     category: "personal",
     name: "Fern",
     title: "Plant care log",
-    description: "Keeps a private journal of your houseplants and reminds you when they need water or care.",
+    description: "Ghi nhật ký riêng về cây cảnh trong nhà và nhắc bạn khi cây cần tưới hoặc chăm sóc.",
     soul: [
       "You look after the user's houseplants.",
       "Keep one entry per plant in memory/plants.md: name, species, where it lives, light, how often to water, and the last time it was watered, repotted, or fed.",
@@ -345,13 +344,12 @@ export function readyBotTemplate(defaults: NewBotDefaults, bot: ReadyBot): NewBo
     const own = template.memory[path]?.trimEnd();
     template.memory[path] = own ? `${own}\n${text}` : text;
   }
-  template.routines = [...template.routines, ...(bot.routines ?? []).map((routine) => ({ ...routine, ...(bot.id === "social" ? { name: t("readyBots.routine.socialWeekly") } : {}), enabled: false }))];
+  template.routines = [...template.routines, ...(bot.routines ?? []).map((routine) => ({ ...routine, enabled: false }))];
   return template;
 }
 
 export function readyBotCopy(bot: ReadyBot): { title: string; description: string; tryAsking: string } {
-  const copy = (field: string, english: string) => tFromServer(`readyBots.bot.${bot.id}.${field}`, english);
-  return { title: copy("title", bot.title), description: copy("description", bot.description), tryAsking: copy("try", bot.tryAsking[0]!) };
+  return { title: bot.title, description: bot.description, tryAsking: bot.tryAsking[0]! };
 }
 
 export function matchesReadyBot(bot: ReadyBot, query: string): boolean {

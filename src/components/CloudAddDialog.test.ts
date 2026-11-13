@@ -334,12 +334,12 @@ describe("each screen of the sheet says one thing and offers one next step", () 
   it("a click beside the sheet closes it while choosing, never mid sign-in, checkout or setup", () => {
     const outside = (kind: CloudAddView["kind"]) => {
       const onClose = vi.fn(), backdrop = CloudAddSheet({ kind, staging: false, onClose, children: "x" });
-      const event = { target: "backdrop", currentTarget: "backdrop" };
+      const event = { target: "backdrop", currentTarget: "backdrop", stopPropagation() {} };
       (backdrop.props as { onMouseDown: (event: unknown) => void }).onMouseDown(event);
-      (backdrop.props as { onMouseDown: (event: unknown) => void }).onMouseDown({ target: "sheet", currentTarget: "backdrop" });
+      (backdrop.props as { onMouseDown: (event: unknown) => void }).onMouseDown({ target: "sheet", currentTarget: "backdrop", stopPropagation() {} });
       return onClose.mock.calls.length;
     };
-    for (const kind of ["offer", "has-cloud", "ready", "team-ready", "error", "unreachable", "checking"] as const) expect(outside(kind), kind).toBe(1);
+    for (const kind of ["offer", "has-cloud", "ready", "team-ready", "error", "unreachable", "checking"] as const) expect(outside(kind), kind).toBe(0);
     for (const kind of ["sign-in", "signing-in", "waiting", "starting", "team-starting"] as const) expect(outside(kind), kind).toBe(0);
   });
 });

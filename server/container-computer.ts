@@ -55,7 +55,7 @@ export const IMAGE_REPOSITORY = "localhost/limixbot/cua-local-vm";
 export const IMAGE_LAYER_VERSION = "9";
 export const IMAGE_LAYER_LABEL = "com.openmausbot.image-layer";
 export const IMAGE = `${IMAGE_REPOSITORY}:driver-${CUA_DRIVER_VERSION}-v${IMAGE_LAYER_VERSION}`;
-export const CONTAINER = "openmausbot-computer";
+export const CONTAINER = "limixbot-computer";
 export const MANAGED_LABEL = "com.openmausbot.local-vm";
 export const DRIVER_LABEL = "com.openmausbot.cua-driver";
 export const BASE_IMAGE_LABEL = "com.openmausbot.cua-base";
@@ -421,6 +421,32 @@ function containerOwnershipLabelsMatch(
   );
 }
 
+
+export async function migrateLocalVmName(runtime: Runtime, target: LocalVmTarget, runner: CommandRunner): Promise<void> {
+  if (runtime === "container" || !target.containerName.startsWith(CONTAINER)) return;
+  try {
+    await runner(runtime, ["inspect", target.containerName]);
+    return;
+  } catch {}
+  const legacy = target.containerName.replace(/^limixbot-computer/, "openmausbot-computer");
+  let labels: Record<string, string> | undefined;
+  try {
+    const { stdout } = await runner(runtime, ["inspect", legacy]);
+    labels = (JSON.parse(stdout) as Array<{ Config?: { Labels?: Record<string, string> } }>)[0]?.Config?.Labels;
+  } catch {
+    return;
+  }
+  if (!containerOwnershipLabelsMatch(labels, target)) return;
+  try {
+    await runner(runtime, ["rename", legacy, target.containerName]);
+  } catch (error) {
+    // Concurrent status requests may have already renamed the same container.
+    const { stdout } = await runner(runtime, ["inspect", target.containerName]);
+    const current = (JSON.parse(stdout) as Array<{ Config?: { Labels?: Record<string, string> } }>)[0];
+    if (!containerOwnershipLabelsMatch(current?.Config?.Labels, target)) throw error;
+  }
+}
+
 function normalizeImageId(id: string | undefined): string | null {
   return id?.trim().replace(/^sha256:/, "") || null;
 }
@@ -515,6 +541,8 @@ export async function containerComputerStatus(
     status.image = imageLabelsMatch(image.labels);
     status.image_id = image.id;
   } catch {}
+
+  await migrateLocalVmName(status.runtime, target, runner);
 
   try {
     const { stdout } = await runner(status.runtime, ["inspect", target.containerName]);

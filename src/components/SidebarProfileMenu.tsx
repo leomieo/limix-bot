@@ -24,7 +24,7 @@ import {
   Zap,
 } from "lucide-react";
 
-import { accountMenuItems, AccountsSheet, cloudRowLabel, useAccounts } from "./AccountMenu";
+import { accountMenuItems, AccountsSheet, useAccounts } from "./AccountMenu";
 import { AccountMoveStatus, useAccountMove, type AccountMoveKind } from "./AccountMove";
 import { InitialsAvatar } from "./Avatar";
 import { ZaloIcon } from "./ZaloIcon";
@@ -601,7 +601,6 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
   const remote = window.ogb?.remoteClient?.active === true;
   const besideRail = railShown(usePlaces());
   const filesReady = useCloudFilesReady();
-  const cloudAccount = !remote && Boolean(window.ogb?.cloudAccount || (window.ogb?.cloudPlan && state.config?.cloudHome === true));
   const openCloudAccount = () => dispatch({ type: "toggleAppSettings", open: true, section: "cloudAccount" });
   const move = useAccountMove(state.config?.cloudHome === true, { onOpen: openCloudAccount, onPairPhone: () => dispatch(phonePairingSettingsAction()) });
   const accounts = useAccounts();
@@ -621,7 +620,7 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
     update: update?.item ?? null,
     updateTop: simple ? simpleUpdateTop(update) : null,
     move: move.items,
-    account: cloudAccount ? cloudRowLabel(accounts.view) : null,
+    account: null,
     accounts: accountMenuItems(accounts),
     ...(account ? { simple: {
       tools: toolMenuItems({

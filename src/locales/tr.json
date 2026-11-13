@@ -5155,7 +5155,7 @@
   "connect.lede": "Sunucunun gösterdiği bağlantıyı yapıştırın ya da adresini ve eşleştirme kodunu yazın. Botları sunucuda kalır.",
   "connect.signedInLede": "Hesabınızla zaten oturum açmış. Bağlantısını yapıştırın ya da adresini ve bir eşleştirme kodu yazın.",
   "connect.address": "Bağlantı veya adres",
-  "connect.addressPlaceholder": "https://maus.example.com veya 192.168.1.20:8799",
+  "connect.addressPlaceholder": "https://limix.example.com veya 192.168.1.20:8799",
   "connect.code": "Eşleştirme kodu",
   "connect.noCode": "Kodunuz yok mu? Sunucuda şunu çalıştırın:",
   "connect.addAddress": "Şimdi sunucunun adresini ekleyin, örneğin {example}.",

@@ -557,7 +557,7 @@
   "connect.lede": "Вставьте ссылку, которую показал сервер, или введите его адрес и код сопряжения. Его боты остаются на сервере.",
   "connect.signedInLede": "Он уже вошёл в ваш аккаунт. Вставьте его ссылку или введите адрес и код сопряжения.",
   "connect.address": "Ссылка или адрес",
-  "connect.addressPlaceholder": "https://maus.example.com или 192.168.1.20:8799",
+  "connect.addressPlaceholder": "https://limix.example.com или 192.168.1.20:8799",
   "connect.code": "Код сопряжения",
   "connect.noCode": "Нет кода? Выполните на сервере:",
   "connect.addAddress": "Теперь введите адрес сервера, например {example}.",

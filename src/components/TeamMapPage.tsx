@@ -186,7 +186,7 @@ export function SectionContextDialog({ section, label, onClose }: { section: str
     // compositing (common on Linux).
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 sm:p-6"
-      onMouseDown={(event) => event.target === event.currentTarget && requestClose()}
+      onMouseDown={(event) => event.stopPropagation()}
     >
       <div
         ref={dialogRef}

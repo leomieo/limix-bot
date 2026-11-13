@@ -33,7 +33,7 @@ export function NewRoomPanel({ onClose }: { onClose: () => void }) {
   return (
     <div
       className="fixed inset-0 z-40 flex items-center justify-center bg-black/40"
-      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+      onMouseDown={(event) => event.stopPropagation()}
     >
       <div className="w-[340px] rounded-2xl border border-hairline/50 bg-card p-4 shadow-2xl">
         <div className="mb-3 text-[15px] font-semibold text-ink">{t("sidebar.newChannel.title")}</div>

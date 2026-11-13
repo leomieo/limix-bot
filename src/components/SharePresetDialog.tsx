@@ -168,9 +168,7 @@ export function SharePresetDialog({ onClose }: { onClose: () => void }) {
   const localSkips = includePicture ? picture?.skipped ?? [] : [];
   const field = "mt-1 w-full rounded-lg border border-hairline/50 bg-inset px-3 py-2 text-[14px] text-ink disabled:opacity-60";
   return createPortal(
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4" onMouseDown={(event) => {
-      if (event.target === event.currentTarget && !saving) onClose();
-    }}>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4" onMouseDown={(event) => event.stopPropagation()}>
       <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="share-preset-title" tabIndex={-1}
         className="flex max-h-[90vh] w-full max-w-[560px] flex-col overflow-hidden rounded-2xl border border-hairline/50 bg-panel text-ink shadow-2xl outline-none"
         onKeyDown={(event) => {

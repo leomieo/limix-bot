@@ -1605,7 +1605,7 @@ edit("electron/main.mjs", lambda s: s if "OMB_UI_LANGUAGE" in s else must(s, "  
     "    // The language picked in this app, so the first greeting and the starting choices are written in it (empty: follow the system).\n"
     "    OMB_UI_LANGUAGE: nativeText.prefs?.language() ?? \"\",\n"))
 
-# 11b. Bot templates from github.com/leomieo/limix-bot-teams, the way the Skill Hub works: Templates > Khám phá
+# 11b. Bot templates from github.com/leomieo/limix-bot-templates, the way the Skill Hub works: Templates > Khám phá
 # lists bots from catalog.json (limix/overlay/server/limix-bot-library.ts) and fetches one bot's file only when
 # "Dùng mẫu" is pressed (limix/overlay/src/components/LimixBotGallery.tsx); offline, the built-in bots show.
 def bot_library_routes(s):
@@ -1620,6 +1620,8 @@ def bot_library_routes(s):
 edit("server/routes/bot-skills.ts", bot_library_routes)
 
 def bot_library_gallery(s):
+    if "refreshTemplates" in s and 'tab === "teams"' in s:
+        return s
     s = must(s, 'import { ReadyBotGallery } from "./ReadyBotGallery";', 'import { LimixBotGallery } from "./LimixBotGallery";')
     s = must(s, "<ReadyBotGallery search={search} onDialog", "<LimixBotGallery search={search} onRefresh={() => void loadCatalog(true)} onDialog")
     # "Cập nhật" asks for the team list past GitHub's cache too.
@@ -2012,3 +2014,42 @@ edit("NOTICE", notice)
 print(f"rebrand: {len(changed)} files changed")
 for c in changed:
     print("  " + c)
+
+def remove_redundant_account_row(s):
+    s = s.replace('accountMenuItems, AccountsSheet, cloudRowLabel, useAccounts', 'accountMenuItems, AccountsSheet, useAccounts')
+    s = s.replace('  const cloudAccount = !remote && Boolean(window.ogb?.cloudAccount || (window.ogb?.cloudPlan && state.config?.cloudHome === true));\n', '')
+    return s.replace('account: cloudAccount ? cloudRowLabel(accounts.view) : null,', 'account: null,')
+edit("src/components/SidebarProfileMenu.tsx", remove_redundant_account_row)
+
+
+def limix_container_names(s):
+    s = s.replace('export const CONTAINER = "openmausbot-computer";', 'export const CONTAINER = "limixbot-computer";')
+    if "export async function migrateLocalVmName(" not in s:
+        s = must(s, "function normalizeImageId(", '\nexport async function migrateLocalVmName(runtime: Runtime, target: LocalVmTarget, runner: CommandRunner): Promise<void> {\n  if (runtime === "container" || !target.containerName.startsWith(CONTAINER)) return;\n  try {\n    await runner(runtime, ["inspect", target.containerName]);\n    return;\n  } catch {}\n  const legacy = target.containerName.replace(/^limixbot-computer/, "openmausbot-computer");\n  let labels: Record<string, string> | undefined;\n  try {\n    const { stdout } = await runner(runtime, ["inspect", legacy]);\n    labels = (JSON.parse(stdout) as Array<{ Config?: { Labels?: Record<string, string> } }>)[0]?.Config?.Labels;\n  } catch {\n    return;\n  }\n  if (!containerOwnershipLabelsMatch(labels, target)) return;\n  try {\n    await runner(runtime, ["rename", legacy, target.containerName]);\n  } catch (error) {\n    // Concurrent status requests may have already renamed the same container.\n    const { stdout } = await runner(runtime, ["inspect", target.containerName]);\n    const current = (JSON.parse(stdout) as Array<{ Config?: { Labels?: Record<string, string> } }>)[0];\n    if (!containerOwnershipLabelsMatch(current?.Config?.Labels, target)) throw error;\n  }\n}\n\n' + "function normalizeImageId(")
+        s = must(s, '  try {\n    const { stdout } = await runner(status.runtime, ["inspect", target.containerName]);', '  await migrateLocalVmName(status.runtime, target, runner);\n\n  try {\n    const { stdout } = await runner(status.runtime, ["inspect", target.containerName]);')
+    return s
+edit("server/container-computer.ts", limix_container_names)
+
+def remaining_visible_brand(s):
+    return s.replace("https://github.com/milind-soni/OpenMausBot/blob/main/docs/", "https://github.com/leomieo/limix-bot/blob/main/docs/").replace("https://maus.example.com", "https://limix.example.com")
+for folder in ("src", "limix/overlay/src"):
+    for p in sorted((ROOT / folder).rglob("*")):
+        if p.is_file() and p.suffix in (".ts", ".tsx", ".json") and "node_modules" not in p.parts:
+            edit(p.relative_to(ROOT).as_posix(), remaining_visible_brand)
+def package_display_brand(s):
+    return s.replace("name: OpenMausBot package install", "name: Limix Bot package install").replace("vendor: OpenMausBot", "vendor: Limix AI").replace("Name: OpenMausBot", "Name: Limix Bot").replace("OpenMausBot uses", "Limix Bot uses").replace("OpenMausBot transcribes", "Limix Bot transcribes").replace("OpenMausBot connects", "Limix Bot connects").replace("OpenMausBot looks", "Limix Bot looks")
+edit("electron-builder.yml", package_display_brand)
+
+def explicit_modal_close(s):
+    handler = 'onMouseDown={(event) => event.stopPropagation()}'
+    s = re.sub(r'onMouseDown=\{(?:\(\w+\)|\w+) => \w+\.target === \w+\.currentTarget && [^{}\n]+\}', handler, s)
+    s = re.sub(r'onMouseDown=\{(?:\(\w+\)|\w+) => \{[^{}]*?\w+\.target === \w+\.currentTarget[^{}]*?\}\}', handler, s)
+    return s
+for folder in ("src/components", "limix/overlay/src/components"):
+    for p in sorted((ROOT / folder).rglob("*.tsx")):
+        if ".test." not in p.name:
+            edit(p.relative_to(ROOT).as_posix(), explicit_modal_close)
+
+edit("src/components/CloudAddDialog.tsx", lambda s: re.sub(r"/\*\* Mid sign-in[^\n]*\*/\nconst HELD:[^\n]*\n", "", s))
+
+edit("src/components/BrowserPanel.tsx", lambda s: s.replace(' onClick={(e) => { if (e.target === e.currentTarget) setShowProfiles(false); }}', ""))

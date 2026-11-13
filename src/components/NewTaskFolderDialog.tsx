@@ -26,7 +26,7 @@ export function NewTaskFolderDialog({ bot, onClose, onReturnFocus }: { bot: Bot;
   }, [saving, error]);
 
   return createPortal(<div data-thread-overlay className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
-    onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
+    onMouseDown={(event) => event.stopPropagation()}>
     <div ref={dialog} role="dialog" tabIndex={-1} aria-modal="true" aria-label={t("task.folder.new")} aria-busy={saving || undefined}
       className="w-full max-w-[440px] rounded-2xl border border-hairline/50 bg-panel p-5 text-ink shadow-2xl">
       <h2 className="flex items-center gap-2 text-[15px] font-semibold"><FolderOpen size={16} />{t("task.folder.new")}</h2>

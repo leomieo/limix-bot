@@ -2729,7 +2729,7 @@
   "connect.lede": "सर्वर ने जो लिंक दिखाया उसे पेस्ट करें, या उसका पता और पेयरिंग कोड टाइप करें। उसके बॉट सर्वर पर ही रहते हैं।",
   "connect.signedInLede": "यह पहले से आपके खाते में साइन इन है। इसका लिंक पेस्ट करें, या इसका पता और एक पेयरिंग कोड टाइप करें।",
   "connect.address": "लिंक या पता",
-  "connect.addressPlaceholder": "https://maus.example.com या 192.168.1.20:8799",
+  "connect.addressPlaceholder": "https://limix.example.com या 192.168.1.20:8799",
   "connect.code": "पेयरिंग कोड",
   "connect.noCode": "कोड नहीं है? सर्वर पर चलाएँ:",
   "connect.addAddress": "अब सर्वर का पता जोड़ें, जैसे {example}।",

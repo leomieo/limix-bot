@@ -557,7 +557,7 @@
   "connect.lede": "Wklej link wyświetlony przez serwer albo wpisz jego adres i kod parowania. Jego boty zostają na serwerze.",
   "connect.signedInLede": "Jest już zalogowany na Twoje konto. Wklej jego link albo wpisz jego adres i kod parowania.",
   "connect.address": "Link lub adres",
-  "connect.addressPlaceholder": "https://maus.example.com lub 192.168.1.20:8799",
+  "connect.addressPlaceholder": "https://limix.example.com lub 192.168.1.20:8799",
   "connect.code": "Kod parowania",
   "connect.noCode": "Nie masz kodu? Na serwerze uruchom:",
   "connect.addAddress": "Teraz dodaj adres serwera, np. {example}.",

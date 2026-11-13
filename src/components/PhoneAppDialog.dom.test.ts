@@ -59,12 +59,12 @@ it("focuses Close and keeps the close button and Escape working after portalling
   expect(close).toHaveBeenCalledTimes(2);
 });
 
-it("closes on a backdrop press while a press inside the card leaves it open", () => {
+it("keeps the dialog open on backdrop and inside presses", () => {
   render();
   flushSync(() => dialog()!.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })));
   expect(close).not.toHaveBeenCalled();
   flushSync(() => backdrop().dispatchEvent(new MouseEvent("mousedown", { bubbles: true })));
-  expect(close).toHaveBeenCalledTimes(1);
+  expect(close).not.toHaveBeenCalled();
 });
 
 it("closes before opening the selected pairing destination", () => {

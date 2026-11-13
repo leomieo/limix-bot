@@ -131,9 +131,7 @@ export function TeamSettingsDialog({ team, onClose }: { team: string; onClose: (
     active ? "bg-raised text-ink" : "text-ink-secondary hover:text-ink");
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onMouseDown={(event) => {
-      if (event.target === event.currentTarget) close();
-    }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onMouseDown={(event) => event.stopPropagation()}>
       <div ref={dialog} role="dialog" aria-modal="true" aria-labelledby="team-settings-title" data-testid="team-settings-dialog"
         className="max-h-[90vh] w-full max-w-[460px] overflow-y-auto rounded-2xl border border-hairline/50 bg-panel p-5 text-ink shadow-2xl"
         onKeyDown={(event) => { if (event.key === "Escape" && !consent) { event.stopPropagation(); close(); } }}>

@@ -53,7 +53,7 @@ export function UpdatesConsentDialog({ signedIn, onYes, onNo }: {
     setBusy(true); setError(null);
     void onYes(signedIn || !typed ? undefined : typed).catch(() => { setBusy(false); setError(t("updatesConsent.failed")); });
   };
-  return <Layer modal><div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6" onMouseDown={event => { if (event.target === event.currentTarget && !busy) onNo(); }}>
+  return <Layer modal><div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6" onMouseDown={(event) => event.stopPropagation()}>
     <div role="dialog" aria-modal="true" aria-labelledby={TITLE} aria-describedby="updates-consent-body" data-updates-consent-popup="" tabIndex={-1}
       onKeyDown={event => { if (event.key === "Escape" && !busy) { event.preventDefault(); event.stopPropagation(); onNo(); } }}
       className="relative max-h-full w-full max-w-[400px] overflow-y-auto rounded-2xl border border-hairline/50 bg-panel p-6 text-ink shadow-2xl outline-none">

@@ -103,7 +103,7 @@ export function CallSheet({ message, transcript, botName, threadId, busy, partia
   return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 sm:p-6"
-      onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}
+      onMouseDown={(event) => event.stopPropagation()}
     >
       <div
         ref={dialog}

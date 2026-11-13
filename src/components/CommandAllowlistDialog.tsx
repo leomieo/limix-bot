@@ -109,7 +109,7 @@ export function CommandAllowlistDialog({ botId, botName, threadId, onClose }: {
       data-thread-overlay
       style={overlayStyle}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
-      onMouseDown={(event) => { event.stopPropagation(); if (event.target === event.currentTarget) onClose(); }}
+      onMouseDown={(event) => event.stopPropagation()}
       onKeyDown={(event) => {
         if (event.key !== "Tab") return;
         const controls = dialogRef.current?.querySelectorAll<HTMLElement>(
