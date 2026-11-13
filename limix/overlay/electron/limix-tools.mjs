@@ -53,6 +53,7 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
   const python = runtime.LIMIX_PYTHON;
   const uv = path.join(resourcesPath, "limix-runtime", "uv", process.platform === "win32" ? "uv.exe" : "uv");
   const jobs = new Map(); // id -> { status: "working" | "error", step, progress, message }
+  let skillScan = null;
   let queue = Promise.resolve();
   const exe = (name) => (process.platform === "win32" ? `${name}.exe` : name);
 
@@ -144,7 +145,7 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
       const found = await locate(tool.id);
       items.push({ ...tool, needs: tool.needs ?? [], installed: Boolean(found), source: found?.from ?? null, where: found?.where ?? null, job: job ?? null });
     }
-    return { supported: process.platform === "win32" && Boolean(python), items };
+    return { supported: process.platform === "win32" && Boolean(python), items, skillScan };
   };
 
   const set = (id, patch) => jobs.set(id, { ...(jobs.get(id) ?? { status: "working", progress: null }), ...patch });
@@ -338,5 +339,16 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
     await fsp.writeFile(promptFile, JSON.stringify({ at: new Date().toISOString() }));
   }
 
-  return { state, scan: () => state({ rescanPath: true }), install, shouldAsk, markAsked };
+  const scan = async () => {
+    const next = await state({ rescanPath: true });
+    try {
+      const response = await serverRequest("/api/limix/skill-requirements", { method: "GET" });
+      if (response?.ok === false) throw new Error(`HTTP ${response.status}`);
+      skillScan = typeof response?.json === "function" ? await response.json() : response;
+    } catch (error) {
+      skillScan = { error: error instanceof Error ? error.message : String(error) };
+    }
+    return { ...next, skillScan };
+  };
+  return { state, scan, install, shouldAsk, markAsked };
 }

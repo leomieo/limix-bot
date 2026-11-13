@@ -8,7 +8,9 @@ import { lx } from "@/lib/limix-text";
 
 interface ToolJob { status: "working" | "error"; step?: string | null; progress?: number | null; message?: string | null }
 interface ToolItem { id: string; name: string; why: string; size: string; recommended?: boolean; needs: string[]; installed: boolean; source?: "limix" | "system" | null; where?: string | null; job: ToolJob | null }
-interface ToolsState { supported: boolean; items: ToolItem[] }
+interface SkillRequirement { skill: string; directory: string; kind: string; name: string; required?: string; evidence: string; status: "found" | "missing" | "review"; version?: string; where?: string }
+interface SkillScan { error?: string; skillCount?: number; scannedAt?: string; requirements?: SkillRequirement[]; warnings?: string[] }
+interface ToolsState { supported: boolean; items: ToolItem[]; skillScan?: SkillScan | null }
 type Bridge = { state(): Promise<ToolsState>; scan?(): Promise<ToolsState>; install(ids: string[]): Promise<ToolsState>; shouldAsk(): Promise<boolean>; markAsked(): Promise<void> };
 
 export const limixTools = (): Bridge | undefined => (window as unknown as { ogb?: { limixTools?: Bridge } }).ogb?.limixTools;
@@ -31,6 +33,7 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
   const [scanning, setScanning] = useState(false);
   const scan = useCallback(async () => {
     setScanning(true);
+    setError(null);
     try {
       const bridge = limixTools();
       const next = await (bridge?.scan ? bridge.scan() : bridge?.state());
@@ -88,7 +91,7 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
       )}
       <div className="flex items-center justify-between gap-3">
         <p className="text-[12px] leading-relaxed text-ink-secondary">
-          {lx("Limix Bot dùng luôn công cụ đã có trên máy bạn; chỉ công cụ chưa có mới hiện nút Cài.", "Limix Bot reuses tools you already have; only missing ones show an Install button.")}
+          {lx("Quét công cụ cơ bản và đọc yêu cầu của các kỹ năng đã cài. Chi tiết từng kỹ năng nằm dưới danh sách công cụ.", "Scan base tools and read requirements from installed skills. Per-skill results appear below the tool list.")}
         </p>
         <button type="button" className={`${button} shrink-0`} disabled={scanning || busy} onClick={() => void scan()}>
           {scanning ? <Loader2 size={14} className="animate-spin" /> : <ScanSearch size={14} />}{lx("Quét máy", "Scan this computer")}
@@ -139,11 +142,29 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
         )}
         {missing.length > 0 && (
           <button type="button" className={button} disabled={busy} onClick={() => void install(missing.map((item) => item.id))}>
-            {lx("Cài tất cả", "Install all")}
+            {lx("Cài công cụ cơ bản còn thiếu", "Install missing base tools")}
           </button>
         )}
         {asking && <button type="button" className={button} onClick={onClose}>{lx("Để sau", "Later")}</button>}
       </div>
+      {state.skillScan && <section className="mt-2 border-t border-hairline/40 pt-4" aria-label={lx("Yêu cầu của kỹ năng đã cài", "Installed skill requirements")}>
+        <h3 className="text-[14px] font-medium text-ink">{lx("Yêu cầu của kỹ năng đã cài", "Installed skill requirements")}</h3>
+        {state.skillScan.error ? <p role="alert" className="mt-2 text-[12px] text-danger">{lx("Chưa đọc được yêu cầu kỹ năng: ", "Could not read skill requirements: ")}{state.skillScan.error}</p> : <>
+          <p className="mt-1 text-[12px] text-ink-secondary">{lx(`Đã đọc ${state.skillScan.skillCount ?? 0} kỹ năng. Kết quả kiểm tra trên máy chạy Limix Bot; môi trường Docker và cloud cần kiểm tra riêng.`, `Read ${state.skillScan.skillCount ?? 0} skills. Checks apply to the computer running Limix Bot; Docker and cloud environments need separate checks.`)}</p>
+          <p className="mt-1 text-[12px] text-ink-tertiary">{lx("Gồm yêu cầu khai báo và công cụ được nhắc trong hướng dẫn. Xem nguồn để phân biệt yêu cầu bắt buộc và ví dụ; ràng buộc phiên bản chưa xác minh sẽ hiện Cần kiểm tra.", "Includes declared requirements and tools mentioned in instructions. Inspect the source to distinguish prerequisites from examples; unverified version constraints are marked Needs review.")}</p>
+          <ul className="mt-3 flex flex-col divide-y divide-hairline/40 rounded-xl border border-hairline/40">
+            {(state.skillScan.requirements ?? []).map((req, index) => <li key={`${req.directory}:${index}`} className="px-3 py-2 text-[12px]">
+              <div className="flex items-start justify-between gap-3">
+                <span className="min-w-0 break-words font-medium text-ink">{req.name}{req.required && ` ${req.required}`}</span>
+                <span className={req.status === "missing" ? "shrink-0 text-danger" : "shrink-0 text-ink-secondary"}>{req.status === "found" ? lx("Đã tìm thấy", "Found") : req.status === "missing" ? lx("Chưa tìm thấy", "Not found") : lx("Cần kiểm tra", "Needs review")}</span>
+              </div>
+              <p className="mt-1 break-words text-ink-secondary" title={req.directory}>{req.skill} · {req.kind}{req.version && ` · ${req.version}`}</p>
+              <details className="mt-1 text-ink-tertiary"><summary className="cursor-pointer">{lx("Xem nguồn yêu cầu", "Requirement source")}</summary><pre className="mt-1 whitespace-pre-wrap break-words font-sans">{req.evidence}{req.where && `\n${req.where}`}</pre></details>
+            </li>)}
+          </ul>
+          {!!state.skillScan.warnings?.length && <details className="mt-2 text-[12px] text-ink-secondary"><summary className="cursor-pointer">{lx(`Có ${state.skillScan.warnings.length} mục chưa đọc đủ`, `${state.skillScan.warnings.length} items could not be fully read`)}</summary><ul>{state.skillScan.warnings.map((warning, index) => <li key={index} className="break-words">{warning}</li>)}</ul></details>}
+        </>}
+      </section>}
       <p className="text-[12px] text-ink-tertiary">
         {lx("Công cụ được tải từ trang chính thức của từng dự án, kiểm tra mã an toàn, rồi đặt trong thư mục riêng của Limix Bot. Bạn có thể đóng cửa sổ này, việc cài vẫn tiếp tục.", "Tools are downloaded from each project's official site, checked with a hash, and kept in Limix Bot's own folder. You can close this window; installing carries on.")}
       </p>

@@ -2053,3 +2053,10 @@ for folder in ("src/components", "limix/overlay/src/components"):
 edit("src/components/CloudAddDialog.tsx", lambda s: re.sub(r"/\*\* Mid sign-in[^\n]*\*/\nconst HELD:[^\n]*\n", "", s))
 
 edit("src/components/BrowserPanel.tsx", lambda s: s.replace(' onClick={(e) => { if (e.target === e.currentTarget) setShowProfiles(false); }}', ""))
+
+def skill_requirement_scan_route(s):
+    if "scanSkillRequirements" in s:
+        return s
+    s = s.replace('import { readLocalSkills } from "../limix-skill-folder.ts";', 'import { readLocalSkills } from "../limix-skill-folder.ts";\nimport { scanSkillRequirements } from "../limix-skill-requirements.ts";')
+    return must(s, '    let m: RegExpMatchArray | null = null;', '    let m: RegExpMatchArray | null = null;\n    if (method === "GET" && path === "/api/limix/skill-requirements") {\n      return json(res, 200, await scanSkillRequirements(store.bots, cfg.mcpServers));\n    }')
+edit("server/routes/bot-skills.ts", skill_requirement_scan_route)
