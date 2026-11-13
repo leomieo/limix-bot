@@ -8,6 +8,7 @@ import { setNativeSkillEnabled } from "../native-skill-choices.ts";
 import { botSkillTemplateSchema } from "../new-bot-defaults.ts";
 import { fetchSkillFromSource } from "../skill-fetch.ts";
 import { readLocalSkills } from "../limix-skill-folder.ts";
+import { scanSkillRequirements } from "../limix-skill-requirements.ts";
 import { loadBundledSkills } from "../skill-library.ts";
 import { handleLimixHub } from "../limix-skill-hub.ts";
 import { proxyLimixGateway } from "../limix-gateway-sidecar.ts";
@@ -33,6 +34,9 @@ export function createBotSkillsRoutes(deps: BotSkillsRouteDeps): RouteHandler {
   const { store, cfg, listBotSkills, readBotSkillFile, stagedSkillListing } = deps;
   return async ({ req, res, url, path, method, json, readBody }) => {
     let m: RegExpMatchArray | null = null;
+    if (method === "GET" && path === "/api/limix/skill-requirements") {
+      return json(res, 200, await scanSkillRequirements(store.bots, cfg.mcpServers));
+    }
     if (path.startsWith("/api/limix/gateway") && proxyLimixGateway(req, res, path)) return;
     if (path.startsWith("/api/limix/bots")) {
       const library = await handleLimixBotLibrary(method, path);

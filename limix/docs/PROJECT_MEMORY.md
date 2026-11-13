@@ -171,3 +171,5 @@
 - Popup dạng hộp thoại giữ mở khi bấm nền ngoài, đóng bằng điều khiển rõ ràng. 19 test thao tác/focus đạt; bản cài Windows dựng thành công. Suite SettingsModal.simple còn 12 kỳ vọng cũ về menu/ngôn ngữ/tính năng chưa khớp bản fork.
 
 - Bản mẫu: tab Bản mẫu Nhóm tách khỏi Khám phá; Cập nhật chung tải lại hai kho, xử lý lỗi từng kho. Tạo và đẩy 16 Bot mẫu lên repo công khai leomieo/limix-bot-templates theo yêu cầu chủ dự án. Workflow cập nhật danh mục đã thành công; fixture control:omb tải thật 16 Bot + 2 nhóm, Dev có mô tả Việt và soul Anh. Repo nhóm vẫn leomieo/limix-bot-teams.
+
+- 0.3.29 bổ sung theo yêu cầu mới: Quét máy đọc yêu cầu skill tích hợp, thư viện, skill riêng từng Bot và các thư mục .agents/.codex/.claude; đọc SKILL.md và tài liệu phụ trợ, metadata, package.json, requirements.txt/pyproject. Kiểm tra CLI/npm/Python/env trên host; ràng buộc phiên bản/MCP/yêu cầu không tự kiểm được báo cần kiểm tra. Fixture riêng đã nhận Remotion có sẵn và CLI còn thiếu; 8 test liên quan đạt, typecheck đạt.
