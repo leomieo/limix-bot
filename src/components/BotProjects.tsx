@@ -106,7 +106,7 @@ export function BotProjectDialog({ bot, project, onClose, onCreated }: {
   }, []);
   return createPortal(
     <div data-thread-overlay className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
-      onMouseDown={(event) => { event.stopPropagation(); if (event.target === event.currentTarget) onClose(); }}
+      onMouseDown={(event) => event.stopPropagation()}
       onKeyDown={(event) => {
         if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); onCloseRef.current(); }
         if (event.key !== "Tab") return;

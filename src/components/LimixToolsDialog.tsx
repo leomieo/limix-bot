@@ -151,7 +151,7 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
   );
 
   const overlay = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6" onMouseDown={(event) => event.stopPropagation()}>
       <div role="dialog" aria-modal="true" aria-labelledby="limix-tools-title" className="max-h-full w-full max-w-[600px] overflow-y-auto rounded-2xl border border-hairline/50 bg-panel p-6 shadow-2xl">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 id="limix-tools-title" className="text-[17px] font-semibold text-ink">{lx("Công cụ cho kỹ năng", "Tools for skills")}</h2>

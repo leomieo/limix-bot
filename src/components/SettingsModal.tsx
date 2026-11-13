@@ -514,7 +514,7 @@ function SettingsDialog() {
         data-settings-sheet
         data-settings-look="simple"
         style={glassPopupFrameStyle()}
-        onMouseDown={(e) => e.target === e.currentTarget && close()}
+        onMouseDown={(event) => event.stopPropagation()}
       >
         <div aria-hidden="true" className="glass-scrim pointer-events-none absolute inset-0" />
         <div
@@ -634,7 +634,7 @@ function SettingsDialog() {
       data-settings-sheet
       data-settings-look="advanced"
       style={glassPopupFrameStyle()}
-      onMouseDown={(e) => e.target === e.currentTarget && close()}
+      onMouseDown={(event) => event.stopPropagation()}
     >
       {/* A sibling, not the parent: a backdrop-filter on an ancestor would stop the pop-up's own glass from seeing the app behind it. */}
       <div aria-hidden="true" className="glass-scrim pointer-events-none absolute inset-0" />

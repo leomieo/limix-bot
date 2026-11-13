@@ -99,7 +99,7 @@ export function WhatsNewPopup({ view, report, onBuy, onDone }: {
       ? <button type="button" className={cn(PRIMARY, "ui-button-lg")} onClick={() => buy("team")}>{t("whatsNew.team.start")}</button>
       : <LinkButton url={startTeamUrl(view.staging)} label={t("whatsNew.team.start")} className={cn(PRIMARY, "ui-button-lg gap-1.5")} onOpened={() => end("start_team")} />;
 
-  return <div className="ui-scrim fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" onMouseDown={event => { if (event.target === event.currentTarget) end("close"); }}>
+  return <div className="ui-scrim fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" onMouseDown={(event) => event.stopPropagation()}>
     <div role="dialog" aria-modal="true" aria-labelledby={titleId(slide)} data-whats-new={slide} tabIndex={-1}
       className={cn(SHEET, "group/sheet animate-pop-in relative flex max-h-full w-full max-w-[520px] flex-col overflow-hidden outline-none")}>
       <div className="grid min-h-0 overflow-y-auto overflow-x-hidden">

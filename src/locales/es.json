@@ -543,7 +543,7 @@
   "connect.lede": "Pega el enlace que mostró el servidor, o escribe su dirección y el código de vinculación. Sus bots se quedan en el servidor.",
   "connect.signedInLede": "Ya ha iniciado sesión con tu cuenta. Pega su enlace, o escribe su dirección y un código de vinculación.",
   "connect.address": "Enlace o dirección",
-  "connect.addressPlaceholder": "https://maus.example.com o 192.168.1.20:8799",
+  "connect.addressPlaceholder": "https://limix.example.com o 192.168.1.20:8799",
   "connect.code": "Código de vinculación",
   "connect.noCode": "¿No tienes código? En el servidor, ejecuta:",
   "connect.addAddress": "Ahora añade la dirección del servidor, por ejemplo {example}.",

@@ -67,7 +67,7 @@ export function LimixSkillStoreDialog({ botId, botName, onClose, onOpenSettings 
 
   const addedCount = (skills ?? []).filter((skill) => skill.added).length;
   const overlay = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6" onMouseDown={(event) => event.stopPropagation()}>
       <div role="dialog" aria-modal="true" aria-labelledby="limix-skill-store-title" className="flex max-h-full w-full max-w-[640px] flex-col rounded-2xl border border-hairline/50 bg-panel shadow-2xl">
         <div className="flex items-start justify-between gap-3 px-6 pb-3 pt-5">
           <div>

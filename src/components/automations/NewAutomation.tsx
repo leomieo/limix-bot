@@ -51,7 +51,7 @@ export function NewAutomation({ initialText = "", onClose, onSetUpYourself }: {
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-5 pt-[14vh] backdrop-blur-sm" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-5 pt-[14vh] backdrop-blur-sm" onMouseDown={(event) => event.stopPropagation()}>
       <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={t("automations.newBox.title")} tabIndex={-1} className="w-full max-w-[560px] rounded-2xl border border-hairline/60 bg-panel p-5 shadow-2xl">
         <div className="flex items-start justify-between gap-3">
           <h2 className="text-[17px] font-semibold text-ink">{yourself ? t("automations.newBox.when") : t("automations.newBox.title")}</h2>

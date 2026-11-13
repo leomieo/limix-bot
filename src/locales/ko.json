@@ -600,7 +600,7 @@
   "connect.lede": "서버가 보여 준 링크를 붙여 넣거나, 주소와 페어링 코드를 입력하세요. 봇은 서버에 그대로 남습니다.",
   "connect.signedInLede": "이미 내 계정으로 로그인되어 있습니다. 링크를 붙여 넣거나, 주소와 페어링 코드를 입력하세요.",
   "connect.address": "링크 또는 주소",
-  "connect.addressPlaceholder": "https://maus.example.com 또는 192.168.1.20:8799",
+  "connect.addressPlaceholder": "https://limix.example.com 또는 192.168.1.20:8799",
   "connect.code": "페어링 코드",
   "connect.noCode": "코드가 없나요? 서버에서 실행하세요:",
   "connect.addAddress": "이제 서버 주소를 입력하세요. 예: {example}",

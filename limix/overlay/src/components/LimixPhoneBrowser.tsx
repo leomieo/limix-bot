@@ -143,17 +143,21 @@ function RemotePane() {
       await host.companion.start();
       await host.companion.setRoute("https", true);
       let endpoint = "";
-      let lastMessage = "";
+      let requested = false;
       for (let i = 0; i < 45 && !endpoint; i++) {
-        const account = await host.companionAccount.state();
+        let account = await host.companionAccount.state();
+        if (!requested && (account.status === "error" || (account.status === "ready" && !account.endpoint))) {
+          requested = true;
+          account = await host.companionAccount.prepare();
+        }
         if (account.status === "ready" && account.endpoint && /\.limixmedia\.com$/.test(new URL(account.endpoint).hostname)) { endpoint = account.endpoint; break; }
         if (account.status === "signed-out" && i >= 3) throw new Error(lx("Máy này chưa đăng nhập tài khoản Limix. Đăng xuất rồi đăng nhập lại Limix Bot, sau đó thử lại.", "This computer is not signed in to a Limix account. Sign out, sign in to Limix Bot again, then retry."));
-        if (account.status === "error") lastMessage = account.message ?? "";
-        if (account.status === "ready") await host.companionAccount.prepare().catch(() => undefined);
+        if (account.status === "error") throw new Error(account.message || lx("Không thể bật kết nối từ xa. Hãy thử lại.", "Could not enable remote access. Please retry."));
+        if (account.status === "ready" && account.endpoint) throw new Error(lx("Địa chỉ từ xa không thuộc Limix. Hãy đăng nhập lại tài khoản Limix.", "The remote address is outside the Limix domain. Sign in to your Limix account again."));
         setNote(i < 6 ? lx("Đang tạo địa chỉ riêng cho máy này trên Cloudflare…", "Creating a private address for this computer on Cloudflare…") : lx("Vẫn đang tạo địa chỉ, chờ thêm chút…", "Still creating the address, one moment…"));
         await pause(2000);
       }
-      if (!endpoint) throw new Error(lastMessage || lx("Chưa tạo được địa chỉ từ xa sau 90 giây. Kiểm tra máy có Internet rồi thử lại.", "Couldn't create the remote address within 90 seconds. Check the computer is online, then retry."));
+      if (!endpoint) throw new Error(lx("Chưa tạo được địa chỉ từ xa sau 90 giây. Kiểm tra máy có Internet rồi thử lại.", "Couldn't create the remote address within 90 seconds. Check the computer is online, then retry."));
       const made = await api<{ code: string; expiresAt: number }>("/api/auth/pairing", {
         method: "POST",
         body: JSON.stringify({ label: lx("Điện thoại (từ xa)", "Phone (remote)"), ttlMs: 15 * 60_000 }),

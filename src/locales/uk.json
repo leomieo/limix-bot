@@ -3167,7 +3167,7 @@
   "connect.lede": "Вставте посилання, яке показав сервер, або введіть його адресу й код прив'язки. Його боти залишаються на сервері.",
   "connect.signedInLede": "Він уже ввійшов у ваш обліковий запис. Вставте його посилання або введіть адресу й код прив'язки.",
   "connect.address": "Посилання або адреса",
-  "connect.addressPlaceholder": "https://maus.example.com або 192.168.1.20:8799",
+  "connect.addressPlaceholder": "https://limix.example.com або 192.168.1.20:8799",
   "connect.code": "Код прив'язки",
   "connect.noCode": "Немає коду? На сервері виконайте:",
   "connect.addAddress": "Тепер введіть адресу сервера, наприклад {example}.",

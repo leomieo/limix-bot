@@ -66,7 +66,7 @@ export function KeyboardShortcutsModal({ open, onClose }: KeyboardShortcutsModal
       className="m-auto w-[min(500px,calc(100%-32px))] max-h-[85vh] overflow-hidden rounded-2xl border border-hairline/50 bg-panel p-0 text-ink shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-xs"
       onCancel={(event) => { event.preventDefault(); onClose(); }}
       onKeyDown={(event) => event.stopPropagation()}
-      onMouseDown={(event) => event.target === event.currentTarget && onClose()}
+      onMouseDown={(event) => event.stopPropagation()}
     >
       <div
         className="flex max-h-[85vh] flex-col"

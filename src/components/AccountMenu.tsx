@@ -165,7 +165,7 @@ export function AccountsSheet({ onClose, adding = null, note: given = null }: { 
   const active = view?.active ?? null;
   const dialog = useRef<HTMLDivElement>(null);
   useModalDialog(dialog, onClose);
-  return <Layer modal><div className="ui-scrim fixed inset-0 z-[60] flex items-center justify-center p-4" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+  return <Layer modal><div className="ui-scrim fixed inset-0 z-[60] flex items-center justify-center p-4" onMouseDown={(event) => event.stopPropagation()}>
     <div ref={dialog} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="cloud-add-title" data-accounts-sheet className={cn(SHEET, "relative w-full max-w-[420px] outline-none")}>
       <button type="button" onClick={onClose} aria-label={t("accounts.close")} className={cn(CLOSE, "absolute end-4 top-4 z-10")}><X size={16} /></button>
       {add !== null

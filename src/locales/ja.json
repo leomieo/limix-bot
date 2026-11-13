@@ -611,7 +611,7 @@
   "connect.lede": "サーバーが表示したリンクを貼り付けるか、アドレスとペアリングコードを入力してください。ボットはサーバーに残ります。",
   "connect.signedInLede": "すでにあなたのアカウントでサインインしています。リンクを貼り付けるか、アドレスとペアリングコードを入力してください。",
   "connect.address": "リンクまたはアドレス",
-  "connect.addressPlaceholder": "https://maus.example.com または 192.168.1.20:8799",
+  "connect.addressPlaceholder": "https://limix.example.com または 192.168.1.20:8799",
   "connect.code": "ペアリングコード",
   "connect.noCode": "コードがない場合は、サーバーで次を実行：",
   "connect.addAddress": "次にサーバーのアドレスを入力してください（例：{example}）。",

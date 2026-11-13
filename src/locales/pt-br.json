@@ -708,7 +708,7 @@
   "connect.lede": "Cole o link que o servidor mostrou, ou digite o endereço dele e o código de pareamento. Os bots dele ficam no servidor.",
   "connect.signedInLede": "Ele já está conectado à sua conta. Cole o link dele, ou digite o endereço e um código de pareamento.",
   "connect.address": "Link ou endereço",
-  "connect.addressPlaceholder": "https://maus.example.com ou 192.168.1.20:8799",
+  "connect.addressPlaceholder": "https://limix.example.com ou 192.168.1.20:8799",
   "connect.code": "Código de pareamento",
   "connect.noCode": "Sem código? No servidor, execute:",
   "connect.addAddress": "Agora adicione o endereço do servidor, por exemplo {example}.",

@@ -233,9 +233,7 @@ export function ShareTeamDialog({ team, onClose }: { team: string; onClose: () =
   const field = "mt-1 w-full rounded-lg border border-hairline/50 bg-inset px-3 py-2 text-[14px] text-ink disabled:opacity-60";
 
   return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/55 p-4" onMouseDown={(event) => {
-      if (event.target === event.currentTarget && !saving) onClose();
-    }}>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/55 p-4" onMouseDown={(event) => event.stopPropagation()}>
       <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="share-team-title" tabIndex={-1}
         className="flex max-h-[90vh] w-full max-w-[620px] flex-col overflow-hidden rounded-2xl border border-hairline/50 bg-panel text-ink shadow-2xl outline-none"
         onKeyDown={(event) => {

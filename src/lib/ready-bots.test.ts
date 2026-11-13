@@ -82,19 +82,19 @@ describe("readyBotTemplate", () => {
 describe("matchesReadyBot", () => {
   it("finds a bot by name, title, description or category, ignoring case", () => {
     const echo = readyBot("humanizer")!;
-    expect(["echo", "HUMANIZER", "read like you", "writing", ""].every((query) => matchesReadyBot(echo, query))).toBe(true);
+    expect(["echo", "HUMANIZER", "tự nhiên", "writing", ""].every((query) => matchesReadyBot(echo, query))).toBe(true);
     expect(matchesReadyBot(echo, "spreadsheet")).toBe(false);
   });
 });
 
 describe("readyBotCopy", () => {
-  it("reads each bot's words from the catalog, and keeps a bot's own English when the catalog has none", () => {
+  it("keeps English template fields and Vietnamese descriptions across app locales", () => {
     for (const bot of READY_BOTS) for (const field of ["title", "description", "try"]) expect(Object.hasOwn(en, `readyBots.bot.${bot.id}.${field}`), `${bot.id}.${field}`).toBe(true);
     const unlisted = { ...readyBot("humanizer")!, id: "not-in-the-catalog", title: "Its title", description: "Its words", tryAsking: ["Its ask"] };
     try {
       setLocale("pt-br");
       expect(readyBotCopy(unlisted)).toEqual({ title: "Its title", description: "Its words", tryAsking: "Its ask" });
-      expect(readyBotCopy(readyBot("humanizer")!).title).not.toBe(readyBot("humanizer")!.title);
+      expect(readyBotCopy(readyBot("humanizer")!).title).toBe(readyBot("humanizer")!.title);
     } finally {
       setLocale("en");
     }

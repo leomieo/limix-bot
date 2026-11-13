@@ -80,7 +80,7 @@ it("names a wrong kind of code instead of letting it be sent as a wrong one", ()
 });
 
 it("opens the phone app at this server with the code filled in", () => {
-  expect(openInAppLink("https://maus.example.com", "7kq2m9xdh4tp")).toBe("openmausbot://pair?address=https%3A%2F%2Fmaus.example.com&code=7KQ2-M9XD-H4TP");
+  expect(openInAppLink("https://limix.example.com", "7kq2m9xdh4tp")).toBe("openmausbot://pair?address=https%3A%2F%2Fmaus.example.com&code=7KQ2-M9XD-H4TP");
   expect(openInAppLink("http://192.168.1.20:8799", "")).toBe("openmausbot://pair?address=http%3A%2F%2F192.168.1.20%3A8799");
 });
 

@@ -18,7 +18,7 @@ const saved = {
   localOrigin: "http://127.0.0.1:1", remote: false, packaged: true, activeId: "local",
   environments: [
     { id: "cloud", name: "My Cloud", origin: "https://omb-u-1.fly.dev", home: true, kind: "remote" as const },
-    { id: "vps", name: "hetzner-1", origin: "https://maus.example.com", kind: "remote" as const },
+    { id: "vps", name: "hetzner-1", origin: "https://limix.example.com", kind: "remote" as const },
     { id: "mini", name: "office-mini", origin: "http://192.168.1.50:8799", kind: "remote" as const },
     { id: "mac", name: "Mac at home", origin: "https://mac.tail1234.ts.net", kind: "remote" as const },
     { id: "open", name: "old box", origin: "http://203.0.113.9:8799", kind: "remote" as const },

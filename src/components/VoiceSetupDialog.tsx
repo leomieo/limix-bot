@@ -97,7 +97,7 @@ export function VoiceSetupDialog({
     <div
       className="glass-popup-frame"
       style={glassPopupFrameStyle()}
-      onMouseDown={(event) => event.target === event.currentTarget && close()}
+      onMouseDown={(event) => event.stopPropagation()}
     >
       {/* A sibling, not the parent: a backdrop-filter on an ancestor would stop the pop-up's own glass from seeing the app behind it. */}
       <div aria-hidden="true" className="glass-scrim pointer-events-none absolute inset-0" />

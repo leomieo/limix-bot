@@ -51,7 +51,7 @@ export function AboutDialog({ open, onClose }: { open: boolean; onClose: () => v
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6"
-      onMouseDown={(event) => event.target === event.currentTarget && onClose()}
+      onMouseDown={(event) => event.stopPropagation()}
     >
       <div
         role="dialog"

@@ -2729,7 +2729,7 @@
   "connect.lede": "Collez le lien affiché par le serveur, ou saisissez son adresse et le code d'appairage. Ses bots restent sur le serveur.",
   "connect.signedInLede": "Il est déjà connecté à votre compte. Collez son lien, ou saisissez son adresse et un code d'appairage.",
   "connect.address": "Lien ou adresse",
-  "connect.addressPlaceholder": "https://maus.example.com ou 192.168.1.20:8799",
+  "connect.addressPlaceholder": "https://limix.example.com ou 192.168.1.20:8799",
   "connect.code": "Code d'appairage",
   "connect.noCode": "Pas de code ? Sur le serveur, lancez :",
   "connect.addAddress": "Ajoutez maintenant l'adresse du serveur, par exemple {example}.",

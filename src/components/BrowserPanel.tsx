@@ -362,7 +362,7 @@ export function LiveBrowser({ bot, signIn, page }: { bot: Bot; signIn?: BrowserS
         </div>
       ) : null}
     </div>
-    <dialog ref={profilesDialog} onClose={() => setShowProfiles(false)} onClick={(e) => { if (e.target === e.currentTarget) setShowProfiles(false); }} className="m-auto w-[min(420px,calc(100%-32px))] max-h-[80vh] overflow-auto rounded-2xl border border-hairline/50 bg-card p-5 text-ink shadow-2xl backdrop:bg-black/40">
+    <dialog ref={profilesDialog} onClose={() => setShowProfiles(false)} className="m-auto w-[min(420px,calc(100%-32px))] max-h-[80vh] overflow-auto rounded-2xl border border-hairline/50 bg-card p-5 text-ink shadow-2xl backdrop:bg-black/40">
       <div className="mb-4 flex items-center justify-between"><h2 className="text-[15px] font-medium">{t("browser.panel.profiles")}</h2><button className={button} aria-label={t("browser.panel.closeProfiles")} onClick={() => setShowProfiles(false)}><X size={16} /></button></div>
       {(heldElsewhere || (you && takeStatus !== "")) && <p className="mb-3 text-[12px] text-ink-secondary">{t(heldElsewhere ? "browser.profiles.heldElsewhere" : "browser.profiles.busy")}</p>}
       <BrowserProfilesManager bot={bot} disabled={heldElsewhere || takeStatus === "pending" || takeStatus === "slow"} onProfileChanged={() => { setShowProfiles(false); reconnect(); }} />

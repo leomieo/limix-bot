@@ -1,19 +1,20 @@
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
+import { lx } from "@/lib/limix-text";
 import { teamImportPreview, type PendingTeamImport } from "@/lib/team-import";
 import { addTemplate } from "@/lib/template-add";
 import { orgCardAction, orgPackagePreview, type OrgLibraryListing, type OrgLibraryPackage } from "@/lib/org-library";
 import type { PackageDocument } from "../../shared/package-format";
 import type { Routine } from "@/lib/routines";
 import { api, useStore, type Bot, type Group } from "@/state/store";
-import { ArrowLeft, Check, Compass, ExternalLink, FolderOpen, Github, Loader2, Search, Share2, UploadCloud, Users, X } from "lucide-react";
+import { ArrowLeft, Check, Compass, ExternalLink, FolderOpen, Github, Loader2, RefreshCw, Search, Share2, UploadCloud, Users, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { catalogCopy, catalogMatches, type TeamCatalog, type TeamCatalogEntry } from "@/lib/team-catalog";
 
 import { TEAM_GLYPHS, TeamImportDetails } from "./TeamImportDetails";
-import { LimixBotGallery } from "./LimixBotGallery";
+import { LimixBotGallery, refreshTemplateBots } from "./LimixBotGallery";
 import { ShareTeamDialog } from "./ShareTeamDialog";
 import { OrgLibraryTab } from "./TeamLibraryPanelOrg";
 import { MAX_TEAM_BACKUP_BYTES } from "../../shared/team-backup";
@@ -30,7 +31,7 @@ export interface TeamImportResult {
 }
 
 type ImportSource = "library" | "file" | "github";
-type TeamTab = "org" | "explore" | "import" | "scout" | "share";
+type TeamTab = "org" | "explore" | "import" | "scout" | "share" | "teams";
 
 interface ScoutResult {
   profile: { name: string; summary: string; stacks: string[] };
@@ -102,6 +103,11 @@ export function TeamLibraryPanel({
   const [catalog, setCatalog] = useState<TeamCatalog | null>(null);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [catalogError, setCatalogError] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshNotice, setRefreshNotice] = useState("");
+  const [refreshError, setRefreshError] = useState("");
+  const [botRevision, setBotRevision] = useState(0);
+  const catalogRequest = useRef(0);
   const [busySlug, setBusySlug] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingTeamImport | null>(null);
   const [source, setSource] = useState<ImportSource>("file");
@@ -137,17 +143,43 @@ export function TeamLibraryPanel({
   const importedNames = pending?.members.map((member) => takeImportName(member.name, takenNames)) ?? [];
 
   const loadCatalog = useCallback(async (fresh = false) => {
+    const request = ++catalogRequest.current;
     setCatalogLoading(true);
     setCatalogError("");
     try {
       // SAFETY: this endpoint is owned by the app and returns TeamCatalog.
-      setCatalog((await api(`/api/team-library/catalog${fresh ? "?fresh=1" : ""}`)) as TeamCatalog);
+      const next = (await api(`/api/team-library/catalog${fresh ? "?fresh=1" : ""}`)) as TeamCatalog;
+      if (request === catalogRequest.current) setCatalog(next);
+      return true;
     } catch (cause) {
-      setCatalogError(cause instanceof Error ? cause.message : String(cause));
+      if (request === catalogRequest.current) setCatalogError(cause instanceof Error ? cause.message : String(cause));
+      return false;
     } finally {
-      setCatalogLoading(false);
+      if (request === catalogRequest.current) setCatalogLoading(false);
     }
   }, []);
+
+  const refreshTemplates = async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    setRefreshNotice("");
+    setRefreshError("");
+    try {
+      const [bots, teams] = await Promise.allSettled([refreshTemplateBots(), loadCatalog(true)]);
+      if (bots.status === "fulfilled") setBotRevision((revision) => revision + 1);
+      if (bots.status === "fulfilled" && teams.status === "fulfilled" && teams.value) {
+        setRefreshNotice(lx("Đã cập nhật mẫu Bot và mẫu nhóm Bot.", "Bot and team templates updated."));
+      } else {
+        const failures = [
+          ...(bots.status === "rejected" ? [lx("mẫu Bot", "bot templates")] : []),
+          ...(teams.status === "rejected" || !teams.value ? [lx("mẫu nhóm Bot", "team templates")] : []),
+        ];
+        setRefreshError(lx(`Chưa cập nhật được ${failures.join(", ")}. Hãy thử lại.`, `Could not update ${failures.join(", ")}. Please retry.`));
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     void loadCatalog();
@@ -440,7 +472,7 @@ export function TeamLibraryPanel({
     // Dim only: a full-window backdrop blur is redrawn every frame without a GPU and keeps the page laggy while it is open.
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 sm:p-6"
-      onMouseDown={(event) => event.target === event.currentTarget && !importing && onClose()}
+      onMouseDown={(event) => event.stopPropagation()}
     >
       <div
         ref={dialogRef}
@@ -556,8 +588,8 @@ export function TeamLibraryPanel({
           </>
         ) : (
           <>
-            <div className="flex flex-col gap-3 px-6 pb-4 pt-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-              <div className="flex w-fit rounded-xl bg-raised/70 p-1" role="tablist" aria-label={t("templates.source") }>
+            <div className="flex flex-wrap items-center gap-3 px-6 pb-4 pt-5 sm:px-8">
+              <div className="flex max-w-full flex-wrap rounded-xl bg-raised/70 p-1" role="tablist" aria-label={t("templates.source") }>
                 {orgListing?.organization && (
                   <button
                     role="tab"
@@ -635,9 +667,23 @@ export function TeamLibraryPanel({
                 >
                   {t("teamLibrary.shareTab")}
                 </button>
+                <button
+                  role="tab"
+                  aria-selected={tab === "teams"}
+                  onClick={() => { tabChosen.current = true; setTab("teams"); setError(""); }}
+                  className={cn("rounded-lg px-4 py-2 text-[14px] transition-colors", tab === "teams" ? "bg-card text-ink shadow-sm" : "text-ink-secondary hover:text-ink")}
+                >
+                  {lx("Bản mẫu Nhóm", "Team templates")}
+                </button>
               </div>
-              {tab === "explore" && (
-                <label className="flex h-11 w-full items-center gap-2.5 rounded-xl bg-raised/70 px-3.5 sm:w-[320px]">
+              <button type="button" onClick={() => void refreshTemplates()} disabled={refreshing}
+                title={lx("Tải lại mẫu Bot và mẫu nhóm Bot mới nhất từ kho", "Reload the latest bot and team templates")}
+                className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-raised/70 px-3 text-[13px] font-medium text-ink hover:bg-raised-hover disabled:opacity-60">
+                <RefreshCw size={14} aria-hidden="true" className={refreshing ? "animate-spin" : undefined} />
+                {refreshing ? lx("Đang cập nhật", "Updating") : lx("Cập nhật", "Update")}
+              </button>
+              {(tab === "explore" || tab === "teams") && (
+                <label className="flex h-11 w-full items-center gap-2.5 rounded-xl bg-raised/70 px-3.5 sm:ml-auto sm:w-[240px]">
                   <Search size={17} className="shrink-0 text-ink-secondary" />
                   <input
                     value={search}
@@ -649,6 +695,7 @@ export function TeamLibraryPanel({
                 </label>
               )}
             </div>
+            {(refreshNotice || refreshError) && <p role={refreshError ? "alert" : "status"} className={cn("px-6 pb-2 text-[13px] sm:px-8", refreshError ? "text-danger" : "text-ink-secondary")}>{refreshError || refreshNotice}</p>}
 
             <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-7 pt-5 sm:px-8">
               {tab === "org" && orgListing?.organization && (
@@ -662,11 +709,10 @@ export function TeamLibraryPanel({
                 />
               )}
               {tab === "explore" && (
+                <LimixBotGallery revision={botRevision} search={search} onDialog={setNestedDialog} onAdded={onClose} />
+              )}
+              {tab === "teams" && (
                 <div>
-                  <LimixBotGallery search={search} onRefresh={() => void loadCatalog(true)} onDialog={setNestedDialog} onAdded={onClose} />
-                  <div className="mb-3 text-[12px] font-medium text-ink-secondary">
-                    {search ? t("templates.searchResults") : t("templates.communityTemplates")}
-                  </div>
                   {catalogLoading && (
                     <div className="flex items-center justify-center gap-2 py-24 text-[13px] text-ink-secondary">
                       <Loader2 size={16} className="animate-spin" /> {t("templates.loading")}

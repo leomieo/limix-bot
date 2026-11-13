@@ -862,7 +862,7 @@ export function EventEditor({
   ] as const;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-3" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-3" onMouseDown={(event) => event.stopPropagation()}>
       <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={t(existingRoutine || existingCall ? "routines.event.editLabel" : "routines.event.createLabel")} tabIndex={-1} className="max-h-[94vh] w-full max-w-[760px] overflow-y-auto rounded-2xl border border-hairline/60 bg-panel shadow-2xl">
         <div className="sticky top-0 z-20 flex items-center justify-between border-b border-hairline/40 bg-panel/95 px-5 py-3.5 backdrop-blur">
           <div className="text-[15px] font-semibold text-ink">{headerTitle}</div>
@@ -1568,7 +1568,7 @@ export function PausedList({
   const dialogRef = useRef<HTMLDivElement>(null);
   useModalDialog(dialogRef, onClose);
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3" onMouseDown={(event) => event.stopPropagation()}>
       <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={t("routines.paused.title")} tabIndex={-1} className="w-full max-w-[520px] rounded-2xl border border-hairline/60 bg-panel shadow-2xl">
         <div className="flex items-center justify-between border-b border-hairline/40 px-5 py-4"><div><div className="text-[16px] font-semibold text-ink">{t("routines.paused.title")}</div><div className="mt-0.5 text-[12px] text-ink-secondary">{t("routines.paused.help")}</div></div><button onClick={onClose} className="rounded-full p-2 text-ink-secondary hover:bg-raised" aria-label={t("routines.paused.close")}><X size={17} /></button></div>
         <div className="max-h-[55vh] space-y-1 overflow-y-auto p-3">

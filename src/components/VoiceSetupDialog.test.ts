@@ -158,16 +158,16 @@ describe("voice set-up pop-up", () => {
     ]);
   });
 
-  it("closes from the close button and from a click on the scrim, not from inside", () => {
+  it("closes with the close button and stays open on backdrop presses", () => {
     const view = render();
     click(byAttribute(view, "aria-label", "Close voice set-up"));
     expect(view.props.onClose).toHaveBeenCalledTimes(1);
     const frame = view.nodes.find((node) => String(node.props.className).split(" ").includes("glass-popup-frame"))!;
     const onMouseDown = frame.props.onMouseDown as (event: { target: unknown; currentTarget: unknown }) => void;
-    onMouseDown({ target: {}, currentTarget: frame });
+    onMouseDown({ target: {}, currentTarget: frame, stopPropagation() {} } as never);
     expect(view.props.onClose).toHaveBeenCalledTimes(1);
-    onMouseDown({ target: frame, currentTarget: frame });
-    expect(view.props.onClose).toHaveBeenCalledTimes(2);
+    onMouseDown({ target: frame, currentTarget: frame, stopPropagation() {} } as never);
+    expect(view.props.onClose).toHaveBeenCalledTimes(1);
     expect(fixture.dispatch).not.toHaveBeenCalled();
   });
 
