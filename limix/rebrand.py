@@ -1868,6 +1868,67 @@ def limix_installer(s):
     return re.sub(r"(?<![A-Za-z/])MausBot(?![A-Za-z])", "Limix Bot", s)
 edit("deploy/install.sh", limix_installer)
 
+# 11i. A machine with no public address (home or office internet, no static IP): `--tunnel TOKEN` serves Limix Bot
+# through a Cloudflare tunnel (cloudflared beside Caddy). No port is opened on the router or the machine; the domain's
+# public hostname is set in Cloudflare (Zero Trust → Tunnels) to http://caddy:80. The token is kept in .env, so running
+# the installer again (or updating) keeps the tunnel.
+TUNNEL_FUNCS = """
+# Limix Bot: the tunnel mode (--tunnel TOKEN, kept in .env as CF_TUNNEL_TOKEN). Caddy serves plain HTTP for the domain
+# on the machine itself only; cloudflared carries the HTTPS traffic in from Cloudflare.
+limix_tunnel_files() {
+  if [ -z "$TUNNEL_TOKEN" ]; then unset_env CF_TUNNEL_TOKEN; return; fi
+  set_env CF_TUNNEL_TOKEN "$TUNNEL_TOKEN"
+  sed -e 's/^      - "80:80"$/      - "127.0.0.1:8080:80"/' -e '/^      - "443:443"$/d' "$INSTALL_DIR/compose.yaml" | write_file "$INSTALL_DIR/compose.yaml"
+  if grep -q "^  tunnel:$" "$INSTALL_DIR/compose.yaml"; then return; fi  # already in this file
+  tunnel_block=$(mktemp)
+  cat >"$tunnel_block" <<'TUNNEL'
+  tunnel:
+    image: cloudflare/cloudflared:2026.9.3
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CF_TUNNEL_TOKEN:?run the installer again}
+    depends_on:
+      caddy:
+        condition: service_started
+
+TUNNEL
+  awk 'NR == FNR { block = block $0 "\\n"; next } /^volumes:$/ && !done { printf "%s", block; done = 1 } { print }' "$tunnel_block" "$INSTALL_DIR/compose.yaml" | write_file "$INSTALL_DIR/compose.yaml"
+  rm -f "$tunnel_block"
+  sed -e 's/^{\\$DOMAIN} {$/http:\\/\\/{$DOMAIN} {/' -e 's/^\\(\\t*\\)flush_interval -1$/\\1flush_interval -1\\n\\1header_up X-Forwarded-Proto https/' "$INSTALL_DIR/Caddyfile" | write_file "$INSTALL_DIR/Caddyfile"
+}
+
+limix_tunnel_public() {
+  waited=0
+  while [ "$waited" -lt 60 ]; do
+    if curl -fsS --max-time 10 "https://$DOMAIN/api/health" 2>/dev/null | grep -q openmausbot; then ok "https://$DOMAIN answers through the Cloudflare tunnel"; return 0; fi
+    sleep 5
+    waited=$((waited + 5))
+  done
+  note "Limix Bot runs here, but https://$DOMAIN does not answer through the tunnel yet. In Cloudflare (Zero Trust → Networks → Tunnels → this tunnel → Public hostname) add $DOMAIN with the service http://caddy:80. It works as soon as that is saved; nothing here needs to run again."
+}
+"""
+def installer_tunnel(s):
+    if "limix_tunnel_files" in s:
+        return s
+    s = must(s, '  HEALTH_WAIT_S="${OMB_INSTALL_HEALTH_WAIT_S:-240}"\n',
+             '  HEALTH_WAIT_S="${OMB_INSTALL_HEALTH_WAIT_S:-240}"\n  TUNNEL_TOKEN="${LIMIX_TUNNEL_TOKEN:-}"\n')
+    s = must(s, '      --domain | --email | --dir)\n', '      --domain | --email | --dir | --tunnel)\n')
+    s = must(s, '          --dir) INSTALL_DIR=$2 ;;\n', '          --dir) INSTALL_DIR=$2 ;;\n          --tunnel) TUNNEL_TOKEN=$2 ;;\n')
+    s = must(s, '      --dir=*) INSTALL_DIR=${1#--dir=} ;;\n', '      --dir=*) INSTALL_DIR=${1#--dir=} ;;\n      --tunnel=*) TUNNEL_TOKEN=${1#--tunnel=} ;;\n')
+    s = must(s, '  case "$CODE" in\n', '  case "$TUNNEL_TOKEN" in\n    "") ;;\n    *[!A-Za-z0-9+/=_-]*) fail "That tunnel token does not look right. Copy it again from Cloudflare (the long text after --token)." ;;\n  esac\n  case "$CODE" in\n')
+    s = must(s, '  say "  --no-sandbox ', '  say "  --tunnel TOKEN     a machine with no public address (home internet): serve it through this Cloudflare tunnel"\n  say "  --no-sandbox ')
+    s = must(s, 'check_ports() {\n', 'check_ports() {\n  if [ -n "$TUNNEL_TOKEN" ]; then ok "ports 80 and 443: not needed (Cloudflare tunnel)"; return; fi\n')
+    s = must(s, 'check_dns() {\n', 'check_dns() {\n  if [ -n "$TUNNEL_TOKEN" ]; then note "DNS: $DOMAIN reaches this machine through the Cloudflare tunnel (its public hostname in Cloudflare)."; return; fi\n')
+    s = must(s, 'https_answers() {\n', 'https_answers() {\n  if [ -n "$TUNNEL_TOKEN" ]; then curl -fsS --max-time 10 -H "Host: $DOMAIN" "http://127.0.0.1:8080/api/health" 2>/dev/null | grep -q openmausbot; return; fi\n')
+    s = must(s, '  write_caddyfile\n  write_settings\n', '  write_caddyfile\n  write_settings\n  limix_tunnel_files\n')
+    s = must(s, 'then run this again. Caddy\'s reason: cd $INSTALL_DIR && sudo docker compose logs caddy --tail 30"\n}\n',
+             'then run this again. Caddy\'s reason: cd $INSTALL_DIR && sudo docker compose logs caddy --tail 30"\n  if [ -n "$TUNNEL_TOKEN" ]; then limix_tunnel_public; fi\n}\n' + TUNNEL_FUNCS)
+    old = '  if [ -z "$DOMAIN" ]; then DOMAIN=$(env_value DOMAIN); fi\n'
+    assert s.count(old) == 2, s.count(old)
+    return s.replace(old, old + '  if [ -z "$TUNNEL_TOKEN" ]; then TUNNEL_TOKEN=$(env_value CF_TUNNEL_TOKEN); fi\n')
+edit("deploy/install.sh", installer_tunnel)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):

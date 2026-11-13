@@ -52,6 +52,22 @@ Thêm kết nối như trên máy tính, chọn bot của máy chủ trong danh 
 Quan trọng: một bot Telegram/Zalo chỉ nên được kết nối ở **một nơi**. Khi đã kết nối trên máy chủ, hãy xóa kết nối
 đó trong ứng dụng trên máy tính, nếu không hai nơi sẽ tranh nhau tin nhắn.
 
+## Máy ở nhà hoặc văn phòng (không có IP tĩnh) — dùng đường hầm Cloudflare
+
+Không cần mở cổng trên modem, không cần IP tĩnh. Tên miền phải nằm trên Cloudflare (ví dụ `limixmedia.com`).
+
+1. Trên Cloudflare: **Zero Trust → Networks → Tunnels → Create a tunnel → Cloudflared**, đặt tên (ví dụ `limix-xeon`).
+   Cloudflare hiện một lệnh cài có đoạn `--token eyJ...`: chép riêng phần mã sau `--token` (giữ bí mật).
+2. Ở bước **Public hostname**: Subdomain `bot`, Domain `limixmedia.com`, Service **HTTP**, URL `caddy:80`. Lưu.
+3. Trên máy chủ (Ubuntu 22.04/24.04), chạy (thay MÃ bằng mã vừa chép):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/leomieo/limix-bot/main/deploy/install.sh | sudo sh -s -- --domain bot.limixmedia.com --tunnel MÃ --install-docker
+```
+
+Trình cài bỏ qua bước kiểm tra cổng 80/443 và bản ghi DNS, chạy thêm `cloudflared` cạnh Limix Bot. Mã được giữ trong
+`/opt/limixbot/.env`, nên lần chạy lại hoặc cập nhật vẫn giữ đường hầm.
+
 ## Máy chủ tự lo những gì
 
 - Tự chạy lại khi Limix Bot lỗi hoặc VPS khởi động lại (Docker `restart: unless-stopped`).

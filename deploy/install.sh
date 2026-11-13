@@ -38,6 +38,7 @@ settings() {
   MIN_DISK_GB=20
   MAX_CLOCK_SKEW_S=300
   HEALTH_WAIT_S="${OMB_INSTALL_HEALTH_WAIT_S:-240}"
+  TUNNEL_TOKEN="${LIMIX_TUNNEL_TOKEN:-}"
   HTTPS_WAIT_S="${OMB_INSTALL_HTTPS_WAIT_S:-180}"
 
   MODE=install
@@ -80,6 +81,7 @@ usage() {
   say "  --email ADDRESS    the first admin's email, so they can sign in with an emailed code"
   say "  --install-docker   install Docker with Docker's official script when it is missing, without asking"
   say "  --dir PATH         where the install lives (default /opt/openmausbot)"
+  say "  --tunnel TOKEN     a machine with no public address (home internet): serve it through this Cloudflare tunnel"
   say "  --no-sandbox       do not prepare this server for the bots' sandbox (only for a server you alone sign in to)"
   say "  <code>             the one-time code Limix Bot shows, to also connect this server to Limix Bot"
 }
@@ -91,18 +93,20 @@ parse() {
       --uninstall) MODE=uninstall ;;
       --install-docker) INSTALL_DOCKER=1 ;;
       --no-sandbox) SANDBOX=no ;;
-      --domain | --email | --dir)
+      --domain | --email | --dir | --tunnel)
         [ $# -ge 2 ] || fail "$1 needs a value. $(usage)"
         case "$1" in
           --domain) DOMAIN=$2 ;;
           --email) EMAIL=$2 ;;
           --dir) INSTALL_DIR=$2 ;;
+          --tunnel) TUNNEL_TOKEN=$2 ;;
         esac
         shift
         ;;
       --domain=*) DOMAIN=${1#--domain=} ;;
       --email=*) EMAIL=${1#--email=} ;;
       --dir=*) INSTALL_DIR=${1#--dir=} ;;
+      --tunnel=*) TUNNEL_TOKEN=${1#--tunnel=} ;;
       -h | --help)
         usage
         exit 0
@@ -124,6 +128,10 @@ parse() {
     *[!A-Za-z0-9@._+-]* | *@*@*) fail "That email address doesn't look right. Give one address, like you@example.com." ;;
     ?*@?*.?*) ;;
     *) fail "That email address doesn't look right. Give one address, like you@example.com." ;;
+  esac
+  case "$TUNNEL_TOKEN" in
+    "") ;;
+    *[!A-Za-z0-9+/=_-]*) fail "That tunnel token does not look right. Copy it again from Cloudflare (the long text after --token)." ;;
   esac
   case "$CODE" in
     *[!A-Za-z0-9-]*) fail "That code doesn't look right. Copy the install command from Limix Bot again." ;;
@@ -316,6 +324,7 @@ listener_on() { # port: the listening line, or nothing
 }
 
 check_ports() {
+  if [ -n "$TUNNEL_TOKEN" ]; then ok "ports 80 and 443: not needed (Cloudflare tunnel)"; return; fi
   if ! command -v ss >/dev/null 2>&1; then
     note "Ports 80 and 443 could not be checked because the ss tool is missing; if something else uses them, the install will say so."
     return
@@ -350,6 +359,7 @@ local_addresses() {
 }
 
 check_dns() {
+  if [ -n "$TUNNEL_TOKEN" ]; then note "DNS: $DOMAIN reaches this machine through the Cloudflare tunnel (its public hostname in Cloudflare)."; return; fi
   if [ -z "$DOMAIN" ]; then
     note "No --domain was given, so its DNS record was not checked."
     return
@@ -925,6 +935,7 @@ wait_healthy() {
 }
 
 https_answers() {
+  if [ -n "$TUNNEL_TOKEN" ]; then curl -fsS --max-time 10 -H "Host: $DOMAIN" "http://127.0.0.1:8080/api/health" 2>/dev/null | grep -q openmausbot; return; fi
   curl -fsS --max-time 10 --resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN/api/health" 2>/dev/null | grep -q openmausbot
 }
 
@@ -945,6 +956,7 @@ install_server() {
   write_compose
   write_caddyfile
   write_settings
+  limix_tunnel_files
   say "Downloading Limix Bot..."
   compose_quietly pull -q || fail "Limix Bot could not be downloaded (Docker's message is above). Check this server's outbound HTTPS, then run this again."
   place_update
@@ -956,6 +968,42 @@ install_server() {
   check_sandbox_runs
   say "Waiting for the HTTPS certificate of $DOMAIN..."
   wait_https || fail "Limix Bot is running, but https://$DOMAIN did not answer within $HTTPS_WAIT_S seconds, usually because the certificate could not be issued. Check that $DOMAIN points at this server and that ports 80 and 443 are open in your provider's firewall, then run this again. Caddy's reason: cd $INSTALL_DIR && sudo docker compose logs caddy --tail 30"
+  if [ -n "$TUNNEL_TOKEN" ]; then limix_tunnel_public; fi
+}
+
+# Limix Bot: the tunnel mode (--tunnel TOKEN, kept in .env as CF_TUNNEL_TOKEN). Caddy serves plain HTTP for the domain
+# on the machine itself only; cloudflared carries the HTTPS traffic in from Cloudflare.
+limix_tunnel_files() {
+  if [ -z "$TUNNEL_TOKEN" ]; then unset_env CF_TUNNEL_TOKEN; return; fi
+  set_env CF_TUNNEL_TOKEN "$TUNNEL_TOKEN"
+  sed -e 's/^      - "80:80"$/      - "127.0.0.1:8080:80"/' -e '/^      - "443:443"$/d' "$INSTALL_DIR/compose.yaml" | write_file "$INSTALL_DIR/compose.yaml"
+  if grep -q "^  tunnel:$" "$INSTALL_DIR/compose.yaml"; then return; fi  # already in this file
+  tunnel_block=$(mktemp)
+  cat >"$tunnel_block" <<'TUNNEL'
+  tunnel:
+    image: cloudflare/cloudflared:2026.9.3
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CF_TUNNEL_TOKEN:?run the installer again}
+    depends_on:
+      caddy:
+        condition: service_started
+
+TUNNEL
+  awk 'NR == FNR { block = block $0 "\n"; next } /^volumes:$/ && !done { printf "%s", block; done = 1 } { print }' "$tunnel_block" "$INSTALL_DIR/compose.yaml" | write_file "$INSTALL_DIR/compose.yaml"
+  rm -f "$tunnel_block"
+  sed -e 's/^{\$DOMAIN} {$/http:\/\/{$DOMAIN} {/' -e 's/^\(\t*\)flush_interval -1$/\1flush_interval -1\n\1header_up X-Forwarded-Proto https/' "$INSTALL_DIR/Caddyfile" | write_file "$INSTALL_DIR/Caddyfile"
+}
+
+limix_tunnel_public() {
+  waited=0
+  while [ "$waited" -lt 60 ]; do
+    if curl -fsS --max-time 10 "https://$DOMAIN/api/health" 2>/dev/null | grep -q openmausbot; then ok "https://$DOMAIN answers through the Cloudflare tunnel"; return 0; fi
+    sleep 5
+    waited=$((waited + 5))
+  done
+  note "Limix Bot runs here, but https://$DOMAIN does not answer through the tunnel yet. In Cloudflare (Zero Trust → Networks → Tunnels → this tunnel → Public hostname) add $DOMAIN with the service http://caddy:80. It works as soon as that is saved; nothing here needs to run again."
 }
 
 # The connector has its own installer, which Limix Bot serves with its address and the connector's image filled in.
@@ -1030,6 +1078,7 @@ finish() {
 run_install() {
   need_root "--domain ${DOMAIN:-maus.example.com}"
   if [ -z "$DOMAIN" ]; then DOMAIN=$(env_value DOMAIN); fi
+  if [ -z "$TUNNEL_TOKEN" ]; then TUNNEL_TOKEN=$(env_value CF_TUNNEL_TOKEN); fi
   [ -n "$DOMAIN" ] || fail "Say which name people will open, like this: $(command_line '--domain maus.example.com')"
   preflight
   if [ "$FAILED" != 0 ]; then
@@ -1044,6 +1093,7 @@ run_install() {
 
 run_check() {
   if [ -z "$DOMAIN" ]; then DOMAIN=$(env_value DOMAIN); fi
+  if [ -z "$TUNNEL_TOKEN" ]; then TUNNEL_TOKEN=$(env_value CF_TUNNEL_TOKEN); fi
   preflight
   report_docker_missing
   if [ "$FAILED" != 0 ]; then
