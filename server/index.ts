@@ -1,6 +1,8 @@
 // Import first: it reads a Cloud home's secrets off the launcher's pipe before any module can start a process.
 import { BOOT_CLOUD_SECRETS } from "./cloud-secrets-boot.ts";
 import { startFailureText } from "./start-failure-text.ts";
+import { limixVmCapacity } from "./limix-vm-capacity.ts";
+import { localVmAutomaticCapacity } from "./local-vm-settings.ts";
 import { reserveGmailDrafts } from "./gmail-draft-policy.ts";
 import { createGmailDrafts } from "./host/gmail-drafts.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
@@ -11679,6 +11681,8 @@ async function localVmPayload(target: LocalVmTarget, auth: RequestAuth) {
     idle_timeout_ms: localVmIdleMs(),
     mode: localVmMode(cfg),
     max_instances: localVmMaxInstances(cfg),
+    automatic_capacity: localVmAutomaticCapacity(cfg),
+    capacity: limixVmCapacity(localVmResources(cfg)),
   };
 }
 
@@ -11696,6 +11700,7 @@ async function readyLocalVmForTurn(botId: string, target: LocalVmTarget, isCurre
     if (!isCurrent()) return status;
     const action = localVmWakeAction(status);
     if (status.ready || !action || !status.runtime) return status;
+    if (action === "run" && localVmMaxInstances(cfg) < 1) return status;
     if (action === "run" && !pooled && !ownsProvision) return status;
 
     if (action === "run" && target.key.startsWith("bot:")) {
@@ -11796,6 +11801,7 @@ function configStatus() {
     localVm: {
       mode: localVmMode(cfg),
       maxInstances: localVmMaxInstances(cfg),
+      automaticCapacity: localVmAutomaticCapacity(cfg),
       idleTimeoutMinutes: localVmIdleTimeoutMinutes(cfg),
       preserveInstalledApps: localVmPreservesInstalledApps(cfg),
     },

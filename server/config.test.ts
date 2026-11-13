@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { botThreadLimitText, defaultBotThreads, maxConcurrentBotThreads, maxConcurrentChildThreads } from "./bot-thread-limits.ts";
 import type { JsonValue } from "./schema.ts";
 import { imageSlots } from "./image-generation.ts";
+import { limixVmCapacity } from "./limix-vm-capacity.ts";
 
 import { cacheUntilConfigChanges,
   changedInstanceIds,
@@ -597,7 +598,7 @@ describe("configuration boundaries", () => {
 
   it("preserves shared Local VM behavior by default and accepts bounded per-bot mode", () => {
     expect(localVmMode({})).toBe("shared");
-    expect(localVmMaxInstances({})).toBe(2);
+    expect(localVmMaxInstances({})).toBe(limixVmCapacity({ memoryGb: 4, cpus: 2 }).limit);
     expect(parseConfigPatch({ localVm: { mode: "per-bot", maxInstances: 4 } })).toEqual({
       localVm: { mode: "per-bot", maxInstances: 4 },
     });
@@ -687,7 +688,7 @@ describe("configuration boundaries", () => {
     expect(showToolCallsEnabled({ features: { showToolCalls: true } })).toBe(true);
   });
 
-  it.each([0, 1.5, 9, "2", null])("rejects an invalid per-bot VM limit: %j", (maxInstances) => {
+  it.each([0, 1.5, 1025, "2", null])("rejects an invalid per-bot VM limit: %j", (maxInstances) => {
     expect(() => parseConfigPatch({ localVm: { maxInstances } })).toThrow("localVm.maxInstances");
   });
 
@@ -1386,7 +1387,7 @@ describe("saving OpenCode provider keys", () => {
     expect(refused("OPENCODE_API_KEY")).toContain("OpenCode API key box");
     for (const name of ["OPENCODE_SERVER_KEY", "OMB_CLOUD_BOAT_TOKEN", "OMB_LICENSE_KEY", "BOX_TOKEN", "COMPOSIO_API_KEY",
       "OPENAI_COMPAT_API_KEY", "XAI_API_KEY", "MISTRAL_API_KEY", "CURSOR_API_KEY", "FACTORY_API_KEY"]) {
-      expect(refused(name)).toBe(`OpenMaus keeps ${name} for itself, so OpenCode can't be given it here. Put this key in opencode.json instead.`);
+      expect(refused(name)).toBe(`Limix keeps ${name} for itself, so OpenCode can't be given it here. Put this key in opencode.json instead.`);
     }
   });
 
@@ -2437,7 +2438,7 @@ describe("DATA_DIR outside the suite's throwaway home", () => {
   it("treats an empty OMB_DATA_DIR as unset", () => {
     const home = mkdtempSync(join(tmpdir(), "omb-config-home-"));
     try {
-      expect(childDataDir({ HOME: home, USERPROFILE: home, OMB_DATA_DIR: "" })).toBe(join(home, ".openmausbot"));
+      expect(childDataDir({ HOME: home, USERPROFILE: home, OMB_DATA_DIR: "" })).toBe(join(home, ".limixbot"));
     } finally {
       rmSync(home, { recursive: true, force: true });
     }
@@ -2446,7 +2447,7 @@ describe("DATA_DIR outside the suite's throwaway home", () => {
   it("keeps the home folder outside tests", () => {
     const home = mkdtempSync(join(tmpdir(), "omb-config-home-"));
     try {
-      expect(childDataDir({ HOME: home, USERPROFILE: home })).toBe(join(home, ".openmausbot"));
+      expect(childDataDir({ HOME: home, USERPROFILE: home })).toBe(join(home, ".limixbot"));
     } finally {
       rmSync(home, { recursive: true, force: true });
     }
