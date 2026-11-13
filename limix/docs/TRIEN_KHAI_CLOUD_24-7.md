@@ -2,6 +2,23 @@
 
 Tắt máy tính, đóng ứng dụng Limix Bot: bot trên máy chủ vẫn trả lời Telegram, Zalo, Discord và chạy việc định kỳ.
 
+**Chọn đường cài:**
+- Máy thuê có IP riêng (VPS) → làm Bước 1–4 bên dưới.
+- Máy đặt ở nhà/văn phòng, mạng cáp quang thường, không IP tĩnh (ví dụ máy Xeon của chủ dự án) → làm
+  "Phần A: cài Ubuntu" rồi "Máy ở nhà hoặc văn phòng — dùng đường hầm Cloudflare", sau đó Bước 2–4.
+
+## Phần A: cài Ubuntu lên máy trống (máy ở nhà, khoảng 30–45 phút)
+
+Cần: 1 USB từ 8 GB, màn hình, bàn phím, dây mạng cắm vào máy.
+
+1. Trên máy Windows, tải **Ubuntu Server 24.04 LTS** (file .iso) tại https://ubuntu.com/download/server.
+2. Tải **Rufus** (https://rufus.ie), chọn USB và file .iso, bấm **Start** để ghi.
+3. Cắm USB vào máy chủ, bật máy, bấm liên tục **F11** (hoặc F12/F8 tùy bo mạch) để chọn khởi động từ USB.
+4. Khi cài: chọn **English**; mạng để tự nhận; ổ cứng chọn **Use an entire disk** (⚠️ xóa sạch ổ đó — sao lưu
+   trước); tự đặt tên đăng nhập + mật khẩu (tự giữ, không gửi ai); tick **Install OpenSSH server**; bỏ qua snap.
+5. Cài xong máy khởi động lại: rút USB, đăng nhập bằng tên và mật khẩu vừa đặt.
+6. Nên dùng bộ lưu điện (UPS): máy ở nhà mất điện/mất mạng thì bot ngừng.
+
 ## Cần chuẩn bị
 
 - Một VPS Ubuntu 22.04 hoặc 24.04, x86-64, tối thiểu 2 CPU, 4 GB RAM (nên 8 GB), 20 GB ổ trống.
@@ -51,6 +68,22 @@ Thêm kết nối như trên máy tính, chọn bot của máy chủ trong danh 
 
 Quan trọng: một bot Telegram/Zalo chỉ nên được kết nối ở **một nơi**. Khi đã kết nối trên máy chủ, hãy xóa kết nối
 đó trong ứng dụng trên máy tính, nếu không hai nơi sẽ tranh nhau tin nhắn.
+
+## Máy ở nhà hoặc văn phòng (không có IP tĩnh) — dùng đường hầm Cloudflare
+
+Không cần mở cổng trên modem, không cần IP tĩnh. Tên miền phải nằm trên Cloudflare (ví dụ `limixmedia.com`).
+
+1. Trên Cloudflare: **Zero Trust → Networks → Tunnels → Create a tunnel → Cloudflared**, đặt tên (ví dụ `limix-xeon`).
+   Cloudflare hiện một lệnh cài có đoạn `--token eyJ...`: chép riêng phần mã sau `--token` (giữ bí mật).
+2. Ở bước **Public hostname**: Subdomain `bot`, Domain `limixmedia.com`, Service **HTTP**, URL `caddy:80`. Lưu.
+3. Trên máy chủ (Ubuntu 22.04/24.04), chạy (thay MÃ bằng mã vừa chép):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/leomieo/limix-bot/main/deploy/install.sh | sudo sh -s -- --domain bot.limixmedia.com --tunnel MÃ --install-docker
+```
+
+Trình cài bỏ qua bước kiểm tra cổng 80/443 và bản ghi DNS, chạy thêm `cloudflared` cạnh Limix Bot. Mã được giữ trong
+`/opt/limixbot/.env`, nên lần chạy lại hoặc cập nhật vẫn giữ đường hầm.
 
 ## Máy chủ tự lo những gì
 
