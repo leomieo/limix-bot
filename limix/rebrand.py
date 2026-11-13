@@ -1299,6 +1299,9 @@ def cc_label(s):
     return must(s, '{instance.orphaned ? t("vm.owner.gone") : t("vm.owner.owned")} · {instance.name}\n                </div>\n                {instance.inUse && (\n                  <div className="mt-1 text-[12px] text-ink-secondary">{t("vm.cloud.stopFirst")}',
                 '{instance.orphaned ? t("vm.owner.gone") : t("vm.cloud.machineId", { id: instance.name })}\n                </div>\n                {instance.inUse && (\n                  <div className="mt-1 text-[12px] text-ink-secondary">{t("vm.cloud.stopFirst")}')
 edit("src/components/LocalComputerSection.tsx", cc_label)
+edit("src/components/LocalComputerSection.tsx", lambda s: must(s,
+    "done={!perBot && ready}",
+    "done={perBot ? inventory.some((instance) => instance.managed) : ready}"))
 def cc_en(s):
     d = json.loads(s)
     d["vm.cloud.ofBot"] = "Computer of bot {name}"

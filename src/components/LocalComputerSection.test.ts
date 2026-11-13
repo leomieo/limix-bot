@@ -231,7 +231,7 @@ describe("Local VM inventory UI", () => {
     }));
 
     expect(markup).toContain("Not managed");
-    expect(markup).toContain("not managed by MausBot");
+    expect(markup).toContain("not managed by Limix Bot");
     expect(markup).toContain("remove it directly in Docker or Podman");
     expect(markup).not.toContain(">Delete</button>");
     expect(markup).not.toContain("Container labels do not match");
@@ -270,7 +270,8 @@ describe("cloud computer inventory UI", () => {
     });
 
     expect(markup).toContain("Research");
-    expect(markup).toContain("Owned by this bot");
+    expect(markup).toContain("Computer of bot Research");
+    expect(markup).toContain("Machine ID: ogb-current0-a1b2c3");
     expect(markup).toContain("Left-behind desktop");
     expect(markup).toContain("Its bot no longer exists");
     expect(markup).toContain("Running");
@@ -295,10 +296,10 @@ describe("cloud computer inventory UI", () => {
 
   it("keeps disconnected, unavailable, and empty states distinct", () => {
     const disconnected = renderCard({ configured: false });
-    expect(disconnected).toContain("Boat is not connected");
+    expect(disconnected).toContain("No Boat or Instabox key is connected");
     expect(disconnected).not.toContain("No cloud desktops found");
-    expect(disconnected.match(/Boat is not connected/g)).toHaveLength(1);
-    expect(disconnected).toContain("Connect your Boat account");
+    expect(disconnected.match(/No Boat or Instabox key is connected/g)).toHaveLength(1);
+    expect(disconnected).toContain("Paste a Boat or Instabox API key");
     expect(disconnected).not.toContain("aria-busy");
 
     const unavailable = renderCard({ unavailableReason: "boat.dev is unavailable" });
@@ -307,7 +308,7 @@ describe("cloud computer inventory UI", () => {
 
     const endpointFailure = renderCard({ configured: null, unavailableReason: "Computer inventory could not load" });
     expect(endpointFailure).toContain("Computer inventory could not load");
-    expect(endpointFailure).not.toContain("Boat is not connected");
+    expect(endpointFailure).not.toContain("No Boat or Instabox key is connected");
 
     const empty = renderCard();
     expect(empty).toContain("No cloud desktops found");
@@ -515,7 +516,7 @@ describe("VPS computer inventory UI", () => {
     expect(disconnected.match(/No VPS is set up yet/g)).toHaveLength(1);
     expect(disconnected).not.toContain("aria-busy");
     expect(renderCard({ unavailableReason: "SSH host cannot be reached" })).toContain("SSH host cannot be reached");
-    expect(renderCard()).toContain("No MausBot desktops found on your VPS");
+    expect(renderCard()).toContain("No Limix Bot desktops found on your VPS");
   });
 
   it("tags computers on more than one server and keeps reachable rows beside the warning", () => {

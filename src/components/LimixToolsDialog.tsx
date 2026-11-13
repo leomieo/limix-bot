@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { Check, Download, Loader2, ScanSearch, X } from "lucide-react";
 import { lx } from "@/lib/limix-text";
@@ -21,6 +21,24 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
   const [state, setState] = useState<ToolsState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [installation, setInstallation] = useState<{ rows: SkillRequirement[]; project: string; baseIds: string[] } | null>(null);
+  const [frame, setFrame] = useState<CSSProperties>({ inset: 16 });
+  useLayoutEffect(() => {
+    const parent = document.querySelector<HTMLElement>('[data-settings-sheet] [aria-modal="true"]');
+    const measure = () => {
+      const rect = parent?.getBoundingClientRect();
+      const gap = window.innerWidth < 640 ? 8 : 20;
+      const left = Math.max(gap, (rect?.left ?? 0) + gap);
+      const top = Math.max(gap, (rect?.top ?? 0) + gap);
+      const right = Math.min(window.innerWidth - gap, (rect?.right ?? window.innerWidth) - gap);
+      const bottom = Math.min(window.innerHeight - gap, (rect?.bottom ?? window.innerHeight) - gap);
+      setFrame({ left, top, width: Math.max(0, right - left), height: Math.max(0, bottom - top) });
+    };
+    measure();
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    if (parent) observer?.observe(parent);
+    window.addEventListener("resize", measure);
+    return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
+  }, []);
 
   const refresh = useCallback(async () => {
     try {
@@ -113,12 +131,14 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
       )}
       <div className="flex items-center justify-between gap-3">
         <p className="text-[12px] leading-relaxed text-ink-secondary">
-          {lx("Quét công cụ cơ bản và đọc yêu cầu của các kỹ năng đã cài. Chi tiết từng kỹ năng nằm dưới danh sách công cụ.", "Scan base tools and read requirements from installed skills. Per-skill results appear below the tool list.")}
+          {lx("Quét công cụ cơ bản và đọc yêu cầu của các kỹ năng có sẵn hoặc đã tải về. Xem kết quả trong mục Yêu cầu của kỹ năng đã cài.", "Scan base tools and read requirements from bundled or downloaded skills. See the Installed skill requirements section for details.")}
         </p>
         <button type="button" className={`${button} shrink-0`} disabled={scanning || busy} onClick={() => void scan()}>
           {scanning ? <Loader2 size={14} className="animate-spin" /> : <ScanSearch size={14} />}{lx("Quét máy", "Scan this computer")}
         </button>
       </div>
+      <div className={state.skillScan ? "grid grid-cols-1 items-start gap-5 @[820px]/tools:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]" : ""}>
+      <div className="flex min-w-0 flex-col gap-3">
       <ul className="flex flex-col divide-y divide-hairline/40 rounded-xl border border-hairline/40 bg-card">
         {state.items.map((item) => {
           const job = item.job;
@@ -169,7 +189,8 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
         )}
         {asking && <button type="button" className={button} onClick={onClose}>{lx("Để sau", "Later")}</button>}
       </div>
-      {state.skillScan && <section className="mt-2 border-t border-hairline/40 pt-4" aria-label={lx("Yêu cầu của kỹ năng đã cài", "Installed skill requirements")}>
+      </div>
+      {state.skillScan && <section className="min-w-0" aria-label={lx("Yêu cầu của kỹ năng đã cài", "Installed skill requirements")}>
         <h3 className="text-[14px] font-medium text-ink">{lx("Yêu cầu của kỹ năng đã cài", "Installed skill requirements")}</h3>
         {missingPackages.length > 0 && limixTools()?.installRequirements && <button type="button" className={`${button} mt-3`} disabled={busy || scanning} onClick={() => void prepareInstall(missingPackages, missing.map((item) => item.id))}><Download size={14} />{lx("Cài tất cả còn thiếu", "Install all missing requirements")}</button>}
         {installation && <div className="my-3 rounded-xl border border-hairline/40 bg-raised p-3 text-[12px]">
@@ -199,6 +220,7 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
           {!!state.skillScan.warnings?.length && <details className="mt-2 text-[12px] text-ink-secondary"><summary className="cursor-pointer">{lx(`Có ${state.skillScan.warnings.length} mục chưa đọc đủ`, `${state.skillScan.warnings.length} items could not be fully read`)}</summary><ul>{state.skillScan.warnings.map((warning, index) => <li key={index} className="break-words">{warning}</li>)}</ul></details>}
         </>}
       </section>}
+      </div>
       <p className="text-[12px] text-ink-tertiary">
         {lx("Công cụ được tải từ trang chính thức của từng dự án, kiểm tra mã an toàn, rồi đặt trong thư mục riêng của Limix Bot. Bạn có thể đóng cửa sổ này, việc cài vẫn tiếp tục.", "Tools are downloaded from each project's official site, checked with a hash, and kept in Limix Bot's own folder. You can close this window; installing carries on.")}
       </p>
@@ -206,13 +228,15 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
   );
 
   const overlay = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6" onMouseDown={(event) => event.stopPropagation()}>
-      <div role="dialog" aria-modal="true" aria-labelledby="limix-tools-title" className="max-h-full w-full max-w-[600px] overflow-y-auto rounded-2xl border border-hairline/50 bg-panel p-6 shadow-2xl">
-        <div className="mb-4 flex items-center justify-between gap-3">
+    <div className="fixed inset-0 z-[70] bg-black/50" onMouseDown={(event) => event.stopPropagation()}>
+      <div style={frame} className="absolute flex items-center justify-center">
+      <div role="dialog" aria-modal="true" aria-labelledby="limix-tools-title" className="@container/tools flex max-h-full w-full max-w-[1080px] min-w-0 flex-col overflow-hidden rounded-2xl border border-hairline/50 bg-panel shadow-2xl">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-hairline/40 px-5 py-4">
           <h2 id="limix-tools-title" className="text-[17px] font-semibold text-ink">{lx("Công cụ cho kỹ năng", "Tools for skills")}</h2>
           <button type="button" onClick={onClose} aria-label={lx("Đóng", "Close")} className="rounded-lg p-1.5 text-ink-secondary hover:bg-raised hover:text-ink"><X size={16} /></button>
         </div>
-        {body}
+        <div className="min-h-0 overflow-y-auto overscroll-contain p-5">{body}</div>
+      </div>
       </div>
     </div>
   );
