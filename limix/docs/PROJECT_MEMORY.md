@@ -8,13 +8,13 @@
 ## 1. Trạng thái hiện tại (luôn ghi đè cho đúng)
 
 - **Hướng chính (đổi 2026-11-11 18:41):** Limix Bot = **bản fork đổi thương hiệu của OpenMausBot** (giao diện như mausbot.com), phát hành file cài Windows `.exe` qua GitHub Actions của repo `leomieo/limix-bot`. `limix-gateway` (cổng Telegram/Zalo) là module sẽ gộp vào app ở mốc sau.
-- **Mốc đang làm:** F1 — đẩy mã fork lên GitHub và build bản Windows đầu tiên
-- **Việc dở dang:** L1 tài khoản Limix dùng chung với Limix Studio (xem `limix/docs/MODULE_ACCOUNT.md`): mã máy chủ đã sửa ở máy chủ dự án riêng (chưa đưa lên VPS), app trên nhánh `limix-account`. Thứ tự: đưa máy chủ lên → thử → gộp nhánh. Bản đã phát hành: v0.2.9 (linh vật mới + tiếng Việt 100%); 0.2.10 (chấm đỏ tin chưa đọc trên taskbar) đang build
+- **Mốc đang làm:** phát hành 0.3.30: cài yêu cầu kỹ năng, quét đúng phạm vi đã tải, sửa cập nhật Codex và bố cục Công cụ cho kỹ năng.
+- **Bản đã phát hành:** v0.3.29, đã xác minh latest.yml và SHA-512 bản cài. 0.3.30 đang kiểm tra trên test-build, chưa phát hành.
 - **Đã làm được:** script `limix/rebrand.py` (chạy lại được, ổn định); logo đen trắng (hai khối bo tròn chồng nhau); linh vật mới 0.2.9: sao xanh ngọc + kính đen + mắt phát sáng (`limix/face.py`, rebrand bước 6a/6b/6d); tiếng Việt đủ 10210/10210 chuỗi; báo lỗi về hộp thư chủ dự án; Cloud là mô-đun ẩn; kiểm tra: 0 lỗi cú pháp, chạy từ bản sạch 6f226f15 → trùng khớp (trừ số phiên bản)
 - **Đã kiểm trên GitHub Actions (run 43018860396, thành công):** cài thư viện, typecheck + build, cấu trúc gói, `Limix Bot.exe`, kênh cập nhật leomieo/limix-bot, máy chủ đóng gói trả lời /api/health
 - **CHƯA kiểm:** cài và mở app thật 0.2.4+/0.2.5 trên máy Windows; linh vật 0.2.9 trong app thật (mới xem bằng ảnh dựng lại từ dữ liệu, chưa chạy vitest vì máy làm việc không có node_modules); thử gửi báo lỗi @devs thật
-- **Đang bị chặn:** không. **Luật tạm thời (2026-11-12 02:36): không push lên GitHub cho tới khi chủ dự án cho phép**
-- **Bước tiếp theo:** chủ dự án đồng ý đưa bản sửa máy chủ lên VPS → kiểm tra → gộp `limix-account` → build 0.3.0. Sau đó: icon giao diện (I1 phần 2). (Trước:) chủ dự án cài thử → báo lỗi/ảnh chụp → F2 gộp Telegram/Zalo vào app. (Cũ:) chờ workflow "Limix Bot Windows" → sửa lỗi build nếu có → tải `LimixBot-setup.exe` từ Releases
+- **Ủy quyền hiện tại:** chủ dự án đã yêu cầu đẩy thay đổi lên GitHub và phát hành để ứng dụng tự cập nhật; cho phép này thay thế luật tạm thời không push ngày 2026-11-12.
+- **Bước tiếp theo:** hoàn tất kiểm tra test-build, phát hành 0.3.30 trên main, xác minh bản cài và kênh cập nhật.
 
 ## 2. Bản đồ thư mục dự án
 
@@ -58,7 +58,8 @@
 | R6 | Khuôn mặt linh vật (mắt hình viên thuốc) vẫn dùng bộ biểu cảm của OpenMausBot; chỉ thân đã thay | Có thể bị coi là giống linh vật MausBot | Mở — cân nhắc vẽ bộ mặt riêng |
 | R7 | Giao thức liên kết `openmausbot://` giữ nguyên (mã chạy dùng đúng tên này) | Cài cả OpenMausBot gốc thì link cài gói có thể mở nhầm app | Mở, nhỏ |
 | R8 | Bản cài chưa ký số | SmartScreen báo "Unknown publisher" | Mở |
-| R9 | Không chạy được typecheck ở máy chủ Claude | Lỗi build chỉ lộ ra trên GitHub Actions | Mở |
+| R9 | Typecheck hiện chạy được trên máy Windows làm việc | Tính năng mới đã kiểm tra kiểu dữ liệu và fixture riêng; chưa thay cho nghiệm thu bản cài trên dữ liệu thật | Đã xử lý hạn chế cũ |
+| R15 | Công cụ/yêu cầu quét trên host, chưa xác minh môi trường Docker/cloud | Không suy ra gói đã cài trên host cũng có trong máy ảo | Hiện rõ trên giao diện |
 | R11 | Gói `limixbot` đã công khai trên npm (0.2.0, 0.2.1; latest 0.2.1) — `npx limixbot pair` dùng được. Còn: bật Trusted Publishing rồi xóa token (token bypass-2FA bị ngừng từ 01/2027) | | Gần xong |
 | R12 | Lần đổi tên 1 sót chữ "OpenMaus Bot" (có dấu cách), "OpenMaus", "Maus" và câu có dấu "/" | Màn hình khởi động/khay còn tên cũ ở v0.1.153 | Đã sửa ở 0.2.0 |
 | R13 | Báo cáo lỗi (@devs) trước gửi về đội OpenMausBot. Chủ dự án chọn: gửi về email riêng, KHÔNG hiển thị email → dùng FormSubmit qua mã ẩn danh trong secret `LIMIX_REPORT_ALIAS`; tắt hỏi trạng thái tới cloud.openmausbot.com | Chờ chủ dự án bấm Activate trong email FormSubmit + lưu secret | Đang làm (commit 698e46d chưa đẩy) |
@@ -66,6 +67,10 @@
 | R10 | Máy chủ Claude không đẩy được tag git (chỉ đẩy nhánh) | Build kích hoạt bằng push lên `main`; tag phát hành do workflow tự tạo | Đã xử lý |
 
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
+
+- 2026-11-14 | Codex | Bước 4 thiết lập máy ảo riêng lấy trạng thái từ inventory: có desktop do app quản lý thì đánh dấu hoàn tất, kể cả đang dừng; không yêu cầu tạo lại | LocalComputerSection.tsx; limix/rebrand.py | Ảnh chủ dự án có Kiwi/Dev chạy nhưng bước 4 chưa hoàn tất; điều kiện cũ luôn false ở per-bot đã được sửa.
+
+- 2026-11-14 | Codex | Công cụ cho kỹ năng rộng tối đa 1080px, giới hạn trong khung Cài đặt, tiêu đề/nút đóng cố định, hai cột khi đủ chỗ; sửa pipeline grep CI tránh SIGPIPE 141 | LimixToolsDialog.tsx + overlay; limix-docker.yml + brand-assets | Headless Edge dựng component thật với CSS production: khung lớn/nhỏ nằm trong parent, cuộn dọc và không tràn ngang; CI ảnh máy chủ đang chờ chạy lại.
 
 Định dạng: `- YYYY-MM-DD HH:MM | Ai | Làm gì | File | Kiểm chứng`
 

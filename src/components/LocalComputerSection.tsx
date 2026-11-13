@@ -1355,7 +1355,7 @@ export function LocalComputerSection() {
                   ? t("vm.setup.step4Recreate")
                   : t("vm.setup.step4")
             }
-            done={!perBot && ready}
+            done={perBot ? inventory.some((instance) => instance.managed) : ready}
           >
             {perBot ? (
               <div className="text-[13px] leading-relaxed text-ink-secondary">

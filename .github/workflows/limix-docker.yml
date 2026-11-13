@@ -62,19 +62,19 @@ jobs:
           docker run -d --init --shm-size=512m --name limix-check limix-bot:check
           trap 'echo "--- logs"; docker logs limix-check 2>&1 | tail -80' EXIT
           for i in $(seq 1 60); do
-            if docker exec limix-check curl -sf http://127.0.0.1:8799/api/health | grep -q openmausbot; then break; fi
+            if docker exec limix-check curl -sf http://127.0.0.1:8799/api/health | grep openmausbot >/dev/null; then break; fi
             sleep 3
           done
-          docker exec limix-check curl -sf http://127.0.0.1:8799/api/health | grep -q openmausbot
+          docker exec limix-check curl -sf http://127.0.0.1:8799/api/health | grep openmausbot >/dev/null
           for i in $(seq 1 30); do
-            if docker exec limix-check curl -sf -H "Host: 127.0.0.1:8790" http://127.0.0.1:8790/healthz | grep -q limix-bot; then break; fi
+            if docker exec limix-check curl -sf -H "Host: 127.0.0.1:8790" http://127.0.0.1:8790/healthz | grep limix-bot >/dev/null; then break; fi
             sleep 2
           done
-          docker exec limix-check curl -sf -H "Host: 127.0.0.1:8790" http://127.0.0.1:8790/healthz | grep -q limix-bot
+          docker exec limix-check curl -sf -H "Host: 127.0.0.1:8790" http://127.0.0.1:8790/healthz | grep limix-bot >/dev/null
           # The connector's page through the server (loopback owner), and its calls with the server's admin token.
-          docker exec limix-check curl -sf http://127.0.0.1:8799/api/limix/gateway/ | grep -q "<html"
+          docker exec limix-check curl -sf http://127.0.0.1:8799/api/limix/gateway/ | grep "<html" >/dev/null
           docker exec limix-check curl -sf http://127.0.0.1:8799/api/limix/gateway/api/state >/dev/null
-          docker exec limix-check curl -sf http://127.0.0.1:8799/api/limix/gateway/api/app/bots | grep -q '"inside":true'
+          docker exec limix-check curl -sf http://127.0.0.1:8799/api/limix/gateway/api/app/bots | grep '"inside":true' >/dev/null
           docker exec limix-check sh -c 'command -v codex'
           echo "server, connector and proxy: ok"
       - name: push to ghcr.io
