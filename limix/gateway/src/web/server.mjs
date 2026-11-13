@@ -57,8 +57,9 @@ export function publicConnection(conn, gateway) {
   };
 }
 
-export function createApp({ store, secrets, pairing, gateway, makeChannel = defaultMakeChannel, port, onShutdown = () => {}, launcherToken = "" }) {
-  const adminToken = randomBytes(24).toString("base64url");
+export function createApp({ store, secrets, pairing, gateway, makeChannel = defaultMakeChannel, port, onShutdown = () => {}, launcherToken = "", adminToken: givenAdmin = "" }) {
+  // On a server the Limix Bot server proxies this page and gives the token (it adds it to every proxied call).
+  const adminToken = /^[A-Za-z0-9_-]{32,}$/.test(givenAdmin) ? givenAdmin : randomBytes(24).toString("base64url");
   const allowedHosts = new Set([`127.0.0.1:${port}`, `localhost:${port}`]);
 
   function buildEngine(body) {

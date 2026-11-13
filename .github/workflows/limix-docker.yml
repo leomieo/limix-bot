@@ -1,0 +1,91 @@
+# Limix Bot (Leox ৹ Limix AI): the server image, ghcr.io/leomieo/limix-bot, for running Limix Bot on a VPS 24/7
+# (deploy/install.sh installs it). Each version on main is tagged v<version> and stable. The image runs the Telegram /
+# Zalo / Discord connector beside the server (server/limix-gateway-sidecar.ts) and has the Codex CLI, so a ChatGPT
+# plan can be signed in on the server itself.
+#
+# Before every push the image is started and checked: the server answers /api/health and the connector answers on its
+# loopback port. A manual run with push=false only builds and checks (use it from the test-build branch).
+name: Limix Bot server image
+
+on:
+  workflow_dispatch:
+    inputs:
+      push:
+        description: "Push the image to ghcr.io"
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths-ignore: ["limix/docs/**", "limix/site/**", ".github/workflows/limix-site.yml", "limix/brand-assets/limix-site.yml", "**/*.md"]
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: limix-docker-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  image:
+    name: build, check and push the server image
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: bug-report address (LIMIX_REPORT_ALIAS secret)
+        shell: bash
+        env:
+          ALIAS: ${{ secrets.LIMIX_REPORT_ALIAS }}
+        run: |
+          if [[ "$ALIAS" =~ ^[A-Za-z0-9]{8,128}$ ]]; then
+            printf 'export const LIMIX_REPORT_ALIAS: string = "%s";\n' "$ALIAS" > server/limix-report-config.ts
+          else
+            echo "::warning::LIMIX_REPORT_ALIAS is not set: this image cannot send bug reports."
+          fi
+      - name: version
+        id: v
+        run: echo "version=$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
+      - name: build (linux/amd64)
+        run: |
+          docker buildx create --use --name limix >/dev/null
+          docker buildx build --target server --platform linux/amd64 --load \
+            --build-arg ENGINES="@openai/codex" \
+            --label org.opencontainers.image.source=https://github.com/leomieo/limix-bot \
+            --label org.opencontainers.image.description="Limix Bot server: run your AI bots 24/7 on your own server" \
+            --label org.opencontainers.image.licenses=Apache-2.0 \
+            -t limix-bot:check .
+      - name: check that the server and the connector start
+        run: |
+          set -euo pipefail
+          docker run -d --init --shm-size=512m --name limix-check limix-bot:check
+          trap 'echo "--- logs"; docker logs limix-check 2>&1 | tail -80' EXIT
+          for i in $(seq 1 60); do
+            if docker exec limix-check curl -sf http://127.0.0.1:8799/api/health | grep -q openmausbot; then break; fi
+            sleep 3
+          done
+          docker exec limix-check curl -sf http://127.0.0.1:8799/api/health | grep -q openmausbot
+          for i in $(seq 1 30); do
+            if docker exec limix-check curl -sf -H "Host: 127.0.0.1:8790" http://127.0.0.1:8790/healthz | grep -q limix-bot; then break; fi
+            sleep 2
+          done
+          docker exec limix-check curl -sf -H "Host: 127.0.0.1:8790" http://127.0.0.1:8790/healthz | grep -q limix-bot
+          # The connector's page through the server (loopback owner), and its calls with the server's admin token.
+          docker exec limix-check curl -sf http://127.0.0.1:8799/api/limix/gateway/ | grep -q "<html"
+          docker exec limix-check curl -sf http://127.0.0.1:8799/api/limix/gateway/api/state >/dev/null
+          docker exec limix-check curl -sf http://127.0.0.1:8799/api/limix/gateway/api/app/bots | grep -q '"inside":true'
+          docker exec limix-check sh -c 'command -v codex'
+          echo "server, connector and proxy: ok"
+      - name: push to ghcr.io
+        if: github.event_name == 'push' || inputs.push
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          set -euo pipefail
+          echo "$TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          for tag in "v$VERSION" stable; do
+            docker tag limix-bot:check "ghcr.io/leomieo/limix-bot:$tag"
+            docker push "ghcr.io/leomieo/limix-bot:$tag"
+          done
+          echo "pushed ghcr.io/leomieo/limix-bot:v$VERSION and :stable"

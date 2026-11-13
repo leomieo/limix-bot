@@ -23,7 +23,9 @@ const { server } = createApp({
   store, secrets, pairing, gateway, port,
   onShutdown: () => shutdown(),
   launcherToken: process.env.LIMIX_LAUNCHER_TOKEN || "",
+  adminToken: process.env.LIMIX_ADMIN_TOKEN || "",
 });
+delete process.env.LIMIX_ADMIN_TOKEN;
 
 process.on("unhandledRejection", (error) => console.error("[limix]", redact(error?.message ?? error)));
 

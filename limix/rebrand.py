@@ -87,13 +87,14 @@ edit(".gitignore", lambda s: s if "limix/__pycache__/" in s else s.rstrip("\n") 
 wf = ROOT / ".github/workflows"
 if wf.exists():
     for f in wf.glob("*.yml"):
-        if f.name not in ("limix-windows.yml", "limix-npm.yml", "limix-cloudflare.yml", "limix-site.yml"):
+        if f.name not in ("limix-windows.yml", "limix-npm.yml", "limix-cloudflare.yml", "limix-site.yml", "limix-docker.yml"):
             f.unlink()
             changed.append(f".github/workflows/{f.name} (removed)")
 shutil.copy(ASSETS / "limix-windows.yml", wf / "limix-windows.yml")
 shutil.copy(ASSETS / "limix-npm.yml", wf / "limix-npm.yml")
 shutil.copy(ASSETS / "limix-cloudflare.yml", wf / "limix-cloudflare.yml")
 shutil.copy(ASSETS / "limix-site.yml", wf / "limix-site.yml")
+shutil.copy(ASSETS / "limix-docker.yml", wf / "limix-docker.yml")
 
 # 2c. The command-line package is published as `limixbot` (npx limixbot pair). The bundle keeps its file name.
 def npm_package(s):
@@ -1266,6 +1267,8 @@ edit("electron/main.mjs", lambda s: s if "serverRequest: (route, init)" in s els
 
 # 10p. The slow-first-reply row also prints its tool name as a sentence: in Limix Bot that sentence is Vietnamese.
 def rescue_words(s):
+    if "limixVi()" in s:  # 11f made these follow the app language
+        return s
     s = must(s, "  return `notice: ${botName} hasn't heard back from ${ai} yet.`;", "  return `notice: ${botName} vẫn chưa nhận được phản hồi từ ${ai}.`;")
     s = must(s, "  return `notice: ${botName} didn't hear back from ${ai}.`;", "  return `notice: ${botName} không nhận được phản hồi từ ${ai}.`;")
     return must(s, "  return `notice: ${ai} answered after a slow start.`;", "  return `notice: ${ai} đã trả lời, sau một lúc chậm.`;")
@@ -1822,6 +1825,48 @@ def skills_en(s):
             s = must(s, old, new)
     return s
 edit("src/locales/en.json", skills_en)
+
+# 11h. Limix Bot on a server, 24/7: the Docker image runs the Telegram / Zalo / Discord connector as the server's
+# sidecar (limix/overlay/server/limix-gateway-sidecar.ts), its page is proxied at /api/limix/gateway/ behind the
+# server's sign-in, and the one-command installer (deploy/install.sh) installs Limix Bot's own image and releases.
+def sidecar_index(s):
+    if "limix-gateway-sidecar.ts" in s:
+        return s
+    s = must(s, 'import { startHubAutoSync } from "./limix-skill-hub.ts";\n',
+             'import { startHubAutoSync } from "./limix-skill-hub.ts";\nimport { startLimixGatewaySidecar } from "./limix-gateway-sidecar.ts";\n')
+    return must(s, "\nlimixSkillDefaultsMigration();\n", "\nlimixSkillDefaultsMigration();\nstartLimixGatewaySidecar({ port: PORT, webhookPort: WEBHOOK_PORT });\n")
+edit("server/index.ts", sidecar_index)
+def sidecar_route(s):
+    if "proxyLimixGateway" in s:
+        return s
+    s = must(s, 'import { handleLimixSkillStore, ', 'import { proxyLimixGateway } from "../limix-gateway-sidecar.ts";\nimport { handleLimixSkillStore, ')
+    return must(s, '    let m: RegExpMatchArray | null = null;\n    if (path.startsWith("/api/limix/bots")) {',
+                '    let m: RegExpMatchArray | null = null;\n    if (path.startsWith("/api/limix/gateway") && proxyLimixGateway(req, res, path)) return;\n    if (path.startsWith("/api/limix/bots")) {')
+edit("server/routes/bot-skills.ts", sidecar_route)
+def sidecar_image(s):
+    if "limix-gateway" in s:
+        return s
+    s = must(s, "COPY --from=build --chown=maus:maus /src/skills ./skills\n# `docker compose exec omb openmausbot pair`",
+             "COPY --from=build --chown=maus:maus /src/skills ./skills\n"
+             "# Limix Bot: the Telegram / Zalo / Discord connector, run by the server as its sidecar (no npm packages).\n"
+             "COPY --from=build --chown=maus:maus /src/limix/gateway/src ./limix-gateway/src\n"
+             "COPY --from=build --chown=maus:maus /src/limix/gateway/package.json ./limix-gateway/package.json\n"
+             "# `docker compose exec omb openmausbot pair`")
+    return must(s, 'ENV HOME=/data \\\n    OMB_CLI_PREFIX="docker compose exec omb openmausbot"',
+                'ENV HOME=/data \\\n    LIMIX_GATEWAY_SIDECAR=1 \\\n    OMB_CLI_PREFIX="docker compose exec omb openmausbot"')
+edit("Dockerfile", sidecar_image)
+def limix_installer(s):
+    for old, new in [
+        ("IMAGE_REPO=milind-soni/openmausbot", "IMAGE_REPO=leomieo/limix-bot"),
+        ("https://api.github.com/repos/milind-soni/OpenMausBot/releases/latest", "https://api.github.com/repos/leomieo/limix-bot/releases/latest"),
+        ("https://raw.githubusercontent.com/milind-soni/OpenMausBot/main/deploy/install.sh", "https://raw.githubusercontent.com/leomieo/limix-bot/main/deploy/install.sh"),
+        ("REPOSITORY_FILES=https://raw.githubusercontent.com/milind-soni/OpenMausBot\n", "REPOSITORY_FILES=https://raw.githubusercontent.com/leomieo/limix-bot\n"),
+        ('INSTALL_DIR="${OMB_INSTALL_DIR:-/opt/openmausbot}"', 'INSTALL_DIR="${OMB_INSTALL_DIR:-/opt/limixbot}"'),
+    ]:
+        s = s.replace(old, new)
+    # The name it prints (not paths such as /etc/mausbot, which the sandbox profiles use).
+    return re.sub(r"(?<![A-Za-z/])MausBot(?![A-Za-z])", "Limix Bot", s)
+edit("deploy/install.sh", limix_installer)
 
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"

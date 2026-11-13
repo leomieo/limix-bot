@@ -2,14 +2,18 @@
 // confined guest turn. The connector (limix-gateway) sends X-Limix-Owner only for a sender the owner linked with /link,
 // in a private chat; the secret is made per launch by the desktop app and never reaches an engine (deleted below,
 // before any engine is started). An owner thread stays an owner thread: a guest's call can never continue it.
-import { timingSafeEqual } from "node:crypto";
+import { randomBytes, timingSafeEqual } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { DATA_DIR } from "./config.ts";
 
-const TOKEN = process.env.LIMIX_OWNER_LANE_TOKEN?.trim() ?? "";
+// On a server the connector is this server's own sidecar (limix-gateway-sidecar.ts): the server makes the secret.
+const TOKEN = process.env.LIMIX_OWNER_LANE_TOKEN?.trim() || (process.env.LIMIX_GATEWAY_SIDECAR === "1" ? randomBytes(32).toString("base64url") : "");
 delete process.env.LIMIX_OWNER_LANE_TOKEN;
+
+/** The secret, for the sidecar connector only (never for an engine). */
+export const limixOwnerLaneToken = (): string => (process.env.LIMIX_GATEWAY_SIDECAR === "1" ? TOKEN : "");
 
 export const LIMIX_OWNER_HEADER = "x-limix-owner";
 
