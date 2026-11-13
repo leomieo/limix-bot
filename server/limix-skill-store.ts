@@ -28,6 +28,24 @@ export const LIMIX_CORE_SKILLS: ReadonlySet<string> = new Set([
   "create-verification-skill", "agent-reach", "windows-computer-automation", "phone-connection", "phone-harness",
 ]);
 
+/** What a shipped skill does, in the app's language (the manifest has one language; the skill itself is unchanged). */
+const BUNDLED_TEXT: Record<string, [vi: string, en: string]> = {
+  "agent-reach": ["Tìm và đọc (chỉ đọc) X/Twitter, Reddit, YouTube (phụ đề), GitHub, Bilibili, XiaoHongShu, V2EX, LinkedIn… bằng lệnh agent-reach.", "Read-only search and reading on X/Twitter, Reddit, YouTube (subtitles), GitHub, Bilibili, XiaoHongShu, V2EX, LinkedIn and more through the agent-reach command."],
+  "create-verification-skill": ["Viết một kĩ năng kiểm chứng cho một ứng dụng hoặc dự án cụ thể.", "Write one verification skill for a specific app or project."],
+  "data-dashboards": ["Dựng trang và bảng số liệu nhanh, đẹp, ngay trong chat hoặc ở một đường link công khai.", "Build fast, good-looking pages and data dashboards, in the chat or at a public link."],
+  "phone-connection": ["Vì sao điện thoại không kết nối được với máy tính, và cách khắc phục.", "Why the phone can't reach the person's computer, and what fixes it."],
+  "phone-harness": ["Điều khiển điện thoại Android thật nối qua USB (gỡ lỗi USB đã cho phép).", "Control a physical Android phone connected over authorized USB debugging."],
+  "rea-video": ["Mổ xẻ cách một video được làm, từng cảnh (quay thật, AI, 3D, quay màn hình…), phụ đề, âm thanh, dựng phim, và cách làm lại.", "Reverse-engineers how a video was made, shot by shot (live action, AI, 3D, screen recording...), its subtitles, sound and editing, and how to remake it."],
+  "social-posts": ["Xem trước bài đăng trông thế nào trên Instagram, LinkedIn, X, Threads, Facebook, TikTok, Reels và Shorts.", "Show how a social post will look on Instagram, LinkedIn, X, Threads, Facebook, TikTok, Reels and Shorts."],
+  "ui-ux-pro-max": ["Trợ lý thiết kế UI/UX: phong cách, bảng màu, cặp phông chữ, luật UX và hướng dẫn theo nền tảng, tra bằng script Python trên máy.", "Design intelligence for UI/UX: styles, colour palettes, font pairings, UX rules and stack guidance, searched with a local Python script."],
+  "windows-computer-automation": ["Điều khiển Windows an toàn: đọc màn hình, thao tác cửa sổ, nhập liệu, trình duyệt, ứng dụng, tệp và tiến trình qua Agent Desktop và Windows-MCP; chọn đúng công cụ, xác minh kết quả, chống lặp thao tác.", "Control Windows safely: read the screen, work windows, type, browse, and manage apps, files and processes through Agent Desktop and Windows-MCP; pick the right tool, check the result, never repeat an action blindly."],
+};
+
+export function limixSkillText(id: string, fallback: string): string {
+  const text = BUNDLED_TEXT[id];
+  return text ? lxs(text[0], text[1]) : fallback;
+}
+
 const BOT_ID = /^[\w-]+$/;
 const picksPath = (botId: string) => join(DATA_DIR, "skill-state", botId, "limix-bundled.json");
 
@@ -75,7 +93,7 @@ export interface BundledListing {
 /** The bot's shipped skills as rows of its Skills page. */
 export function limixBundledListings(botId: string): BundledListing[] {
   return limixBundledFor(botId, loadBundledSkills()).map(({ manifest }) => ({
-    name: manifest.id, description: manifest.description, enabled: true, editable: false,
+    name: manifest.id, description: limixSkillText(manifest.id, manifest.description), enabled: true, editable: false,
     source: LIMIX_CORE_SKILLS.has(manifest.id) ? lxs("Kĩ năng gốc của Limix Bot", "Limix Bot core skill") : lxs("Kho Kĩ Năng (Skills) · có sẵn", "Skills Store · built in"),
     sha256: "", importedAt: "", warnings: [], skippedFiles: [], origin: "bundled", core: LIMIX_CORE_SKILLS.has(manifest.id),
   }));
@@ -104,7 +122,7 @@ function storeItems(bots: StoreBots, botId: string): StoreItem[] {
   const items = new Map<string, StoreItem>();
   for (const { manifest } of loadBundledSkills()) {
     const core = LIMIX_CORE_SKILLS.has(manifest.id);
-    items.set(manifest.id, { name: manifest.id, description: manifest.description, kind: "bundled", added: core || picks.has(manifest.id), core, ready: true, warnings: 0, source: lxs("Có sẵn trong Limix Bot", "Built into Limix Bot") });
+    items.set(manifest.id, { name: manifest.id, description: limixSkillText(manifest.id, manifest.description), kind: "bundled", added: core || picks.has(manifest.id), core, ready: true, warnings: 0, source: lxs("Có sẵn trong Limix Bot", "Built into Limix Bot") });
   }
   for (const skill of listLibrarySkills()) {
     if (items.has(skill.name)) continue;

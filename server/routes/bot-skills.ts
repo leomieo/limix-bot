@@ -11,7 +11,7 @@ import { readLocalSkills } from "../limix-skill-folder.ts";
 import { loadBundledSkills } from "../skill-library.ts";
 import { handleLimixHub } from "../limix-skill-hub.ts";
 import { proxyLimixGateway } from "../limix-gateway-sidecar.ts";
-import { handleLimixSkillStore, LIMIX_CORE_SKILLS, limixBundledListings, limixBundledSwitch } from "../limix-skill-store.ts";
+import { handleLimixSkillStore, LIMIX_CORE_SKILLS, limixSkillText, limixBundledListings, limixBundledSwitch } from "../limix-skill-store.ts";
 import { skillImportSummary } from "../skill-folder.ts";
 import { installLibrarySkill, librarySkillOptOuts, listLibrarySkills, readLibrarySkillFile, readSkillLibraryIndex, setLibrarySkillEveryBot, setLibrarySkillOptOut, setLibrarySkillReviewState, skillsLibraryEnabled, unassignLibrarySkill } from "../skill-library.ts";
 import {
@@ -47,7 +47,7 @@ export function createBotSkillsRoutes(deps: BotSkillsRouteDeps): RouteHandler {
       if (skillStore) return json(res, skillStore.status, skillStore.body);
     }
     if (method === "GET" && path === "/api/limix/bundled-skills") {
-      const skills = loadBundledSkills().map(({ manifest }) => ({ id: manifest.id, name: manifest.name, description: manifest.description, defaultEnabled: manifest.defaultEnabled, triggerTerms: manifest.triggerTerms, core: LIMIX_CORE_SKILLS.has(manifest.id) }));
+      const skills = loadBundledSkills().map(({ manifest }) => ({ id: manifest.id, name: manifest.name, description: limixSkillText(manifest.id, manifest.description), defaultEnabled: manifest.defaultEnabled, triggerTerms: manifest.triggerTerms, core: LIMIX_CORE_SKILLS.has(manifest.id) }));
       return json(res, 200, { skills });
     }
     // Imports land DISABLED: a person enables one after reading SKILL.md and its scan warnings.
