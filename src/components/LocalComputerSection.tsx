@@ -55,6 +55,8 @@ interface Status {
   max_instances: number;
   automatic_capacity?: boolean;
   capacity?: LimixVmCapacity;
+  running_instances?: number;
+  capacity_limited?: boolean;
   commands: {
     install: string | null;
     runtimeStart: string | null;
@@ -486,6 +488,9 @@ export function LocalVmInventoryCard({
   unavailableReason,
   onRefresh,
   onDelete,
+  runningInstances,
+  powerPending,
+  onPower,
 }: {
   instances: LocalVmInventoryInstance[];
   maxInstances: number;
@@ -495,6 +500,9 @@ export function LocalVmInventoryCard({
   unavailableReason: string | null;
   onRefresh: () => void;
   onDelete: (instance: LocalVmInventoryInstance) => void;
+  runningInstances?: number;
+  powerPending?: { botId: string; action: "start" | "stop" } | null;
+  onPower?: (instance: LocalVmInventoryInstance, action: "start" | "stop") => void;
 }) {
   return (
     <Card
@@ -502,17 +510,19 @@ export function LocalVmInventoryCard({
       subtitle={t("vm.perBot.subtitle", {
         count: unavailableReason
           ? t("vm.perBot.inventoryUnavailable")
-          : t("vm.perBot.created", { count: instances.length, max: maxInstances }),
+          : runningInstances === undefined
+            ? t("vm.perBot.created", { count: instances.length, max: maxInstances })
+            : lx(`Đã tạo ${instances.length} máy · Đang chạy ${runningInstances}/${maxInstances}`, `${instances.length} desktops created · ${runningInstances}/${maxInstances} running`),
       })}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="text-[12px] text-ink-secondary">
-          {t("vm.perBot.deleteHint")}
+          {runningInstances === undefined ? t("vm.perBot.deleteHint") : lx("Ứng dụng không giới hạn số máy đã tạo; số lượng thực tế phụ thuộc dung lượng ổ đĩa. Dừng một máy để giải phóng tài nguyên cho máy khác.", "The app does not cap created desktops; their number depends on disk space. Stop a desktop to free resources for another.")}
         </div>
         <button
           type="button"
           onClick={onRefresh}
-          disabled={loading || deletingBotId !== null}
+          disabled={loading || deletingBotId !== null || Boolean(powerPending)}
           aria-label={t("vm.perBot.refreshAria")}
           className="flex shrink-0 items-center gap-1.5 rounded-lg border border-hairline/40 px-2.5 py-1.5 text-[12px] text-ink-secondary hover:bg-control hover:text-ink disabled:opacity-40"
         >
@@ -533,7 +543,7 @@ export function LocalVmInventoryCard({
       </p>
 
       <div
-        aria-busy={loading || deletingBotId !== null}
+        aria-busy={loading || deletingBotId !== null || Boolean(powerPending)}
         className="mt-3 overflow-hidden rounded-xl border border-hairline/40"
       >
         {loading && instances.length === 0 ? (
@@ -591,10 +601,19 @@ export function LocalVmInventoryCard({
                   <div className="mt-1 text-[12px] text-ink-secondary">{t("vm.perBot.stopFirst")}</div>
                 )}
               </div>
-              {managed && <button
+              {managed && <div className="flex shrink-0 flex-wrap gap-2">
+              {onPower && <button type="button"
+                onClick={() => onPower(instance, instance.container === "running" ? "stop" : "start")}
+                disabled={loading || instance.inUse || deletingBotId !== null || Boolean(powerPending) || (instance.container === "stopped" && runningInstances !== undefined && runningInstances >= maxInstances)}
+                aria-busy={powerPending?.botId === instance.botId || undefined}
+                className="flex items-center gap-1.5 rounded-lg bg-control px-2.5 py-1.5 text-[12px] text-ink hover:bg-raised-hover disabled:opacity-40">
+                {powerPending?.botId === instance.botId && <Loader2 size={12} className="animate-spin" />}
+                {instance.container === "running" ? lx("Dừng", "Stop") : lx("Bật", "Start")}
+              </button>}
+              <button
                 type="button"
                 onClick={() => onDelete(instance)}
-                disabled={loading || instance.inUse || deletingBotId !== null}
+                disabled={loading || instance.inUse || deletingBotId !== null || Boolean(powerPending)}
                 aria-busy={deleting || undefined}
                 title={
                   instance.inUse
@@ -605,7 +624,7 @@ export function LocalVmInventoryCard({
               >
                 {deleting ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
                 {t("common.delete")}
-              </button>}
+              </button></div>}
             </div>
           );
         })}
@@ -775,6 +794,7 @@ export function LocalComputerSection() {
   const [inventoryError, setInventoryError] = useState<string | null>(null);
   const [inventoryUnavailableReason, setInventoryUnavailableReason] = useState<string | null>(null);
   const [deletingBotId, setDeletingBotId] = useState<string | null>(null);
+  const [vmPowerPending, setVmPowerPending] = useState<{ botId: string; action: "start" | "stop" } | null>(null);
   const [inventoryRefreshKey, setInventoryRefreshKey] = useState(0);
   const [cloudInventory, setCloudInventory] = useState<CloudComputerInventoryInstance[]>([]);
   const [cloudConfigured, setCloudConfigured] = useState<boolean | null>(null);
@@ -980,7 +1000,7 @@ export function LocalComputerSection() {
           async () => (await refresh(controller.signal)) ?? result,
           controller.signal,
         );
-        if (!result.ready) throw new Error(result.problem ?? t("vm.err.start"));
+        if (!result.ready && !result.capacity_limited) throw new Error(result.problem ?? t("vm.err.start"));
       }
       await refresh();
       setAnnouncement(
@@ -997,6 +1017,27 @@ export function LocalComputerSection() {
       actionController.current = null;
       if (!controller.signal.aborted) setPending(null);
     }
+  };
+
+  const setVmPower = async (instance: LocalVmInventoryInstance, action: "start" | "stop") => {
+    if (vmPowerPending || deletingBotId) return;
+    setVmPowerPending({ botId: instance.botId, action });
+    setInventoryError(null);
+    const controller = new AbortController();
+    try {
+      const path = `/api/bots/${encodeURIComponent(instance.botId)}/local-computer`;
+      const response = await fetch(`${path}/${action}`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
+      let body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? t("vm.err.start"));
+      if (action === "start") body = await waitForLocalVmReady(body, async () => {
+        const current = await fetch(path);
+        if (!current.ok) throw new Error(t("vm.err.start"));
+        return current.json();
+      }, controller.signal);
+      if (action === "start" && !body.ready) throw new Error(body.problem ?? t("vm.err.start"));
+      await Promise.all([refreshInventory(), refresh()]);
+    } catch (cause) { setInventoryError(cause instanceof Error ? cause.message : String(cause)); }
+    finally { setVmPowerPending(null); }
   };
 
   const savePolicy = async (mode: Status["mode"]) => {
@@ -1290,8 +1331,8 @@ export function LocalComputerSection() {
         {perBot && (
           <div className="mt-3 flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-[13px] text-ink">{lx("Tổng số máy ảo riêng tối đa", "Maximum private desktops in total")}</div>
-              <div className="text-[12px] text-ink-secondary">{lx("Tự tính theo RAM và CPU được cấp cho môi trường container; chừa tài nguyên cho hệ thống. Đây là ước tính theo giới hạn mỗi máy, tính cả máy đã tạo nhưng đang dừng.", "Calculated from container runtime memory and CPU, with resources reserved for the system. This estimate uses each desktop's resource limits and includes created desktops that are stopped.")}</div>
+              <div className="text-[13px] text-ink">{lx("Số máy ảo chạy cùng lúc tối đa", "Maximum desktops running at once")}</div>
+              <div className="text-[12px] text-ink-secondary">{lx("Không giới hạn số máy đã tạo trong ứng dụng. Giới hạn chạy cùng lúc tự tính theo RAM/CPU cấp cho Docker hoặc Podman, có dự phòng cho hệ thống. Khi đủ chỗ đang chạy, máy mới vẫn được tạo ở trạng thái dừng.", "The app does not cap created desktops. The running limit is calculated from Docker or Podman memory/CPU with a system reserve. When running slots are full, new desktops are still created in a stopped state.")}</div>
               {status?.capacity && <div className="mt-1 text-[12px] text-ink-secondary">
                 {status.capacity.source === "host" ? lx("Ước tính từ máy chủ; chưa đọc được tài nguyên Docker/Podman", "Host estimate; Docker/Podman resources have not been read") : status.capacity.source === "docker" ? "Docker" : "Podman"}
                 {` · ${status.capacity.memoryGb.toFixed(1)} GB RAM · ${status.capacity.cpus} CPU`}
@@ -1299,7 +1340,7 @@ export function LocalComputerSection() {
                 {` · ${lx("Dành cho hệ thống", "System reserve")}: ${status.capacity.reservedMemoryGb.toFixed(1)} GB / ${status.capacity.reservedCpus} CPU`}
               </div>}
               {status?.automatic_capacity === false && <button type="button" disabled={policyPending} onClick={() => void savePolicy(status.mode)} className="mt-1 text-[12px] text-accent hover:underline">{lx("Chuyển sang tự động", "Switch to automatic")}</button>}
-              {status && inventory.length > status.max_instances && <div className="mt-1 text-[12px] text-warning">{lx("Số máy đã tạo vượt mức ước tính hiện tại. Các máy được giữ nguyên; chưa thể tạo thêm.", "The existing desktops exceed the current estimate. They are kept; additional desktops cannot be created yet.")}</div>}
+              {status && (status.running_instances ?? 0) > status.max_instances && <div className="mt-1 text-[12px] text-warning">{lx("Số máy đang chạy vượt mức ước tính mới. Ứng dụng giữ nguyên chúng; dừng bớt máy trước khi bật máy khác.", "The running desktops exceed the new estimate. They are kept; stop some before starting another.")}</div>}
             </div>
             <div className="shrink-0 rounded-lg bg-control px-3 py-2 text-center text-[13px] text-ink">
               <div className="text-[11px] text-ink-secondary">{status?.automatic_capacity === false ? lx("Thủ công", "Manual") : lx("Tự động", "Automatic")}</div>
@@ -1406,6 +1447,9 @@ export function LocalComputerSection() {
         <LocalVmInventoryCard
           instances={inventory}
           maxInstances={status?.max_instances ?? inventoryMax}
+          runningInstances={status?.running_instances}
+          powerPending={vmPowerPending}
+          onPower={(instance, action) => void setVmPower(instance, action)}
           loading={inventoryLoading}
           deletingBotId={deletingBotId}
           error={inventoryError}

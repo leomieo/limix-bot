@@ -5,6 +5,7 @@ import { Switch } from "./SettingsPrimitives";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { waitForLocalVmReady } from "@/lib/local-vm-readiness";
+import { lx } from "@/lib/limix-text";
 import { CalendarClock, ChevronRight, Columns2, Globe, Hand, Loader2, Maximize2, Monitor, Moon, Power, Settings, X } from "lucide-react";
 import { api, ApiError, currentTaskBot, useStore, type Bot, type ConfigStatus } from "@/state/store";
 import { setAdvancedMode, useAdvancedMode } from "@/lib/interface-mode";
@@ -91,6 +92,7 @@ type Phase =
   | "error";
 
 interface LocalVmStatus {
+  capacity_limited?: boolean;
   resumable?: boolean;
   stop_reason?: "idle" | null;
   mode: "shared" | "per-bot" | "pool";
@@ -992,6 +994,11 @@ export function ComputerPanel({
           signal: controller.signal,
         });
         const status = await waitForLocalVmReady(started, () => api(threadPath("local-computer"), { signal: controller.signal }), controller.signal);
+        if (status.container === "stopped" && status.capacity_limited) {
+          setVmStatus(status);
+          setPhase("vm-unavailable");
+          return;
+        }
         if (!status.ready) throw new Error(status.problem ?? t("computer.err.vmNotReady"));
         setVmStatus(status);
         setPhase("vm");
@@ -1465,6 +1472,7 @@ export function ComputerPanel({
                   </button>
                 )
               )}
+              {phase === "vm-unavailable" && vmStatus?.capacity_limited && <p className="text-[12px] text-ink-secondary">{lx("Máy ảo đã được tạo và đang dừng vì đã đủ số máy chạy cùng lúc. Dừng một máy khác rồi bấm Bật.", "This desktop has been created and is stopped because the running limit is full. Stop another desktop, then start this one.")}</p>}
               {!advanced && vpsPhase && (
                 <>
                   <p className="text-[12px]">{t("computer.simple.needsSetup", { name: bot.name })}</p>

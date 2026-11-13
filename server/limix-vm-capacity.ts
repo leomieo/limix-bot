@@ -10,6 +10,13 @@ interface Machine { memoryGb: number; cpus: number; source: LimixVmCapacity["sou
 let machine: Machine | null = null;
 let cached: { runtime: Runtime; expires: number; pending: Promise<void> } | null = null;
 let generation = 0;
+let startQueue: Promise<unknown> = Promise.resolve();
+
+export function serializeLimixVmStart<T>(work: () => Promise<T>): Promise<T> {
+  const next = startQueue.then(work, work);
+  startQueue = next.catch(() => undefined);
+  return next;
+}
 
 export function calculateLimixVmCapacity(host: Machine, resources: DesktopResources): LimixVmCapacity {
   const reservedMemoryGb = Math.min(host.memoryGb, Math.max(2, host.memoryGb * 0.2));

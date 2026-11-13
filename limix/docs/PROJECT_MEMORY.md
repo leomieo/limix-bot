@@ -8,7 +8,7 @@
 ## 1. Trạng thái hiện tại (luôn ghi đè cho đúng)
 
 - **Hướng chính (đổi 2026-11-11 18:41):** Limix Bot = **bản fork đổi thương hiệu của OpenMausBot** (giao diện như mausbot.com), phát hành file cài Windows `.exe` qua GitHub Actions của repo `leomieo/limix-bot`. `limix-gateway` (cổng Telegram/Zalo) là module sẽ gộp vào app ở mốc sau.
-- **Mốc đang làm:** phát hành 0.3.30: cài yêu cầu kỹ năng, quét đúng phạm vi đã tải, sửa cập nhật Codex, bố cục Công cụ cho kỹ năng và giới hạn máy ảo tự tính theo tài nguyên Docker/Podman.
+- **Mốc đang làm:** phát hành 0.3.30: cài yêu cầu kỹ năng, quét đúng phạm vi đã tải, sửa cập nhật Codex, bố cục Công cụ cho kỹ năng; tạo máy ảo không giới hạn trong app, chỉ giới hạn số chạy cùng lúc theo tài nguyên Docker/Podman.
 - **Bản đã phát hành:** v0.3.29, đã xác minh latest.yml và SHA-512 bản cài. 0.3.30 đang kiểm tra trên test-build, chưa phát hành.
 - **Đã làm được:** script `limix/rebrand.py` (chạy lại được, ổn định); logo đen trắng (hai khối bo tròn chồng nhau); linh vật mới 0.2.9: sao xanh ngọc + kính đen + mắt phát sáng (`limix/face.py`, rebrand bước 6a/6b/6d); tiếng Việt đủ 10210/10210 chuỗi; báo lỗi về hộp thư chủ dự án; Cloud là mô-đun ẩn; kiểm tra: 0 lỗi cú pháp, chạy từ bản sạch 6f226f15 → trùng khớp (trừ số phiên bản)
 - **Đã kiểm trên GitHub Actions (run 43018860396, thành công):** cài thư viện, typecheck + build, cấu trúc gói, `Limix Bot.exe`, kênh cập nhật leomieo/limix-bot, máy chủ đóng gói trả lời /api/health
@@ -60,7 +60,7 @@
 | R8 | Bản cài chưa ký số | SmartScreen báo "Unknown publisher" | Mở |
 | R9 | Typecheck hiện chạy được trên máy Windows làm việc | Tính năng mới đã kiểm tra kiểu dữ liệu và fixture riêng; chưa thay cho nghiệm thu bản cài trên dữ liệu thật | Đã xử lý hạn chế cũ |
 | R15 | Công cụ/yêu cầu quét trên host, chưa xác minh môi trường Docker/cloud | Không suy ra gói đã cài trên host cũng có trong máy ảo | Hiện rõ trên giao diện |
-| R16 | Số máy ảo tự tính là ước tính theo giới hạn RAM/CPU; không phải kiểm thử tải hay bảo đảm dung lượng ổ đĩa | Chừa 20% RAM (tối thiểu 2 GiB), 10% CPU (tối thiểu 1); khi chưa đọc được runtime thì ghi rõ ước tính host. Máy đã tạo được giữ nguyên khi mức tính giảm | Hiện rõ cơ sở tính trong Cài đặt |
+| R16 | Số máy ảo chạy cùng lúc tự tính là ước tính theo giới hạn RAM/CPU; không phải kiểm thử tải hay bảo đảm dung lượng ổ đĩa | Chừa 20% RAM (tối thiểu 2 GiB), 10% CPU (tối thiểu 1); chưa đọc runtime thì ghi rõ ước tính host. Máy đã tạo không bị giới hạn số lượng trong app; không tự dừng máy đang chạy khi mức tính giảm | Hiện rõ cơ sở tính trong Cài đặt |
 | R11 | Gói `limixbot` đã công khai trên npm (0.2.0, 0.2.1; latest 0.2.1) — `npx limixbot pair` dùng được. Còn: bật Trusted Publishing rồi xóa token (token bypass-2FA bị ngừng từ 01/2027) | | Gần xong |
 | R12 | Lần đổi tên 1 sót chữ "OpenMaus Bot" (có dấu cách), "OpenMaus", "Maus" và câu có dấu "/" | Màn hình khởi động/khay còn tên cũ ở v0.1.153 | Đã sửa ở 0.2.0 |
 | R13 | Báo cáo lỗi (@devs) trước gửi về đội OpenMausBot. Chủ dự án chọn: gửi về email riêng, KHÔNG hiển thị email → dùng FormSubmit qua mã ẩn danh trong secret `LIMIX_REPORT_ALIAS`; tắt hỏi trạng thái tới cloud.openmausbot.com | Chờ chủ dự án bấm Activate trong email FormSubmit + lưu secret | Đang làm (commit 698e46d chưa đẩy) |
@@ -68,6 +68,8 @@
 | R10 | Máy chủ Claude không đẩy được tag git (chỉ đẩy nhánh) | Build kích hoạt bằng push lên `main`; tag phát hành do workflow tự tạo | Đã xử lý |
 
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
+
+- 2026-11-14 | Chủ dự án + Codex | Chốt lại giới hạn chỉ áp dụng máy chạy đồng thời, không áp dụng số đã tạo. Khi đầy slot, dùng Docker/Podman create để tạo máy ở trạng thái dừng; mọi đường start/run của app kiểm tra số chạy trong cùng hàng đợi để chống vượt giới hạn. Danh sách có Dừng/Bật | container-computer.ts, index/routes, ComputerPanel và LocalComputerSection; module capacity | 171 test backend/liên quan và 96 test UI liên quan đạt (có chồng lặp); mô phỏng 30 máy mới khi slot đầy, 6 yêu cầu bật đồng thời chỉ 3 chạy. Docker thật: tạo fixture stopped/resumable khi limit=0, số máy chạy giữ 2→2; đã xóa đúng fixture.
 
 - 2026-11-14 | Codex | Giới hạn máy ảo tự tính theo MemTotal/NCPU của Docker hoặc host.memTotal/cpus của Podman, bỏ lựa chọn cố định 1–8; nâng cấu hình cũ sang auto, vẫn giữ lựa chọn thủ công rõ ràng trong config/API; không xóa hay dừng máy hiện có | server/limix-vm-capacity.ts, shared/limix-vm-capacity.ts, cấu hình/routes và LocalComputerSection, limix/patches/vm-capacity.json | 385 test đạt, 2 bỏ qua; typecheck đạt. Đọc Docker thật: 15.49 GiB/32 CPU, mỗi VM 4 GiB/2 CPU => 3 VM sau dự phòng. Chưa kiểm thử tải nhiều máy cùng lúc.
 

@@ -141,6 +141,18 @@ describe("computer inventory request wiring", () => {
 });
 
 describe("Local VM inventory UI", () => {
+  it("shows thirty created desktops independently of three running slots and disables only additional starts", () => {
+    setLocale("en");
+    const markup = renderToStaticMarkup(createElement(LocalVmInventoryCard, {
+      instances: Array.from({ length: 30 }, (_, index) => ({ ...cloudVm, botId: String(index), name: `Bot ${index}`, container: index < 3 ? "running" as const : "stopped" as const, ready: index < 3 })),
+      maxInstances: 3, runningInstances: 3, loading: false, deletingBotId: null,
+      error: null, unavailableReason: null, onRefresh: vi.fn(), onDelete: vi.fn(), onPower: vi.fn(),
+    }));
+    expect(markup).toContain("30 desktops created · 3/3 running");
+    expect(markup.match(/<button[^>]*disabled=""[^>]*>Start<\/button>/g)).toHaveLength(27);
+    expect(markup.match(/<button[^>]*>Stop<\/button>/g)).toHaveLength(3);
+    expect(markup).toContain("The app does not cap created desktops");
+  });
   it("shows capacity, current destinations, health, and an in-use deletion guard", () => {
     const markup = renderToStaticMarkup(createElement(LocalVmInventoryCard, {
       instances: [

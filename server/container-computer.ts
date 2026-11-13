@@ -34,7 +34,8 @@ import {
   type HostUser,
 } from "./container-isolation.ts";
 import { SPAWNED_PROXIES } from "./proxy-paths.ts";
-import { refreshLimixVmCapacity } from "./limix-vm-capacity.ts";
+import { limixVmCapacity, refreshLimixVmCapacity, serializeLimixVmStart } from "./limix-vm-capacity.ts";
+import { lxs } from "./limix-lang.ts";
 
 const run = promisify(execFile);
 const SCREENSHOT_STATUS_TTL_MS = 10_000;
@@ -282,6 +283,7 @@ export async function containerRuntimeStatus(
 }
 
 export interface ContainerComputerStatus {
+  capacity_limited?: boolean;
   platform: NodeJS.Platform;
   runtime: Runtime | null;
   available: Runtime[];
@@ -903,10 +905,12 @@ export async function containerComputerAction(
   platform: NodeJS.Platform = process.platform,
   target: LocalVmTarget = SHARED_LOCAL_VM_TARGET,
   resources: DesktopResources = DEFAULT_DESKTOP_RESOURCES,
+  runningLimit?: number | (() => number),
 ): Promise<ContainerComputerStatus> {
   if (runner === sh && platform === process.platform) screenshotStatusCache.delete(target.key);
   const before = await containerComputerStatus(runner, platform, target);
   const runtime = before.runtime;
+  let createdStopped = false;
   if (!runtime) throw Object.assign(new Error(before.problem ?? "No container runtime is installed"), { status: 409 });
   if (!before.daemonUp) throw Object.assign(new Error(before.problem ?? `${runtime} is not running`), { status: 409 });
 
@@ -952,9 +956,40 @@ export async function containerComputerAction(
         : action === "remove"
           ? ["rm", runtime === "container" ? "--force" : "-f", target.containerName]
           : [action, target.containerName];
-    await runner(runtime, args, 2 * 60_000);
+    if ((action === "run" || action === "start") && (runner === sh || runningLimit !== undefined)) {
+      await serializeLimixVmStart(async () => {
+        const maximum = (typeof runningLimit === "function" ? runningLimit() : runningLimit) ?? limixVmCapacity(resources).limit;
+        const running = await runningLocalVmCount(runtime, runner);
+        if (running >= maximum) {
+          if (action === "run" && runtime !== "container") {
+            await runner(runtime, ["create", ...args.slice(2)], 2 * 60_000);
+            createdStopped = true;
+            return;
+          }
+          throw Object.assign(new Error(lxs(
+            `Đã đạt giới hạn ${maximum} máy ảo đang chạy. Dừng một máy khác rồi bật lại máy này.`,
+            `The limit of ${maximum} running desktops has been reached. Stop another desktop before starting this one.`,
+          )), { status: 409, code: "local_vm_capacity" });
+        }
+        await runner(runtime, args, 2 * 60_000);
+      });
+    } else await runner(runtime, args, 2 * 60_000);
   }
-  return containerComputerStatus(runner, platform, target);
+  const after = await containerComputerStatus(runner, platform, target);
+  if (createdStopped) after.capacity_limited = true;
+  return after;
+}
+
+export async function runningLocalVmCount(runtime: Runtime, runner: CommandRunner = sh): Promise<number> {
+  if (runtime === "container") {
+    try {
+      const result = await runner(runtime, ["inspect", SHARED_LOCAL_VM_TARGET.containerName], 8000);
+      const rows = JSON.parse(result.stdout);
+      return rows.some((row: { status?: { state?: string } }) => row.status?.state === "running") ? 1 : 0;
+    } catch { return 0; }
+  }
+  const result = await runner(runtime, ["ps", "--filter", `label=${MANAGED_LABEL}=1`, "--format", "{{.Names}}"], 8000);
+  return result.stdout.split(/\r?\n/).filter((name) => name.trim()).length;
 }
 
 export async function containerComputerExists(

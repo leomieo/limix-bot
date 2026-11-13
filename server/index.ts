@@ -3,6 +3,7 @@ import { BOOT_CLOUD_SECRETS } from "./cloud-secrets-boot.ts";
 import { startFailureText } from "./start-failure-text.ts";
 import { limixVmCapacity } from "./limix-vm-capacity.ts";
 import { localVmAutomaticCapacity } from "./local-vm-settings.ts";
+import { runningLocalVmCount } from "./container-computer.ts";
 import { reserveGmailDrafts } from "./gmail-draft-policy.ts";
 import { createGmailDrafts } from "./host/gmail-drafts.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
@@ -5635,7 +5636,7 @@ let localVmProvisionBusy = false;
 let localVmModeChangeBusy = false;
 const localVmUpdates = createLocalVmUpdater({
   status: (target) => containerComputerStatus(undefined, undefined, target),
-  act: (action, target) => containerComputerAction(action, undefined, undefined, target, localVmResources(cfg)),
+  act: (action, target) => containerComputerAction(action, undefined, undefined, target, localVmResources(cfg), () => localVmMaxInstances(cfg)),
   imageBusy: { get: () => localVmImageBusy, set: (busy) => { localVmImageBusy = busy; } },
   provisionBusy: { get: () => localVmProvisionBusy, set: (busy) => { localVmProvisionBusy = busy; } },
   lifecycleBusy: localVmLifecycleBusy,
@@ -11674,6 +11675,7 @@ const { fillLoginForTurn } = createFillLoginTurn({
 
 async function localVmPayload(target: LocalVmTarget, auth: RequestAuth) {
   const status = localVmUpdates.describe(target, await containerComputerStatus(undefined, undefined, target));
+  const running = status.runtime && status.daemonUp ? await runningLocalVmCount(status.runtime) : 0;
   return {
     ...localVmViewerStatus(status, auth),
     stop_reason: localVmStopReason(target.key, status),
@@ -11683,12 +11685,13 @@ async function localVmPayload(target: LocalVmTarget, auth: RequestAuth) {
     max_instances: localVmMaxInstances(cfg),
     automatic_capacity: localVmAutomaticCapacity(cfg),
     capacity: limixVmCapacity(localVmResources(cfg)),
+    running_instances: running,
+    capacity_limited: status.container === "stopped" && running >= localVmMaxInstances(cfg),
   };
 }
 
 async function readyLocalVmForTurn(botId: string, target: LocalVmTarget, isCurrent = () => true) {
   localVmLifecycleBusy.add(target.key);
-  // Fence before the first await, so two concurrent turns cannot both pass the per-bot limit between count and create.
   const pooled = target.key.startsWith("pool:");
   const ownsProvision = !pooled && !localVmProvisionBusy;
   if (ownsProvision) localVmProvisionBusy = true;
@@ -11700,17 +11703,11 @@ async function readyLocalVmForTurn(botId: string, target: LocalVmTarget, isCurre
     if (!isCurrent()) return status;
     const action = localVmWakeAction(status);
     if (status.ready || !action || !status.runtime) return status;
-    if (action === "run" && localVmMaxInstances(cfg) < 1) return status;
     if (action === "run" && !pooled && !ownsProvision) return status;
-
-    if (action === "run" && target.key.startsWith("bot:")) {
-      const count = await existingPerBotLocalVmCount(status.runtime);
-      if (!isCurrent() || count >= localVmMaxInstances(cfg)) return status;
-    }
 
     broadcast({ kind: "computer", botId, state: "provisioning" });
     try {
-      status = await containerComputerAction(action, undefined, undefined, target, localVmResources(cfg));
+      status = await containerComputerAction(action, undefined, undefined, target, localVmResources(cfg), () => localVmMaxInstances(cfg));
     } catch {
       // `run` can throw after the container exists, so arm the idle backstop anyway.
       localVmIdleFor(target).touch();
