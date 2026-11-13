@@ -4,7 +4,7 @@
 # plan can be signed in on the server itself.
 #
 # Before every push the image is started and checked: the server answers /api/health and the connector answers on its
-# loopback port. A manual run with push=false only builds and checks (use it from the test-build branch).
+# loopback port. A push to test-build, or a manual run with push=false, only builds and checks.
 name: Limix Bot server image
 
 on:
@@ -15,7 +15,8 @@ on:
         type: boolean
         default: false
   push:
-    branches: [main]
+    # test-build: built and checked, never pushed (a manual run cannot start a workflow main does not have yet).
+    branches: [main, test-build]
     paths-ignore: ["limix/docs/**", "limix/site/**", ".github/workflows/limix-site.yml", "limix/brand-assets/limix-site.yml", "**/*.md"]
 
 permissions:
@@ -77,7 +78,7 @@ jobs:
           docker exec limix-check sh -c 'command -v codex'
           echo "server, connector and proxy: ok"
       - name: push to ghcr.io
-        if: github.event_name == 'push' || inputs.push
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || inputs.push
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.v.outputs.version }}
