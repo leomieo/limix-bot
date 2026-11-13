@@ -484,7 +484,7 @@ export interface AppConfig extends HelperConfig {
   threads?: { maxConcurrentPerBot: number; eventLogMaxBytes?: number; eventLogRetentionDays?: number }; burst?: { maxParallel?: number };
   context?: { rebuildBytes?: number; compactAt?: number; autoCompact?: boolean; roomCompactAt?: number; roomSessions?: boolean; replayToolHistory?: boolean };
   memory?: { captureQuietMs?: number; tidyHour?: number };
-  localVm?: { mode?: "shared" | "per-bot" | "pool"; maxInstances?: number; idleTimeoutMinutes?: number; preserveInstalledApps?: boolean; memoryGb?: number; cpus?: number };
+  localVm?: { mode?: "shared" | "per-bot" | "pool"; automaticCapacity?: boolean; maxInstances?: number; idleTimeoutMinutes?: number; preserveInstalledApps?: boolean; memoryGb?: number; cpus?: number };
   features?: { skillAuthoring?: boolean; skillReview?: boolean; skillAutoApply?: boolean; skillReviewSteps?: number; showToolCalls?: boolean; browser?: boolean; sharedComputers?: boolean; claudeUserMcp?: boolean; claudeUserSkills?: boolean; llmThreadTitles?: boolean; smartSetupChoices?: boolean; autoRecall?: boolean; skillsLibrary?: boolean; shareLearnedSkills?: "off" | "ask" | "auto"; roomMemoryCapture?: boolean; parallelRoomJobs?: boolean; acpPlanLines?: boolean; agentsToolBridge?: boolean; savedSteps?: boolean };
   onboarding?: { completedAt?: string; version?: number; reelSeen?: boolean; hintsSeen?: string[]; firstTurnAt?: string };
   browserProfiles?: BrowserProfile[];
@@ -561,6 +561,7 @@ export function browserProfilePartitionTarget(
 export function parseStoredConfig(value: JsonValue): AppConfig {
   const parsed = storedAppConfigSchema.safeParse(value);
   if (!parsed.success) throw new Error(schemaIssue(parsed.error, "Invalid stored configuration"));
+  if (parsed.data.localVm && parsed.data.localVm.automaticCapacity === undefined) parsed.data.localVm.automaticCapacity = true;
   return parsed.data;
 }
 
@@ -922,6 +923,7 @@ export function saveConfig(
     const merged: JsonObject = current.success ? { ...current.data } : {};
     if (key === "threads" && !current.success) merged.maxConcurrentPerBot = defaultBotThreads();
     Object.assign(merged, section, key === "browserEngine" && checkedPatch.browserEngine?.egress ? { egress: { ...jsonObjectSchema.safeParse(merged.egress).data, ...checkedPatch.browserEngine.egress } } : {}); // a partial egress patch keeps the stored allow-list
+    if (key === "localVm" && checkedPatch.localVm?.maxInstances !== undefined && checkedPatch.localVm.automaticCapacity === undefined) merged.automaticCapacity = false;
     for (const [sectionKey, sectionValue] of Object.entries(section as Record<string, unknown>)) {
       if (sectionValue === null) delete merged[sectionKey];
     }

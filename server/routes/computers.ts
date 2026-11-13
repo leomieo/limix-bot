@@ -1,12 +1,15 @@
 import { z, type ZodString } from "zod";
 import * as boat from "../boat.ts";
 import type { ComputerControl } from "../computer-control.ts";
+import { limixVmCapacity } from "../limix-vm-capacity.ts";
+import { localVmAutomaticCapacity } from "../local-vm-settings.ts";
 import { isValidSshAlias, localVmMaxInstances, localVmMode, localVmResources, type AppConfig } from "../config.ts";
 import {
   containerComputerAction,
   containerComputerExists,
   containerComputerScreenshot,
   containerComputerStatus,
+  containerRuntimeStatus,
   SHARED_LOCAL_VM_TARGET,
   setupCommands,
   type LocalVmTarget,
@@ -300,6 +303,10 @@ export function createComputerRoutes(deps: ComputerRouteDeps): RouteHandler {
       if (localVmMode(cfg) === "pool" && action === "run") {
         return json(res, 409, { error: "Pool mode creates its desktops automatically from conversation turns" });
       }
+      if (action === "run") {
+        await containerRuntimeStatus();
+        if (localVmMaxInstances(cfg) < 1) return json(res, 409, { error: "Not enough container runtime memory or CPU for a desktop with the configured resource limits" });
+      }
       const vmOwner = localVmLeaseFor(SHARED_LOCAL_VM_TARGET).current(localVmOwnerBusy);
       if (vmOwner && (action === "stop" || action === "remove" || action === "run")) {
         return json(res, 409, { error: "the Local VM is being used by a bot — stop that turn first" });
@@ -324,6 +331,8 @@ export function createComputerRoutes(deps: ComputerRouteDeps): RouteHandler {
           idle_timeout_ms: localVmIdleMs(),
           mode: localVmMode(cfg),
           max_instances: localVmMaxInstances(cfg),
+          automatic_capacity: localVmAutomaticCapacity(cfg),
+          capacity: limixVmCapacity(localVmResources(cfg)),
         });
       } finally {
         if (action === "pull") localVmImageBusy.set(false);
@@ -381,7 +390,7 @@ export function createComputerRoutes(deps: ComputerRouteDeps): RouteHandler {
             const count = await existingPerBotLocalVmCount(before.runtime);
             if (count >= localVmMaxInstances(cfg)) {
               return json(res, 409, {
-                error: `The per-bot Local VM limit is ${localVmMaxInstances(cfg)} — delete an unused bot VM or raise the limit in App Settings`,
+                error: `The per-bot Local VM limit is ${localVmMaxInstances(cfg)} — delete an unused bot VM or increase the container runtime's memory/CPU allocation`,
               });
             }
           }
@@ -399,6 +408,8 @@ export function createComputerRoutes(deps: ComputerRouteDeps): RouteHandler {
           idle_timeout_ms: localVmIdleMs(),
           mode: localVmMode(cfg),
           max_instances: localVmMaxInstances(cfg),
+          automatic_capacity: localVmAutomaticCapacity(cfg),
+          capacity: limixVmCapacity(localVmResources(cfg)),
         });
       } finally {
         if (action === "run") localVmProvisionBusy.set(false);

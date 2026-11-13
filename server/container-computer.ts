@@ -34,6 +34,7 @@ import {
   type HostUser,
 } from "./container-isolation.ts";
 import { SPAWNED_PROXIES } from "./proxy-paths.ts";
+import { refreshLimixVmCapacity } from "./limix-vm-capacity.ts";
 
 const run = promisify(execFile);
 const SCREENSHOT_STATUS_TTL_MS = 10_000;
@@ -272,6 +273,7 @@ export async function containerRuntimeStatus(
     }),
   );
   const healthyIndex = healthy.indexOf(true);
+  if (runner === sh) await refreshLimixVmCapacity(healthyIndex >= 0 ? available[healthyIndex] : null, runner);
   return {
     runtime: healthyIndex >= 0 ? available[healthyIndex] : (available[0] ?? null),
     available,

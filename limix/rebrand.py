@@ -2077,3 +2077,10 @@ def skill_install_scan_projects(s):
     s = s.replace('import { z } from "zod";', 'import { z } from "zod";\nimport { isAbsolute } from "node:path";')
     return must(s, '    let m: RegExpMatchArray | null = null;', '    let m: RegExpMatchArray | null = null;\n    if (method === "POST" && path === "/api/limix/skill-requirements/scan") {\n      const input = z.object({ projects: z.array(z.string().max(4096).refine(isAbsolute)).max(200) }).safeParse(await readBody(req));\n      if (!input.success) return json(res, 400, { error: "Choose valid project folders" });\n      return json(res, 200, await scanSkillRequirements(store.bots, cfg.mcpServers, input.data.projects));\n    }')
 edit("server/routes/bot-skills.ts", skill_install_scan_projects)
+
+for rel, edits in json.loads((ROOT / "limix/patches/vm-capacity.json").read_text(encoding="utf-8")).items():
+    def apply_capacity_patch(s, edits=edits):
+        for patch in edits:
+            s = must(s, patch["before"], patch["after"])
+        return s
+    edit(rel, apply_capacity_patch)

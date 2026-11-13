@@ -2,6 +2,7 @@
 import { z } from "zod";
 
 import type { AppConfig } from "./config.ts";
+import { limixVmCapacity } from "./limix-vm-capacity.ts";
 import {
   DEFAULT_DESKTOP_RESOURCES,
   MAX_DESKTOP_CPUS,
@@ -14,7 +15,7 @@ import {
 export const DEFAULT_LOCAL_VM_MODE = "shared" as const;
 export const DEFAULT_LOCAL_VM_MAX_INSTANCES = 2;
 export const MIN_LOCAL_VM_MAX_INSTANCES = 1;
-export const MAX_LOCAL_VM_MAX_INSTANCES = 8;
+export const MAX_LOCAL_VM_MAX_INSTANCES = 1024;
 export const DEFAULT_LOCAL_VM_IDLE_TIMEOUT_MINUTES = 480;
 export const MIN_LOCAL_VM_IDLE_TIMEOUT_MINUTES = 5;
 export const MAX_LOCAL_VM_IDLE_TIMEOUT_MINUTES = 1_440;
@@ -22,6 +23,7 @@ export const MAX_LOCAL_VM_IDLE_TIMEOUT_MINUTES = 1_440;
 /** Bot desktop isolation, default "shared"; `maxInstances` caps per-bot desktops or pool seats. Switching modes cold-starts every desktop. */
 export const localVmConfigSchema = z.object({
   mode: z.enum(["shared", "per-bot", "pool"]).optional(),
+  automaticCapacity: z.boolean().optional(),
   maxInstances: z
     .number()
     .int()
@@ -46,7 +48,12 @@ export function localVmMode(cfg: AppConfig): "shared" | "per-bot" | "pool" {
 }
 
 export function localVmMaxInstances(cfg: AppConfig): number {
-  return cfg.localVm?.maxInstances ?? DEFAULT_LOCAL_VM_MAX_INSTANCES;
+  if (!localVmAutomaticCapacity(cfg)) return cfg.localVm!.maxInstances ?? DEFAULT_LOCAL_VM_MAX_INSTANCES;
+  return limixVmCapacity(localVmResources(cfg)).limit;
+}
+
+export function localVmAutomaticCapacity(cfg: AppConfig): boolean {
+  return cfg.localVm?.automaticCapacity ?? cfg.localVm?.maxInstances === undefined;
 }
 
 export function localVmIdleTimeoutMinutes(cfg: AppConfig): number {

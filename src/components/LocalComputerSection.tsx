@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { t } from "@/lib/i18n";
+import { lx } from "@/lib/limix-text";
+import type { LimixVmCapacity } from "../../shared/limix-vm-capacity";
 import { waitForLocalVmReady } from "@/lib/local-vm-readiness";
 import type { LocaleKey } from "@/locales";
 import {
@@ -17,7 +19,6 @@ import {
 } from "lucide-react";
 import { Card, CommandLine } from "./SettingsPrimitives";
 import { MacLocalControl } from "./MacLocalControl";
-import { Select } from "./Select";
 import { cn } from "@/lib/cn";
 import { localizeComputerProblem } from "@/lib/computer-messages";
 import { computerInventoryRequest, jsonPostRequest, type ComputerApiRequest } from "@/lib/computer-requests";
@@ -52,6 +53,8 @@ interface Status {
   stop_reason?: "idle" | null;
   mode: "shared" | "per-bot" | "pool";
   max_instances: number;
+  automatic_capacity?: boolean;
+  capacity?: LimixVmCapacity;
   commands: {
     install: string | null;
     runtimeStart: string | null;
@@ -996,18 +999,18 @@ export function LocalComputerSection() {
     }
   };
 
-  const savePolicy = async (mode: Status["mode"], maxInstances: number) => {
+  const savePolicy = async (mode: Status["mode"]) => {
     setPolicyPending(true);
     setError(null);
     try {
       const response = await fetch("/api/config", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ localVm: { mode, maxInstances } }),
+        body: JSON.stringify({ localVm: { mode, automaticCapacity: true } }),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error ?? t("vm.policyError"));
-      setStatus((current) => current ? { ...current, mode, max_instances: maxInstances } : current);
+      setStatus((current) => current ? { ...current, mode } : current);
       await refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -1273,7 +1276,7 @@ export function LocalComputerSection() {
               key={mode}
               type="button"
               disabled={!status || policyPending}
-              onClick={() => void savePolicy(mode, status?.max_instances ?? 2)}
+              onClick={() => void savePolicy(mode)}
               className={cn(
                 "flex-1 px-3 py-2 text-[13px] disabled:opacity-50",
                 index > 0 && "border-l border-hairline/40",
@@ -1285,19 +1288,23 @@ export function LocalComputerSection() {
           ))}
         </div>
         {perBot && (
-          <div className="mt-3 flex items-center justify-between gap-3">
-            <div>
-              <div className="text-[13px] text-ink">{t("vm.isolation.max")}</div>
-              <div className="text-[12px] text-ink-secondary">{t("vm.isolation.maxDetail")}</div>
+          <div className="mt-3 flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[13px] text-ink">{lx("Tổng số máy ảo riêng tối đa", "Maximum private desktops in total")}</div>
+              <div className="text-[12px] text-ink-secondary">{lx("Tự tính theo RAM và CPU được cấp cho môi trường container; chừa tài nguyên cho hệ thống. Đây là ước tính theo giới hạn mỗi máy, tính cả máy đã tạo nhưng đang dừng.", "Calculated from container runtime memory and CPU, with resources reserved for the system. This estimate uses each desktop's resource limits and includes created desktops that are stopped.")}</div>
+              {status?.capacity && <div className="mt-1 text-[12px] text-ink-secondary">
+                {status.capacity.source === "host" ? lx("Ước tính từ máy chủ; chưa đọc được tài nguyên Docker/Podman", "Host estimate; Docker/Podman resources have not been read") : status.capacity.source === "docker" ? "Docker" : "Podman"}
+                {` · ${status.capacity.memoryGb.toFixed(1)} GB RAM · ${status.capacity.cpus} CPU`}
+                {` · ${lx("Mỗi máy", "Each desktop")}: ${status.capacity.perVmMemoryGb} GB / ${status.capacity.perVmCpus} CPU`}
+                {` · ${lx("Dành cho hệ thống", "System reserve")}: ${status.capacity.reservedMemoryGb.toFixed(1)} GB / ${status.capacity.reservedCpus} CPU`}
+              </div>}
+              {status?.automatic_capacity === false && <button type="button" disabled={policyPending} onClick={() => void savePolicy(status.mode)} className="mt-1 text-[12px] text-accent hover:underline">{lx("Chuyển sang tự động", "Switch to automatic")}</button>}
+              {status && inventory.length > status.max_instances && <div className="mt-1 text-[12px] text-warning">{lx("Số máy đã tạo vượt mức ước tính hiện tại. Các máy được giữ nguyên; chưa thể tạo thêm.", "The existing desktops exceed the current estimate. They are kept; additional desktops cannot be created yet.")}</div>}
             </div>
-            <Select size="sm"
-              aria-label={t("vm.isolation.maxAria")}
-              value={status?.max_instances ?? 2}
-              disabled={!status || policyPending}
-              onChange={(event) => void savePolicy(status?.mode ?? "shared", Number(event.target.value))}
-            >
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((value) => <option key={value} value={value}>{value}</option>)}
-            </Select>
+            <div className="shrink-0 rounded-lg bg-control px-3 py-2 text-center text-[13px] text-ink">
+              <div className="text-[11px] text-ink-secondary">{status?.automatic_capacity === false ? lx("Thủ công", "Manual") : lx("Tự động", "Automatic")}</div>
+              <div className="font-semibold tabular-nums">{status?.max_instances ?? "…"}</div>
+            </div>
           </div>
         )}
         <LocalVmIdleTimeoutSetting
@@ -1398,7 +1405,7 @@ export function LocalComputerSection() {
       {perBot && (
         <LocalVmInventoryCard
           instances={inventory}
-          maxInstances={inventoryMax || status?.max_instances || 2}
+          maxInstances={status?.max_instances ?? inventoryMax}
           loading={inventoryLoading}
           deletingBotId={deletingBotId}
           error={inventoryError}
