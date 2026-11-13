@@ -590,6 +590,7 @@ import { createBotOrderRoutes } from "./routes/bot-order.ts";
 import { createBotLifecycleRoutes } from "./routes/bot-lifecycle.ts";
 import { createBotSkillsRoutes } from "./routes/bot-skills.ts";
 import { startHubAutoSync } from "./limix-skill-hub.ts";
+import { startLimixGatewaySidecar } from "./limix-gateway-sidecar.ts";
 import { limixBundledFor, limixSelectBundled, limixSkillDefaultsMigration } from "./limix-skill-store.ts";
 import { createSkillShareRoutes } from "./routes/skill-share.ts";
 import { createTeamContextRoutes } from "./routes/team-context.ts";
@@ -1411,6 +1412,7 @@ const firstEngineRead = holdUntilFirstEngineRead();
 await registry.load(providerConfigs(), decorateHostedProvider);
 const bundledSkills = loadBundledSkills();
 limixSkillDefaultsMigration();
+startLimixGatewaySidecar({ port: PORT, webhookPort: WEBHOOK_PORT });
 const availableSkills = () => mergeSkills(bundledSkills, loadUserSkills(join(DATA_DIR, "skills")));
 /** Every turn the engine can mount it, whatever its words: they pick only the skill's instructions. A Cloud home or a hosted workspace has no USB port. */
 const usbPhoneOffered = (instance: { adapter: { capabilities: { phoneMcp?: boolean } } }, skills: readonly BundledSkill[]) => instance.adapter.capabilities.phoneMcp === true &&

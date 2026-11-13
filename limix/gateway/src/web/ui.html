@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="author" content="Leox ৹ Limix AI">
 <title>Limix Bot</title>
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <style>
 :root {
   --bg:#121212; --sidebar:#0e0e0e; --card:#1b1b1b; --card-2:#202020; --hover:#2c2c2c; --control:#282828; --line:#383838; --edge:#f5f5f50f;
@@ -325,8 +325,10 @@ function applyTheme(t) {
 }
 applyTheme(prefTheme());
 
+// Served at "/" by itself, or under a prefix by the Limix Bot server (/api/limix/gateway/): calls keep that prefix.
+const BASE = location.pathname.replace(/\/+$/, "");
 async function api(path, body) {
-  const res = await fetch(path, { method: body === undefined ? "GET" : "POST", headers: { "X-Limix-Admin": ADMIN, "Content-Type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
+  const res = await fetch(BASE + path, { method: body === undefined ? "GET" : "POST", headers: { "X-Limix-Admin": ADMIN, "Content-Type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Lỗi ${res.status}`);
   return data;
