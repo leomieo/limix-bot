@@ -3227,6 +3227,14 @@ let limixTools = null;
 ipcMain.handle("limix-tools:state", localOnly("limix-tools:state", () => limixTools ? limixTools.state() : { supported: false, items: [] }));
 ipcMain.handle("limix-tools:install", localOnly("limix-tools:install", (_event, ids) => limixTools ? limixTools.install(Array.isArray(ids) ? ids.map(String) : []) : { supported: false, items: [] }));
 ipcMain.handle("limix-tools:scan", localOnly("limix-tools:scan", () => limixTools ? limixTools.scan() : { supported: false, items: [] }));
+ipcMain.handle("limix-tools:install-requirement", localOnly("limix-tools:install-requirement", (_event, id, project) => {
+  if (!limixTools) throw new Error("Tools service is not ready");
+  return limixTools.installRequirement(id, project);
+}));
+ipcMain.handle("limix-tools:install-requirements", localOnly("limix-tools:install-requirements", (_event, ids, project) => {
+  if (!limixTools) throw new Error("Tools service is not ready");
+  return limixTools.installRequirements(ids, project);
+}));
 ipcMain.handle("limix-tools:should-ask", localOnly("limix-tools:should-ask", () => limixTools ? limixTools.shouldAsk() : false));
 ipcMain.handle("limix-tools:asked", localOnly("limix-tools:asked", () => limixTools?.markAsked()));
 app.on("render-process-gone", (_event, contents, details) => {

@@ -3,7 +3,7 @@ import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { BotEditorStore, initialState, type InstanceInfo, type useStore } from "@/state/store";
-import { EngineSetup } from "./EngineSetup";
+import { EngineSetup, EngineUpdateNotice } from "./EngineSetup";
 import { RefreshEngines } from "./EngineLibrary";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -70,6 +70,18 @@ it("uses the verified install response instead of relying on another status requ
   expect(host.textContent).toContain("Installation verified. Sign in if requested.");
 });
 
+it("requests an update and refuses a success message while the old Codex version is still active", async () => {
+  const update = { title: "Update Codex to 0.169.0", message: "Installed: 0.167.0", command: "codex update" };
+  const codex: InstanceInfo = { ...engine, instanceId: "codex", driverKind: "codex", displayName: "Codex", snapshot: { state: "available", version: "codex-cli 0.167.0", update } };
+  const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ instances: [codex] })));
+  vi.stubGlobal("fetch", fetcher);
+  mount(createElement(EngineUpdateNotice, { instance: codex, update }));
+  await act(async () => button("Update Codex here").click());
+  expect(fetcher.mock.calls[0][0]).toBe("/api/instances/codex/install?update=1");
+  expect(host.textContent).toContain("Update not verified");
+  expect(host.textContent).not.toContain("Installation verified");
+});
+
 it("never opens a local terminal to install on a paired remote server", () => {
   vi.stubGlobal("window", Object.assign(window, { ogb: { platform: "win32", openInstallTerminal: vi.fn(), remoteClient: { active: true } } }));
   mount(createElement(EngineSetup, { instance: engine }));
@@ -87,6 +99,6 @@ it("says plainly when the engine now runs the copy the app installed", async () 
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ instances: [ready], usingAppCopy: true }))));
   mount(createElement(EngineSetup, { instance: opencode }));
   await act(async () => button("Install OpenCode here").click());
-  expect(host.textContent).toContain("Another copy of OpenCode on this computer doesn't start, so OpenCode now uses the copy MausBot installed.");
+  expect(host.textContent).toContain("Another copy of OpenCode on this computer doesn't start, so OpenCode now uses the copy Limix Bot installed.");
   expect(host.textContent).toContain("Installation verified");
 });

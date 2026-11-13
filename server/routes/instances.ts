@@ -348,10 +348,19 @@ export function createInstanceRoutes(deps: InstanceRouteDeps): RouteHandler {
           return json(res, 200, { instances: await describeInstances() });
         }
         if (action === "install") {
-          const installed = await registry.installRuntime(instanceId);
+          const updating = url.searchParams.get("update") === "1";
+          const installed = await registry.installRuntime(instanceId, { update: updating });
           if (!installed) return json(res, 404, { error: "Installing this engine from Settings is not available on this server. Use the install command on the machine running Limix Bot." });
           const usingAppCopy = installed !== true && await useAppCopy(instanceId, installed.useCli);
-          return json(res, 200, { instances: await describeInstances(), ...(usingAppCopy ? { usingAppCopy: true } : {}) });
+          if (updating && installed !== true && !usingAppCopy) return json(res, 409, { error: "The new CLI was installed, but this engine is busy. Wait for its current task to finish, then retry the update to switch to the new copy." });
+          const instances = await describeInstances();
+          if (installed !== true && installed.expectedVersion) {
+            const active = await registry.get(instanceId)?.snapshot();
+            if (active?.state !== "available" || active.version?.match(/\b\d+\.\d+\.\d+(?:-[\w.-]+)?\b/)?.[0] !== installed.expectedVersion) {
+              return json(res, 502, { error: `The new CLI was downloaded, but its active version could not be verified as ${installed.expectedVersion}. Current version: ${active?.version ?? "unknown"}.` });
+            }
+          }
+          return json(res, 200, { instances, ...(usingAppCopy ? { usingAppCopy: true } : {}) });
         }
         if (action === "auth/start") {
           const instance = registry.get(instanceId);

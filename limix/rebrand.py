@@ -2060,3 +2060,17 @@ def skill_requirement_scan_route(s):
     s = s.replace('import { readLocalSkills } from "../limix-skill-folder.ts";', 'import { readLocalSkills } from "../limix-skill-folder.ts";\nimport { scanSkillRequirements } from "../limix-skill-requirements.ts";')
     return must(s, '    let m: RegExpMatchArray | null = null;', '    let m: RegExpMatchArray | null = null;\n    if (method === "GET" && path === "/api/limix/skill-requirements") {\n      return json(res, 200, await scanSkillRequirements(store.bots, cfg.mcpServers));\n    }')
 edit("server/routes/bot-skills.ts", skill_requirement_scan_route)
+
+def skill_install_bridge(s):
+    if 'ipcMain.handle("limix-tools:install-requirements"' in s:
+        return s
+    anchor = 'ipcMain.handle("limix-tools:scan", localOnly("limix-tools:scan", () => limixTools ? limixTools.scan() : { supported: false, items: [] }));'
+    return must(s, anchor, anchor + '\nipcMain.handle("limix-tools:install-requirement", localOnly("limix-tools:install-requirement", (_event, id, project) => limixTools.installRequirement(id, project)));\nipcMain.handle("limix-tools:install-requirements", localOnly("limix-tools:install-requirements", (_event, ids, project) => limixTools.installRequirements(ids, project)));')
+edit("electron/main.mjs", skill_install_bridge)
+edit("electron/preload.cjs", lambda s: s if "installRequirements:" in s else s.replace('limixTools: { state:', 'limixTools: { installRequirement: (id, project) => ipcRenderer.invoke("limix-tools:install-requirement", id, project), installRequirements: (ids, project) => ipcRenderer.invoke("limix-tools:install-requirements", ids, project), state:'))
+def skill_install_scan_projects(s):
+    if 'path === "/api/limix/skill-requirements/scan"' in s:
+        return s
+    s = s.replace('import { z } from "zod";', 'import { z } from "zod";\nimport { isAbsolute } from "node:path";')
+    return must(s, '    let m: RegExpMatchArray | null = null;', '    let m: RegExpMatchArray | null = null;\n    if (method === "POST" && path === "/api/limix/skill-requirements/scan") {\n      const input = z.object({ projects: z.array(z.string().max(4096).refine(isAbsolute)).max(200) }).safeParse(await readBody(req));\n      if (!input.success) return json(res, 400, { error: "Choose valid project folders" });\n      return json(res, 200, await scanSkillRequirements(store.bots, cfg.mcpServers, input.data.projects));\n    }')
+edit("server/routes/bot-skills.ts", skill_install_scan_projects)

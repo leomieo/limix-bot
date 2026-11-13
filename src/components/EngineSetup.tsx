@@ -3,6 +3,7 @@ import { AlertTriangle, Check, Copy, Download, ExternalLink, KeyRound, Loader2, 
 import { api, type InstanceInfo, useStore } from "@/state/store";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
+import { lx } from "@/lib/limix-text";
 import { engineDisplayName } from "@/lib/engine-name";
 import { copyText } from "@/lib/copy-text";
 import { DEVICE_SIGN_IN_COPY, DeviceSignIn, deviceSignInProvider } from "./DeviceSignIn";
@@ -173,12 +174,15 @@ function ServerEngineInstall({ instance, mode, command, quiet = false }: { insta
     setDone(false);
     setError(null);
     try {
-      const { instances, usingAppCopy } = await api(`/api/instances/${encodeURIComponent(instance.instanceId)}/install`, { method: "POST" });
+      const { instances, usingAppCopy } = await api(`/api/instances/${encodeURIComponent(instance.instanceId)}/install${mode === "update" ? "?update=1" : ""}`, { method: "POST" });
       noteAppCopySwitch(instance.instanceId, usingAppCopy === true);
       const installed = (instances as InstanceInfo[] | undefined)?.find((candidate) => candidate.instanceId === instance.instanceId);
       if (instances) dispatch({ type: "instances", instances });
       if (installed?.snapshot.state !== "available") {
         throw new Error(t("engineSetup.installNotVerified", { reason: installed?.snapshot.reason ?? t("engineSetup.noReason") }));
+      }
+      if (mode === "update" && installed.snapshot.update) {
+        throw new Error(lx(`Cập nhật chưa hoàn tất: Limix Bot vẫn đang dùng ${installed.snapshot.version ?? "bản cũ"}. ${installed.snapshot.update.message}`, `Update not verified: Limix Bot is still using ${installed.snapshot.version ?? "the older version"}. ${installed.snapshot.update.message}`));
       }
       setDone(true);
       await refreshModels(instance.instanceId).catch(() => {});

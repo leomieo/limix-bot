@@ -10,6 +10,7 @@ import { execFile, spawn } from "node:child_process";
 
 import { limixRuntimeEnv } from "./limix-runtime.mjs";
 import { lxm } from "./limix-lang.mjs";
+import { skillRequirementId, skillPackageSpec, skillBaseTool, skillInstallPackages, installSkillPackage } from "./limix-skill-install.mjs";
 
 const REA_MCP_PACKAGE = "rea-agents@6.8.0";
 const REA_VIDEO_COMMIT = "3669923645e3953632e7406a57fb883e0ba8a6e0";
@@ -54,6 +55,10 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
   const uv = path.join(resourcesPath, "limix-runtime", "uv", process.platform === "win32" ? "uv.exe" : "uv");
   const jobs = new Map(); // id -> { status: "working" | "error", step, progress, message }
   let skillScan = null;
+  const requirementJobs = new Map();
+  const projectFile = path.join(p.tools, "skill-projects.json");
+  let skillProjects = [];
+  try { const saved = JSON.parse(fs.readFileSync(projectFile, "utf8")); if (Array.isArray(saved)) skillProjects = saved.filter((v) => typeof v === "string" && path.isAbsolute(v)); } catch {}
   let queue = Promise.resolve();
   const exe = (name) => (process.platform === "win32" ? `${name}.exe` : name);
 
@@ -145,7 +150,8 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
       const found = await locate(tool.id);
       items.push({ ...tool, needs: tool.needs ?? [], installed: Boolean(found), source: found?.from ?? null, where: found?.where ?? null, job: job ?? null });
     }
-    return { supported: process.platform === "win32" && Boolean(python), items, skillScan };
+    const report = skillScan ? { ...skillScan, requirements: skillScan.requirements?.map((req) => ({ ...req, id: skillRequirementId(req), installable: Boolean(skillPackageSpec(req) || skillBaseTool(req)), packages: skillPackageSpec(req) || skillBaseTool(req) ? skillInstallPackages(req) : [], job: requirementJobs.get(skillRequirementId(req)) ?? null })) } : null;
+    return { supported: process.platform === "win32" && Boolean(python), items, skillScan: report };
   };
 
   const set = (id, patch) => jobs.set(id, { ...(jobs.get(id) ?? { status: "working", progress: null }), ...patch });
@@ -188,9 +194,9 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
     return file;
   }
 
-  function run(command, args, env = {}) {
+  function run(command, args, env = {}, options = {}) {
     return new Promise((resolve, reject) => {
-      const child = spawn(command, args, { env: { ...process.env, ...runtime, ...env }, windowsHide: true });
+      const child = spawn(command, args, { env: { ...process.env, ...runtime, ...env }, ...options, windowsHide: true });
       let tail = "";
       const keep = (data) => { tail = (tail + String(data)).slice(-600); };
       child.stdout.on("data", keep);
@@ -340,15 +346,70 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
   }
 
   const scan = async () => {
-    const next = await state({ rescanPath: true });
+    await state({ rescanPath: true });
     try {
-      const response = await serverRequest("/api/limix/skill-requirements", { method: "GET" });
+      const response = await serverRequest("/api/limix/skill-requirements/scan", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ projects: skillProjects }) });
       if (response?.ok === false) throw new Error(`HTTP ${response.status}`);
       skillScan = typeof response?.json === "function" ? await response.json() : response;
     } catch (error) {
       skillScan = { error: error instanceof Error ? error.message : String(error) };
     }
-    return { ...next, skillScan };
+    return state();
   };
-  return { state, scan, install, shouldAsk, markAsked };
+  const installRequirement = async (id, project) => {
+    const req = skillScan?.requirements?.find((row) => skillRequirementId(row) === id);
+    if (!req || !(skillPackageSpec(req) || skillBaseTool(req))) throw new Error(lxm("Hãy quét lại và chọn gói hợp lệ.", "Scan again and select a valid package."));
+    if (typeof project !== "string" || !path.isAbsolute(project)) throw new Error(lxm("Chọn thư mục dự án cần cài.", "Choose the project folder to install into."));
+    const cwd = await fsp.realpath(project);
+    for (const protectedRoot of [resourcesPath, process.resourcesPath, ...[...(skillScan?.requirements ?? [])].map((r) => r.directory)].filter(Boolean)) {
+      const rel = path.relative(path.resolve(protectedRoot), cwd);
+      if (!rel || (!rel.startsWith(`..${path.sep}`) && rel !== ".." && !path.isAbsolute(rel))) throw new Error(lxm("Hãy chọn thư mục dự án riêng ngoài thư mục ứng dụng và kỹ năng.", "Choose a project folder outside the app and skill directories."));
+    }
+    if (requirementJobs.get(id)?.status === "working") return state();
+    requirementJobs.set(id, { status: "working", step: lxm("Đang cài vào ", "Installing into ") + cwd, project: cwd });
+    queue = queue.then(async () => {
+      try {
+        const baseTool = skillBaseTool(req);
+        if (baseTool) {
+          await installOne(baseTool);
+          requirementJobs.set(id, { status: "done", project: cwd });
+          return;
+        }
+        skillProjects = [...new Set([...skillProjects, cwd])].slice(-200);
+        await fsp.mkdir(p.tools, { recursive: true });
+        await fsp.writeFile(projectFile, JSON.stringify(skillProjects));
+        let node;
+        let npmCli;
+        if (req.kind === "npm") {
+          node = (await locate("node"))?.where;
+          npmCli = node && [path.join(path.dirname(node), "node_modules/npm/bin/npm-cli.js"), path.join(path.dirname(node), "../lib/node_modules/npm/bin/npm-cli.js")].find(fs.existsSync);
+          if (!npmCli) {
+            await installers.node();
+            node = path.join(p.node, exe("node"));
+            npmCli = path.join(p.node, "node_modules/npm/bin/npm-cli.js");
+          }
+        }
+        await installSkillPackage({ requirement: req, project: cwd, node, npmCli, python: python ?? findOnSystem("python") ?? findOnSystem("python3"), run: (command, args, options) => run(command, args, { PATH: [node && path.dirname(node), runtime.OMB_EXTRA_PATH, process.env.PATH].filter(Boolean).join(path.delimiter) }, options) });
+        requirementJobs.set(id, { status: "done", project: cwd });
+      } catch (error) {
+        requirementJobs.set(id, { status: "error", project: cwd, message: error instanceof Error ? error.message : String(error) });
+      }
+      finally { await scan(); }
+    }).catch((error) => { requirementJobs.set(id, { status: "error", project: cwd, message: String(error) }); });
+    return state();
+  };
+  const installRequirements = async (ids, project) => {
+    if (!Array.isArray(ids) || ids.length > 200) throw new Error("Invalid requirements list");
+    const planned = new Set();
+    for (const id of [...new Set(ids)]) {
+      const req = skillScan?.requirements?.find((row) => skillRequirementId(row) === id);
+      if (!req) throw new Error("Scan again before installing requirements");
+      const key = JSON.stringify([req.kind, skillInstallPackages(req).sort()]);
+      if (planned.has(key)) continue;
+      planned.add(key);
+      await installRequirement(id, project);
+    }
+    return state();
+  };
+  return { state, scan, install, installRequirement, installRequirements, shouldAsk, markAsked };
 }

@@ -20,7 +20,7 @@ it("reads structured requirements, compatibility and unknown requirements withou
 });
 
 it("recognizes Remotion and install commands while keeping setup text for review", () => {
-  const reqs = extractSkillRequirements('# Prerequisites\nRequires a GPU.\nRun npm install remotion @remotion/cli\nThen pip install pydantic>=2\nUse npx remotion render.');
+  const reqs = extractSkillRequirements('# Prerequisites\nRequires a GPU.\nRun `npm install remotion @remotion/cli`\nThen `pip install pydantic>=2`\nUse `npx remotion render`.');
   expect(reqs).toEqual(expect.arrayContaining([
     expect.objectContaining({ kind: "npm", name: "remotion" }),
     expect.objectContaining({ kind: "npm", name: "@remotion/cli" }),
@@ -28,6 +28,12 @@ it("recognizes Remotion and install commands while keeping setup text for review
     expect.objectContaining({ kind: "review", name: "Requires a GPU." }),
   ]));
   expect(reqs.filter((r) => r.kind === "npm").map((r) => r.name)).not.toContain("remotion.");
+});
+
+it("does not turn prose about pip or Vietnamese instructions into installable packages", () => {
+  const requirements = extractSkillRequirements('Bạn cần pip install để cài thêm gói gì thì đọc hướng dẫn.\nMCP server cần cấu hình.\n```sh\npip install "rea-video[ocr] @ https://example.test/archive.zip"\n```');
+  expect(requirements.some((row) => row.kind === "python")).toBe(false);
+  expect(requirements).toContainEqual(expect.objectContaining({ kind: "review" }));
 });
 
 it("reports invalid metadata and never accepts a shell command as a binary path", () => {
