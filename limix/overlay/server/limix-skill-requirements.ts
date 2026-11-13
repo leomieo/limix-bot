@@ -146,14 +146,18 @@ export async function scanSkillRequirements(bots: readonly Pick<BotRecord, "id" 
     if (skill.directory) add(`${skill.name} (${bot.name})`, skill.directory, [bot.cwd ?? workspaceDir(bot.id)]);
   }
   const home = homedir();
-  const walkSkills = (root: string, depth = 0) => {
+  const walkSkills = (root: string, depth = 0, projects: string[] = []) => {
     if (depth > 3 || !existsSync(root)) return;
     try {
-      if (statSync(join(root, "SKILL.md"), { throwIfNoEntry: false })?.isFile()) { add(root.split(/[\\/]/).at(-1)!, root); return; }
-      for (const entry of readdirSync(root, { withFileTypes: true })) if (entry.name !== "node_modules" && entry.name !== ".git" && (entry.isDirectory() || entry.isSymbolicLink())) walkSkills(join(root, entry.name), depth + 1);
+      if (statSync(join(root, "SKILL.md"), { throwIfNoEntry: false })?.isFile()) { add(root.split(/[\\/]/).at(-1)!, root, projects); return; }
+      for (const entry of readdirSync(root, { withFileTypes: true })) if (entry.name !== "node_modules" && entry.name !== ".git" && (entry.isDirectory() || entry.isSymbolicLink())) walkSkills(join(root, entry.name), depth + 1, projects);
     } catch { warnings.push(`Could not enumerate ${root}`); }
   };
-  for (const root of [join(home, ".agents", "skills"), join(process.env.CODEX_HOME ?? join(home, ".codex"), "skills"), join(process.env.CLAUDE_CONFIG_DIR ?? join(home, ".claude"), "skills")]) walkSkills(root);
+  for (const root of [join(home, ".agents", "skills"), join(process.env.CODEX_HOME ?? join(home, ".codex"), "skills"), join(process.env.CLAUDE_CONFIG_DIR ?? join(home, ".claude"), "skills"), join(home, ".gemini", "skills"), join(home, ".gemini", "antigravity", "skills")]) walkSkills(root);
+  for (const bot of bots.filter((b) => !b.computer || b.computer === "local")) {
+    const cwd = bot.cwd ?? workspaceDir(bot.id);
+    for (const folder of [".agents", ".claude", ".codex", ".gemini"]) walkSkills(join(cwd, folder, "skills"), 0, [cwd]);
+  }
   const dirs = `${process.env.OMB_EXTRA_PATH ?? ""}${delimiter}${process.env.PATH ?? ""}`.split(delimiter).filter(Boolean);
   if (process.platform === "win32") {
     try {
