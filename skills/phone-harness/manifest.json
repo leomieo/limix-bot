@@ -11,7 +11,14 @@
     "adb",
     "my phone",
     "mobile app",
-    "on the phone"
+    "on the phone",
+    "điện thoại android",
+    "gỡ lỗi usb",
+    "điện thoại của tôi",
+    "trên điện thoại",
+    "ứng dụng di động"
   ],
-  "requiredCapabilities": ["phoneMcp"]
+  "requiredCapabilities": [
+    "phoneMcp"
+  ]
 }

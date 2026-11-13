@@ -37,7 +37,10 @@
         "trang đích",
         "dashboard design",
         "redesign",
-        "ui-ux-pro-max"
+        "ui-ux-pro-max",
+        "thiết kế giao diện",
+        "trải nghiệm người dùng",
+        "làm đẹp giao diện"
       ],
       "defaultEnabled": true
     },
@@ -84,7 +87,12 @@
         "agent reach",
         "đọc link",
         "đọc giúp link",
-        "read this link"
+        "read this link",
+        "tìm trên reddit",
+        "tìm trên twitter",
+        "đọc bài trên",
+        "tóm tắt video youtube",
+        "xem phụ đề"
       ],
       "defaultEnabled": true
     },
@@ -119,7 +127,9 @@
         "视频怎么做的",
         "是不是ai",
         "怎么复刻",
-        "rea-video"
+        "rea-video",
+        "video này",
+        "cách làm video"
       ],
       "defaultEnabled": true
     }

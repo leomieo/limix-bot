@@ -2,7 +2,7 @@
   "id": "windows-computer-automation",
   "name": "Windows Computer Automation",
   "version": "1.0.0",
-  "description": "Điều khiển Windows an toàn: đọc màn hình, thao tác cửa sổ, nhập liệu, trình duyệt, ứng dụng, tệp và tiến trình qua Agent Desktop và Windows-MCP; chọn đúng công cụ, xác minh kết quả, chống lặp thao tác.",
+  "description": "Control Windows safely: read the screen, work windows, type, browse, and manage apps, files and processes through Agent Desktop and Windows-MCP; pick the right tool, check the result, never repeat an action blindly.",
   "defaultEnabled": true,
   "triggerTerms": [
     "windows-computer-automation",
@@ -17,7 +17,10 @@
     "windows-mcp",
     "agent desktop",
     "control my computer",
-    "automate windows"
+    "automate windows",
+    "tự động hóa máy tính",
+    "mở chương trình",
+    "bấm nút trên máy"
   ],
   "requiredCapabilities": [],
   "source": {

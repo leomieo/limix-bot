@@ -1950,6 +1950,33 @@ def phone_skill_names(s):
 for f in ["skills/phone-connection/SKILL.md", "skills/phone-connection/manifest.json", "skills/phone-harness/SKILL.md", "skills/phone-harness/agents/openai.yaml"]:
     edit(f, phone_skill_names)
 
+# 11k. Hybrid skills (English core + Vietnamese layer): every shipped skill keeps its English SKILL.md, and gets
+# Vietnamese trigger terms so a request in Vietnamese (with or without accents, limixSelectBundled) finds it. Only the
+# chosen skills' SKILL.md is loaded into a turn; references/ are read only when the task needs them.
+VI_TRIGGERS = {
+    "agent-reach": ["tìm trên reddit", "tìm trên twitter", "đọc bài trên", "tóm tắt video youtube", "xem phụ đề"],
+    "create-verification-skill": ["tạo kĩ năng kiểm chứng", "tạo kỹ năng kiểm chứng", "viết kĩ năng kiểm tra", "viết kỹ năng kiểm tra"],
+    "data-dashboards": ["bảng điều khiển", "biểu đồ", "đồ thị", "trực quan hóa", "bảng số liệu", "trang web", "trang giới thiệu", "trang bảng giá", "bản mẫu giao diện"],
+    "phone-connection": ["điện thoại không kết nối", "điện thoại không vào được", "kết nối điện thoại", "ghép điện thoại", "dùng 4g", "mạng di động", "cùng wi-fi", "anywhere, through limix bot", "limix bot app on my phone"],
+    "phone-harness": ["điện thoại android", "gỡ lỗi usb", "điện thoại của tôi", "trên điện thoại", "ứng dụng di động"],
+    "rea-video": ["video này", "cách làm video"],
+    "social-posts": ["bài đăng", "viết bài đăng", "đăng facebook", "bài facebook", "bài tiktok", "viết caption", "chú thích instagram", "đăng lên mạng xã hội"],
+    "ui-ux-pro-max": ["thiết kế giao diện", "trải nghiệm người dùng", "làm đẹp giao diện"],
+    "windows-computer-automation": ["tự động hóa máy tính", "mở chương trình", "bấm nút trên máy"],
+}
+def vi_triggers(skill_id):
+    def apply(s):
+        data = json.loads(s)
+        terms = data.get("triggerTerms", [])
+        added = [t for t in VI_TRIGGERS[skill_id] if t not in terms]
+        if not added:
+            return s
+        data["triggerTerms"] = terms + added
+        return json.dumps(data, ensure_ascii=False, indent=2) + "\n"
+    return apply
+for skill_id in VI_TRIGGERS:
+    edit(f"skills/{skill_id}/manifest.json", vi_triggers(skill_id))
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):

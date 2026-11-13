@@ -77,12 +77,19 @@ export function limixBundledFor(botId: string, skills: readonly BundledSkill[]):
 
 const slashCalled = (text: string, id: string) => new RegExp(`(^|\\s)/${id.replace(/[-]/g, "\\-")}(?=$|[\\s.,:;!?])`, "m").test(text);
 
-/** selectBundledSkills, plus every skill of `skills` the text calls by `/id`. */
+/** Vietnamese typed with or without accents ("điều khiển máy tính" / "dieu khien may tinh") matches the same terms. */
+export const foldVietnamese = (value: string): string =>
+  value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
+
+/** selectBundledSkills, plus a trigger term matched without accents, plus every skill of `skills` the text calls by
+ * `/id`. Only the chosen skills' SKILL.md go into the turn (the rest stay out of the context). */
 export function limixSelectBundled(text: string, capabilities: Iterable<string>, skills: readonly BundledSkill[]): BundledSkill[] {
   const available = new Set(capabilities);
-  const called = skills.filter(({ manifest }) =>
-    manifest.requiredCapabilities.every((capability) => available.has(capability)) && slashCalled(text, manifest.id));
-  return mergeSkills(selectBundledSkills(text, available, skills), called);
+  const usable = skills.filter(({ manifest }) => manifest.requiredCapabilities.every((capability) => available.has(capability)));
+  const folded = foldVietnamese(text);
+  const unaccented = usable.filter(({ manifest }) => manifest.defaultEnabled && manifest.triggerTerms.some((term) => folded.includes(foldVietnamese(term))));
+  const called = usable.filter(({ manifest }) => slashCalled(text, manifest.id));
+  return mergeSkills(mergeSkills(selectBundledSkills(text, available, skills), unaccented), called);
 }
 
 export interface BundledListing {

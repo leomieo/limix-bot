@@ -33,7 +33,16 @@
     "pair my phone",
     "pair the phone",
     "phone & devices",
-    "phone and devices"
+    "phone and devices",
+    "điện thoại không kết nối",
+    "điện thoại không vào được",
+    "kết nối điện thoại",
+    "ghép điện thoại",
+    "dùng 4g",
+    "mạng di động",
+    "cùng wi-fi",
+    "anywhere, through limix bot",
+    "limix bot app on my phone"
   ],
   "requiredCapabilities": []
 }

@@ -1,44 +1,44 @@
-# Ví dụ chạy Skill
+# Example runs
 
-## A. Nhập liệu qua UI
+## A. Typing through the UI
 
-Người dùng: "Mở Notepad và nhập nội dung tôi vừa đưa."
+User: "Open Notepad and type what I just gave you."
 
-1. Windows-MCP `App` hoặc Agent Desktop launch ứng dụng, sau khi quan sát.
-2. Agent Desktop `desktop_snapshot` chọn đúng Notepad/window; lấy ref ô soạn thảo hiện tại.
-3. Khóa `desktop_id`; `desktop_type` một lần theo ref hợp lệ.
-4. `desktop_snapshot` lại và xác minh có nội dung mong đợi; giải phóng lock.
-5. Chưa có yêu cầu lưu file thì không tự lưu vào vị trí bất kỳ.
+1. Windows-MCP `App` or Agent Desktop launches the app, after observing.
+2. Agent Desktop `desktop_snapshot` picks the right Notepad window; take the ref of the current edit box.
+3. Lock the `desktop_id`; `desktop_type` once with a valid ref.
+4. `desktop_snapshot` again and verify the expected text is there; release the lock.
+5. Without a request to save, never save the file anywhere on your own.
 
-## B. Thu thập dữ liệu từ web ra thư mục Windows
+## B. Collecting web data into a Windows folder
 
-Người dùng: "Thu thập tiêu đề video công khai và lưu CSV tại thư mục X."
+User: "Collect the titles of public videos and save a CSV in folder X."
 
-1. Dùng công cụ web/trình duyệt được cấp quyền để thu thập dữ liệu công khai. Tránh scraping vi phạm điều khoản và dữ liệu riêng tư.
-2. Xác nhận `X` là đường dẫn tuyệt đối và nằm trong thư mục đã được người dùng cho phép.
-3. Windows-MCP `FileSystem` tạo CSV ở đường dẫn được phép nếu có tool, không ghi đè file tồn tại khi chưa xác nhận.
-4. Kiểm tra file tồn tại, kích thước/nội dung hợp lệ; trả về đường dẫn và số dòng đã kiểm chứng.
+1. Use the permitted web/browser tool to collect public data. Avoid scraping that breaks terms of service and private data.
+2. Confirm `X` is an absolute path inside a folder the user allowed.
+3. Windows-MCP `FileSystem` creates the CSV at the allowed path if the tool exists; never overwrite an existing file without confirmation.
+4. Check the file exists and its size/content are valid; return the path and the verified row count.
 
-## C. Chặn hành động nguy hiểm
+## C. Blocking a dangerous action
 
-Bot: "Xóa toàn bộ thư mục Downloads để dọn máy".
+Bot: "Delete the whole Downloads folder to clean the machine."
 
-1. Không dùng FileSystem, PowerShell, Explorer hay shortcut để thực thi ngay.
-2. Trả về yêu cầu xác nhận rõ phạm vi; giao cho UI host hiển thị danh sách file sẽ xóa.
-3. Không có approval hợp lệ: dừng. Có approval: backend thực thi đúng các file đã được duyệt, không thêm phạm vi.
+1. Never run it at once through FileSystem, PowerShell, Explorer or a shortcut.
+2. Return a confirmation request with the exact scope; let the host UI show the list of files to delete.
+3. No valid approval: stop. With approval: the backend deletes exactly the approved files, nothing more.
 
-## D. Khắc phục lặp thao tác
+## D. Recovering from a repeated action
 
-Bot click nút gửi nhưng mất kết nối MCP trước khi nhận response.
+The bot clicks Send but the MCP connection drops before the response arrives.
 
-1. Coi kết quả là **không chắc chắn**; không click lại.
-2. Quan sát lại hộp thoại hoặc lịch sử gửi, xác nhận đã gửi hay chưa.
-3. Nếu chưa xác định được, dừng và hỏi người dùng thay vì gây gửi trùng.
+1. Treat the result as **uncertain**; do not click again.
+2. Observe the dialog or the sent history again and confirm whether it was sent.
+3. If it cannot be determined, stop and ask the user instead of risking a duplicate send.
 
-## E. Gợi ý gọi policy engine
+## E. Calling the policy engine
 
 ```bash
 python scripts/policy_engine.py --config assets/control-policy.example.json --request '{"kind":"ui","operation":"click","observed":true,"target":{"ref_id":"@s123:e8"}}'
 ```
 
-Kết quả JSON chỉ cho biết đường định tuyến/phán đoán; **không có tool nào đã được gọi**.
+The JSON result only shows the routing/decision; **no tool has been called**.
