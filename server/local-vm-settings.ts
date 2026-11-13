@@ -20,7 +20,7 @@ export const DEFAULT_LOCAL_VM_IDLE_TIMEOUT_MINUTES = 480;
 export const MIN_LOCAL_VM_IDLE_TIMEOUT_MINUTES = 5;
 export const MAX_LOCAL_VM_IDLE_TIMEOUT_MINUTES = 1_440;
 
-/** Bot desktop isolation, default "shared"; `maxInstances` caps per-bot desktops or pool seats. Switching modes cold-starts every desktop. */
+/** Bot desktop isolation, default "shared"; `maxInstances` limits running desktops in manual mode. Created, stopped per-bot desktops do not consume a running slot. */
 export const localVmConfigSchema = z.object({
   mode: z.enum(["shared", "per-bot", "pool"]).optional(),
   automaticCapacity: z.boolean().optional(),

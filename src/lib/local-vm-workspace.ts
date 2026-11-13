@@ -163,7 +163,7 @@ export function reconcileLocalVmWorkspaceSlots(
 
 const localVmStatusPayloadSchema = z.object({
   mode: z.enum(["shared", "per-bot", "pool"]).optional(),
-  max_instances: z.number().int().positive().optional(),
+  max_instances: z.number().int().nonnegative().optional(),
   container: z.enum(["running", "stopped", "missing"]).optional(),
   network: z.enum(["loopback", "unsafe", "unknown"]).optional(),
   security: z.enum(["hardened", "unsafe", "unknown"]).optional(),

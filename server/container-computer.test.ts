@@ -305,6 +305,88 @@ function perBotReadyInspect(botId: string, viewerPort: number, targetLabel?: str
   return JSON.stringify([detail]);
 }
 
+function capacityFixture() {
+  const root = mkdtempSync(join(tmpdir(), "limix-running-capacity-"));
+  const states = new Map<string, boolean>();
+  const targets = new Map<string, LocalVmTarget>();
+  const starts: string[] = [];
+  let highestRunning = 0;
+  const targetFor = (id: string) => {
+    const target = { ...perBotLocalVmTarget(id), workspaceDir: join(root, id) };
+    targets.set(target.containerName, target);
+    return target;
+  };
+  const run: CommandRunner = async (command, args) => {
+    if (command === "/usr/bin/which" && args[0] === "docker") return { stdout: "docker" };
+    if (command !== "docker") throw new Error("not installed");
+    if (args[0] === "info") return { stdout: "29" };
+    if (args[0] === "image") return { stdout: preparedImageInspect() };
+    if (args[0] === "ps") return { stdout: [...states].filter(([, running]) => running).map(([name]) => name).join("\n") };
+    if (args[0] === "inspect") {
+      const target = targets.get(args[1]);
+      if (!target || !states.has(args[1])) throw new Error("missing");
+      const detail = JSON.parse(readyInspect({ State: { Running: states.get(args[1]) } }))[0];
+      detail.Config.Labels[TARGET_LABEL] = target.label;
+      detail.Mounts[0].Source = target.workspaceDir;
+      detail.HostConfig.PidsLimit = PIDS_LIMIT;
+      return { stdout: JSON.stringify([detail]) };
+    }
+    if (args[0] === "run" || args[0] === "create") {
+      const name = args[args.indexOf("--name") + 1];
+      states.set(name, args[0] === "run");
+      if (args[0] === "create") expect(args).not.toContain("-d");
+      highestRunning = Math.max(highestRunning, [...states.values()].filter(Boolean).length);
+      return { stdout: name };
+    }
+    if (args[0] === "start" || args[0] === "stop") {
+      states.set(args[1], args[0] === "start");
+      if (args[0] === "start") starts.push(args[1]);
+      highestRunning = Math.max(highestRunning, [...states.values()].filter(Boolean).length);
+      return { stdout: args[1] };
+    }
+    if (args[0] === "update") return { stdout: "updated" };
+    throw new Error("desktop not ready");
+  };
+  return { states, targetFor, run, starts, highestRunning: () => highestRunning, close: () => rmSync(root, { recursive: true, force: true }) };
+}
+
+describe("running desktop capacity", () => {
+  it("creates thirty stopped desktops when the running slots are full", async () => {
+    const fake = capacityFixture();
+    fake.states.set(fake.targetFor("existing").containerName, true);
+    try {
+      for (let i = 0; i < 30; i++) {
+        const result = await containerComputerAction("run", fake.run, "linux", fake.targetFor(`new-${i}`), { memoryGb: 4, cpus: 2 }, 1);
+        expect(result.container).toBe("stopped");
+        expect(result.capacity_limited).toBe(true);
+        expect(result.resumable).toBe(true);
+      }
+      expect(fake.states.size).toBe(31);
+      expect([...fake.states.values()].filter(Boolean)).toHaveLength(1);
+    } finally { fake.close(); }
+  });
+
+  it("serializes simultaneous starts and releases a slot when another desktop stops", async () => {
+    const fake = capacityFixture();
+    const targets = Array.from({ length: 6 }, (_, i) => fake.targetFor(`start-${i}`));
+    for (const target of targets) fake.states.set(target.containerName, false);
+    const act = (action: "start" | "stop", target: LocalVmTarget) => containerComputerAction(action, fake.run, "linux", target, { memoryGb: 4, cpus: 2 }, () => 3);
+    try {
+      const results = await Promise.allSettled(targets.map((target) => act("start", target)));
+      expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(3);
+      expect(results.filter((result) => result.status === "rejected")).toHaveLength(3);
+      expect(fake.highestRunning()).toBe(3);
+      const first = targets.find((target) => fake.states.get(target.containerName))!;
+      const waiting = targets.find((target) => !fake.states.get(target.containerName))!;
+      await act("stop", first);
+      await act("start", waiting);
+      expect(fake.states.size).toBe(6);
+      expect(fake.highestRunning()).toBe(3);
+      expect(fake.starts).toHaveLength(4);
+    } finally { fake.close(); }
+  });
+});
+
 describe("containerComputerStatus", () => {
   it("prefers the supported Podman image store when Docker is also healthy on Windows", async () => {
     const fake = runner({
