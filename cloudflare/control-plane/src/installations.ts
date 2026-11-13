@@ -179,8 +179,15 @@ export async function createInstallation(request: Request, env: Env, auth: Contr
   const credentialId = crypto.randomUUID();
   const now = Date.now();
   const credential = await newCredential(now);
+  // limix: one address per account. The account's other computers are revoked first (their tunnels are deleted by the cron).
+  const replaced = session.user.id.startsWith("limix:") ? [
+    env.DB.prepare("UPDATE installation_credentials SET revoked_at = ? WHERE revoked_at IS NULL AND installation_id IN (SELECT id FROM installations WHERE owner_user_id = ? AND revoked_at IS NULL)").bind(now, session.user.id),
+    env.DB.prepare("DELETE FROM installation_push_devices WHERE installation_id IN (SELECT id FROM installations WHERE owner_user_id = ? AND revoked_at IS NULL)").bind(session.user.id),
+    env.DB.prepare("UPDATE installations SET revoked_at = ?, updated_at = ? WHERE owner_user_id = ? AND revoked_at IS NULL").bind(now, now, session.user.id),
+  ] : [];
   try {
     await env.DB.batch([
+      ...replaced,
       // `kind` is written only when sent, so registration does not depend on migration 0016.
       env.DB.prepare(
         `INSERT INTO installations

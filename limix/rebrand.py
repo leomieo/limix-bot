@@ -1977,6 +1977,27 @@ def vi_triggers(skill_id):
 for skill_id in VI_TRIGGERS:
     edit(f"skills/{skill_id}/manifest.json", vi_triggers(skill_id))
 
+# 11l. "Connect … with ChatGPT" (ChatGPT plan sign-in): OpenAI shows the name the app registers its agent with.
+edit("server/drivers/chatgpt-plan-auth.ts", lambda s: must(s, 'agent_name_hint: "openmausbot"', 'agent_name_hint: "Limix Bot"'))
+
+# 11m. One remote address per Limix account: a computer that registers for remote access replaces the account's
+# other computers (revoked in the same transaction); the cleanup cron then deletes their Cloudflare tunnel and DNS
+# record, so the Cloudflare account never fills up. Migration 0017 (overlay) does the same once for existing accounts.
+def cp_one_address(s):
+    if "limix: one address" in s:
+        return s
+    s = must(s, "  const credential = await newCredential(now);\n  try {\n    await env.DB.batch([\n      // `kind` is written only when sent",
+             "  const credential = await newCredential(now);\n"
+             "  // limix: one address per account. The account's other computers are revoked first (their tunnels are deleted by the cron).\n"
+             "  const replaced = session.user.id.startsWith(\"limix:\") ? [\n"
+             "    env.DB.prepare(\"UPDATE installation_credentials SET revoked_at = ? WHERE revoked_at IS NULL AND installation_id IN (SELECT id FROM installations WHERE owner_user_id = ? AND revoked_at IS NULL)\").bind(now, session.user.id),\n"
+             "    env.DB.prepare(\"DELETE FROM installation_push_devices WHERE installation_id IN (SELECT id FROM installations WHERE owner_user_id = ? AND revoked_at IS NULL)\").bind(session.user.id),\n"
+             "    env.DB.prepare(\"UPDATE installations SET revoked_at = ?, updated_at = ? WHERE owner_user_id = ? AND revoked_at IS NULL\").bind(now, now, session.user.id),\n"
+             "  ] : [];\n"
+             "  try {\n    await env.DB.batch([\n      ...replaced,\n      // `kind` is written only when sent")
+    return s
+edit("cloudflare/control-plane/src/installations.ts", cp_one_address)
+
 # 7. Attribution (Apache-2.0 section 4: state that files were changed, keep NOTICE).
 NOTICE_LINE = f"Limix Bot is a modified version of OpenMausBot by {AUTHOR}"
 def notice(s):

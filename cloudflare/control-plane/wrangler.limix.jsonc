@@ -22,7 +22,7 @@
     "OMB_TUNNEL_RECLAIM": "on",
     "OMB_TUNNEL_OFFLINE_RECLAIM_DAYS": "3",
     "OMB_TUNNEL_RECLAIM_PREVIEW_DAYS": "",
-    "OMB_CLEANUP_SWEEP_LIMIT": "4",
+    "OMB_CLEANUP_SWEEP_LIMIT": "20",
     // No relay and no tunnel release: every computer keeps its own Cloudflare Tunnel.
     "RELAY_NODES": "",
     "RELAY_DISABLED": "1",
