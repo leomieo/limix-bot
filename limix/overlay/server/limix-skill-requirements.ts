@@ -67,7 +67,7 @@ export function extractSkillRequirements(text: string): SkillRequirement[] {
     const kind = /pip|^uv/i.test(match[1]!) ? "python" : "npm";
     for (const token of match[2]!.split(/\s+/)) if (!token.startsWith("-") && !/^[;&|#]/.test(token)) add(kind, token, match[0]!);
   }
-  for (const match of body.matchAll(/\b(?:npx|bunx|pnpm\s+(?:exec|dlx))\s+(?:--[\w-]+\s+)*((?:@[\w.-]+\/)?[\w.-]+(?:@[\w.^~+-]+)?)/g)) {
+  for (const match of body.matchAll(/\b(?:npx|bunx|pnpm\s+(?:exec|dlx))\s+(?:--?[\w-]+(?:=[^\s]+)?\s+)*((?:@[\w.-]+\/)?[\w.-]+(?:@[\w.^~+-]+)?)/g)) {
     add("npm", match[1] === "remotion" ? "@remotion/cli" : match[1], match[0]);
   }
   if (/\bremotion\b/i.test(text)) { add("npm", "remotion", "Remotion"); add("npm", "@remotion/cli", "Remotion CLI"); }
@@ -218,7 +218,7 @@ export async function scanSkillRequirements(bots: readonly Pick<BotRecord, "id" 
         if (pkg) Object.assign(result, pkg);
       } else if (req.kind === "env") result.status = process.env[req.name] ? "found" : "missing";
       else if (req.kind === "python") {
-        const pkg = findSkillPythonPackage(req.name, [source.directory, ...source.projects]);
+        const pkg = findSkillPythonPackage(req.name, [source.directory, ...source.projects, ...bots.filter((b) => !b.computer || b.computer === "local").map((b) => b.cwd ?? workspaceDir(b.id))]);
         if (pkg) { Object.assign(result, pkg); result.status = req.required ? "review" : "found"; }
       }
       else if (req.kind === "mcp") result.where = Object.hasOwn(mcpServers, req.name) ? "Configured; connection needs checking" : "No matching MCP configuration";
