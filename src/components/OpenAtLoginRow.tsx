@@ -17,7 +17,7 @@ export function OpenAtLoginRow({ simple = false }: { simple?: boolean }) {
   if (!bridge || !state?.available) return null;
   const set = (on: boolean) => {
     setBusy(true); setFailed(false);
-    void bridge.set(on).then(setState, () => setFailed(true)).finally(() => setBusy(false));
+    void bridge.set(on).then((next) => { setState(next); setFailed(next.on !== on); }, () => setFailed(true)).finally(() => setBusy(false));
   };
   return <SettingRow title={t("settings.openAtLogin.title")} subtitle={t(simple ? "settings.simple.openAtLogin" : "settings.openAtLogin.subtitle")}
     message={failed ? <span role="alert" className="text-danger">{t("settings.openAtLogin.failed")}</span> : undefined}>
