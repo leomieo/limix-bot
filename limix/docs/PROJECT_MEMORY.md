@@ -7,6 +7,10 @@
 
 ## 1. Trạng thái hiện tại (luôn ghi đè cho đúng)
 
+- 2026-11-15 preparing 0.3.41: hidden channel conversations with online Limix password reauthentication through main IPC, one-use review ticket, five-minute HttpOnly cookie, lock/expiry. Scoped sender identity and internal chat separation implemented. 60 gateway tests, 74 server/navigation and 35 visibility/privacy tests PASS; isolated real HTTP fixture with fake engine confirms hidden snapshots/transcripts and cross-user refusal. Live account password entry/Zalo/Telegram NOT_TESTED. Native release pending CI.
+
+- 2026-11-15 channel chat isolation locally implemented, NOT RELEASED: desktop navigation/composer separated from API chats, safe pre-admission busy retry, platform/user/thread identity binding. Password-protected hidden conversation management remains incomplete; see PLAN_CHANNEL_PRIVACY.md. Do not claim privacy implemented.
+
 - 2026-11-15 Responses image integration: Custom now supports Images and Responses protocols; Sol/Astra model choices, optional local-image-extension header from the user-supplied gateway config, and explicit saved API connection import without exposing keys. Image settings visible under AI in Simple mode. 319 tests passed, 2 skipped; TypeScript PASS; isolated HTTP fixture generated PNGs through Responses for both model IDs (fake upstream). Public v0.3.39 verified via GitHub release metadata; new image changes prepared as 0.3.40; publication pending native CI.
 
 - 2026-11-15 desktop update schedule: change existing hourly check to every six hours (Windows/macOS/Linux). Keep startup check after 15 seconds and manual check via updater coordinator. Requires app process running; no OS background service introduced. Reproducible via rebrand.py.
@@ -64,6 +68,10 @@
 
 ## 4. Vấn đề mở / rủi ro
 
+- Channel privacy 0.3.41: application access control, not encrypted-at-rest storage. Online account verification required. Archive/search/activity access is unavailable while channel review is locked. Raw files remain accessible to the OS account owner. Live account verification and packaged runtime NOT_TESTED.
+
+- 2026-11-15 password privacy pending: existing admin snapshots/SSE/search/attachments still expose channel history. Need trusted password reauthentication and per-session visibility gate before release. Identity metadata requires the Bot API bearer and is additional scope, not independent platform authentication. Groups share group history.
+
 - 2026-11-15 image integration: Xingchi live endpoint/account NOT_TESTED, no real key supplied. Responses adapter requires non-streaming JSON with completed image_generation_call.result; no image editing. Settings suite has 6 pre-existing failures, reproduced on HEAD (analytics removal, old branding, disabled Cloud), not caused by image changes. No changes to guest permission/spending gates or the existing image/media size caps. Saved connection import copies credentials once and disables fallback; it does not synchronize later key changes.
 
 - 2026-11-15 desktop update schedule: change existing hourly check to every six hours (Windows/macOS/Linux). Keep startup check after 15 seconds and manual check via updater coordinator. Requires app process running; no OS background service introduced. Reproducible via rebrand.py.
@@ -86,6 +94,10 @@
 | R10 | Máy chủ Claude không đẩy được tag git (chỉ đẩy nhánh) | Build kích hoạt bằng push lên `main`; tag phát hành do workflow tự tạo | Đã xử lý |
 
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
+
+- 2026-11-15 preparing 0.3.41: hidden channel conversations with online Limix password reauthentication through main IPC, one-use review ticket, five-minute HttpOnly cookie, lock/expiry. Scoped sender identity and internal chat separation implemented. 60 gateway tests, 74 server/navigation and 35 visibility/privacy tests PASS; isolated real HTTP fixture with fake engine confirms hidden snapshots/transcripts and cross-user refusal. Live account password entry/Zalo/Telegram NOT_TESTED. Native release pending CI.
+
+- 2026-11-15: Added local/API chat navigation separation, read-only customer composer and server refusal, explicit busy retry, and persistent scoped channel identity checks. 70 targeted server/navigation tests + 11 gateway queue tests passed. Password gate and hidden history browser still pending; changes not pushed/released.
 
 - 2026-11-15: Implemented Custom Responses image generation and server-side saved API connection copy, exposed image settings in AI, added Sol/Astra suggestions. Unit/UI/mock route tests 319 PASS + 2 skipped; isolated HTTP config→Responses→PNG PASS for both models. Rebrand patches reproduce changes and are idempotent. Live Xingchi/Zalo NOT_TESTED.
 

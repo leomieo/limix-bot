@@ -108,7 +108,7 @@ export class Router {
     const text = (event.text ?? "").trim();
     const cmd = /^\/(\w+)(?:@\w+)?(?:\s+([\s\S]*))?$/.exec(text);
     const role = roleOf(conn, event.senderId);
-    const sessionKey = Store.sessionKey(conn.id, event.topicId ? `${event.chatId}:${event.topicId}` : event.chatId, event.senderId);
+    const sessionKey = JSON.stringify([conn.id, conn.platform, "private", String(event.chatId), String(event.topicId ?? ""), String(event.senderId), role === "owner"]);
 
     if (cmd) {
       const name = cmd[1].toLowerCase();
@@ -186,7 +186,7 @@ export class Router {
       return "command";
     }
     if (roleOf(conn, event.senderId) === "unknown") return "ignored_group";
-    const sessionKey = Store.sessionKey(conn.id, event.topicId ? `${event.chatId}:${event.topicId}` : event.chatId, "group");
+    const sessionKey = JSON.stringify([conn.id, conn.platform, "group", String(event.chatId), String(event.topicId ?? ""), "group", false]);
     const said = event.senderName ? `${event.senderName}: ${text}` : text;
     return this.enqueue(sessionKey, () => this.runTurn({ conn, channel, engine, event, text: said, sessionKey }));
   }
@@ -238,7 +238,7 @@ export class Router {
         await this.reply(channel, event.chatId, "Không nhận được tệp: kiểm tra loại tệp, giới hạn dung lượng và quyền nhận media trong thiết lập kết nối.", event);
         return "media_rejected";
       }
-      const answer = await engine.send({ message: text || "Please inspect the attached files.", attachments, thread: this.store.getThread(sessionKey), owner });
+      const answer = await engine.send({ message: text || "Please inspect the attached files.", attachments, conversation: { connectionId: String(conn.id), platform: conn.platform, chatId: String(event.chatId), senderId: event.chatType === "private" ? String(event.senderId) : "group", kind: event.chatType === "private" ? "private" : "group", ...(event.topicId ? { topicId: String(event.topicId) } : {}) }, channel: conn.platform, thread: this.store.getThread(sessionKey), owner, onThread: (threadId) => this.store.setThread(sessionKey, threadId) });
       if (answer.thread) this.store.setThread(sessionKey, answer.thread);
       if (typeof answer.reply === "string") {
         if (answer.reply.trim()) await this.reply(channel, event.chatId, answer.reply.trim(), event);

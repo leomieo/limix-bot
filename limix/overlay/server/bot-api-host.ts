@@ -1,3 +1,4 @@
+import { channelConversationSchema, parseChannelHeader, type ChannelIdentityRegistry } from "./limix-channel-identity.ts";
 import { channelAttachmentSchema, channelReplyAttachments, saveChannelAttachments } from "./limix-channel-media.ts";
 import { deleteAttachment } from "./attachments.ts";
 // The Bot API's two sides. Outside: `POST /hooks/api/bots/<id>/messages` on the webhook receiver, a bearer key, a
@@ -30,6 +31,8 @@ const callSchema = z.object({
   message: z.string().min(1).max(BOT_API_MAX_MESSAGE_CHARS),
   attachments: z.array(channelAttachmentSchema).max(4).optional(),
   thread: z.string().regex(/^[\w-]{1,128}$/).optional(),
+  conversation: channelConversationSchema.optional(),
+  channel: z.enum(["telegram", "zalo", "discord", "facebook"]).optional(),
   /** Seconds to wait for the reply, for a caller that knows nothing in its path drops a quiet connection. */
   wait: z.number().min(0).max(BOT_API_MAX_WAIT_MS / 1000).optional(),
 });
@@ -47,6 +50,7 @@ export interface BotApiTurnOptions {
 }
 
 export interface BotApiHostDeps {
+  channelIdentities?: ChannelIdentityRegistry;
   store: Pick<Store, "bot" | "taskByThread" | "createTask" | "patchTask" | "appendMessage" | "messagesFor" | "onChange">;
   startTurn(botId: string, text: string, opts: BotApiTurnOptions): Promise<unknown>;
   threadBusy(botId: string, threadId: string): boolean;
@@ -85,6 +89,11 @@ function callerWords(error: unknown): string {
 
 const COULD_NOT_ANSWER = "The bot could not answer. Open this thread in the app to see why.";
 const BUSY = "The bot is busy. Try again soon.";
+function failBeforeAcceptance(code: "thread_busy" | "capacity_busy"): never {
+  throw Object.assign(new Error(BUSY), { status: 409, forCaller: true, code, retryable: true });
+}
+const retryableBusySchema = z.object({ forCaller: z.literal(true), retryable: z.literal(true), code: z.enum(["thread_busy", "capacity_busy"]) });
+const CHANNEL_NAMES = { telegram: "Telegram", zalo: "Zalo", discord: "Discord", facebook: "Facebook" } as const;
 const CANNOT_CONFINE = "This bot's AI can't take Bot API calls. Choose another AI for this bot.";
 
 function detailOf(error: unknown): string {
@@ -147,20 +156,22 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     if (threadId !== undefined) {
       const task = store.taskByThread(botId, threadId);
       // Only a thread this API opened: the caller never writes into the person's own conversations.
-      if (!task || task.botApi !== true || isLimixOwnerThread(threadId) !== owner) fail(404, "no such thread");
-      if (deps.threadBusy(botId, threadId)) return { status: 409, body: { thread: threadId, status: "working" } };
+      if (!task || task.botApi !== true || isLimixOwnerThread(threadId) !== owner || (deps.channelIdentities && !deps.channelIdentities.matches(threadId, call.conversation, owner))) fail(404, "no such thread");
+      if (deps.threadBusy(botId, threadId)) failBeforeAcceptance("thread_busy");
     }
-    if (!deps.canStart(botId, threadId ?? "")) fail(409, BUSY, "The bot already had as many conversations going as it may");
+    if (!deps.canStart(botId, threadId ?? "")) failBeforeAcceptance("capacity_busy");
+    if (!manager.admit(botId)) fail(429, "Too many calls: this key takes 10 a minute");
     const message = withoutAttachedImages(call.message);
     let opened = false;
     if (threadId === undefined) {
       // Asks from the start, with none of the bot's saved allowances: nothing may answer an approval for an outside caller.
-      const task = store.createTask(botId, message.slice(0, 80), false, undefined, undefined, "ask", undefined, undefined, (created) => deps.opened?.(created.threadId));
+      const task = store.createTask(botId, `${call.channel ? CHANNEL_NAMES[call.channel] + " · " : ""}${call.conversation ? call.conversation.senderId + " · " : ""}${message.slice(0, 80)}`, false, undefined, undefined, "ask", undefined, undefined, (created) => deps.opened?.(created.threadId));
       if (!task) fail(404, "no such bot");
       threadId = task.threadId;
       opened = true;
       store.patchTask(botId, threadId, { botApi: true, outside: true });
       if (owner) markLimixOwnerThread(threadId);
+      if (call.conversation) deps.channelIdentities?.bind(threadId, call.conversation, owner);
     }
     const media = await saveChannelAttachments(call.attachments ?? []);
     const receivedAt = Date.now();
@@ -234,7 +245,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       if (req.method === "GET") {
         const threadId = url.searchParams.get("thread") ?? "";
         const task = /^[\w-]{1,128}$/.test(threadId) ? deps.store.taskByThread(botId, threadId) : undefined;
-        if (!task || task.botApi !== true || isLimixOwnerThread(threadId) !== limixOwner) { json(res, 404, { error: "no such thread" }); return true; }
+        if (!task || task.botApi !== true || isLimixOwnerThread(threadId) !== limixOwner || (deps.channelIdentities && !deps.channelIdentities.matches(threadId, parseChannelHeader(req.headers["x-limix-conversation"]), limixOwner))) { json(res, 404, { error: "no such thread" }); return true; }
         const state = threadState(botId, threadId);
         json(res, "reply" in state ? 200 : 202, state);
         return true;
@@ -256,14 +267,9 @@ export function createBotApiHost(deps: BotApiHostDeps) {
         json(res, status, { error: message });
         return true;
       }
-      if (!manager.admit(botId)) {
-        manager.record(botId, { outcome: "rejected", statusCode: 429, reason: "Rate limit exceeded", preview: call.message });
-        json(res, 429, { error: "Too many calls: this key takes 10 a minute" });
-        return true;
-      }
       if (pendingFor(botId) >= BOT_API_MAX_PENDING) {
         manager.record(botId, { outcome: "rejected", statusCode: 409, reason: "The bot is busy", preview: call.message });
-        json(res, 409, { error: `The bot is busy: ${BOT_API_MAX_PENDING} calls are still being answered` });
+        json(res, 409, { error: `The bot is busy: ${BOT_API_MAX_PENDING} calls are still being answered`, code: "capacity_busy", retryable: true });
         return true;
       }
       try {
@@ -273,7 +279,8 @@ export function createBotApiHost(deps: BotApiHostDeps) {
         json(res, answer.status, answer.body);
       } catch (error) {
         manager.record(botId, { outcome: "rejected", statusCode: statusOf(error), reason: detailOf(error), preview: call.message });
-        json(res, statusOf(error), { error: callerWords(error) });
+        const busy = retryableBusySchema.safeParse(error);
+        json(res, statusOf(error), { error: callerWords(error), ...(busy.success ? { code: busy.data.code, retryable: true } : {}) });
       }
       return true;
     } finally {

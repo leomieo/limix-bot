@@ -1,4 +1,7 @@
 {
+  "chat.channel.title": "Connected-channel conversation",
+  "chat.channel.readOnly": "Messages in this conversation come from a connected channel. Configure your bot in its separate internal chat.",
+  "chat.channel.openInternal": "Open internal chat",
   "connectedWorkspaces.localTitle": "Environments on this computer",
   "connectedWorkspaces.missing": "missing",
   "connectedWorkspaces.current": "Current",

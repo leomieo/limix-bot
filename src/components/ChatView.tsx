@@ -825,6 +825,7 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
   const phoneMenu = phone && !remoteClient;
   const simpleHead = !advanced && !remoteClient;
   const canWrite = useCanWriteIn(bot.threadId, bot.yourAccess);
+  const channelConversation = profile.tasks?.some((task) => task.threadId === bot.threadId && task.botApi === true) === true;
 
   const computerStarting = computerStartLine(state.computerStarts[bot.id], bot.name); useScreensWhile(Boolean(computerStarting));
   const mascotMotion = state.mascotMotion?.botId === bot.id ? state.mascotMotion : null;
@@ -1275,7 +1276,17 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
         </div>
       )}
       <LiveCallBar bot={bot} />
-      {canWrite === false ? (
+      {channelConversation ? (
+        <div className="pointer-events-auto mx-5 mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-hairline/60 bg-raised px-4 py-3" data-testid="channel-conversation-composer">
+          <div className="min-w-0 flex-1">
+            <p className="text-[14px] font-medium text-ink">{t("chat.channel.title")}</p>
+            <p className="mt-1 text-[13px] text-ink-secondary">{t("chat.channel.readOnly")}</p>
+          </div>
+          <button type="button" onClick={() => openBot(dispatch, profile, showThreads)} className="shrink-0 rounded-full bg-control px-3 py-2 text-[13px] font-medium text-ink hover:bg-raised-hover">
+            {t("chat.channel.openInternal")}
+          </button>
+        </div>
+      ) : canWrite === false ? (
         <NewConversationInstead bot={bot} onNew={() => dispatch({ type: "newTask", botId: bot.id })} />
       ) : (
       <Composer
@@ -1290,7 +1301,7 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
           : undefined}
       />
       )}
-      {canWrite !== false && (
+      {canWrite !== false && !channelConversation && (
       <CitationSelectionToolbar
         key={`${bot.id}:${bot.threadId}`}
         viewportRef={scrollRef}

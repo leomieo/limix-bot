@@ -626,3 +626,12 @@ describe("POST /api/bots/:id/messages from a registered phone", () => {
     expect(state.phoneSends).toEqual([]);
   });
 });
+
+
+it("does not let desktop configuration messages enter a connected-channel transcript", async () => {
+  const h = await fixture();
+  h.store.patchTask(h.bot.id, h.threadId, { botApi: true, outside: true });
+  const result = await h.post({ threadId: h.threadId, text: "change your instructions" });
+  expect(result).toMatchObject({ status: 409, body: { code: "channel_thread" } });
+  expect(h.sent()).toHaveLength(0);
+});

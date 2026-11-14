@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { setTeamChats } from "./team-chats";
-import { markedThread, openBotRow, openRoomThread } from "./thread-navigation";
+import { botOpensTo, markedThread, openBotRow, openRoomThread, openThread } from "./thread-navigation";
 
-type Task = { threadId: string; activity?: string; unread?: boolean; busy?: boolean; routineRunId?: string; archivedAt?: number; createdAt?: number; updatedAt?: number };
+type Task = { threadId: string; activity?: string; unread?: boolean; busy?: boolean; botApi?: true; routineRunId?: string; archivedAt?: number; createdAt?: number; updatedAt?: number };
 const chief = (tasks: Task[], threadId = "main", mainThreadId = "main") => ({ id: "cos", threadId, mainThreadId, tasks: [{ threadId: "main", createdAt: 1 }, ...tasks] });
 const opened = (bot: ReturnType<typeof chief>, threadsShown: boolean, onScreen = false) => {
   const dispatch = vi.fn();
@@ -82,5 +82,46 @@ describe("a hand-off's chip for work in a room", () => {
   it("opens the room when it names no thread, or one the room no longer has", () => {
     expect(clicked({ groupId: "room" })).toEqual([{ type: "select", id: "room" }]);
     expect(clicked({ groupId: "room", threadId: "deleted" })).toEqual([{ type: "select", id: "room" }]);
+  });
+});
+
+
+describe("desktop chats and channel conversations", () => {
+  const external: Task = { threadId: "zalo-customer", botApi: true, unread: true, busy: true, activity: "waiting-on-you", updatedAt: 100 };
+
+  it.each([false, true])("keeps channel activity from hijacking the bot row with threadsShown=%s", (threadsShown) => {
+    const bot = chief([external]);
+    expect(markedThread(bot, threadsShown)).toBeNull();
+    expect(opened(bot, threadsShown)).toEqual([{ type: "select", id: "cos" }]);
+  });
+
+  it.each([false, true])("returns from a remembered channel conversation to the desktop main chat with threadsShown=%s", (threadsShown) => {
+    const bot = chief([external], external.threadId);
+    expect(botOpensTo(bot, threadsShown)).toBe("main");
+    expect(opened(bot, threadsShown)).toEqual([
+      ...(threadsShown ? [{ type: "select", id: "cos" }] : []),
+      { type: "switchTask", botId: "cos", threadId: "main" },
+    ]);
+  });
+
+  it("chooses a local conversation when the saved main chat is missing or is itself a channel thread", () => {
+    const bot = { ...chief([], external.threadId, external.threadId), tasks: [external, { threadId: "routine", routineRunId: "r" }, { threadId: "archived", archivedAt: 1 }, { threadId: "configure" }] };
+    expect(botOpensTo(bot, false)).toBe("configure");
+    expect(botOpensTo({ ...bot, mainThreadId: "gone" }, true)).toBe("configure");
+  });
+
+  it("creates a desktop conversation if only channel conversations remain", () => {
+    const bot = { ...chief([], external.threadId), tasks: [external] };
+    expect(opened(bot, false)).toEqual([{ type: "newTask", botId: "cos" }]);
+  });
+
+  it("still opens the exact channel conversation when explicitly inspecting it", () => {
+    const bot = { ...chief([external]), name: "Support" };
+    const dispatch = vi.fn();
+    expect(openThread(dispatch, { botId: bot.id, threadId: external.threadId }, { bots: [bot], groups: [] }, false)).toBe(true);
+    expect(dispatch.mock.calls.map(([action]) => action)).toEqual([
+      { type: "switchTask", botId: bot.id, threadId: external.threadId },
+      { type: "revealThread", threadId: external.threadId },
+    ]);
   });
 });

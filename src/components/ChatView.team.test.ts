@@ -20,9 +20,11 @@ const { BotEditorStore, initialState } = await import("@/state/store");
 const { t } = await import("@/lib/i18n");
 const { setAdvancedMode } = await import("@/lib/interface-mode");
 
+const dispatch = vi.fn();
 let root: Root;
 let container: HTMLDivElement;
 beforeEach(() => {
+  dispatch.mockReset();
   vi.stubGlobal("fetch", () => new Promise(() => {}));
   container = document.createElement("div");
   document.body.append(container);
@@ -45,7 +47,7 @@ const luna = (messages: Message[], extra: Partial<Bot> = {}): Bot => ({
 });
 const draw = (bot: Bot) => {
   const state: AppState = { ...initialState, connected: true, selectedId: bot.id, bots: [bot], instances, config: { team } as AppState["config"] };
-  const value = { state, dispatch: () => {}, flushBotPatches: async () => null, refreshInstances: async () => {}, refreshModels: async () => {} };
+  const value = { state, dispatch, flushBotPatches: async () => null, refreshInstances: async () => {}, refreshModels: async () => {} };
   flushSync(() => root.render(createElement(BotEditorStore, { value, children: createElement(ChatView, { bot }) })));
 };
 const row = (text: string) => [...container.querySelectorAll<HTMLElement>("[data-message-row]")].find((element) => element.textContent?.includes(text))!;
@@ -75,4 +77,19 @@ it.each([[false, "[data-chathead-privacy='shared']"], [true, "[data-chathead-sha
   draw(luna([], { onlyPeopleAdded: true }));
   expect(said()).toBe(t("team.sharedHeaderPeople"));
   setAdvancedMode(false);
+});
+
+
+it("opens the internal chat from the connected-channel banner without sending a customer message", () => {
+  setAdvancedMode(false);
+  draw(luna([], {
+    threadId: "zalo", mainThreadId: "main",
+    tasks: [{ threadId: "main", title: "Internal", createdAt: 1 }, { threadId: "zalo", title: "Channel", createdAt: 2, botApi: true }],
+  }));
+  const banner = container.querySelector('[data-testid="channel-conversation-composer"]');
+  expect(banner).not.toBeNull();
+  const button = banner!.querySelector<HTMLButtonElement>("button")!;
+  expect(button.textContent).toBe("Open internal chat");
+  flushSync(() => button.click());
+  expect(dispatch.mock.calls.map(([action]) => action)).toEqual([{ type: "switchTask", botId: "luna", threadId: "main" }]);
 });

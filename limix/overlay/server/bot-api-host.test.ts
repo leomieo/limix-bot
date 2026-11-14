@@ -250,7 +250,7 @@ describe("the Bot API door on the webhook receiver", () => {
     const answer = await h.call("b1", key, { message: "Think hard" });
     expect(answer).toEqual({ status: 202, body: { thread: expect.any(String), status: "working" } });
     const threadId = answer.body.thread as string;
-    expect(await h.call("b1", key, { message: "Again", thread: threadId })).toEqual({ status: 409, body: { thread: threadId, status: "working" } });
+    expect(await h.call("b1", key, { message: "Again", thread: threadId })).toMatchObject({ status: 409, body: { code: "thread_busy", retryable: true } });
     expect(await h.call("b1", key, undefined, { method: "GET", query: `?thread=${threadId}` })).toEqual({ status: 202, body: { thread: threadId, status: "working" } });
     finish.shift()!();
     expect(await h.call("b1", key, undefined, { method: "GET", query: `?thread=${threadId}` })).toEqual({ status: 200, body: { reply: "Late", thread: threadId } });
@@ -451,4 +451,39 @@ describe("the Bot API door on the webhook receiver", () => {
     expect(h.manager.enabled("b1")).toBe(false);
     expect(h.manager.listAttempts("b1")).toEqual([]);
   });
+});
+
+
+it("keeps local, Zalo and Telegram histories separate and labels channel tasks", async () => {
+  const h = await harness(replies("channel reply"));
+  const local = h.fake.store.createTask("b1", "Internal configuration")!;
+  h.fake.store.appendMessage(local.threadId, { role: "user", kind: "text", text: "private configuration" });
+  const key = (await h.app("POST", "/api/bots/b1/bot-api", { enabled: true })).body.key;
+  const zalo = await h.call("b1", key, { message: "zalo customer", channel: "zalo" });
+  const telegram = await h.call("b1", key, { message: "telegram customer", channel: "telegram" });
+  expect(new Set([local.threadId, zalo.body.thread, telegram.body.thread]).size).toBe(3);
+  expect(h.fake.store.taskByThread("b1", String(zalo.body.thread))).toMatchObject({ title: "Zalo · zalo customer", botApi: true });
+  expect(h.fake.store.taskByThread("b1", String(telegram.body.thread))).toMatchObject({ title: "Telegram · telegram customer", botApi: true });
+  expect((await h.call("b1", key, { message: "overwrite config", thread: local.threadId })).status).toBe(404);
+  expect(JSON.stringify(h.fake.store.messagesFor(local.threadId))).not.toContain("customer");
+  expect(h.turns.every(turn => !turn.prompt.includes("private configuration"))).toBe(true);
+});
+
+it("pre-admission busy waits consume no message quota and leave no transcript", async () => {
+  const options = { full: true };
+  const h = await harness(replies("ok"), options);
+  const key = (await h.app("POST", "/api/bots/b1/bot-api", { enabled: true })).body.key;
+  for (let i = 0; i < 12; i++) expect(await h.call("b1", key, { message: "waiting" })).toMatchObject({ status: 409, body: { code: "capacity_busy", retryable: true } });
+  expect(h.fake.bots.get("b1")!.tasks).toEqual([]);
+  options.full = false;
+  expect((await h.call("b1", key, { message: "waiting" })).status).toBe(200);
+  expect(h.turns).toHaveLength(1);
+});
+
+it("does not mark post-append dispatch errors as safe to replay", async () => {
+  const h = await harness(() => { throw Object.assign(new Error("dispatch already attempted"), { code: "thread_busy" }); });
+  const key = (await h.app("POST", "/api/bots/b1/bot-api", { enabled: true })).body.key;
+  const result = await h.call("b1", key, { message: "run once" });
+  expect(result.status).toBe(409);
+  expect(result.body.retryable).toBeUndefined();
 });

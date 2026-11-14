@@ -32,9 +32,14 @@ function forbidden(reason) {
 }
 
 const sleep = (ms, signal) => new Promise((resolve, reject) => {
-  const t = setTimeout(resolve, ms);
-  signal?.addEventListener("abort", () => { clearTimeout(t); reject(new EngineError("aborted", "Đã dừng")); }, { once: true });
+  if (signal?.aborted) return reject(new EngineError("aborted", "Đã dừng"));
+  const finish = () => { signal?.removeEventListener("abort", abort); resolve(); };
+  const t = setTimeout(finish, ms);
+  const abort = () => { clearTimeout(t); signal?.removeEventListener("abort", abort); reject(new EngineError("aborted", "Đã dừng")); };
+  signal?.addEventListener("abort", abort, { once: true });
 });
+
+const UNREACHED = new Set(["ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN", "EHOSTUNREACH", "ENETUNREACH"]);
 
 export class OpenMausBotEngine {
   constructor({ endpoint, apiKey, fetchImpl = fetch, pollMs = 4000, maxWaitMs = 10 * 60_000, waitSeconds = 50, hooksPorts = [8800, 18800, 28800], ownerLaneToken = process.env.LIMIX_OWNER_LANE_TOKEN }) {
@@ -62,24 +67,28 @@ export class OpenMausBotEngine {
     return ports.map((port) => { const u = new URL(this.endpoint); u.port = port; return u.toString(); });
   }
 
-  async call(method, { body, thread, timeoutMs, owner = false }) {
+  async call(method, { body, thread, timeoutMs, owner = false, signal, conversation }) {
+    if (signal?.aborted) throw new EngineError("aborted", "Đã dừng");
     let res;
     let lastError;
+    const deadline = Date.now() + timeoutMs;
     for (const endpoint of this.candidates()) {
       const url = new URL(endpoint);
       if (method === "GET") url.searchParams.set("thread", thread);
       try {
         res = await this.fetch(url, {
           method,
-          headers: { Authorization: `Bearer ${this.apiKey}`, ...(body ? { "Content-Type": "application/json" } : {}), ...(owner && this.ownerLaneToken ? { "X-Limix-Owner": this.ownerLaneToken } : {}) },
+          headers: { Authorization: `Bearer ${this.apiKey}`, ...(body ? { "Content-Type": "application/json" } : {}), ...(conversation ? { "X-Limix-Conversation": Buffer.from(JSON.stringify(conversation)).toString("base64url") } : {}), ...(owner && this.ownerLaneToken ? { "X-Limix-Owner": this.ownerLaneToken } : {}) },
           body: body ? JSON.stringify(body) : undefined,
-          signal: AbortSignal.timeout(timeoutMs),
+          signal: AbortSignal.any([AbortSignal.timeout(Math.max(1, deadline - Date.now())), ...(signal ? [signal] : [])]),
         });
         this.endpoint = endpoint;
         break;
       } catch (error) {
+        if (signal?.aborted) throw new EngineError("aborted", "Đã dừng");
         lastError = error;
-        if (error.name === "TimeoutError") break;
+        // A reset can happen after a POST was accepted. Only a confirmed connection failure may try another port.
+        if (error.name === "TimeoutError" || Date.now() >= deadline || (method === "POST" && !UNREACHED.has(error.cause?.code))) break;
       }
     }
     if (!res) {
@@ -90,27 +99,43 @@ export class OpenMausBotEngine {
     try {
       data = await res.json();
     } catch {
+      if (signal?.aborted) throw new EngineError("aborted", "Đã dừng");
+      if (res.status === 200 || res.status === 202) throw new EngineError("engine_error", "Bộ não AI trả dữ liệu không hợp lệ");
       // Error bodies are not always JSON.
     }
     if (res.status === 200 || res.status === 202) return data;
     const [code, message] = res.status === 403 ? forbidden(data?.error) : ERRORS[res.status] ?? ["engine_error", `Limix Bot trả lỗi ${res.status}`];
-    throw new EngineError(code, message, res.status);
+    const error = new EngineError(code, message, res.status);
+    error.retryable = res.status === 409 && data?.retryable === true && ["capacity_busy", "thread_busy"].includes(data?.code);
+    throw error;
   }
 
   /** Sends one message. Resolves {reply, thread} or {status: "needs_approval" | "working", thread}. */
-  async send({ message, attachments = [], thread, signal, owner = false }) {
-    const body = { message, ...(attachments.length ? { attachments } : {}), wait: this.waitSeconds, ...(thread ? { thread } : {}) };
-    let answer;
-    try {
-      answer = await this.call("POST", { body, owner, timeoutMs: (this.waitSeconds + 15) * 1000 });
-    } catch (error) {
-      if (error.code === "thread_missing" && thread) return this.send({ message, attachments, signal, owner });
-      throw error;
-    }
+  async send({ message, attachments = [], thread, signal, owner = false, onThread, channel, conversation }) {
+    const body = { message, ...(conversation ? { conversation } : {}), ...(attachments.length ? { attachments } : {}), wait: this.waitSeconds, ...(thread ? { thread } : {}),
+      ...(["telegram", "zalo", "discord", "facebook"].includes(channel) ? { channel } : {}) };
     const deadline = Date.now() + this.maxWaitMs;
+    let answer;
+    for (;;) {
+      try {
+        answer = await this.call("POST", { body, owner, signal, conversation, timeoutMs: Math.max(1, Math.min((this.waitSeconds + 15) * 1000, deadline - Date.now())) });
+        if (typeof answer.thread === "string" && /^[\w-]{1,128}$/.test(answer.thread)) onThread?.(answer.thread);
+        break;
+      } catch (error) {
+        if (error.code === "thread_missing" && body.thread && Date.now() < deadline) {
+          delete body.thread;
+          continue;
+        }
+        // Only explicit pre-admission refusals guarantee this message has not already been appended or run.
+        if (!error.retryable || Date.now() >= deadline) throw error;
+        await sleep(Math.min(this.pollMs, deadline - Date.now()), signal);
+        if (Date.now() >= deadline) throw error;
+      }
+    }
     while (answer.status === "working" && Date.now() < deadline) {
-      await sleep(this.pollMs, signal);
-      answer = await this.call("GET", { thread: answer.thread, owner, timeoutMs: 30_000 });
+      await sleep(Math.min(this.pollMs, deadline - Date.now()), signal);
+      if (Date.now() >= deadline) break;
+      answer = await this.call("GET", { thread: answer.thread, owner, signal, conversation, timeoutMs: Math.max(1, Math.min(30_000, deadline - Date.now())) });
     }
     return answer;
   }

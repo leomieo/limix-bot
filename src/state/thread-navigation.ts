@@ -10,7 +10,7 @@ interface NotificationThreadOwner {
   tasks?: Array<RowThread>;
 }
 
-type RowThread = { threadId: string; activity?: string; unread?: boolean; busy?: boolean; routineRunId?: unknown; archivedAt?: unknown; updatedAt?: number; createdAt?: number };
+type RowThread = { threadId: string; activity?: string; unread?: boolean; busy?: boolean; botApi?: true; routineRunId?: unknown; archivedAt?: unknown; updatedAt?: number; createdAt?: number };
 
 interface NotificationRoutingState {
   bots: NotificationThreadOwner[];
@@ -29,8 +29,14 @@ export function visibleNotificationThread(
 }
 
 export function botOpensTo(bot: Pick<NotificationThreadOwner, "threadId" | "mainThreadId" | "tasks">, threadsShown: boolean): string {
-  return !threadsShown && bot.mainThreadId && bot.tasks?.some((task) => task.threadId === bot.mainThreadId)
-    ? bot.mainThreadId : bot.threadId;
+  const current = bot.tasks?.find((task) => task.threadId === bot.threadId);
+  const main = bot.tasks?.find((task) => task.threadId === bot.mainThreadId && !task.botApi);
+  if ((!threadsShown || current?.botApi) && main) return main.threadId;
+  if (current?.botApi) {
+    const local = bot.tasks?.find((task) => !task.botApi && !task.routineRunId && task.archivedAt === undefined);
+    if (local) return local.threadId;
+  }
+  return bot.threadId;
 }
 
 export function awayFromMainThread(bot: Pick<NotificationThreadOwner, "threadId" | "mainThreadId" | "tasks">, threadsShown: boolean): boolean {
@@ -48,12 +54,16 @@ export function openBot(
   if (shared) return openBotThread(dispatch, bot, shared, threadsShown);
   if (openOwnTeamChat(dispatch, bot, (threadId) => openBotThread(dispatch, bot, threadId, threadsShown))) return;
   const opened = botOpensTo(bot, threadsShown);
+  if (bot.tasks?.find((task) => task.threadId === opened)?.botApi) {
+    dispatch({ type: "newTask", botId: bot.id });
+    return;
+  }
   if (opened === bot.threadId) dispatch({ type: "select", id: bot.id });
   else openBotThread(dispatch, bot, opened, threadsShown);
 }
 
 const markRank = (task: RowThread): number | null => {
-  if (task.routineRunId) return null;
+  if (task.routineRunId || task.botApi) return null;
   if (task.activity === "waiting-on-you") return 0;
   if (task.archivedAt !== undefined) return null;
   if (task.unread) return 1;
