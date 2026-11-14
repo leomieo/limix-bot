@@ -41,3 +41,7 @@ Máy chủ beta dự kiến là máy Windows của chủ dự án, hai Xeon E5-2
 ## Current evidence
 
 The user supplied a screenshot of a running isolated Limix Server 0.3.47 on Windows 10 Pro 19045, reached through a Tailscale HTTP address. Docker Linux engine passed its preflight. This establishes a single server start, not managed provisioning, public HTTPS, tenant isolation or a working hosted desktop.
+
+## Beta workspace requests
+
+The operator enrolls a canonical Limix principal in the control plane D1 table managed_cloud_beta (migration 0018). GET /v1/managed-cloud/workspace reports the signed-in account's state. POST on the same URL queues its request once. A queued ID represents a reservation in the registry only. Host allocation, connection grants and desktop integration are pending. The Xeon tunnel was shown Healthy with one replica and no routes. Keep the existing local operator workspace private.

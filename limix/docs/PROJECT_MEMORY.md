@@ -7,6 +7,8 @@
 
 ## 1. Trạng thái hiện tại (luôn ghi đè cho đúng)
 
+- Managed beta workspace requests now use verified Limix sessions and a D1 registry in source.
+
 - 2026-11-15 owner selected managed customer Cloud on owner infrastructure, public endpoint bot.limixmedia.com. Recorded PLAN_MANAGED_CLOUD_BETA.md with account-verified provisioning, tenant isolation, durable jobs, automatic client connection, host capacity and acceptance. This is a design record, not implemented provisioning.
 
 - 2026-11-15 preparing 0.3.48: replaced own-server lending popup with a main-owned static Electron modal matching app colors. Shows server identity and origin, explicit screen/app scope and separately granted folder/terminal access. Default Not now; close/Escape decline; page scripts off, resources blocked, only nonce-bound form navigation can approve. 19 node tests PASS, locale validation PASS, real isolated Electron screenshot and Allow form interaction PASS.
@@ -86,6 +88,8 @@
 
 ## 4. Vấn đề mở / rủi ro
 
+- The host allocator and customer connection are pending. No public route or live deployment verified.
+
 - Managed Cloud controller, host worker, public HTTPS routing and beta UI are not implemented. Public DNS lookup for bot.limixmedia.com returned no records during this check. Running one Tailscale server does not establish customer-ready Cloud provisioning.
 
 - Server access dialog verified in isolated Electron, not in an installed 0.3.48 app or a live remote permission grant. The new dialog applies to own-server initial/screen sharing consent; other native permission prompts retain their existing UI.
@@ -130,6 +134,8 @@
 | R10 | Máy chủ Claude không đẩy được tag git (chỉ đẩy nhánh) | Build kích hoạt bằng push lên `main`; tag phát hành do workflow tự tạo | Đã xử lý |
 
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
+
+- 2026-11-15: Added enrolled-account workspace requests with retry deduplication. Xeon tunnel screenshot shows Healthy, one replica, no routes.
 
 - 2026-11-15 recorded owner decisions: customers use owner server, require only Limix Bot, and connect through bot.limixmedia.com. Added managed Cloud beta architecture and acceptance plan.
 

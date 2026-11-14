@@ -2175,3 +2175,13 @@ for rel, edits in json.loads((ROOT / "limix/patches/server-access-dialog.json").
                 s = must(s, patch["before"], patch["after"])
         return s
     edit(rel, server_access_dialog_patch)
+
+def managed_workspace_route(s):
+    for before, after in [
+        ('import { z } from "zod";', 'import { managedWorkspace } from "./managed-workspace";\nimport { z } from "zod";'),
+        ('  if (url.pathname.startsWith("/api/auth/")) {', '  if (url.pathname === "/v1/managed-cloud/workspace") return managedWorkspace(request, env);\n\n  if (url.pathname.startsWith("/api/auth/")) {'),
+    ]:
+        if after not in s:
+            s = must(s, before, after)
+    return s
+edit("cloudflare/control-plane/src/index.ts", managed_workspace_route)

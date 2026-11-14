@@ -1,3 +1,4 @@
+import { managedWorkspace } from "./managed-workspace";
 import { z } from "zod";
 
 import { accountSession, createAuth, deleteExpiredVerifications } from "./auth";
@@ -76,6 +77,8 @@ async function route(
 ) {
   const url = new URL(request.url);
   if (request.method === "OPTIONS") return preflight(request, config);
+
+  if (url.pathname === "/v1/managed-cloud/workspace") return managedWorkspace(request, env);
 
   if (url.pathname.startsWith("/api/auth/")) {
     const limited = await limitedOTPResponse(request, env);

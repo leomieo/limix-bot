@@ -27,21 +27,23 @@ export async function limixSession(request: Request, env: Env): Promise<LimixSes
   if (!base.startsWith("https://")) throw new HTTPError(503, "limix_account_unavailable");
   let machineId: string;
   try { machineId = fromBase64Url(match[1]); } catch { return null; }
-  let answer: { valid?: boolean; username?: string } | null = null;
+  let answer: unknown;
   try {
     const response = await fetch(`${base}/validate`, {
       method: "POST",
+      redirect: "error",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ token: match[2], machine_id: machineId }),
       signal: AbortSignal.timeout(8_000),
     });
     if (!response.ok && response.status >= 500) throw new HTTPError(503, "limix_account_unavailable");
+    if (!response.ok) return null;
     answer = await response.json().catch(() => null);
   } catch (error) {
     if (error instanceof HTTPError) throw error;
     throw new HTTPError(503, "limix_account_unavailable");
   }
-  if (!answer?.valid || typeof answer.username !== "string") return null;
+  if (!answer || typeof answer !== "object" || !("valid" in answer) || answer.valid !== true || !("username" in answer) || typeof answer.username !== "string") return null;
   const key = limixUserKey(answer.username);
   if (!key) return null;
   const id = `limix:${key}`;
