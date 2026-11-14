@@ -212,3 +212,5 @@
 - 2026-11-14 trước push 0.3.33: TypeScript UI/server đạt; 29/29 HTTP + UI backup sau thay đổi accountReady đạt; tái dựng từ base 4aaad48 chạy hai lượt thành công, idempotent và không lệch file patch. Giữ module đồng bộ server tắt. Sẽ chạy lại toàn bộ desktop CI; chưa nhận là phát hành cho tới khi all-platform gate đạt.
 
 - 2026-11-14 CI 43548573503: macOS kiểm thử Node phát hiện assertion đường dẫn /var và /private/var khác nhau sau canonicalize. Đã sửa kỳ vọng test dùng realpath (mã cài đặt đúng); Windows/Linux tiếp tục chạy. Site 43548604239 success gồm kiểm tra live FAQ đóng, đủ 4 placeholder và downloads.js khớp nguồn.
+
+- 2026-11-14 CI 43548740166: Windows success; Mac đã build cả hai kiến trúc, health packaged Apple Silicon đạt, đang upload; Linux packaged server health đạt. Lỗi gom artifact Linux do electron-builder đặt tên x86_64.AppImage nhưng workflow dùng x64.AppImage. Đã sửa tham chiếu file đúng; vẫn giữ all-platform publish gate.
