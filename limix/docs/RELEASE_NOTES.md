@@ -1,9 +1,9 @@
-Limix Bot 0.3.43
-
-## Tiếng Việt
-
-Trong Cài đặt → AI → Nhà cung cấp AI khác, chọn **Xingchi (Codex Responses)**. Nhập khóa Xingchi và lưu để tải danh sách model của tài khoản. Khi chọn kết nối này cho bot, trò chuyện và tạo ảnh dùng cùng model và khóa. Việc tạo ảnh phụ thuộc vào quyền của khóa tại Xingchi.
+Limix Bot 0.3.44
 
 ## English
 
-In Settings → AI → More AI providers, select **Xingchi (Codex Responses)**. Save your Xingchi key to discover the models available to your account. Selecting this connection for a bot uses its chosen model and key for both chat and image generation. Image access depends on the permissions granted by Xingchi.
+Fix an overly broad channel conversation privacy guard that could block bot template names containing search, logs or export. Template routes remain accessible while conversation archives, search and activity require unlocking.
+
+## Tiếng Việt
+
+Sửa điều kiện bảo vệ cuộc trò chuyện chặn nhầm các tên bản mẫu chứa search, logs hoặc export. API bản mẫu truy cập được, còn lịch sử trò chuyện, tìm kiếm và hoạt động vẫn yêu cầu mở khóa.

@@ -1,0 +1,12 @@
+{
+  "server/index.ts": [
+    {
+      "before": "(/backup|export|session-search|search|activity|logs/.test(path))",
+      "after": "channelReviewSensitivePath(path)"
+    },
+    {
+      "before": "import { channelReviewRoute, channelReviewUntil }",
+      "after": "import { channelReviewSensitivePath } from \"./limix-channel-review-path.ts\";\nimport { channelReviewRoute, channelReviewUntil }"
+    }
+  ]
+}

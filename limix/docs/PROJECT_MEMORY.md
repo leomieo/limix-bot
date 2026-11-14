@@ -7,6 +7,8 @@
 
 ## 1. Trạng thái hiện tại (luôn ghi đè cho đúng)
 
+- 2026-11-15 preparing 0.3.44: channel review guard matches route segments and excludes bot-template endpoints. 18 targeted tests PASS; screenshot request itself not captured.
+
 - 0.3.43 adds a dedicated Xingchi Codex Responses preset in More AI providers. The image tool uses the selected preset for that conversation, retaining image limits.
 
 - 2026-11-15 preparing 0.3.42: always advertise native generate_image, including missing setup; stable English routing instructions; reject Composio image-generation slugs (direct and multi-execute) before upstream. Missing setup returns Settings path and no fabricated success. 82 targeted tests PASS + one isolated real-server/fake-engine MCP test PASS; TypeScript PASS. Desktop 0.3.41 CI 43624714392 completed success across all platforms and publish. New routing release pending.
@@ -72,6 +74,8 @@
 
 ## 4. Vấn đề mở / rủi ro
 
+- Exact request causing template screenshot error remains unobserved. Packaged regression is pending CI.
+
 - Xingchi account permissions and packaged UI remain unverified. Network and sandbox permissions remain scoped by Limix.
 
 - 2026-11-15 image routing: live Xingchi capability/403 account entitlement NOT_TESTED. Native image limits and person-turn rules unchanged. Connector guard recognizes image-generation slugs, not arbitrary opaque workbench code; do not claim universal prevention of external image services. 9 pre-existing system-prompt/catalog golden-budget tests fail identically on HEAD (baseline verified); no new failures in targeted routing tests.
@@ -102,6 +106,8 @@
 | R10 | Máy chủ Claude không đẩy được tag git (chỉ đẩy nhánh) | Build kích hoạt bằng push lên `main`; tag phát hành do workflow tự tạo | Đã xử lý |
 
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
+
+- 2026-11-15 fixed overbroad channel privacy path matcher and added template/search/archive regression coverage.
 
 - 2026-11-15 added Xingchi preset, isolated endpoint key, model discovery and same-provider image routing. Focused tests 100/100 with simulated provider.
 
