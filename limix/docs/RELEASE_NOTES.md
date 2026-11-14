@@ -1,6 +1,6 @@
 Limix Bot 0.3.35 — Windows, macOS Apple Silicon, macOS Intel và Linux x64.
 
-Tích hợp có chọn lọc từ OpenMausBot 0.1.155:
+Cải tiến chat và các nhà cung cấp AI:
 
 - Kéo phòng chat để sắp xếp trong thanh bên; hỗ trợ Alt+↑/↓, lưu thứ tự và đồng bộ giữa các cửa sổ.
 - Đính kèm file nén ZIP, TAR/GZ, 7z… trong chat dưới dạng tệp; ứng dụng không tự giải nén.
@@ -10,7 +10,7 @@ Tích hợp có chọn lọc từ OpenMausBot 0.1.155:
 - Sửa phân biệt bot bị hệ thống dừng với người dùng chủ động dừng; tránh gửi lặp yêu cầu đánh dấu đã đọc.
 - Mở xem trước Markdown Windows-1252 và hiển thị lý do server từ chối tệp rõ hơn.
 
-Đây là bản tích hợp chọn lọc, không phải nhập toàn bộ upstream. Cloud và đồng bộ tài khoản vẫn tắt. Danh sách nguồn và phần chưa tích hợp: `limix/docs/UPSTREAM_0.1.155.md` trong mã nguồn.
+Cloud và đồng bộ tài khoản vẫn tắt.
 
 Bao gồm các cải tiến từ 0.3.34:
 

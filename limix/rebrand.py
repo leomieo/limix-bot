@@ -144,9 +144,8 @@ edit("public/manifest.webmanifest", manifest)
 
 # 4. Author and upstream attribution in the About dialog.
 def about(s):
-    # Owner's choice 2026-11-12: the About window shows only the author. The Apache-2.0 attribution stays in NOTICE, the
-    # README, the License link and as a hover note on the author line.
-    line = f'        <p className="mt-2 text-[12px] text-ink-secondary" title="Based on OpenMausBot (Apache-2.0)">{AUTHOR}</p>\n'
+    s = s.replace(' title="Based on OpenMausBot (Apache-2.0)"', '')
+    line = f'        <p className="mt-2 text-[12px] text-ink-secondary">{AUTHOR}</p>\n'
     old_line = f'        <p className="mt-2 text-[12px] text-ink-secondary">{AUTHOR} · Based on OpenMausBot (Apache-2.0)</p>\n'
     if old_line in s:
         return s.replace(old_line, line)

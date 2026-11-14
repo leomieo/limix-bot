@@ -4,6 +4,10 @@
 > Đọc file này TRƯỚC mỗi phiên. Tài liệu thiết kế chi tiết: `CLAUDE_BOT_PLATFORM_CONTEXT.md`.
 > Nếu file này mâu thuẫn với tài liệu khác, file này thắng. Chỉ chủ dự án được sửa các quyết định ở mục 2.
 
+## Project-wide branding and commit policy
+
+Use Limix Bot for product-facing names, release notes, commit subjects/bodies and public project summaries. Do not add upstream project names, upstream author names or Co-authored-by trailers to integration commits. Integrate changes under the Limix Bot identity. Preserve required copyright, LICENSE, NOTICE and third-party notices. Preserve protocol identifiers, migration aliases and compatibility paths unless a verified migration replaces them. Keep precise source provenance in engineering records, outside product copy. Do not rewrite unrelated historical authorship.
+
 ## 1. Dự án là gì (một câu)
 
 Limix Bot = ứng dụng tạo và quản lý Bot AI — **bản fork đổi thương hiệu của OpenMausBot** (giao diện như mausbot.com), tác giả **Leox ৹ Limix AI**, thêm **tự học skill** và **kết nối native** tới Telegram, Zalo, WhatsApp, Discord, lấy có chọn lọc từ **Hermes Agent**.
