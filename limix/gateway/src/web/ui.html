@@ -186,6 +186,9 @@ dialog .actions { display:flex; justify-content:flex-end; gap:8px; margin-top:6p
   .kv { grid-template-columns:1fr; gap:2px; } .kv dd { margin-bottom:8px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+.setup-advanced { margin: 12px 0; }
+summary { cursor: pointer; font-weight: 600; }
+.setup-advanced[open] > summary { margin-bottom: 12px; }
 </style>
 </head>
 <body>
@@ -240,6 +243,7 @@ dialog .actions { display:flex; justify-content:flex-end; gap:8px; margin-top:6p
 <dialog id="addDialog" aria-labelledby="addTitle">
   <header><h2 id="addTitle">Kết nối bot mới</h2><button class="icon-btn" type="button" data-close aria-label="Đóng"><svg class="i"><use href="#i-x"/></svg></button></header>
   <form id="addForm" novalidate>
+    <p class="sub">Chọn nền tảng, dán token và chọn bot AI. Limix Bot tự thiết lập kết nối.</p>
     <div class="field"><span>Nền tảng</span>
       <div class="choice" role="radiogroup" aria-label="Nền tảng">
         <label><input type="radio" name="platform" value="telegram" checked><span class="avatar telegram"><svg class="i" aria-hidden="true"><use href="#i-send"/></svg></span><span style="display:grid;gap:2px"><b>Telegram</b><span class="help">Token từ @BotFather</span></span></label>
@@ -257,6 +261,7 @@ dialog .actions { display:flex; justify-content:flex-end; gap:8px; margin-top:6p
       <p class="help">Dùng Page access token có quyền pages_messaging. Sau khi tạo, cấu hình callback HTTPS và đăng ký sự kiện messages trong Meta App. App Review cần hoàn tất để phục vụ khách ngoài vai trò thử nghiệm.</p>
     </div>
     <label class="field"><span>Token của bot</span><input name="token" type="password" autocomplete="off" required placeholder="Dán token vào đây"><span class="help" id="tokenHelp">Telegram: nhắn @BotFather → /newbot → copy token.</span></label>
+    <details class="setup-advanced"><summary>Tên hiển thị và chế độ thử</summary>
     <label class="field"><span>Tên hiển thị (không bắt buộc)</span><input name="name" maxlength="60" placeholder="Ví dụ: Trợ lý bán hàng"></label>
     <div class="field"><span>Bộ não AI</span>
       <div class="seg">
@@ -264,6 +269,7 @@ dialog .actions { display:flex; justify-content:flex-end; gap:8px; margin-top:6p
         <label><input type="radio" name="engineKind" value="echo"><span><b>Chế độ thử</b><span>Bot nhắc lại tin bạn gửi, để kiểm tra kết nối.</span></span></label>
       </div>
     </div>
+    </details>
     <div id="ombFields">
       <label class="field"><span>Bot AI trong Limix Bot</span><select name="appBot" data-appbot></select><span class="help">Chọn bot: Limix Bot tự bật Bot API, lấy địa chỉ và khóa. Không cần chép tay.</span></label>
       <div class="manual">
@@ -271,6 +277,7 @@ dialog .actions { display:flex; justify-content:flex-end; gap:8px; margin-top:6p
       <label class="field"><span>Khóa Bot API</span><input name="apiKey" type="password" autocomplete="off" placeholder="bak_…"><span class="help">Limix Bot: mở bot → bánh răng → Advanced: Access → Bot API → bật “Let apps talk to this bot”, copy địa chỉ và khóa.</span></label>
       </div>
     </div>
+    <details class="setup-advanced"><summary>Quyền truy cập</summary><p class="help">Mặc định, người lạ cần bạn duyệt trước khi trò chuyện.</p>
     <label class="field"><span>Ai được nhắn cho bot</span>
       <select name="accessPolicy">
         <option value="pairing">Người lạ xin mã, bạn duyệt (khuyên dùng)</option>
@@ -278,6 +285,7 @@ dialog .actions { display:flex; justify-content:flex-end; gap:8px; margin-top:6p
         <option value="open">Mọi người</option>
       </select>
     </label>
+    </details>
     <p class="form-error" id="addError" role="alert"></p>
     <div class="actions"><button class="btn ghost" type="button" data-close>Hủy</button><button class="btn primary" type="submit"><svg class="i" aria-hidden="true"><use href="#i-link"/></svg>Kết nối</button></div>
   </form>
@@ -326,6 +334,16 @@ async function fillFromApp(f) {
 let S = { connections: [], pairing: [], activity: [] };
 let view = { name: "home" };
 let lastMain = "";
+const linkCodes = new Map();
+function linkCodeMarkup(c) {
+  const saved = linkCodes.get(c.id);
+  if (!saved || c.ownerIds.length > saved.owners || saved.until <= Date.now()) { linkCodes.delete(c.id); return ""; }
+  return `<div class="code" style="margin-bottom:12px"><span>/link ${esc(saved.code)}</span><button class="icon-btn" data-act="copy" data-text="/link ${esc(saved.code)}" aria-label="Sao chép">${icon("copy")}</button></div>`;
+}
+async function prepareLinkCode(id) {
+  const result = await api(`/api/connections/${id}/link-code`, {});
+  linkCodes.set(id, { code: result.code, owners: conn(id)?.ownerIds.length ?? 0, until: Date.now() + 15 * 60 * 1000 });
+}
 
 function prefTheme() { try { return localStorage.getItem("limix.theme") || "system"; } catch { return "system"; } }
 function applyTheme(t) {
@@ -412,10 +430,10 @@ function botView(c) {
   return `<div class="top">${avatar(c, 36)}<div><h1>${esc(c.name)}</h1><div class="help">${esc(PLATFORM[c.platform])} · ${esc(who)}${c.status === "running" ? "" : ` · ${esc(STATUS[c.status] || c.status)}`}</div></div><span class="grow"></span>${actions}</div>
   <div class="content">
     ${c.statusDetail ? `<div class="note ${bad ? "bad" : "warn"}">${icon("alert")}<span>${esc(c.statusDetail)}</span></div>` : ""}
-    ${c.ownerIds.length ? "" : `<div class="note warn">${icon("shield")}<span>Bot chưa có chủ. Tạo mã liên kết bên dưới rồi gửi từ điện thoại để xác nhận bạn là chủ bot.</span></div>`}
+    ${c.ownerIds.length ? "" : `<div class="note warn">${icon("shield")}<span>Hoàn tất kết nối: sao chép mã bên dưới và gửi vào bot từ tài khoản của bạn. Sau đó gửi một tin nhắn để kiểm tra AI trả lời.</span></div>`}
     <div class="grid2">
       <section class="card"><h2>${icon("link")}Liên kết chủ bot</h2><p class="sub">Mở bot trên điện thoại và gửi mã. Mã dùng một lần, hết hạn sau 15 phút.</p>
-        <div id="codeBox"></div>
+        <div id="codeBox">${linkCodeMarkup(c)}</div>
         <button class="btn" data-act="link-code" data-id="${c.id}">${icon("plus")}Tạo mã liên kết</button></section>
       <section class="card"><h2>${icon("cpu")}Bộ não AI</h2><p class="sub">${c.engine.kind === "echo" ? "Đang ở chế độ thử: bot nhắc lại tin nhắn." : "Bot AI trong Limix Bot trả lời qua Bot API."}</p>
         <dl class="kv"><dt>Loại</dt><dd>${c.engine.kind === "echo" ? "Chế độ thử" : "Limix Bot"}</dd>
@@ -430,7 +448,7 @@ function botView(c) {
             </div>
             <button class="btn primary" type="submit">${icon("check")}Lưu</button></form></details></section>
     </div>
-    <section class="card"><h2>Tệp và media</h2><p class="sub">${esc(c.mediaSupport?.note || "")}</p>
+    <section class="card"><details><summary>Tệp và media · Tùy chọn nâng cao</summary><p class="sub">${esc(c.mediaSupport?.note || "")}</p>
       <form class="mediaForm" data-id="${c.id}">
         ${c.platform === "facebook" ? `<p class="help">Callback: HTTPS của bạn + <code>${esc(c.webhookPath)}</code>. Chỉ chuyển tiếp /hooks/facebook/* và /hooks/limix-media/* tới cổng gateway; không công khai giao diện quản trị.</p>` : ""}
         ${["facebook", "zalo"].includes(c.platform) ? `<label class="field"><span>Địa chỉ HTTPS để gửi media (không bắt buộc)</span><input name="publicMediaBase" type="url" value="${esc(c.publicMediaBase || "")}" placeholder="https://bot.example.com"><span class="help">Cần proxy /hooks/limix-media/* tới gateway. Khi bật, tệp gửi có liên kết bí mật tồn tại 5 phút để nền tảng tải về. Không có server HTTPS: vẫn nhận media, chưa gửi media qua URL.</span></label>` : ""}
@@ -442,7 +460,7 @@ function botView(c) {
         <label class="field"><span>Số tệp tối đa mỗi tin</span><input name="maxCount" type="number" min="1" max="4" value="${c.media?.maxCount || 4}" required></label>
         <p class="help">Tệp nhận được lưu trong dữ liệu của Limix Bot. Khả năng hiểu ảnh, nghe âm thanh hoặc phân tích video còn phụ thuộc AI và công cụ của bot. Không tự chạy tệp nhận được.</p>
         <button class="btn primary" type="submit">Lưu thiết lập media</button>
-      </form></section>
+      </form></details></section>
     <section class="card"><h2>${icon("users")}Trong nhóm chat</h2><p class="sub">Khi bạn thêm bot vào một nhóm Zalo, Telegram hoặc kênh Discord. Bot chỉ trả lời người đã được phép nhắn cho bot.</p>
       <div class="seg" role="radiogroup" aria-label="Trong nhóm chat">${Object.entries(GROUP).map(([k, [t, d]]) => `<label><input type="radio" name="group-${c.id}" value="${k}" data-group="${c.id}" ${k === (c.groupMode || "mention") ? "checked" : ""}><span><b>${t}</b><span>${d}</span></span></label>`).join("")}</div></section>
     <section class="card"><h2>${icon("shield")}Ai được nhắn cho bot</h2><p class="sub">Áp dụng ngay, không cần chạy lại.</p>
@@ -544,9 +562,9 @@ document.addEventListener("click", async (ev) => {
     if (act === "approve" || act === "deny") { await api(`/api/pairing/${id}/${act}`, {}); toast(act === "approve" ? "Đã duyệt." : "Đã từ chối."); }
     else if (act === "remove-person") { await api(`/api/connections/${id}/remove-person`, { personId: b.dataset.person }); toast("Đã gỡ quyền."); }
     else if (act === "link-code") {
-      const r = await api(`/api/connections/${id}/link-code`, {});
+      await prepareLinkCode(id);
       const box = $("#codeBox");
-      box.innerHTML = `<div class="code" style="margin-bottom:12px"><span>/link ${esc(r.code)}</span><button class="icon-btn" data-act="copy" data-text="/link ${esc(r.code)}" aria-label="Sao chép">${icon("copy")}</button></div>`;
+      box.innerHTML = linkCodeMarkup(conn(id));
       b.disabled = false; return;
     }
     else if (act === "copy") {
@@ -597,7 +615,7 @@ function syncForm() {
   syncManual(form);
   $("#facebookFields").hidden = form.platform.value !== "facebook";
   $("#ombFields").hidden = form.engineKind.value !== "openmausbot";
-  $("#tokenHelp").textContent = form.platform.value === "facebook" ? "Facebook: nhập Page access token, không dùng token tài khoản cá nhân." : form.platform.value === "discord" ? "Discord: discord.com/developers → New Application → Bot → Reset Token → copy; bật Message Content Intent." : form.platform.value === "zalo" ? "Zalo: đăng nhập bot.zaloplatforms.com → tạo bot → copy token." : "Telegram: nhắn @BotFather → /newbot → copy token.";
+  $("#tokenHelp").textContent = form.platform.value === "facebook" ? "Facebook: nhập Page access token, không dùng token tài khoản cá nhân." : form.platform.value === "discord" ? "Discord: discord.com/developers → New Application → Bot → Reset Token → copy; bật Message Content Intent." : form.platform.value === "zalo" ? "Zalo: mở bot.zaloplatforms.com, đăng nhập và tạo bot. Dán token tại đây; Limix Bot tự nhận tin khi kết nối." : "Telegram: nhắn @BotFather → /newbot → copy token.";
 }
 function openAdd() { form.reset(); $("#addError").textContent = ""; void loadAppBots(); syncForm(); dlg.showModal(); form.token.focus(); }
 form.addEventListener("change", syncForm);
@@ -613,8 +631,10 @@ form.addEventListener("submit", async (ev) => {
     if (form.engineKind.value === "openmausbot") await fillFromApp(form);
     const r = await api("/api/connections", Object.fromEntries(new FormData(form)));
     dlg.close();
-    toast(r.engineCheck && !r.engineCheck.ok ? `Đã kết nối, nhưng AI báo: ${r.engineCheck.message}` : "Đã kết nối. Tạo mã liên kết để xác nhận bạn là chủ bot.", r.engineCheck && !r.engineCheck.ok);
+    toast(r.engineCheck && !r.engineCheck.ok ? `Đã kết nối, nhưng AI báo: ${r.engineCheck.message}` : "Đã kết nối. Gửi mã liên kết bên dưới vào bot để hoàn tất.", r.engineCheck && !r.engineCheck.ok);
     await refresh(true); go("bot", r.connection.id);
+    try { await prepareLinkCode(r.connection.id); renderMain(true); }
+    catch (error) { toast("Bot đã kết nối. Chưa lấy được mã chủ bot: " + error.message + ". Bấm Tạo mã liên kết để thử lại.", true); }
   } catch (e) { err.textContent = e.message; }
   finally { btn.disabled = false; btn.lastChild.textContent = "Kết nối"; }
 });

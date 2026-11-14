@@ -7,6 +7,8 @@
 
 ## 1. Trạng thái hiện tại (luôn ghi đè cho đúng)
 
+- 2026-11-15 preparing 0.3.45: simplified gateway setup, folded name/test/access/media settings, automatic owner code after create and transient code retained across refresh until owner verification/expiry. 13 DOM/API tests PASS. Live Zalo NOT_TESTED.
+
 - 2026-11-15 preparing 0.3.44: channel review guard matches route segments and excludes bot-template endpoints. 18 targeted tests PASS; screenshot request itself not captured.
 
 - 0.3.43 adds a dedicated Xingchi Codex Responses preset in More AI providers. The image tool uses the selected preset for that conversation, retaining image limits.
@@ -74,6 +76,8 @@
 
 ## 4. Vấn đề mở / rủi ro
 
+- Zalo token issuance still requires the platform website. Sending media still needs the existing HTTPS configuration. Packaged visual and live Zalo acceptance pending.
+
 - Exact request causing template screenshot error remains unobserved. Packaged regression is pending CI.
 
 - Xingchi account permissions and packaged UI remain unverified. Network and sandbox permissions remain scoped by Limix.
@@ -106,6 +110,8 @@
 | R10 | Máy chủ Claude không đẩy được tag git (chỉ đẩy nhánh) | Build kích hoạt bằng push lên `main`; tag phát hành do workflow tự tạo | Đã xử lý |
 
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
+
+- 2026-11-15 simplified Zalo/gateway onboarding and automated the initial owner link code with retry on failure.
 
 - 2026-11-15 fixed overbroad channel privacy path matcher and added template/search/archive regression coverage.
 
