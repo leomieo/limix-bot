@@ -11,6 +11,22 @@ import { lxm } from "./limix-lang.mjs";
 const PORT = 8790;
 const URL_ = `http://127.0.0.1:${PORT}/`;
 
+export function configureGatewayPermissions(contents, pageUrl) {
+  const allowed = (sender, permission, requesting, details) => {
+    if (sender !== contents || permission !== "clipboard-sanitized-write" || details?.isMainFrame !== true) return false;
+    try {
+      const origin = new URL(pageUrl).origin;
+      return new URL(requesting).origin === origin && new URL(contents.getURL()).origin === origin;
+    } catch {
+      return false;
+    }
+  };
+  contents.session.setPermissionCheckHandler(allowed);
+  contents.session.setPermissionRequestHandler((sender, permission, callback, details) => {
+    callback(allowed(sender, permission, details?.requestingUrl, details));
+  });
+}
+
 export function createLimixGateway({ app, BrowserWindow, shell, resourcesPath, userData, iconPath, log = () => {}, ownerLaneToken, serverRequest }) {
   const entry = [path.join(resourcesPath, "limix-gateway", "src", "main.mjs"), path.join(app.getAppPath(), "limix", "gateway", "src", "main.mjs")]
     .find((candidate) => fs.existsSync(candidate));
@@ -96,8 +112,9 @@ export function createLimixGateway({ app, BrowserWindow, shell, resourcesPath, u
     window = new BrowserWindow({
       width: 1040, height: 720, minWidth: 760, minHeight: 520, backgroundColor: "#0a0a0a", icon: iconPath,
       title: lxm("Kết nối Zalo · Telegram · Discord", "Connect Zalo · Telegram · Discord"), autoHideMenuBar: true,
-      webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false },
+      webPreferences: { partition: "limix-gateway", contextIsolation: true, sandbox: true, nodeIntegration: false },
     });
+    configureGatewayPermissions(window.webContents, URL_);
     window.setMenu(null);
     window.webContents.setWindowOpenHandler(({ url }) => { if (/^https:\/\//.test(url)) void shell.openExternal(url); return { action: "deny" }; });
     window.webContents.on("will-navigate", (event, url) => { if (!url.startsWith(URL_)) event.preventDefault(); });

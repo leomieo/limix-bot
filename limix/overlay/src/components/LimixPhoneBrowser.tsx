@@ -4,6 +4,7 @@ import { Check, Copy, Globe, Loader2, RefreshCw, Smartphone, Wifi } from "lucide
 
 import { api } from "@/state/api";
 import { lx } from "@/lib/limix-text";
+import { useCopyFeedback } from "@/lib/copy-text";
 
 /** Limix Bot has no phone app: a phone opens this computer's Limix Bot in its browser instead. The QR is an ordinary
  * web link (http://<this computer on the Wi-Fi>/pair#code=…) that any camera opens; the code signs that browser in once. */
@@ -211,22 +212,15 @@ function RemotePane() {
 
 /** For a laptop or another computer: open the copied link there (it signs that browser in once), or type the code. */
 function CopyRow({ url, code }: { url: string; code: string }) {
-  const [copied, setCopied] = useState<"link" | "code" | null>(null);
-  const copy = async (what: "link" | "code", text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(what);
-      setTimeout(() => setCopied(null), 1500);
-    } catch {
-      setCopied(null);
-    }
-  };
+  const linkCopy = useCopyFeedback(url);
+  const codeCopy = useCopyFeedback(code);
   return (
     <div className="flex flex-col items-center gap-1.5">
       <div className="flex flex-wrap justify-center gap-2">
-        <button type="button" className={button} onClick={() => void copy("link", url)}>{copied === "link" ? <Check size={14} /> : <Copy size={14} />}{copied === "link" ? lx("Đã chép link", "Link copied") : lx("Chép link", "Copy link")}</button>
-        <button type="button" className={button} onClick={() => void copy("code", code)}>{copied === "code" ? <Check size={14} /> : <Copy size={14} />}{copied === "code" ? lx("Đã chép mã", "Code copied") : lx("Chép mã", "Copy code")}</button>
+        <button type="button" className={button} onClick={linkCopy.copy}>{linkCopy.state === "copied" ? <Check size={14} /> : <Copy size={14} />}{linkCopy.state === "copied" ? lx("Đã chép link", "Link copied") : lx("Chép link", "Copy link")}</button>
+        <button type="button" className={button} onClick={codeCopy.copy}>{codeCopy.state === "copied" ? <Check size={14} /> : <Copy size={14} />}{codeCopy.state === "copied" ? lx("Đã chép mã", "Code copied") : lx("Chép mã", "Copy code")}</button>
       </div>
+      {(linkCopy.state === "failed" || codeCopy.state === "failed") && <p role="alert" className="text-[12px] text-danger">{lx("Không thể sao chép. Hãy chọn và sao chép trực tiếp.", "Could not copy. Select and copy the text directly.")}</p>}
       <p className="text-center text-[11px] text-ink-tertiary">{lx("Dùng trên laptop: dán link vào trình duyệt là vào thẳng. Link chỉ dùng được một lần.", "On a laptop: paste the link into a browser to go straight in. The link works only once.")}</p>
     </div>
   );

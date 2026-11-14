@@ -7,6 +7,8 @@
 
 ## 1. Trạng thái hiện tại (luôn ghi đè cho đúng)
 
+- **Đang sửa 0.3.36:** sao chép mã liên kết chủ bot không còn báo thành công khi clipboard bị từ chối. Cửa sổ gateway dùng session riêng, chỉ cấp clipboard-sanitized-write cho main frame đúng origin/cửa sổ; có fallback chọn văn bản và lỗi rõ ràng. Chưa phát hành 0.3.36.
+
 - **Đang phát triển 2026-11-14:** đồng bộ dữ liệu tài khoản là module ẩn/tắt vì chưa có server; chuyển máy Offline bằng file có mật khẩu, chỉ nhập vào app bằng hoặc mới hơn; dọn trùng quản lý skills; chuẩn hóa English technical core; bổ sung macOS/Linux. Kế hoạch và giới hạn: `PLAN_ACCOUNT_DATA.md`. Desktop v0.3.35 đã được phát hành công khai cho Windows x64, macOS Apple Silicon/Intel và Linux x64; xem mốc phát hành bên dưới.
 
 - **Hướng chính (đổi 2026-11-11 18:41):** Limix Bot = **bản fork đổi thương hiệu của OpenMausBot** (giao diện như mausbot.com), phát hành file cài Windows `.exe` qua GitHub Actions của repo `leomieo/limix-bot`. `limix-gateway` (cổng Telegram/Zalo) là module sẽ gộp vào app ở mốc sau.
@@ -70,6 +72,8 @@
 | R10 | Máy chủ Claude không đẩy được tag git (chỉ đẩy nhánh) | Build kích hoạt bằng push lên `main`; tag phát hành do workflow tự tạo | Đã xử lý |
 
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
+
+- 2026-11-14 | Codex | Sửa lỗi clipboard ở gateway: mã cũ nuốt NotAllowedError nhưng vẫn báo Đã sao chép; cửa sổ gateway dùng default session với quyền chỉ dành cho origin app chính nên không được cấp ghi clipboard. Thêm session gateway tách biệt với quyền ghi hạn chế theo cửa sổ/origin/main frame, từ chối đọc clipboard và mọi quyền khác; web UI chờ kết quả, fallback execCommand, timeout 3 giây, báo lỗi/chọn mã khi thất bại. 5 kiểm thử UI và 2 kiểm thử quyền đạt; 4 HTTP gateway tests đạt. Electron 43 fixture trên cổng ngẫu nhiên xác nhận quyền ghi theo gesture granted và đọc denied. Chưa ghi thử clipboard hệ điều hành để giữ nguyên clipboard ảnh hiện có; chưa kiểm bản cài thực tế. Kiểm tra mở rộng phát hiện 2 guard tests thất bại vì LimixPhoneBrowser gọi clipboard trực tiếp từ trước; chuyển hai nút chép link/mã điện thoại sang useCopyFeedback dùng chung, có fallback và báo lỗi. Kiểm thử cuối đạt 27/27 Vitest clipboard/UI, 19/19 Electron clipboard và 32/32 gateway (HTTP/API/channels giả lập); không phải xác minh gửi tin nền tảng thật. TypeScript UI đã qua. Đồng bộ overlay/workflow nguồn; thêm kiểm thử gateway/clipboard trên cả ba OS; chuẩn bị 0.3.36.
 
 - 2026-11-14 | Codex | Cập nhật README song ngữ sau phát hành v0.3.35: hàng nút tải Windows, macOS Apple Silicon, macOS Intel và Linux x64; tách hàng phiên bản/giấy phép; bảng tải đủ EXE/DMG/AppImage/DEB ở cả hai ngôn ngữ; hướng dẫn bắt đầu và lưu ý nền tảng khớp gói đã public. Đồng bộ README gốc, overlay và brand asset. Chỉ sửa tài liệu, không khởi chạy lại build desktop. Nguồn trạng thái phát hành: API workflow 43554086881 và releases/latest.
 
