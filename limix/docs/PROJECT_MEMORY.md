@@ -8,13 +8,13 @@
 ## 1. Trạng thái hiện tại (luôn ghi đè cho đúng)
 
 - **Hướng chính (đổi 2026-11-11 18:41):** Limix Bot = **bản fork đổi thương hiệu của OpenMausBot** (giao diện như mausbot.com), phát hành file cài Windows `.exe` qua GitHub Actions của repo `leomieo/limix-bot`. `limix-gateway` (cổng Telegram/Zalo) là module sẽ gộp vào app ở mốc sau.
-- **Mốc đang làm:** phát hành 0.3.30 (main 63716b7, Windows run 43531575861); chuẩn bị 0.3.31 sửa công tắc Mở khi đăng nhập do Electron đọc sai đường dẫn có dấu cách.
-- **Bản đã phát hành:** v0.3.29, đã xác minh latest.yml và SHA-512 bản cài. 0.3.30 đang kiểm tra trên test-build, chưa phát hành.
+- **Mốc hoàn tất:** phát hành 0.3.31 tại main/tag 07b0860, sửa công tắc Mở khi đăng nhập do Electron đọc sai đường dẫn có dấu cách.
+- **Bản đã phát hành:** v0.3.31, Windows run 43533896116, npm 43533896083, server image 43533896079 đều success. latest.yml trỏ đúng 0.3.31, tải thật bản cài 298305452 byte khớp SHA-512, stable installer và blockmap có đủ. Bản 0.3.30 trước đó cũng đã xác minh.
 - **Đã làm được:** script `limix/rebrand.py` (chạy lại được, ổn định); logo đen trắng (hai khối bo tròn chồng nhau); linh vật mới 0.2.9: sao xanh ngọc + kính đen + mắt phát sáng (`limix/face.py`, rebrand bước 6a/6b/6d); tiếng Việt đủ 10210/10210 chuỗi; báo lỗi về hộp thư chủ dự án; Cloud là mô-đun ẩn; kiểm tra: 0 lỗi cú pháp, chạy từ bản sạch 6f226f15 → trùng khớp (trừ số phiên bản)
 - **Đã kiểm trên GitHub Actions (run 43018860396, thành công):** cài thư viện, typecheck + build, cấu trúc gói, `Limix Bot.exe`, kênh cập nhật leomieo/limix-bot, máy chủ đóng gói trả lời /api/health
-- **CHƯA kiểm:** cài và mở app thật 0.2.4+/0.2.5 trên máy Windows; linh vật 0.2.9 trong app thật (mới xem bằng ảnh dựng lại từ dữ liệu, chưa chạy vitest vì máy làm việc không có node_modules); thử gửi báo lỗi @devs thật
+- **CHƯA kiểm:** 30 máy ảo cùng chạy trên phần cứng thật; cập nhật/cài đặt 0.3.31 qua giao diện ứng dụng của chủ dự án; tự khởi động sau khi đăng xuất/đăng nhập Windows hoặc reboot. Khởi động cùng Windows đã thử API native với registry fixture riêng.
 - **Ủy quyền hiện tại:** chủ dự án đã yêu cầu đẩy thay đổi lên GitHub và phát hành để ứng dụng tự cập nhật; cho phép này thay thế luật tạm thời không push ngày 2026-11-12.
-- **Bước tiếp theo:** hoàn tất kiểm tra test-build, phát hành 0.3.30 trên main, xác minh bản cài và kênh cập nhật.
+- **Bước tiếp theo:** chủ dự án cập nhật 0.3.31 và kiểm tra công tắc Mở khi đăng nhập; chưa thử đăng xuất/reboot Windows.
 
 ## 2. Bản đồ thư mục dự án
 
@@ -68,6 +68,10 @@
 | R10 | Máy chủ Claude không đẩy được tag git (chỉ đẩy nhánh) | Build kích hoạt bằng push lên `main`; tag phát hành do workflow tự tạo | Đã xử lý |
 
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
+
+- 2026-11-14 | GitHub Actions + Codex | Phát hành và xác minh v0.3.31 | main/tag 07b0860; Windows 43533896116, npm 43533896083, image 43533896079 | Cả 3 workflow success; tải thật bản cài 298305452 byte khớp SHA-512 latest.yml; latest feed 0.3.31; stable installer và blockmap có đủ. Release notes tiếng Việt đã cập nhật.
+
+- 2026-11-14 | GitHub Actions + Codex | Phát hành v0.3.30; xác minh bản cài và metadata cập nhật trực tiếp từ Releases | tag/main 63716b7; Windows 43531575861, npm 43531575805, server image 43531575818 | Cả 3 workflow success; tải thật 298305129 byte, khớp SHA-512 latest.yml; latest feed 0.3.30; stable installer + blockmap có đủ.
 
 - 2026-11-14 | Codex | Sửa Mở khi đăng nhập trên Windows: truy vấn quoted execPath cho Electron 43.7.9 (upstream PR #54364), đăng ký/enable rõ ràng đúng executable; xác minh lại trạng thái sau thay đổi, báo lỗi khi hệ thống không áp dụng | electron/open-at-login.mjs + overlay, OpenAtLoginRow + overlay | Đọc HKCU thấy Limix Bot at login đã đăng ký. Electron thật: unquoted không tìm thấy, quoted thấy enabled. Fixture registry riêng kiểm bật, nhận Task Manager disabled, bật lại, tắt và xóa đúng mục thử; helper mới đọc bản cài thật là on (chỉ đọc). Không đăng xuất/khởi động lại Windows.
 
