@@ -7,6 +7,9 @@ import { parseBotProfilePatch } from "../bot-profile.ts";
 import { createOpenRouterModelCatalog } from "../decider/openrouter-models.ts";
 import { customImageUrl, imageProviderKey, imageSlots, type ImageCredentials } from "../image-generation.ts";
 import { checkProviderKey, type ProviderKeyKind } from "../provider-key-check.ts";
+import { imageGenPatchSchema } from "../image-generation-config.ts";
+import { savedImageConnections } from "../limix-image-connections.ts";
+import type { InstanceConfigMap } from "../contracts.ts";
 import { PASS, type RouteHandler } from "./table.ts";
 
 const GEMINI_OPENAI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai";
@@ -56,9 +59,31 @@ export async function testImageProvider(cfg: ImageCredentials, provider: ImagePr
   return { ok: true, check: verdict.check, ...(verdict.freeTier !== undefined ? { freeTier: verdict.freeTier } : {}) };
 }
 
-export function createImageSettingsRoutes(deps: { config: () => ImageCredentials; fetch?: typeof fetch }): RouteHandler {
+export function createImageSettingsRoutes(deps: { config: () => ImageCredentials; fetch?: typeof fetch; connections?: () => InstanceConfigMap; saveImage?: (patch: z.output<typeof imageGenPatchSchema>) => unknown }): RouteHandler {
   const models = createOpenRouterModelCatalog({ fetch: deps.fetch, output: "image", curated: IMAGE_MODEL_CHOICES.openrouter });
-  return async ({ req, res, path, method, json, readBody }) => {
+  return async ({ req, res, path, method, auth, json, readBody }) => {
+    if (path === "/api/images/connections") {
+      if (!auth.scopes.includes("admin")) return json(res, 403, { error: "Administrator access required" });
+      res.setHeader("cache-control", "no-store");
+      const connections = savedImageConnections(deps.connections?.() ?? {});
+      if (method === "GET") return json(res, 200, { connections: connections.map(({ key: _key, ...entry }) => entry) });
+      if (method !== "POST") return PASS;
+      if (!deps.saveImage) return json(res, 403, { error: "Image connection import is unavailable" });
+      const input = z.object({ id: z.string().min(1).max(200) }).strict().safeParse(await readBody(req, 8192));
+      if (!input.success) return json(res, 400, { error: "Choose a saved API connection" });
+      const entry = connections.find((item) => item.id === input.data.id);
+      if (!entry) return json(res, 404, { error: "Saved API connection is unavailable" });
+      const current = deps.config().imageGen;
+      const sameEndpoint = customImageUrl(deps.config()) === entry.url;
+      const patch = imageGenPatchSchema.parse({
+        customUrl: entry.url, customApiKey: entry.key,
+        primary: { provider: "custom", model: sameEndpoint ? current?.customModel ?? "" : "" },
+        customModel: sameEndpoint ? current?.customModel ?? "" : "",
+        customLocalImageExtension: sameEndpoint && current?.customLocalImageExtension === true,
+        fallback: null,
+      });
+      return json(res, 200, await deps.saveImage(patch));
+    }
     if (method === "POST" && path === "/api/bot-defaults/avatar") {
       const body = await readBody(req);
       if (!body || typeof body !== "object" || Array.isArray(body)) return json(res, 400, { error: "avatar preview must be a JSON object" });

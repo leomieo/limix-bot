@@ -14,14 +14,14 @@ const catalog = (...models: unknown[]) => new Response(JSON.stringify({ data: mo
 const listSchema = z.object({ source: z.string(), models: z.array(z.object({ id: z.string(), group: z.string() })) });
 const verdictSchema = z.object({ ok: z.boolean(), reason: z.string().optional(), model: z.string().optional(), freeTier: z.boolean().optional(), check: z.string().optional(), status: z.number().optional() });
 
-async function call(route: ReturnType<typeof createImageSettingsRoutes>, path: string, method: string, body?: unknown) {
+async function call(route: ReturnType<typeof createImageSettingsRoutes>, path: string, method: string, body?: unknown, admin = true) {
   const req = new IncomingMessage(new Socket());
   const res = new ServerResponse(req);
   let answer: { status: number; body: unknown } | null = null;
   const out = await route({
     req, res, url: new URL(`http://localhost${path}`), path, method,
     readBody: async () => body,
-    auth: { kind: "loopback", scopes: ["admin"] } as RequestAuth,
+    auth: { kind: "loopback", scopes: admin ? ["admin"] : ["client"] } as RequestAuth,
     json: (_res, status, sent) => { answer = { status, body: sent }; },
   });
   return { out, answer: answer as { status: number; body: unknown } | null };
@@ -138,5 +138,30 @@ describe("testing an image provider from Settings, without making an image", () 
   it("refuses a request that names no known provider", async () => {
     const { answer } = await call(createImageSettingsRoutes({ config: () => ({}), fetch: vi.fn<typeof fetch>() }), "/api/images/test", "POST", { provider: "acme" });
     expect(answer?.status).toBe(400);
+  });
+});
+
+
+describe("saved image connection routes", () => {
+  const connections = () => ({ api: { driver: "openai-compat", displayName: "My API", config: { url: "https://gateway.example/v1", key: "private-key" } } });
+  it("lists only public metadata and imports credentials server-side without a backup", async () => {
+    const saveImage = vi.fn(() => ({ imageGen: { customKeyConfigured: true } }));
+    const route = createImageSettingsRoutes({ config: () => ({ imageGen: { customUrl: "https://previous.example/v1", customModel: "previous-model", customLocalImageExtension: true } }), connections, saveImage });
+    const listed = await call(route, "/api/images/connections", "GET");
+    expect(listed.answer?.body).toEqual({ connections: [{ id: "api", name: "My API", url: "https://gateway.example/v1" }] });
+    expect(JSON.stringify(listed)).not.toContain("private-key");
+    const imported = await call(route, "/api/images/connections", "POST", { id: "api" });
+    expect(imported.answer?.status).toBe(200);
+    expect(JSON.stringify(imported)).not.toContain("private-key");
+    expect(saveImage).toHaveBeenCalledWith(expect.objectContaining({ customUrl: "https://gateway.example/v1", customApiKey: "private-key", primary: { provider: "custom", model: "" }, fallback: null, customLocalImageExtension: false }));
+  });
+  it("rejects non-admins, unknown IDs and client-supplied endpoint overrides before saving", async () => {
+    const saveImage = vi.fn();
+    const route = createImageSettingsRoutes({ config: () => ({}), connections, saveImage });
+    expect((await call(route, "/api/images/connections", "GET", undefined, false)).answer?.status).toBe(403);
+    expect((await call(route, "/api/images/connections", "POST", { id: "api" }, false)).answer?.status).toBe(403);
+    expect((await call(route, "/api/images/connections", "POST", { id: "gone" })).answer?.status).toBe(404);
+    expect((await call(route, "/api/images/connections", "POST", { id: "api", url: "https://evil.example" })).answer?.status).toBe(400);
+    expect(saveImage).not.toHaveBeenCalled();
   });
 });

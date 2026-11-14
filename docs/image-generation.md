@@ -6,8 +6,7 @@ The image is attached to the bot's reply when its turn ends, like a voice note.
 
 ## Setup
 
-Open **Settings → Image generation** (an AI page shown in Advanced mode; a
-link from the avatar editor opens it in Simple mode too). Choose:
+Open **Settings → AI → Image generation** in Simple mode, or the Image generation page in Advanced mode. Choose:
 
 - **Base provider**: used first for every image.
 - **Backup provider** (optional): used only when the base could not start.
@@ -16,7 +15,7 @@ link from the avatar editor opens it in Simple mode too). Choose:
   (`/api/v1/models?output_modalities=image`, fetched without a key and kept
   for an hour). When the catalog cannot be loaded, the page says so and shows
   only the recommended ones. **Other** opens a field to type any model ID.
-  Custom has no list, so its model is always typed.
+  Custom Images API uses a typed model ID. Custom Responses API offers `gpt-6.1-sol`, `gpt-6-astra`, and a field for another ID. These choices are not a live capability check.
 - **Images per reply**: the most images a bot may create in one turn (1–10,
   default 4). Images still being made count, so parallel calls cannot pass it.
   Images from Codex's own image tool count toward the same limit.
@@ -45,7 +44,7 @@ needs, so a bot never spends a turn finding out it cannot make images.
 | Grok (xAI) | in this section; the same key as under **API keys** | `grok-imagine-image-2.0` | `api.x.ai/v1/images/generations` |
 | Gemini | its own (Google AI Studio), in this section | `gemini-2.5-flash-image` | `generativelanguage.googleapis.com/v1beta/openai/images/generations` |
 | OpenRouter | in this section; the same key as under **API keys** | `google/gemini-2.5-flash-image` | `openrouter.ai/api/v1/images` |
-| Custom | optional, in this section | none: enter one | `<base URL>/images/generations` |
+| Custom | optional, in this section | none: enter one | `<base URL>/images/generations` or `<base URL>/responses` |
 
 Each key goes only to its own provider; a missing key is never borrowed from
 another one. Signing in to a ChatGPT, Claude, Gemini, Grok or Copilot
@@ -101,3 +100,20 @@ redirects, and asynchronous job responses are not supported.
 Each decoded image is limited to 10 MiB, the response to 15 MiB, and
 generation to two minutes. Provider error bodies are never shown or stored:
 an error names only the provider, the HTTP status and the model ID.
+
+
+## Custom Responses API / API Responses tùy chỉnh
+
+**English:** Choose Custom and select **Responses API · image_generation**. Set the API base URL and key, then choose the chat model that your endpoint supports. Limix sends `store: false`, a text prompt and the `image_generation` tool, and accepts only a completed image result containing valid raster bytes. Text-only replies are failures, not generated images. No other image provider is selected automatically unless you explicitly configured a backup.
+
+Use **Use a saved API connection** to copy an OpenAI-compatible connection's address and key entirely on the server. This clears the backup and, when changing endpoint, the previous image model and extension header. Select the protocol and model after importing. Keys are copied once, not synchronized. CLI sign-ins are not API keys and cannot be imported this way.
+
+For the Xingchi configuration supplied by the project owner: base URL `https://api.xingchiapi.com/v1`, protocol Responses, model `gpt-6.1-sol` or `gpt-6-astra`. Enable the optional local-image-extension header only when your gateway requires it. The provider key must be entered privately in the app. These settings follow the supplied configuration; live Xingchi image generation has not been verified. The Test button checks credentials, not generation capability. Image edits and streaming responses are not implemented by this adapter.
+
+**Tiếng Việt:** Chọn Custom và **Responses API · image_generation**. Nhập địa chỉ API, khóa và chọn model chat được endpoint hỗ trợ. Limix gửi `store: false`, yêu cầu tạo ảnh qua công cụ `image_generation`, và chỉ nhận kết quả hoàn tất chứa dữ liệu ảnh hợp lệ. Câu trả lời bằng chữ không được coi là ảnh. Chỉ dùng nhà cung cấp dự phòng nếu bạn đã cấu hình rõ ràng.
+
+Nút **Dùng kết nối API đã lưu** sao chép địa chỉ và khóa hoàn toàn trong máy chủ, bỏ dự phòng; khi đổi endpoint sẽ xóa model ảnh và header mở rộng cũ. Chọn lại giao thức và model sau khi nhập. Khóa được sao chép một lần, không đồng bộ về sau. Đăng nhập CLI không phải khóa API nên không nhập bằng cách này.
+
+Với cấu hình Xingchi do chủ dự án cung cấp: URL `https://api.xingchiapi.com/v1`, giao thức Responses, model `gpt-6.1-sol` hoặc `gpt-6-astra`. Bật header local-image-extension nếu gateway yêu cầu. Nhập khóa riêng trong app. Chưa kiểm chứng tạo ảnh trên Xingchi thật; nút Kiểm tra chỉ kiểm tra khóa. Adapter này chưa hỗ trợ sửa ảnh hoặc phản hồi streaming.
+
+Protocol reference: https://developers.openai.com/api/docs/guides/image-generation (checked 2026-11-15). This documents OpenAI's protocol, not Xingchi's implementation.

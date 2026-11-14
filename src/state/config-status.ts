@@ -131,6 +131,8 @@ export interface ConfigStatus {
     ready?: boolean;
     maxPerTurn?: number;
     customUrl?: string;
+    customApi?: "images" | "responses";
+    customLocalImageExtension?: boolean;
     customModel?: string;
     openaiConfigured?: boolean;
     xaiConfigured?: boolean;

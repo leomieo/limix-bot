@@ -208,13 +208,19 @@ export async function generateImageWith(
   const apiKey = provider.key(cfg)?.trim();
   const headers: Record<string, string> = { "content-type": "application/json" };
   if (apiKey) headers.authorization = `Bearer ${apiKey}`;
-  const body = { model: slot.model, prompt: request.prompt, ...provider.body(request) };
+  const responses = slot.provider === "custom" && cfg.imageGen?.customApi === "responses";
+  if (responses && cfg.imageGen?.customLocalImageExtension) headers["x-openai-actor-authorization"] = "local-image-extension";
+  const body = responses ? {
+    model: slot.model, store: false, stream: false,
+    input: `Generate exactly one image. ${request.prompt}`,
+    tools: [{ type: "image_generation", size: OPENAI_SIZES[request.aspect ?? "1:1"], output_format: "webp", ...(request.draft ? { quality: "low" } : {}) }],
+  } : { model: slot.model, prompt: request.prompt, ...provider.body(request) };
 
   const timeoutSignal = AbortSignal.timeout(timeoutMs);
   const cancelled = () => cancel?.aborted === true && !timeoutSignal.aborted;
   let response: Response;
   try {
-    response = await fetchImpl(provider.url(cfg), {
+    response = await fetchImpl(responses ? `${customImageUrl(cfg)}/responses` : provider.url(cfg), {
       method: "POST",
       headers,
       body: JSON.stringify(body),
@@ -253,9 +259,19 @@ export async function generateImageWith(
   } catch {
     fail(`${provider.name} returned an invalid image response`, 502);
   }
-  const parsed = imagesApiResponseSchema.safeParse(parsedJson);
-  if (!parsed.success) fail(`${provider.name} returned no generated image`, 502);
-  const encoded = parsed.data.data[0]!.b64_json;
+  let encoded: string | null | undefined;
+  if (responses) {
+    const parsed = z.object({ status: z.literal("completed"), output: z.array(z.object({
+      type: z.string(), status: z.string().optional(), result: z.string().nullish(),
+    })) }).safeParse(parsedJson);
+    if (!parsed.success) fail("Custom Responses API did not complete image generation", 502);
+    encoded = parsed.data.output.find((item) => item.type === "image_generation_call" && item.status === "completed")?.result;
+    if (!encoded) fail("Custom Responses API returned no generated image. Check that this endpoint and model support the image_generation tool.", 502);
+  } else {
+    const parsed = imagesApiResponseSchema.safeParse(parsedJson);
+    if (!parsed.success) fail(`${provider.name} returned no generated image`, 502);
+    encoded = parsed.data.data[0]!.b64_json;
+  }
   if (!encoded) {
     // Never fetch a URL a provider returns; compatible gateways must answer with inline b64_json.
     fail(`${provider.name} image generation must return base64 image data (b64_json)`, 502);

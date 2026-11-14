@@ -17,6 +17,8 @@ export const imageGenConfigSchema = z.object({
   key: z.string().optional(),
   geminiKey: z.string().optional(),
   customApiKey: z.string().optional(),
+  customApi: z.enum(["images", "responses"]).optional(),
+  customLocalImageExtension: z.boolean().optional(),
   customUrl: z.string().trim().max(2048).transform((value, ctx) => {
     if (!value) return "";
     try { return normalizeImageGenerationUrl(value); } catch (error) {

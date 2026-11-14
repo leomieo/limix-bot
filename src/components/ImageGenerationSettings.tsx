@@ -114,6 +114,7 @@ export function ImageGenerationSettings() {
         </p>
       </section>
 
+      <SavedImageConnection disabled={saving} />
       <SlotRow
         slot="primary" provider={primary.provider} model={primary.model} configured={primary.configured} openrouterModels={openrouterModels}
         disabled={saving || !state.config} onProvider={chooseProvider} onModel={(model) => void save({ imageGen: { primary: { provider: primary.provider, model } } })}
@@ -139,6 +140,39 @@ export function ImageGenerationSettings() {
       {providers.map((provider) => <ProviderKeyCard key={provider} provider={provider} status={status} />)}
     </>
   );
+}
+
+function SavedImageConnection({ disabled }: { disabled: boolean }) {
+  const { dispatch } = useStore();
+  const [entries, setEntries] = useState<{ id: string; name: string; url: string }[] | null>(null);
+  const [selected, setSelected] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const run = async (apply: boolean) => {
+    setBusy(true); setError("");
+    try {
+      if (apply) {
+        const config = await api<ConfigStatus>("/api/images/connections", { method: "POST", body: JSON.stringify({ id: selected }) });
+        dispatch({ type: "configStatus", config });
+        setEntries(null); setSelected("");
+      } else {
+        const result = await api<{ connections: NonNullable<typeof entries> }>("/api/images/connections");
+        setEntries(result.connections); setSelected(result.connections[0]?.id ?? "");
+      }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+    finally { setBusy(false); }
+  };
+  return <Card title={t("imageGen.saved.title")}>
+    <p className="mb-2 text-[12px] text-ink-secondary">{t("imageGen.saved.help")}</p>
+    {entries === null ? <button type="button" className={BUTTON_CLASS} disabled={busy || disabled} onClick={() => void run(false)}>{t("imageGen.saved.title")}</button>
+      : entries.length ? <div className="flex flex-wrap gap-2">
+        <Select aria-label={t("imageGen.saved.title")} value={selected} disabled={busy} onChange={(event) => setSelected(event.target.value)}>
+          {entries.map((entry) => <option key={entry.id} value={entry.id}>{entry.name} · {entry.url}</option>)}
+        </Select>
+        <button type="button" className={BUTTON_CLASS} disabled={busy || disabled || !selected} onClick={() => void run(true)}>{t("imageGen.saved.apply")}</button>
+      </div> : <p className="text-[12px] text-ink-secondary">{t("imageGen.saved.empty")}</p>}
+    {error && <p role="alert" className="text-[12px] text-danger">{error}</p>}
+  </Card>;
 }
 
 function SlotRow({ slot, provider, model, configured, exclude, openrouterModels, disabled, onProvider, onModel }: {
@@ -186,8 +220,12 @@ function ModelRow({ slot, slotLabel, provider, model, openrouterModels, disabled
   onModel: (model: string) => void;
 }) {
   const [draft, setDraft] = useState<string | null>(null);
+  const { state } = useStore();
+  const responses = provider === "custom" && state.config?.imageGen?.customApi === "responses";
   const live = provider === "openrouter" && openrouterModels?.source === "openrouter" ? openrouterModels.models : null;
-  const choices: ModelChoice[] = live ?? IMAGE_MODEL_CHOICES[provider].map((choice) => ({ ...choice, group: "recommended" }));
+  const choices: ModelChoice[] = live ?? (responses
+    ? [{ id: "gpt-6.1-sol", name: "GPT-6.1 Sol" }, { id: "gpt-6-astra", name: "GPT-6 Astra" }]
+    : IMAGE_MODEL_CHOICES[provider]).map((choice) => ({ ...choice, group: "recommended" }));
   const typing = draft !== null || choices.length === 0;
   const commit = () => {
     if (draft === null) return;
@@ -214,6 +252,7 @@ function ModelRow({ slot, slotLabel, provider, model, openrouterModels, disabled
             disabled={disabled}
             aria-label={t("imageGen.model.label", { slot: slotLabel })}
           >
+            {!model && <option value="" disabled>{t("imageGen.model.placeholder")}</option>}
             {model && !choices.some((choice) => choice.id === model) && <option value={model}>{model}</option>}
             {(["recommended", "more"] as const).map((group) => {
               const inGroup = choices.filter((choice) => choice.group === group);
@@ -313,6 +352,22 @@ function ProviderKeyCard({ provider, status }: { provider: ImageProvider; status
             {t("imageGen.key.manage")}
           </button>
         </p>
+      )}
+      {provider === "custom" && (
+        <div className="mb-3 space-y-2">
+          <label className="block text-[13px] text-ink-secondary">{t("imageGen.custom.api")}</label>
+          <Select aria-label={t("imageGen.custom.api")} value={status?.customApi ?? "images"} disabled={saving}
+            onChange={(event) => void run(() => api("/api/config", { method: "PUT", body: JSON.stringify({ imageGen: { customApi: event.target.value } }) }))}>
+            <option value="images">Images API</option>
+            <option value="responses">Responses API · image_generation</option>
+          </Select>
+          <p className="text-[12px] text-ink-secondary">{t("imageGen.custom.apiHelp")}</p>
+          {status?.customApi === "responses" && <label className="flex items-center gap-2 text-[12px] text-ink-secondary">
+            <input type="checkbox" checked={status.customLocalImageExtension === true} disabled={saving}
+              onChange={(event) => void run(() => api("/api/config", { method: "PUT", body: JSON.stringify({ imageGen: { customLocalImageExtension: event.target.checked } }) }))} />
+            {t("imageGen.custom.extension")}
+          </label>}
+        </div>
       )}
       {provider === "custom" && (
         <div className="mb-2 flex gap-2">

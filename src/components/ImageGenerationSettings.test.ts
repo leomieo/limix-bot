@@ -176,3 +176,28 @@ describe("Image generation settings", () => {
     expect(sentPatches()).toEqual([["/api/config", { openrouter: { key: "or-new-key" } }]]);
   });
 });
+
+
+describe("Responses image setup", () => {
+  it("offers both requested chat models for Responses and keeps custom IDs editable", async () => {
+    await mount({ configured: true, ready: true, customApi: "responses", customKeyConfigured: true, primary: { provider: "custom", model: "gpt-6.1-sol", configured: true } });
+    const ids = options("Base provider model").map(([, id]) => id);
+    expect(ids).toContain("gpt-6.1-sol");
+    expect(ids).toContain("gpt-6-astra");
+    await choose("Base provider model", "gpt-6-astra");
+    expect(sentPatches()).toContainEqual(["/api/config", { imageGen: { primary: { provider: "custom", model: "gpt-6-astra" } } }]);
+    await choose("Image API protocol", "images");
+    expect(sentPatches()).toContainEqual(["/api/config", { imageGen: { customApi: "images" } }]);
+  });
+  it("copies a chosen saved connection by ID, without sending a key through the renderer", async () => {
+    fixture.api.mockImplementation(async (path, init) => path === "/api/images/connections" && !init
+      ? { connections: [{ id: "xingchi", name: "Xingchi", url: "https://gateway.example/v1" }] }
+      : { imageGen: { customKeyConfigured: true } });
+    const view = await mount({ configured: false });
+    const click = async (text: string) => act(async () => { [...view.querySelectorAll("button")].find((button) => button.textContent === text)!.click(); });
+    await click("Use a saved API connection");
+    await click("Use for images");
+    expect(fixture.api).toHaveBeenCalledWith("/api/images/connections", { method: "POST", body: JSON.stringify({ id: "xingchi" }) });
+    expect(fixture.dispatch).toHaveBeenCalledWith({ type: "configStatus", config: { imageGen: { customKeyConfigured: true } } });
+  });
+});

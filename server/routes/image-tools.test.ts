@@ -257,3 +257,13 @@ describe("the generate_image route", () => {
     expect([...r.parked.values()].flat()).toEqual([]);
   });
 });
+
+
+it("attaches a completed Responses image to the active turn", async () => {
+  const fetchImpl = vi.fn<typeof fetch>(async () => Response.json({ status: "completed", output: [{ type: "image_generation_call", status: "completed", result: PNG.toString("base64") }] }));
+  const { deps: d, attached } = deps({ fetchImpl, cfg: { imageGen: { primary: { provider: "custom", model: "gpt-6-astra" }, customUrl: "https://gateway.example/v1", customApi: "responses", customApiKey: "fixture-key" } } });
+  const result = await generateImageForTurn({ prompt: "cat" }, d);
+  expect(result.status).toBe(201);
+  expect(attached).toEqual([{ bytes: PNG, mime: "image/png" }]);
+  expect(String(fetchImpl.mock.calls[0]![0])).toBe("https://gateway.example/v1/responses");
+});

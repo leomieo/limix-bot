@@ -54,6 +54,8 @@ export interface ImageGenerationConfig {
   geminiKey?: string;
   customApiKey?: string;
   customUrl?: string;
+  customApi?: "images" | "responses";
+  customLocalImageExtension?: boolean;
   provider?: AvatarImageProvider;
   customModel?: string;
 }
@@ -82,6 +84,6 @@ export function normalizeImageGenerationUrl(value: string): string {
       || (Number(ipv4[1]) === 172 && Number(ipv4[2]) >= 16 && Number(ipv4[2]) <= 31)));
   if (url.protocol !== "https:" && !(url.protocol === "http:" && local)) throw new Error(message);
   if (ipv4 && (Number(ipv4[1]) === 0 || (Number(ipv4[1]) === 169 && Number(ipv4[2]) === 254))) throw new Error(message);
-  url.pathname = url.pathname.replace(/\/+$/, "").replace(/\/images\/generations$/, "");
+  url.pathname = url.pathname.replace(/\/+$/, "").replace(/\/(images\/generations|responses)$/, "");
   return url.toString().replace(/\/+$/, "");
 }

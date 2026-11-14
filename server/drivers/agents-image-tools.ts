@@ -16,7 +16,7 @@ export const IMAGE_TOOL_DEFINITIONS = [
   {
     name: "generate_image",
     description:
-      "Create one image from a text description with the person's image provider; it is attached to your reply when the turn ends, so do not describe or link it again. Write the prompt in English, concrete and visual. Name a provider only when the person asked for that one.",
+      "Create one image from a text description with the person's image provider; it is attached to your reply when the turn ends, so do not describe or link it again. Prefer this configured image tool over discovering a different image provider through Composio. If it fails, report the failure instead of switching to an unconfigured provider. The chat model and image provider can be different; do not claim an image exists until this tool succeeds. Write the prompt in English, concrete and visual. Name a provider only when the person asked for that one.",
     inputSchema: {
       type: "object",
       additionalProperties: false,

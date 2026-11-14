@@ -1,29 +1,21 @@
-Limix Bot 0.3.39 — Windows, macOS Apple Silicon / Intel, Linux x64.
+Limix Bot 0.3.40 — Windows, macOS Apple Silicon / Intel, Linux x64.
 
 ## Tiếng Việt
 
-- Tự kiểm tra cập nhật mỗi 6 giờ khi ứng dụng đang chạy, trên Windows/macOS/Linux. Vẫn kiểm tra sau khi mở app khoảng 15 giây và hỗ trợ kiểm tra thủ công.
+- Hiển thị Tạo ảnh trong Cài đặt → AI, kể cả giao diện đơn giản.
+- Custom hỗ trợ Responses API với công cụ image_generation, bên cạnh Images API. Thêm lựa chọn GPT-6.1 Sol, GPT-6 Astra và nhập model tùy chỉnh; endpoint phải hỗ trợ model và công cụ tương ứng.
+- Thêm tùy chọn header local-image-extension cho gateway yêu cầu nó. Chỉ gửi tới endpoint Responses tùy chỉnh đã cấu hình.
+- Dùng lại kết nối API đã lưu: sao chép địa chỉ/khóa trong máy chủ, không trả khóa ra giao diện. Chọn giao thức và model sau khi nhập; bỏ nhà cung cấp dự phòng để tránh tự chuyển ngoài ý muốn. Khóa không tự đồng bộ khi kết nối gốc thay đổi.
+- Chỉ báo có ảnh khi API trả kết quả hoàn tất và dữ liệu ảnh hợp lệ. Nếu API chỉ trả chữ hoặc báo lỗi, không coi đó là ảnh thành công.
 
-- Mac: thêm nút Cài Docker trong Công cụ cho kỹ năng. Tải DMG chính thức theo kiến trúc app Intel/Apple Silicon, kiểm tra bằng hdiutil và mở bộ cài. Người dùng kéo Docker vào Applications, mở Docker rồi Quét máy để xác nhận. Nhận diện Docker trong /Applications, ~/Applications và ~/.docker/bin. Các công cụ khác trên Mac vẫn chưa có trình cài tự động.
-
-- Thêm nhận/gửi ảnh, video, âm thanh và tài liệu cho Telegram và Discord.
-- Thêm tùy chỉnh nhận/gửi media, loại tệp, dung lượng và số tệp cho từng kết nối (tối đa tổng 10 MB / 4 tệp mỗi tin).
-- Zalo Bot nhận ảnh và thoại; gửi ảnh và thoại AAC trong chat riêng khi có địa chỉ HTTPS công khai cho media.
-- Thêm Facebook Fanpage qua Messenger Platform: Page token, xác thực webhook và phản hồi văn bản/media. Cần tự cấu hình HTTPS, quyền Page và App Review. Facebook cá nhân chưa hỗ trợ.
-- Kiểm tra quyền trước khi tải tệp, giới hạn nguồn tải và báo kết quả gửi từng phần. Khả năng hiểu hoặc tạo media phụ thuộc AI/công cụ của bot.
-
-Đây là bản để kiểm thử tính năng kết nối mới. Đã kiểm thử cục bộ với nền tảng/AI giả lập và máy chủ tách biệt; chưa xác minh gửi nhận bằng tài khoản nền tảng thật. Không tự cấu hình server HTTPS. Cloud đồng bộ tài khoản tiếp tục tắt.
+Đã kiểm thử bằng API giả lập và máy chủ tách biệt; chưa xác minh tạo ảnh trên Xingchi thật hoặc gửi ảnh qua Zalo. Chưa hỗ trợ sửa ảnh/streaming trong adapter Responses này. Giữ nguyên giới hạn media và quyền sử dụng công cụ hiện có. Bản 0.3.39 trước đó có kiểm tra cập nhật mỗi 6 giờ và trình cài Docker cho Mac.
 
 ## English
 
-- Check for updates automatically every six hours while the app is running on Windows/macOS/Linux. Keep the startup check after about 15 seconds and manual checks.
+- Show image generation under Settings → AI in Simple mode.
+- Support Custom Responses API with the image_generation tool alongside Images API. Offer GPT-6.1 Sol, GPT-6 Astra and custom model IDs; the endpoint must support the selected model and tool.
+- Add an optional local-image-extension header for gateways that require it, scoped to the configured Custom Responses endpoint.
+- Reuse a saved API connection by copying its address/key entirely on the server. Select the protocol and model after import. Clear the backup to avoid unintended provider switching; later key changes are not synchronized.
+- Accept only completed responses with valid image bytes. Text-only replies and errors are not reported as generated images.
 
-- Mac: add Install Docker to skill tools. Download the official DMG for the app architecture (Intel/Apple Silicon), verify it with hdiutil and open the installer. Drag Docker into Applications, launch Docker and scan again. Detect Docker in standard app and CLI locations. Other Mac tools still require manual installation.
-
-- Receive and send images, video, audio and documents through Telegram and Discord.
-- Configure media directions, allowed types, size and count for each connection (10 MB combined / four files per message).
-- Zalo Bot receives images and voice; sends images and private AAC voice with a configured public HTTPS media endpoint.
-- Add Facebook Page setup, signed Messenger webhooks and text/media replies. Requires HTTPS routing, Page permissions and App Review. Personal Facebook accounts remain unsupported.
-- Authorize before downloading, restrict download origins and report partial sends. Media understanding and generation depend on the bot's AI/tools.
-
-New integrations have isolated mock-provider and server verification; live platform delivery remains unverified. HTTPS infrastructure is user-managed. Account cloud sync remains disabled. Desktop installers are unsigned; macOS is not notarized.
+Verified with mocked APIs and an isolated HTTP server fixture; live Xingchi generation and Zalo delivery remain unverified. Image edits/streaming are not implemented by this Responses adapter. Existing media limits and tool permission gates remain in place. Previous version 0.3.39 includes six-hour update checks and the Mac Docker installer flow.

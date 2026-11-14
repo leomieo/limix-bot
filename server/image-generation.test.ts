@@ -217,3 +217,43 @@ describe("what the person learns when a provider fails", () => {
     expect(imageSlots({ openrouter: { key: "or-key" }, imageGen: { primary: { provider: "openrouter", model: "or-key" } } }).primary.model).toBe(IMAGE_DEFAULT_MODELS.openrouter);
   });
 });
+
+
+describe("custom Responses image generation", () => {
+  const cfg = { imageGen: { primary: { provider: "custom" as const, model: "gpt-6.1-sol" }, customUrl: "https://gateway.example/v1", customApiKey: "gateway-secret", customApi: "responses" as const, customLocalImageExtension: true } };
+  const response = (output: unknown, status = "completed") => Response.json({ status, output });
+  it.each(["gpt-6.1-sol", "gpt-6-astra"])("uses %s and returns actual image bytes without switching providers", async (model) => {
+    const fetchImpl = vi.fn<typeof fetch>(async () => response([{ type: "image_generation_call", status: "completed", result: PNG.toString("base64") }]));
+    const result = await generateImage({ imageGen: { ...cfg.imageGen, primary: { provider: "custom", model } } }, { prompt: "a cat", aspect: "16:9" }, { fetchImpl });
+    expect(result).toMatchObject({ bytes: PNG, mime: "image/png", model, usedFallback: false });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchImpl.mock.calls[0]!;
+    expect(url).toBe("https://gateway.example/v1/responses");
+    expect(init).toMatchObject({ redirect: "error", headers: { authorization: "Bearer gateway-secret", "x-openai-actor-authorization": "local-image-extension" } });
+    expect(JSON.parse(String(init?.body))).toEqual({ model, store: false, stream: false, input: "Generate exactly one image. a cat", tools: [{ type: "image_generation", size: "1536x1024", output_format: "webp" }] });
+  });
+  it.each([
+    [{ type: "message", content: [{ type: "output_text", text: "I made it" }] }],
+    [{ type: "image_generation_call", status: "in_progress", result: PNG.toString("base64") }],
+    [{ type: "image_generation_call", status: "completed", result: "https://evil.example/image" }],
+  ])("refuses text, unfinished images and remote URLs", async (...output) => {
+    const fetchImpl = vi.fn<typeof fetch>(async () => response(output));
+    await expect(generateImage(cfg, { prompt: "cat" }, { fetchImpl })).rejects.toThrow();
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+  it("does not accept partial responses or expose provider error details", async () => {
+    const fetchImpl = vi.fn<typeof fetch>(async () => response([{ type: "image_generation_call", status: "completed", result: PNG.toString("base64") }], "incomplete"));
+    await expect(generateImage(cfg, { prompt: "cat" }, { fetchImpl })).rejects.toThrow("did not complete");
+    fetchImpl.mockImplementation(async () => new Response("gateway-secret", { status: 400 }));
+    await expect(generateImage(cfg, { prompt: "cat" }, { fetchImpl })).rejects.toThrow("HTTP 400");
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+  it("never sends the optional extension to other providers or by default", async () => {
+    const fetchImpl = vi.fn<typeof fetch>(async () => response([{ type: "image_generation_call", status: "completed", result: PNG.toString("base64") }]));
+    await generateImage({ imageGen: { ...cfg.imageGen, customLocalImageExtension: false } }, { prompt: "cat" }, { fetchImpl });
+    expect(fetchImpl.mock.calls[0]![1]?.headers).not.toHaveProperty("x-openai-actor-authorization");
+    fetchImpl.mockImplementation(async () => imageResponse());
+    await generateImage({ imageGen: { ...cfg.imageGen, key: "openai-key", primary: { provider: "openai" } } }, { prompt: "cat" }, { fetchImpl });
+    expect(fetchImpl.mock.calls[1]![1]?.headers).not.toHaveProperty("x-openai-actor-authorization");
+  });
+});
