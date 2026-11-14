@@ -1,3 +1,4 @@
+import { macDockerLocations, openMacDockerInstaller } from "./limix-docker-mac.mjs";
 // Limix Bot: one-click install of the programs the default skills and the suggested MCP need on a new Windows computer.
 // Everything goes to userData/limix-tools (no administrator rights, kept across app updates); limix-runtime.mjs puts
 // these folders on every agent's PATH, so a tool works in the next turn without restarting Limix Bot.
@@ -93,6 +94,7 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
     path.join(home, "scoop", "shims"),
     path.join(home, ".local", "bin"),
     path.join(process.env.APPDATA ?? "", "npm"),
+    ...(process.platform === "darwin" ? ["/usr/local/bin", "/opt/homebrew/bin", path.join(home, ".docker/bin"), "/Applications/Docker.app/Contents/Resources/bin"] : []),
     ...(process.env.JAVA_HOME ? [path.join(process.env.JAVA_HOME, "bin")] : []),
     ...(process.env.GHIDRA_INSTALL_DIR ? [path.join(process.env.GHIDRA_INSTALL_DIR, "support")] : []),
   ];
@@ -121,7 +123,7 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
     const own = (file) => (file && fs.existsSync(file) ? { from: "limix", where: file } : null);
     const sys = (file) => (file ? { from: "system", where: file } : null);
     switch (id) {
-      case "docker": return sys(findOnSystem("docker") ?? findOnSystem("podman")
+      case "docker": return sys((process.platform === "darwin" ? macDockerLocations(home).find((file) => fs.existsSync(file)) : null) ?? findOnSystem("docker") ?? findOnSystem("podman")
         ?? [path.join(process.env.ProgramFiles ?? "C:\\Program Files", "Docker", "Docker", "resources", "bin", "docker.exe"),
             path.join(process.env.ProgramFiles ?? "C:\\Program Files", "RedHat", "Podman", "podman.exe")].find((f) => fs.existsSync(f)) ?? null);
       case "node": return own(path.join(p.node, exe("node"))) ?? sys(findOnSystem("node"));
@@ -148,7 +150,7 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
     for (const tool of CATALOG) {
       const job = jobs.get(tool.id);
       const found = await locate(tool.id);
-      items.push({ ...tool, needs: tool.needs ?? [], installed: Boolean(found), source: found?.from ?? null, where: found?.where ?? null, job: job ?? null });
+      items.push({ ...tool, installable: process.platform === "win32" && Boolean(python) || process.platform === "darwin" && tool.id === "docker", ...(process.platform === "darwin" && tool.id === "docker" ? { why: lxm("Tải Docker Desktop chính thức đúng chip Mac và mở bộ cài. Kéo Docker vào Applications rồi mở Docker để hoàn tất; macOS có thể hỏi cấp quyền. Quét lại sau khi cài.", "Downloads the official Docker Desktop installer for this Mac and opens it. Drag Docker into Applications, then open Docker to finish; macOS may request permission. Scan again after installation.") } : {}), needs: tool.needs ?? [], installed: Boolean(found), source: found?.from ?? null, where: found?.where ?? null, job: job ?? null });
     }
     const report = skillScan ? { ...skillScan, requirements: skillScan.requirements?.map((req) => ({ ...req, id: skillRequirementId(req), installable: Boolean(skillPackageSpec(req) || skillBaseTool(req)), packages: skillPackageSpec(req) || skillBaseTool(req) ? skillInstallPackages(req) : [], job: requirementJobs.get(skillRequirementId(req)) ?? null })) } : null;
     return { supported: process.platform === "win32" && Boolean(python), items, skillScan: report };
@@ -232,6 +234,11 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
 
   const installers = {
     async docker() {
+      if (process.platform === "darwin") {
+        await openMacDockerInstaller({ arch: process.arch, download, rename: fsp.rename, run, tools: p.tools });
+        set("docker", { status: "done", step: null, progress: null, message: lxm("Đã mở bộ cài. Kéo Docker vào Applications, mở Docker rồi bấm Quét máy.", "Installer opened. Drag Docker into Applications, launch Docker, then scan again.") });
+        return;
+      }
       set("docker", { step: lxm("Đang cài qua winget, Windows sẽ hỏi quyền quản trị", "Installing through winget, Windows will ask for administrator permission"), progress: null });
       try {
         await run("winget", ["install", "-e", "--id", "Docker.DockerDesktop", "--accept-source-agreements", "--accept-package-agreements", "--silent"]);
@@ -302,13 +309,14 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
   async function installOne(id, seen = new Set()) {
     const tool = CATALOG.find((t) => t.id === id);
     if (!tool || seen.has(id)) return;
+    if (process.platform !== "win32" && !(process.platform === "darwin" && id === "docker")) throw new Error("Automatic installation is unavailable for this tool on this OS");
     seen.add(id);
     for (const need of tool.needs ?? []) if (!(await installed(need))) await installOne(need, seen);
     if (await installed(id)) return;
     set(id, { status: "working", step: lxm("Chuẩn bị", "Preparing"), progress: null, message: null });
     try {
       await installers[id]();
-      jobs.delete(id);
+      if (!(process.platform === "darwin" && id === "docker")) jobs.delete(id);
       log(`limix tools: installed ${id}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -320,7 +328,7 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
 
   /** Starts in the background (one at a time) and returns at once; the window polls state(). */
   function install(ids) {
-    const list = (Array.isArray(ids) ? ids : [ids]).filter((id) => CATALOG.some((t) => t.id === id));
+    const list = (Array.isArray(ids) ? ids : [ids]).filter((id) => CATALOG.some((t) => t.id === id) && (process.platform === "win32" || process.platform === "darwin" && id === "docker"));
     for (const id of list) set(id, { status: "working", step: lxm("Đang chờ", "Waiting"), progress: null, message: null });
     queue = queue.then(async () => {
       for (const id of list) await installOne(id).catch(() => {});

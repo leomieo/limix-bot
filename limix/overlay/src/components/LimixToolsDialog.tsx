@@ -7,7 +7,7 @@ import { lx } from "@/lib/limix-text";
  * suggested MCP, with an Install button each (electron/limix-tools.mjs does the work). */
 
 interface ToolJob { status: "working" | "error" | "done"; step?: string | null; progress?: number | null; message?: string | null; project?: string }
-interface ToolItem { id: string; name: string; why: string; size: string; recommended?: boolean; needs: string[]; installed: boolean; source?: "limix" | "system" | null; where?: string | null; job: ToolJob | null }
+interface ToolItem { installable?: boolean; id: string; name: string; why: string; size: string; recommended?: boolean; needs: string[]; installed: boolean; source?: "limix" | "system" | null; where?: string | null; job: ToolJob | null }
 interface SkillRequirement { id?: string; installable?: boolean; packages?: string[]; job?: ToolJob | null; optional?: boolean; installScope?: "tool" | "project"; skill: string; directory: string; kind: string; name: string; required?: string; evidence: string; status: "found" | "missing" | "review"; version?: string; where?: string }
 interface SkillScan { error?: string; skillCount?: number; scannedAt?: string; requirements?: SkillRequirement[]; warnings?: string[] }
 interface ToolsState { supported: boolean; items: ToolItem[]; skillScan?: SkillScan | null }
@@ -141,7 +141,7 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
           {lx(`Máy này còn thiếu ${missingRecommended.length} công cụ mà các kỹ năng có sẵn của bot cần. Cài ngay?`, `This computer is missing ${missingRecommended.length} tools the bot's built-in skills need. Install them now?`)}
         </p>
       )}
-      {state.supported === false && <p className="rounded-lg bg-raised p-3 text-[12px] text-ink-secondary">{lx("Có thể quét và xem yêu cầu trên máy này. Cài công cụ tự động hiện hỗ trợ Windows.", "You can scan and inspect requirements here. Automatic tool installation currently supports Windows.")}</p>}
+      {state.supported === false && <p className="rounded-lg bg-raised p-3 text-[12px] text-ink-secondary">{lx("Có thể quét và xem yêu cầu trên máy này. Cài công cụ tự động hiện hỗ trợ Windows; trên Mac có thể bấm Cài Docker để tải và mở bộ cài chính thức.", "You can scan and inspect requirements here. Automatic tool installation supports Windows; on Mac, Install Docker downloads and opens the official installer.")}</p>}
       <div role="tabpanel" id="limix-tools-base-panel" aria-labelledby="limix-tools-base-tab" hidden={activeTab !== "tools"} className="min-w-0 space-y-3">
       <ul className="flex flex-col divide-y divide-hairline/40 rounded-xl border border-hairline/40 bg-card">
         {state.items.map((item) => {
@@ -159,7 +159,7 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
                     {job.step ?? lx("Đang cài", "Installing")}{typeof job.progress === "number" ? ` ${Math.round(job.progress * 100)}%` : "…"}
                   </p>
                 )}
-                {job?.status === "error" && job.message && <p className="mt-1 text-[12px] text-danger">{job.message}</p>}
+                {(job?.status === "error" || job?.status === "done") && job.message && <p className="mt-1 text-[12px] text-danger">{job.message}</p>}
               </div>
               <div className="shrink-0 pt-0.5">
                 {item.installed ? (
@@ -170,7 +170,7 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
                 ) : job?.status === "working" ? (
                   <Loader2 size={15} className="animate-spin text-ink-secondary" />
                 ) : (
-                  <button type="button" className={button} disabled={busy || !state.supported} onClick={() => void install([item.id])}>
+                  <button type="button" className={button} disabled={busy || !(item.installable ?? state.supported)} onClick={() => void install([item.id])}>
                     <Download size={14} />{job?.status === "error" ? lx("Thử lại", "Retry") : lx("Cài", "Install")}
                   </button>
                 )}

@@ -7,6 +7,8 @@
 
 ## 1. Trạng thái hiện tại (luôn ghi đè cho đúng)
 
+- 2026-11-14 Mac Docker: per-tool installable flag enables Docker on macOS without enabling Windows-only installers. Official arch-specific DMG download, hdiutil verify then open; done means installer opened, not installed. Detect /Applications, user Applications and ~/.docker/bin. Source + overlays/workflows aligned. 3 helper tests and 4 tools UI tests pass (mock); actual DMG installation on a Mac NOT_TESTED. Prepared 0.3.38 for all-platform CI.
+
 - **2026-11-14 media connections:** implemented Telegram/Discord binary media receive/send, Zalo image/voice receive and image/private AAC send via optional HTTPS, Facebook Fanpage signed webhook + Page responses. Per-connection controls and scoped Bot API attachments, authorization before download, bounded CDN fetch and partial-send status. Facebook personal/WhatsApp/Zalo OA remain unavailable; no verified official personal API. See `PLAN_CHANNEL_MEDIA.md`. Verification: gateway 49/49 PASS_MOCK; Bot API/attachment/ingress 104 passed, 1 skipped; targeted full-server/media 3 passed; TypeScript build PASS. Live accounts/HTTPS/packaged delivery NOT_TESTED. Release 0.3.37 requested: promoting reviewed channel-media changes to main for all-platform build; publication pending CI. Existing Windows symlink fixture fails EPERM before exercising code. Cloud stays off.
 
 - **Yêu cầu mới — kết nối đa phương tiện:** đã rà soát gateway Telegram/Zalo/Discord: chỉ có đường truyền chữ, attachments=false và router chặn non-text; chưa có Facebook adapter. Kế hoạch `PLAN_CHANNEL_MEDIA.md`; chưa triển khai/chưa kiểm gửi nhận media thật. Chủ dự án đã chọn cả Facebook Fanpage và tài khoản cá nhân; cần hai loại kết nối riêng, chưa xác minh cơ chế hỗ trợ tài khoản cá nhân.
@@ -76,6 +78,8 @@
 | R10 | Máy chủ Claude không đẩy được tag git (chỉ đẩy nhánh) | Build kích hoạt bằng push lên `main`; tag phát hành do workflow tự tạo | Đã xử lý |
 
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
+
+- 2026-11-14 Mac Docker: per-tool installable flag enables Docker on macOS without enabling Windows-only installers. Official arch-specific DMG download, hdiutil verify then open; done means installer opened, not installed. Detect /Applications, user Applications and ~/.docker/bin. Source + overlays/workflows aligned. 3 helper tests and 4 tools UI tests pass (mock); actual DMG installation on a Mac NOT_TESTED. Prepared 0.3.38 for all-platform CI.
 
 - **2026-11-14 media connections:** implemented Telegram/Discord binary media receive/send, Zalo image/voice receive and image/private AAC send via optional HTTPS, Facebook Fanpage signed webhook + Page responses. Per-connection controls and scoped Bot API attachments, authorization before download, bounded CDN fetch and partial-send status. Facebook personal/WhatsApp/Zalo OA remain unavailable; no verified official personal API. See `PLAN_CHANNEL_MEDIA.md`. Verification: gateway 49/49 PASS_MOCK; Bot API/attachment/ingress 104 passed, 1 skipped; targeted full-server/media 3 passed; TypeScript build PASS. Live accounts/HTTPS/packaged delivery NOT_TESTED. Release 0.3.37 requested: promoting reviewed channel-media changes to main for all-platform build; publication pending CI. Existing Windows symlink fixture fails EPERM before exercising code. Cloud stays off.
 

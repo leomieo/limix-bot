@@ -1,6 +1,8 @@
-Limix Bot 0.3.37 — Windows, macOS Apple Silicon / Intel, Linux x64.
+Limix Bot 0.3.38 — Windows, macOS Apple Silicon / Intel, Linux x64.
 
 ## Tiếng Việt
+
+- Mac: thêm nút Cài Docker trong Công cụ cho kỹ năng. Tải DMG chính thức theo kiến trúc app Intel/Apple Silicon, kiểm tra bằng hdiutil và mở bộ cài. Người dùng kéo Docker vào Applications, mở Docker rồi Quét máy để xác nhận. Nhận diện Docker trong /Applications, ~/Applications và ~/.docker/bin. Các công cụ khác trên Mac vẫn chưa có trình cài tự động.
 
 - Thêm nhận/gửi ảnh, video, âm thanh và tài liệu cho Telegram và Discord.
 - Thêm tùy chỉnh nhận/gửi media, loại tệp, dung lượng và số tệp cho từng kết nối (tối đa tổng 10 MB / 4 tệp mỗi tin).
@@ -11,6 +13,8 @@ Limix Bot 0.3.37 — Windows, macOS Apple Silicon / Intel, Linux x64.
 Đây là bản để kiểm thử tính năng kết nối mới. Đã kiểm thử cục bộ với nền tảng/AI giả lập và máy chủ tách biệt; chưa xác minh gửi nhận bằng tài khoản nền tảng thật. Không tự cấu hình server HTTPS. Cloud đồng bộ tài khoản tiếp tục tắt.
 
 ## English
+
+- Mac: add Install Docker to skill tools. Download the official DMG for the app architecture (Intel/Apple Silicon), verify it with hdiutil and open the installer. Drag Docker into Applications, launch Docker and scan again. Detect Docker in standard app and CLI locations. Other Mac tools still require manual installation.
 
 - Receive and send images, video, audio and documents through Telegram and Discord.
 - Configure media directions, allowed types, size and count for each connection (10 MB combined / four files per message).
