@@ -7,6 +7,8 @@
 
 ## 1. Trạng thái hiện tại (luôn ghi đè cho đúng)
 
+- **Đang phát triển 2026-11-14:** đồng bộ dữ liệu tài khoản là module ẩn/tắt vì chưa có server; chuyển máy Offline bằng file có mật khẩu, chỉ nhập vào app bằng hoặc mới hơn; dọn trùng quản lý skills; chuẩn hóa English technical core; bổ sung macOS/Linux. Kế hoạch và giới hạn: `PLAN_ACCOUNT_DATA.md`. Chưa phát hành các thay đổi phiên này.
+
 - **Hướng chính (đổi 2026-11-11 18:41):** Limix Bot = **bản fork đổi thương hiệu của OpenMausBot** (giao diện như mausbot.com), phát hành file cài Windows `.exe` qua GitHub Actions của repo `leomieo/limix-bot`. `limix-gateway` (cổng Telegram/Zalo) là module sẽ gộp vào app ở mốc sau.
 - **Mốc hoàn tất:** phát hành 0.3.31 tại main/tag 07b0860, sửa công tắc Mở khi đăng nhập do Electron đọc sai đường dẫn có dấu cách.
 - **Bản đã phát hành:** v0.3.31, Windows run 43533896116, npm 43533896083, server image 43533896079 đều success. latest.yml trỏ đúng 0.3.31, tải thật bản cài 298305452 byte khớp SHA-512, stable installer và blockmap có đủ. Bản 0.3.30 trước đó cũng đã xác minh.
@@ -195,3 +197,7 @@
 - 0.3.30: quét chỉ skill tích hợp và đã tải/cài vào Limix Bot, bỏ skill ngoài app và kho chưa tải. Sửa parser không tách văn xuôi thành tên gói. Thêm cài từng mục/tất cả thiếu, chọn và xem lại dự án đích, npm/Python .venv, công cụ cơ bản dùng installer hiện có. Thử thật Remotion + CLI 4.0.543 và packaging 26.3 trong project tạm: rescan nhận đầy đủ. Sửa Update Codex trước cài lại pin 0.167.0: update lấy npm latest, chuyển đúng CLI và xác minh phiên bản thực tế; 23 test registry/route/UI đạt.
 
 - 0.3.30 bổ sung giao diện Hub: bỏ tab Nguồn, chuyển Đồng bộ ngay sang Khám phá, giữ thời điểm/lỗi đồng bộ ở đó; test DOM đạt. Luồng Update Codex đã thử tải thật vào prefix tạm: expected 0.169.0, CLI báo codex-cli 0.169.0.
+
+- 2026-11-14: thêm module `limix/account-sync` (9/9 Node fixture tests), tái sử dụng workspace backup cho Chuyển máy Offline, bỏ gán bot ở thư viện chung; rà soát ngôn ngữ kỹ thuật và nhận yêu cầu build macOS/Linux. Chưa nối server, chưa bật đồng bộ, chưa phát hành.
+
+- 2026-11-14 QA trước push 0.3.32: 56/56 Vitest tính năng mới, 9/9 Node module đồng bộ, 2 kiểm thử archive/phiên bản thực tế đạt (các lượt có chồng lặp, không cộng tổng). TypeScript UI/server và Vite build đạt. Rebrand tái dựng đúng 15 file thay đổi, chạy lặp ổn định. Bộ Settings Simple còn 6 lỗi cũ; so với baseline HEAD 12 lỗi, không có lỗi mới. Bộ archive đầy đủ trên Windows còn 3 lỗi EPERM tạo symlink; sẽ chạy trên CI macOS/Linux. Fixture HTTP chuẩn đã launch và /status 200, export bị guard từ chối do HOME nằm trong DATA của launcher; không coi đây là export E2E đạt. Không sửa/bỏ guard. Website đã kiểm DOM fixture: FAQ không có open, 4 link nền tảng bật khi API giả trả đủ file; chưa xác minh trình duyệt/live site sau deploy.

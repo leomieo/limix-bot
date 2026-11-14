@@ -1,3 +1,4 @@
+import { fetchHubFile } from "./limix-hub-download.ts";
 // Limix Skill Hub client: keeps a cached copy of the hub catalog, installs a skill only after every file matches the
 // SHA-256 the catalog pins, and never installs scripts, binaries or MCP files unless the owner allows tools for that
 // one skill. Installed skills wait in the store ("Kho Kĩ Năng (Skills)"), switched on but on no bot until one is added to it. Auto Sync (catalog refresh) is on by default,
@@ -124,7 +125,7 @@ const isToolFile = (path: string): boolean => SCRIPT.test(path) || MCP_FILE.test
 const sha = (data: Uint8Array | string): string => createHash("sha256").update(data).digest("hex");
 
 export function hubSkillBlocked(entry: HubEntry): string | null {
-  if (entry.area === "quarantine" || entry.security_status === "quarantined") return lxs("Skill nằm trong khu cách ly vì có mã nguy hiểm.", "This skill is quarantined because it contains dangerous code.");
+  if (entry.area === "quarantine" || entry.security_status === "quarantined") return lxs("Bộ quét đánh dấu rủi ro và cách ly skill; cần xem các phát hiện trước khi dùng.", "The scanner flagged risks and quarantined this skill; review the findings before use.");
   if (entry.approval_status === "quarantined" || entry.approval_status === "rejected") return lxs("Skill bị từ chối.", "This skill was rejected.");
   return null;
 }
@@ -182,7 +183,7 @@ export async function installHubSkill(id: string, options: { allowTools?: boolea
     if (!expected) return { error: lxs(`Danh mục thiếu mã kiểm tra cho ${path}`, `The catalog has no checksum for ${path}`) };
     let response: Response;
     try {
-      response = await fetchText(rawUrl(`${entry.area === "quarantine" ? "quarantine" : "skills"}/${id}/${path}`));
+      response = await fetchHubFile(rawUrl("").replace(/\/$/, ""), entry.area, id, path, fetchText);
     } catch (cause) {
       return { error: lxs(`Không tải được ${path}: `, `Couldn't download ${path}: `) + (cause instanceof Error ? cause.message : String(cause)) };
     }

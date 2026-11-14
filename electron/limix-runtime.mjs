@@ -14,10 +14,12 @@ export function limixRuntimeEnv({ resourcesPath, userData, env = process.env, ex
   const userBase = path.join(tools, "python-user");
   const dirs = [
     python,
+    path.join(python, "bin"),
     path.join(python, "Scripts"),
     path.join(root, "uv"),
     path.join(tools, "bin"),
     path.join(userBase, "Python312", "Scripts"),
+    path.join(userBase, "bin"),
     // Installed later from "Công cụ cho kỹ năng" (limix-tools.mjs); listed now so a tool works without a restart.
     path.join(tools, "node"),
     path.join(tools, "ffmpeg", "bin"),

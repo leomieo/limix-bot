@@ -130,15 +130,15 @@ const open = (section: AppSettingsSection) => { fixture.section = section; retur
 describe("Settings in Simple mode", () => {
   it("draws five pages on the desktop, General, AI, Computer, Usage & billing and Updates, and none of the Advanced-only ones", () => {
     const html = render();
-    expect(pages(html)).toEqual(["general", "ai", "computer", "billing", "updates"]);
-    expect(SIMPLE_PAGES.map((page) => page.id)).toEqual(["general", "botAccess", "ai", "computer", "billing", "updates"]);
+    expect(pages(html)).toEqual(["general", "ai", "skills", "computer", "billing", "backups", "updates"]);
+    expect(SIMPLE_PAGES.map((page) => page.id)).toEqual(["general", "botAccess", "ai", "skills", "computer", "billing", "backups", "updates"]);
     expect(html).toMatch(/General<\/span>[\s\S]*AI<\/span>[\s\S]*Computer<\/span>[\s\S]*Usage &amp; billing<\/span>[\s\S]*Updates<\/span>/);
     expect(html).not.toContain("data-settings-group=");
     expect(html).not.toContain("data-settings-section=");
     expect(html).not.toMatch(/class="(?:[^"]*\s)?uppercase(?:\s[^"]*)?"/);
-    for (const hidden of ["backups", "experimental", "workspaces", "skills"]) expect(html).not.toContain(`value="${hidden}"`);
+    for (const hidden of ["experimental", "workspaces"]) expect(html).not.toContain(`value="${hidden}"`);
     const picker = html.match(/<select aria-label="Settings"[\s\S]*?<\/select>/)![0];
-    expect([...picker.matchAll(/<option value="([^"]+)"/g)].map((match) => match[1])).toEqual(["general", "ai", "computer", "billing", "updates"]);
+    expect([...picker.matchAll(/<option value="([^"]+)"/g)].map((match) => match[1])).toEqual(["general", "ai", "skills", "computer", "billing", "backups", "updates"]);
     expect(html).toContain('data-settings-look="simple"');
   });
 
@@ -159,7 +159,7 @@ describe("Settings in Simple mode", () => {
     const placed = SIMPLE_PAGES.flatMap((page) => page.sections);
     expect(new Set(placed).size).toBe(placed.length);
     const hidden = SECTIONS.map((entry) => entry.id).filter((id) => !placed.includes(id));
-    expect(hidden).toEqual(["decisionModel", "imageGeneration", "skills", "backups", "workspaces", "experimental"]);
+    expect(hidden).toEqual(["decisionModel", "imageGeneration", "workspaces", "experimental"]);
     for (const id of hidden) expect(SIMPLE_HIDDEN_SECTIONS).toContain(id);
   });
 
@@ -298,7 +298,7 @@ describe("Settings in Simple mode", () => {
     fixture.ownerOrAdmin = true;
     fixture.section = "people";
     const html = render();
-    expect(pages(html)).toEqual(["general", "ai", "computer", "billing", "updates"]);
+    expect(pages(html)).toEqual(["general", "ai", "skills", "computer", "billing", "backups", "updates"]);
     expect(currentPage(html)).toBe("general");
     expect(placement(html, "MARKER:people;")).toBe("shown");
     expect(placement(html, "MARKER:activity;")).toBe("shown");
@@ -344,14 +344,13 @@ describe("Settings in Simple mode", () => {
   });
 
   it.each<[AppSettingsSection, string]>([
-    ["backups", "backups"],
     ["experimental", "skillAuthoring"],
     // The add-a-key suggestion's Add key opens it straight away.
     ["decisionModel", "decisionModel"],
   ])("opens a hidden page (%s) for as long as it is the open one", (section, content) => {
     fixture.section = section;
     const html = render();
-    expect(pages(html)).toEqual(["general", "ai", "computer", "billing", "updates", section]);
+    expect(pages(html)).toEqual(["general", "ai", "skills", "computer", "billing", "backups", "updates", section]);
     expect(currentPage(html)).toBe(section);
     if (content === "skillAuthoring") expect(html).toContain("Bots may write their own skills");
     else expect(markers(html)).toContain(content);

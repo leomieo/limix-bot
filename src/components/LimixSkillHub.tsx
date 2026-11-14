@@ -5,7 +5,7 @@ import { Card, Switch } from "./SettingsPrimitives";
 import { LimixToolsDialog, limixTools } from "./LimixToolsDialog";
 import { lx } from "@/lib/limix-text";
 
-/** Settings > Kỹ năng > "Thư viện kỹ năng Limix": the Limix Skill Hub catalog (leomieo/limix-skill-hub). Skills are
+/** Settings > Kỹ năng > "Kho kỹ năng Limix": the Limix Skill Hub catalog (leomieo/limix-skill-hub). Skills are
  * installed disabled and verified by SHA-256; skills that bring scripts or MCP never get those parts without a click. */
 
 interface HubSkill {
@@ -154,7 +154,7 @@ export function LimixSkillHub() {
                     {s.permissions.mcp && (
                       <li>{lx(<><b className="text-ink">MCP:</b> file cấu hình MCP chỉ được chép vào thư mục kỹ năng, không tự bật. Muốn dùng, thêm máy chủ MCP ở Cài đặt rồi bật.</>, <><b className="text-ink">MCP:</b> the MCP config file is only copied into the skill folder and is not switched on. To use it, add the MCP server in Settings and turn it on.</>)}</li>
                     )}
-                    <li>{lx(<><b className="text-ink">Bật:</b> sau khi cài, gạt công tắc "Đang tắt" sang bật, rồi gán cho bot ở thư viện bên dưới.</>, <><b className="text-ink">Switch on:</b> after installing, flip the "Off" switch to on, then assign it to a bot in the library below.</>)}</li>
+                    <li>{lx(<><b className="text-ink">Bật:</b> sau khi cài, gạt công tắc "Đang tắt" sang bật, rồi mở cài đặt của bot → Kĩ Năng (Skills) để thêm.</>, <><b className="text-ink">Switch on:</b> after installing, flip the "Off" switch to on, then add it in the bot’s Settings → Skills.</>)}</li>
                   </ol>
                 )}
               </div>
@@ -199,7 +199,7 @@ export function LimixSkillHub() {
   };
 
   return (
-    <Card title={lx("Thư viện kỹ năng Limix", "Limix Skill Library")} subtitle={lx("Kĩ năng đã quét bảo mật và chấm điểm. Cài xong, kĩ năng nằm sẵn trong kho nhưng chưa bot nào dùng: mở bot → Kĩ Năng (Skills) → Kho Kĩ Năng (Skills) để thêm cho từng bot.", "Skills that are security-scanned and scored. Once installed, a skill waits in the store and no bot uses it yet: open a bot → Skills → Skills Store to add it to one bot.")}>
+    <Card title={lx("Kho kỹ năng Limix", "Limix Skill Catalog")} subtitle={lx("Kĩ năng đã quét bảo mật và chấm điểm. Cài xong, kĩ năng nằm sẵn trong kho nhưng chưa bot nào dùng: mở bot → Kĩ Năng (Skills) → Kho Kĩ Năng (Skills) để thêm cho từng bot.", "Skills that are security-scanned and scored. Once installed, a skill waits in the store and no bot uses it yet: open a bot → Skills → Skills Store to add it to one bot.")}>
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap gap-1.5">
           {TABS.map(([id, label]) => {
@@ -250,7 +250,7 @@ export function LimixSkillHub() {
                 {visible.length > shown && <button type="button" className={`${button} w-fit self-center`} onClick={() => setShown((n) => n + PAGE)}>{lx(`Xem thêm ${Math.min(PAGE, visible.length - shown)} kỹ năng`, `Show ${Math.min(PAGE, visible.length - shown)} more`)}</button>}
               </>
             )}
-            {tab === "installed" && visible.length > 0 && <p className="flex items-center gap-1 text-[12px] text-ink-tertiary"><Check size={13} />{lx("Kỹ năng đã bật nằm trong thư viện kỹ năng bên dưới, nơi bạn gán cho từng bot hoặc mọi bot.", "Skills you switched on are in the skill library below, where you assign them to one bot or all bots.")}</p>}
+            {tab === "installed" && visible.length > 0 && <p className="flex items-center gap-1 text-[12px] text-ink-tertiary"><Check size={13} />{lx("Kỹ năng đã bật nằm trong thư viện bên dưới. Mở cài đặt của từng bot → Kĩ Năng (Skills) để thêm.", "Enabled skills are in the library below. Add them from each bot’s Settings → Skills.")}</p>}
           </>
         )}
       </div>

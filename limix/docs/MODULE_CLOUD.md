@@ -49,3 +49,7 @@ Lộ trình gợi ý: (1) dịch vụ cài `limixbot serve` trên VPS của khá
 3. Xem lại bước 8b (branded build): nếu muốn hiện bảng giá Limix Cloud, phải cho các thẻ Cloud chạy cả khi
    `source === "file"`, nhưng vẫn ẩn thẻ tài trợ/thông báo của MausBot.
 4. Chạy lại `python3 limix/rebrand.py . limix/brand-assets`, build, kiểm thử với máy đám mây thử nghiệm.
+
+## Đồng bộ dữ liệu theo tài khoản (2026-11-14)
+
+Module riêng, tiếp tục ẩn/tắt vì chủ dự án chưa có server. Không cần máy Cloud chạy bot để triển khai lưu trữ sau này. Kế hoạch và các bước còn thiếu: [PLAN_ACCOUNT_DATA.md](PLAN_ACCOUNT_DATA.md). Hiện ưu tiên **Chuyển máy Offline** bằng file mã hóa; không bật `LIMIX_CLOUD_ENABLED`.

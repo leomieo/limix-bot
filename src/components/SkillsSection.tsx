@@ -1,15 +1,13 @@
 // Security: local browse only, with no registry and no network fetch, so an import is exactly the bytes pasted here.
-import { Search, X } from "lucide-react";
+import { Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { intlLocale, t } from "@/lib/i18n";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
-import { useStore } from "@/state/store";
 import { Card, Switch } from "./SettingsPrimitives";
 import { LimixBundledSkills, LimixToolsCard } from "./LimixBundledSkills";
 import { LimixSkillHub } from "./LimixSkillHub";
 import type { SkillsLibrarySkillWire } from "../../shared/wire";
 import { Layer } from "./Layer";
-import { Select } from "./Select";
 
 export function filterLibrarySkills(
   skills: readonly SkillsLibrarySkillWire[],
@@ -38,7 +36,6 @@ export function LibrarySkillMeta({ skill }: { skill: SkillsLibrarySkillWire }) {
 }
 
 export function SkillsSection() {
-  const { state } = useStore();
   const [skills, setSkills] = useState<SkillsLibrarySkillWire[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -49,10 +46,8 @@ export function SkillsSection() {
   const [importText, setImportText] = useState("");
   const [importing, setImporting] = useState(false);
   const [importMessage, setImportMessage] = useState("");
-  const [assignBot, setAssignBot] = useState("");
   const busy = useRef(false);
 
-  const bots = state.bots.filter((bot) => !bot.hidden);
   const tags = useMemo(
     () => [...new Set(skills.flatMap((skill) => skill.tags))].sort((a, b) => a.localeCompare(b)),
     [skills],
@@ -83,45 +78,6 @@ export function SkillsSection() {
     };
   }, []);
 
-  const putAssignments = async (botId: string, name: string, remove: boolean) => {
-    if (busy.current) return;
-    busy.current = true;
-    const label = `${name}:${botId}`;
-    setWorking(label);
-    setError("");
-    try {
-      // Read the complete current list while mutations are serialized, so a second row never overwrites an earlier
-      // assignment.
-      const listing = await fetch("/api/skills-library");
-      const listed = (await listing.json()) as { skills?: SkillsLibrarySkillWire[]; error?: string };
-      if (!listing.ok) throw new Error(listed.error ?? t("skills.library.loadError"));
-      const current = (listed.skills ?? []).filter((skill) => skill.assignedBots.some((bot) => bot.id === botId)).map((skill) => skill.name);
-      const next = remove ? current.filter((skill) => skill !== name) : [...new Set([...current, name])];
-      const response = await fetch(`/api/bots/${encodeURIComponent(botId)}/skills-library`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ skills: next }),
-      });
-      const body = (await response.json()) as { error?: string };
-      if (!response.ok) throw new Error(body.error ?? t("skills.error.assignments"));
-      await refresh();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t("skills.error.assignments"));
-    } finally {
-      busy.current = false;
-      setWorking("");
-    }
-  };
-
-  const assign = async (skill: SkillsLibrarySkillWire) => {
-    if (!assignBot) return;
-    await putAssignments(assignBot, skill.name, false);
-  };
-
-  const unassign = async (skill: SkillsLibrarySkillWire, botId: string) => {
-    await putAssignments(botId, skill.name, true);
-  };
-
   const toggle = async (skill: SkillsLibrarySkillWire, reviewed = false) => {
     if (busy.current) return;
     if (!skill.enabled && !reviewed) return view(skill, true);
@@ -146,27 +102,6 @@ export function SkillsSection() {
     }
   };
 
-  const toggleEveryBot = async (skill: SkillsLibrarySkillWire) => {
-    if (busy.current) return;
-    busy.current = true;
-    setWorking(skill.name);
-    setError("");
-    try {
-      const response = await fetch(`/api/skills-library/${encodeURIComponent(skill.name)}`, {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ everyBot: !skill.everyBot }),
-      });
-      const body = (await response.json()) as { error?: string };
-      if (!response.ok) throw new Error(body.error ?? "Could not update this skill.");
-      await refresh();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not update this skill.");
-    } finally {
-      busy.current = false;
-      setWorking("");
-    }
-  };
 
   const view = async (skill: SkillsLibrarySkillWire, review = false) => {
     setError("");
@@ -278,69 +213,10 @@ export function SkillsSection() {
                     />
                   </div>
                   <LibrarySkillMeta skill={skill} />
-                  {skill.everyBot && (
-                  <div className="mt-2 flex items-center justify-between gap-3 rounded-lg bg-inset px-2.5 py-2">
-                    <div>
-                      <div className="text-[12px] font-medium text-ink">{t("skills.library.everyBot")}</div>
-                      <div className="text-[11px] text-ink-secondary">{t("skills.library.everyBotHint")}</div>
-                    </div>
-                    <Switch
-                      checked={skill.everyBot}
-                      aria-label={t("skills.library.everyBot")}
-                      disabled={Boolean(working || importing)}
-                      onClick={() => void toggleEveryBot(skill)}
-                    />
-                  </div>
-                  )}
                   {skill.warnings.length > 0 && (
                     <div className="mt-1 text-[11px] text-warning">{skill.warnings.join(" · ")}</div>
                   )}
-                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-ink-secondary">
-                    {skill.assignedBots.length === 0 ? (
-                      <span>{t("skills.library.notAssigned")}</span>
-                    ) : (
-                      skill.assignedBots.map((bot) => (
-                        <span key={bot.id} className="flex items-center gap-1 rounded-full bg-control px-2 py-0.5">
-                          <span className="max-w-40 truncate">{bot.name}</span>
-                          <button
-                            type="button"
-                            aria-label={t("skills.library.removeAssignment", { bot: bot.name })}
-                            title={t("skills.library.removeAssignment", { bot: bot.name })}
-                            disabled={Boolean(working || importing)}
-                            onClick={() => void unassign(skill, bot.id)}
-                            className="flex size-4 items-center justify-center rounded-full text-ink-secondary hover:bg-danger/10 hover:text-danger disabled:opacity-40"
-                          >
-                            <X size={11} />
-                          </button>
-                        </span>
-                      ))
-                    )}
-                  </div>
-                  {bots.length > 0 && (
-                    <div className="mt-1.5 flex items-center gap-1.5">
-                      <Select
-                        size="sm"
-                        aria-label={t("skills.library.assignLabel")}
-                        value={assignBot}
-                        disabled={Boolean(working || importing)}
-                        onChange={(e) => setAssignBot(e.target.value)}
-                        className="max-w-45"
-                      >
-                        <option value="">{t("skills.library.assignPickBot")}</option>
-                        {bots.map((bot) => (
-                          <option key={bot.id} value={bot.id}>{bot.name}</option>
-                        ))}
-                      </Select>
-                      <button
-                        type="button"
-                        disabled={!assignBot || Boolean(working || importing)}
-                        onClick={() => void assign(skill)}
-                        className="rounded-lg bg-control px-2.5 py-1 text-[12px] text-ink hover:bg-raised-hover disabled:opacity-50"
-                      >
-                        {t("skills.library.assign")}
-                      </button>
-                    </div>
-                  )}
+
                 </div>
               ))}
             </div>

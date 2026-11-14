@@ -10,3 +10,6 @@ export const LIMIX_ACCOUNT_URL = "https://tiktok.limixmedia.com/api/limixbot";
  * does not exist yet. While false the Settings → Organization block, the onboarding row and the Server-menu entry are
  * hidden (owner's choice 2026-11-12). The preload carries its own copy of this switch (it cannot import modules). */
 export const LIMIX_ORGANIZATION_ENABLED = false;
+
+/** Account data sync stays hidden until a Limix storage server is deployed and verified. */
+export const LIMIX_ACCOUNT_SYNC_ENABLED = false;

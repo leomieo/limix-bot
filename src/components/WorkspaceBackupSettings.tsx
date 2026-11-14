@@ -119,7 +119,7 @@ export function WorkspaceBackupSettings() {
   const exportBackup = () => perform("export", async () => {
     if (!validPassword(exportPassword) || exportPassword !== confirmPassword) return;
     const result: { id: string; filename: string } = await api("/api/workspace-backup/export", {
-      method: "POST", body: JSON.stringify({ password: exportPassword, clientState: collectWorkspaceClientState() }),
+      method: "POST", body: JSON.stringify({ password: exportPassword, omitMedia: true, clientState: collectWorkspaceClientState() }),
     });
     if (alive.current) { setExportPassword(""); setConfirmPassword(""); }
     if (!alive.current) return;

@@ -112,6 +112,13 @@ def main():
                 skill["commit"] = commit
             files = build(skill, src, commit)
             print(f"{skill['id']}: {files} files at {commit[:7]}")
+    overlay = Path(__file__).resolve().parents[1] / "overlay" / "skills"
+    if overlay.exists():
+        for source in sorted(overlay.rglob("*")):
+            if source.is_file():
+                target = OUT / source.relative_to(overlay)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(source, target)
     if update:
         SOURCES.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         print("Review `git diff limix/` before releasing.")

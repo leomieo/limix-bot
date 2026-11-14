@@ -87,7 +87,7 @@ edit(".gitignore", lambda s: s if "limix/__pycache__/" in s else s.rstrip("\n") 
 wf = ROOT / ".github/workflows"
 if wf.exists():
     for f in wf.glob("*.yml"):
-        if f.name not in ("limix-windows.yml", "limix-npm.yml", "limix-cloudflare.yml", "limix-site.yml", "limix-docker.yml"):
+        if f.name not in ("limix-desktop.yml", "limix-windows.yml", "limix-npm.yml", "limix-cloudflare.yml", "limix-site.yml", "limix-docker.yml"):
             f.unlink()
             changed.append(f".github/workflows/{f.name} (removed)")
 shutil.copy(ASSETS / "limix-windows.yml", wf / "limix-windows.yml")
@@ -1770,7 +1770,7 @@ def skills_panel(s):
     return s
 edit("src/components/bot-panel/pages.tsx", skills_panel)
 def skills_settings(s):
-    if "{skill.everyBot && (" in s:
+    if "{skill.everyBot && (" in s or "toggleEveryBot" not in s:
         return s
     s = must(s, '                  <div className="mt-2 flex items-center justify-between gap-3 rounded-lg bg-inset px-2.5 py-2">\n                    <div>\n                      <div className="text-[12px] font-medium text-ink">{t("skills.library.everyBot")}</div>',
                 '                  {skill.everyBot && (\n                  <div className="mt-2 flex items-center justify-between gap-3 rounded-lg bg-inset px-2.5 py-2">\n                    <div>\n                      <div className="text-[12px] font-medium text-ink">{t("skills.library.everyBot")}</div>')
@@ -2084,3 +2084,11 @@ for rel, edits in json.loads((ROOT / "limix/patches/vm-capacity.json").read_text
             s = must(s, patch["before"], patch["after"])
         return s
     edit(rel, apply_capacity_patch)
+
+for rel, edits in json.loads((ROOT / "limix/patches/offline-desktop.json").read_text(encoding="utf-8")).items():
+    def apply_offline_desktop_patch(s, edits=edits):
+        for patch in edits:
+            if patch["after"] not in s:
+                s = must(s, patch["before"], patch["after"])
+        return s
+    edit(rel, apply_offline_desktop_patch)
