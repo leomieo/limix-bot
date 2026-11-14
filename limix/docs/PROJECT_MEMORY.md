@@ -210,3 +210,5 @@
 - 2026-11-14 lượt 0.3.33: 67/67 Vitest chức năng tổng hợp, 14/14 UI/HTTP đăng xuất/chọn thư mục, 4/4 archive thật có ràng buộc account/version/khôi phục, 6/6 Node cài gói+đăng xuất đã qua (có kiểm thử chồng lặp, không cộng tổng). Bảo toàn sai tài khoản trước commit/startup đã xác minh trên thư mục fixture. Chưa có bộ cài 0.3.33 phát hành; đang kiểm tra tái dựng nguồn rồi push và chạy CI.
 
 - 2026-11-14 trước push 0.3.33: TypeScript UI/server đạt; 29/29 HTTP + UI backup sau thay đổi accountReady đạt; tái dựng từ base 4aaad48 chạy hai lượt thành công, idempotent và không lệch file patch. Giữ module đồng bộ server tắt. Sẽ chạy lại toàn bộ desktop CI; chưa nhận là phát hành cho tới khi all-platform gate đạt.
+
+- 2026-11-14 CI 43548573503: macOS kiểm thử Node phát hiện assertion đường dẫn /var và /private/var khác nhau sau canonicalize. Đã sửa kỳ vọng test dùng realpath (mã cài đặt đúng); Windows/Linux tiếp tục chạy. Site 43548604239 success gồm kiểm tra live FAQ đóng, đủ 4 placeholder và downloads.js khớp nguồn.
