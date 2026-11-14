@@ -1,0 +1,34 @@
+{
+  "server/agents-turn.ts": [
+    {
+      "before": "    OMB_X_RESEARCH: flag(host.x && bot.xResearch !== false),\n    OMB_RESEARCH: flag(host.x && host.research && bot.xResearch !== false),\n    ...roleToolEnv(bot),\n    OMB_IMAGE_GENERATION: flag(host.imageGeneration),\n    OMB_MEETINGS: flag(host.meetings === true && !conversation.room),\n    OMB_COMPUTER_SELECTION: flag(!conversation.room && bot.computer !== \"off\" && !conversation.teamComputer && !conversation.botDriven),\n  };\n",
+      "after": "    OMB_X_RESEARCH: flag(host.x && bot.xResearch !== false),\n    OMB_RESEARCH: flag(host.x && host.research && bot.xResearch !== false),\n    ...roleToolEnv(bot),\n    OMB_IMAGE_GENERATION: \"1\",\n    OMB_MEETINGS: flag(host.meetings === true && !conversation.room),\n    OMB_COMPUTER_SELECTION: flag(!conversation.room && bot.computer !== \"off\" && !conversation.teamComputer && !conversation.botDriven),\n  };\n"
+    }
+  ],
+  "server/system-prompt.ts": [
+    {
+      "before": "// One builder for every turn's system prompt, so what a bot receives and the \"what the model sees\" preview are the same bytes.\nimport { soulSystemPrompt } from \"./bot-folder.ts\";\nimport { lentComputersLine, theirComputer } from \"./lent-computers.ts\";\n",
+      "after": "import { IMAGE_ROUTING_PROMPT } from \"./limix-image-routing.ts\";\n// One builder for every turn's system prompt, so what a bot receives and the \"what the model sees\" preview are the same bytes.\nimport { soulSystemPrompt } from \"./bot-folder.ts\";\nimport { lentComputersLine, theirComputer } from \"./lent-computers.ts\";\n"
+    },
+    {
+      "before": "    { id: \"soul\", label: \"Standing instructions (SOUL.md)\", text: soulSystemPrompt(soul) },\n    // Right after the soul: on a direct turn, ahead of every section that names a tool.\n    { id: \"tool-bridge\", label: \"Tool search\", text: agentsToolBridged(agents) ? AGENTS_TOOL_BRIDGE_PROMPT : \"\" },\n    { id: \"reply-style\", label: \"Reply style\", text: replyStylePrompt(opts?.replyStyle) },\n    ...parts,\n    { id: \"reply-habits\", label: \"How to reply\", text: REPLY_HABITS_PROMPT },\n",
+      "after": "    { id: \"soul\", label: \"Standing instructions (SOUL.md)\", text: soulSystemPrompt(soul) },\n    // Right after the soul: on a direct turn, ahead of every section that names a tool.\n    { id: \"tool-bridge\", label: \"Tool search\", text: agentsToolBridged(agents) ? AGENTS_TOOL_BRIDGE_PROMPT : \"\" },\n    { id: \"image-routing\", label: \"Image generation\", text: agents?.env?.OMB_IMAGE_GENERATION === \"1\" ? IMAGE_ROUTING_PROMPT : \"\" },\n    { id: \"reply-style\", label: \"Reply style\", text: replyStylePrompt(opts?.replyStyle) },\n    ...parts,\n    { id: \"reply-habits\", label: \"How to reply\", text: REPLY_HABITS_PROMPT },\n"
+    }
+  ],
+  "server/routes/image-tools.ts": [
+    {
+      "before": "import { PASS } from \"./table.ts\";\n\nexport const IMAGE_MESSAGES = {\n  notSetUp: \"Image generation isn't set up on this computer. Ask the person to choose an image provider in Settings → AI → Image generation (shown in advanced mode).\",\n  noTurn: \"This turn has not started yet or already ended, so the image could not be attached.\",\n  notSaved: \"The image could not be saved on this computer. Try again shortly.\",\n  notPerson: \"Images are made only for a person's own message in a chat. This turn was started another way (a routine, a webhook, an app, a guest or a room goal's coordinator), so no image was made. Tell the person they can ask for the image in a chat.\",\n",
+      "after": "import { PASS } from \"./table.ts\";\n\nexport const IMAGE_MESSAGES = {\n  notSetUp: \"Image generation is not configured in Limix Bot on this computer. Open Settings → AI → Image generation and choose the image provider, API protocol and model. Selecting a chat model does not configure image generation. Do not try Gemini, Composio or code-drawn substitutes. No image was generated.\",\n  noTurn: \"This turn has not started yet or already ended, so the image could not be attached.\",\n  notSaved: \"The image could not be saved on this computer. Try again shortly.\",\n  notPerson: \"Images are made only for a person's own message in a chat. This turn was started another way (a routine, a webhook, an app, a guest or a room goal's coordinator), so no image was made. Tell the person they can ask for the image in a chat.\",\n"
+    }
+  ],
+  "server/index.ts": [
+    {
+      "before": "import { channelReviewRoute, channelReviewUntil } from \"./limix-channel-review.ts\";\nimport { ChannelIdentityRegistry } from \"./limix-channel-identity.ts\";\nimport { BOT_API_INTERNAL_CHAT_REQUIRED } from \"../shared/bot-api.ts\";\n",
+      "after": "import { imageConnectorRefusal } from \"./limix-image-routing.ts\";\nimport { channelReviewRoute, channelReviewUntil } from \"./limix-channel-review.ts\";\nimport { ChannelIdentityRegistry } from \"./limix-channel-identity.ts\";\nimport { BOT_API_INTERNAL_CHAT_REQUIRED } from \"../shared/bot-api.ts\";\n"
+    },
+    {
+      "before": "        const connectorCalls = rpc?.method === \"tools/call\" && typeof rpcParams?.name === \"string\"\n          ? connectorCallsIn(rpcParams.name, rpcParams.arguments)\n          : [];\n        if (proactive.fence.refusesConnectorCall(currentSender, internalCapability.threadId, body)) return refuseOutbound(READ_AND_DRAFT_REFUSAL);\n        const scopeRefusal = managedPolicy.appsCallRefusal(connectorCalls, serviceSlugs) ?? await teamConnections.callRefusal(internalCapability, connectorCalls); if (scopeRefusal) return refuseOutbound(scopeRefusal);\n        // A room turn can run at a Chief's delegated level, which only the room handoff carries.\n",
+      "after": "        const connectorCalls = rpc?.method === \"tools/call\" && typeof rpcParams?.name === \"string\"\n          ? connectorCallsIn(rpcParams.name, rpcParams.arguments)\n          : [];\n        const imageRoutingRefusal = rpc?.method === \"tools/call\" && typeof rpcParams?.name === \"string\" ? imageConnectorRefusal(rpcParams.name, rpcParams.arguments) : null;\n        if (imageRoutingRefusal) return refuseOutbound(imageRoutingRefusal);\n        if (proactive.fence.refusesConnectorCall(currentSender, internalCapability.threadId, body)) return refuseOutbound(READ_AND_DRAFT_REFUSAL);\n        const scopeRefusal = managedPolicy.appsCallRefusal(connectorCalls, serviceSlugs) ?? await teamConnections.callRefusal(internalCapability, connectorCalls); if (scopeRefusal) return refuseOutbound(scopeRefusal);\n        // A room turn can run at a Chief's delegated level, which only the room handoff carries.\n"
+    }
+  ]
+}

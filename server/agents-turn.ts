@@ -48,7 +48,7 @@ export function agentsServerEnv(conversation: AgentsConversation, turn: AgentsTu
     OMB_X_RESEARCH: flag(host.x && bot.xResearch !== false),
     OMB_RESEARCH: flag(host.x && host.research && bot.xResearch !== false),
     ...roleToolEnv(bot),
-    OMB_IMAGE_GENERATION: flag(host.imageGeneration),
+    OMB_IMAGE_GENERATION: "1",
     OMB_MEETINGS: flag(host.meetings === true && !conversation.room),
     OMB_COMPUTER_SELECTION: flag(!conversation.room && bot.computer !== "off" && !conversation.teamComputer && !conversation.botDriven),
   };

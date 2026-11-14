@@ -2126,3 +2126,11 @@ for rel, edits in json.loads((ROOT / "limix/patches/channel-conversations.json")
                 s = must(s, patch["before"], patch["after"])
         return s
     edit(rel, channel_conversations_patch)
+
+for rel, edits in json.loads((ROOT / "limix/patches/image-routing.json").read_text(encoding="utf-8")).items():
+    def image_routing_patch(s, edits=edits):
+        for patch in edits:
+            if patch["after"] not in s:
+                s = must(s, patch["before"], patch["after"])
+        return s
+    edit(rel, image_routing_patch)

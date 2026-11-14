@@ -1,3 +1,4 @@
+import { imageConnectorRefusal } from "./limix-image-routing.ts";
 import { channelReviewRoute, channelReviewUntil } from "./limix-channel-review.ts";
 import { ChannelIdentityRegistry } from "./limix-channel-identity.ts";
 import { BOT_API_INTERNAL_CHAT_REQUIRED } from "../shared/bot-api.ts";
@@ -14516,6 +14517,8 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
         const connectorCalls = rpc?.method === "tools/call" && typeof rpcParams?.name === "string"
           ? connectorCallsIn(rpcParams.name, rpcParams.arguments)
           : [];
+        const imageRoutingRefusal = rpc?.method === "tools/call" && typeof rpcParams?.name === "string" ? imageConnectorRefusal(rpcParams.name, rpcParams.arguments) : null;
+        if (imageRoutingRefusal) return refuseOutbound(imageRoutingRefusal);
         if (proactive.fence.refusesConnectorCall(currentSender, internalCapability.threadId, body)) return refuseOutbound(READ_AND_DRAFT_REFUSAL);
         const scopeRefusal = managedPolicy.appsCallRefusal(connectorCalls, serviceSlugs) ?? await teamConnections.callRefusal(internalCapability, connectorCalls); if (scopeRefusal) return refuseOutbound(scopeRefusal);
         // A room turn can run at a Chief's delegated level, which only the room handoff carries.

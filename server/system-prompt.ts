@@ -1,3 +1,4 @@
+import { IMAGE_ROUTING_PROMPT } from "./limix-image-routing.ts";
 // One builder for every turn's system prompt, so what a bot receives and the "what the model sees" preview are the same bytes.
 import { soulSystemPrompt } from "./bot-folder.ts";
 import { lentComputersLine, theirComputer } from "./lent-computers.ts";
@@ -88,6 +89,7 @@ export function buildSystemPrompt(
     { id: "soul", label: "Standing instructions (SOUL.md)", text: soulSystemPrompt(soul) },
     // Right after the soul: on a direct turn, ahead of every section that names a tool.
     { id: "tool-bridge", label: "Tool search", text: agentsToolBridged(agents) ? AGENTS_TOOL_BRIDGE_PROMPT : "" },
+    { id: "image-routing", label: "Image generation", text: agents?.env?.OMB_IMAGE_GENERATION === "1" ? IMAGE_ROUTING_PROMPT : "" },
     { id: "reply-style", label: "Reply style", text: replyStylePrompt(opts?.replyStyle) },
     ...parts,
     { id: "reply-habits", label: "How to reply", text: REPLY_HABITS_PROMPT },

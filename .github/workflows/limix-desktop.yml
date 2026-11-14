@@ -49,7 +49,7 @@ jobs:
       - name: Verify channel isolation and privacy
         run: node node_modules/vitest/vitest.mjs run server/limix-channel-review.test.ts server/limix-channel-identity.test.ts server/bot-api-host.test.ts src/state/thread-navigation.test.ts
       - name: Verify Responses image generation
-        run: node node_modules/vitest/vitest.mjs run server/image-generation.test.ts server/limix-image-connections.test.ts server/routes/image-settings.test.ts server/routes/image-tools.test.ts src/components/ImageGenerationSettings.test.ts
+        run: node node_modules/vitest/vitest.mjs run server/limix-image-routing.test.ts server/limix-image-routing.e2e.test.ts server/image-generation.test.ts server/limix-image-connections.test.ts server/routes/image-settings.test.ts server/routes/image-tools.test.ts src/components/ImageGenerationSettings.test.ts
       - name: Verify transfer and skill changes
         run: |
           node --test limix/account-sync/account-sync.test.mjs electron/limix-sign-out.node-test.mjs electron/limix-skill-install.node-test.mjs

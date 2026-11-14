@@ -35,8 +35,7 @@ Open **Settings → AI → Image generation** in Simple mode, or the Image gener
   says when the account has no credit, since image models are paid. For the
   other providers the model is only checked when the first image is made.
 
-Bots are shown `generate_image` only while the base or the backup has what it
-needs, so a bot never spends a turn finding out it cannot make images.
+Bots always receive `generate_image` through the Limix tool catalog. If no image provider is configured, it returns setup instructions without making an upstream request. Composio image generation calls are refused so the bot cannot silently switch image providers. Use Settings → AI → Image generation to choose the provider and protocol explicitly.
 
 | Provider | Key | Default model | Endpoint |
 | --- | --- | --- | --- |
