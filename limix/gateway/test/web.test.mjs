@@ -1,3 +1,5 @@
+import { createHmac } from "node:crypto";
+import vm from "node:vm";
 import assert from "node:assert/strict";
 import { mkdtempSync } from "node:fs";
 import { request } from "node:http";
@@ -15,11 +17,11 @@ import { fakeOpenMausBot, fakeTelegram, until } from "./fakes.mjs";
 const cleanups = [];
 after(() => cleanups.forEach((f) => f()));
 
-function call(port, { method = "GET", path = "/", host, admin, body }) {
+function call(port, { method = "GET", path = "/", host, admin, body, headers = {} }) {
   return new Promise((resolve, reject) => {
     const data = body ? JSON.stringify(body) : undefined;
     const req = request({ host: "127.0.0.1", port, method, path, headers: {
-      Host: host ?? `127.0.0.1:${port}`, ...(admin ? { "X-Limix-Admin": admin } : {}),
+      ...headers, Host: host ?? `127.0.0.1:${port}`, ...(admin ? { "X-Limix-Admin": admin } : {}),
       ...(data ? { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(data) } : {}),
     } }, (res) => {
       const parts = [];
@@ -51,7 +53,7 @@ async function startApp() {
   cleanups.push(() => { gateway.stopAll(); app.server.close(); });
   const page = await call(port, {});
   const admin = /const ADMIN = "([^"]+)"/.exec(page.text)[1];
-  return { tg, omb, store, gateway, port, admin, page };
+  return { tg, omb, store, secrets, gateway, port, admin, page };
 }
 
 test("API refuses calls without the page's admin token or from a foreign Host", async () => {
@@ -115,4 +117,42 @@ test("Shutdown needs the admin token or the launcher's own token", async () => {
   await new Promise((r) => setTimeout(r, 200));
   assert.equal(stopped, 1);
   assert.equal((await call(port, { path: "/favicon.svg" })).status, 200);
+});
+
+test("media settings persist and invalid limits are rejected", async () => {
+  const { tg, port, admin, store } = await startApp();
+  const added = await call(port, { method: "POST", path: "/api/connections", admin, body: { platform: "telegram", token: tg.token } });
+  const id = added.json.connection.id;
+  const path = `/api/connections/${id}/media`;
+  assert.equal((await call(port, { method: "POST", path, admin, body: { maxCount: 99 } })).status, 400);
+  assert.equal((await call(port, { method: "POST", path, admin, body: { receive: false, kinds: ["image"], maxBytes: 1048576, maxCount: 1 } })).status, 200);
+  assert.equal(store.getConnection(id).media.receive, false);
+  assert.deepEqual(store.getConnection(id).media.kinds, ["image"]);
+});
+
+test("gateway UI compiles and includes Page setup and media controls", async () => {
+  const { page } = await startApp();
+  const script = page.text.match(/<script>([\s\S]*?)<\/script>/)[1];
+  assert.doesNotThrow(() => new vm.Script(script));
+  assert.match(page.text, /Facebook Fanpage/); assert.match(page.text, /mediaForm/);
+});
+
+test("Page webhook verifies signature and challenge, then persists dedup before dispatch", async () => {
+  const { port, store, secrets, gateway } = await startApp();
+  const secret = "a".repeat(32), verify = "verify-token-123456789";
+  const conn = store.addConnection({ platform: "facebook", pageId: "123", ownerIds: ["u"], appSecretRef: secrets.put(secret), verifyTokenRef: secrets.put(verify) });
+  let turns = 0;
+  gateway.active.set(conn.id, { channel: { maxLength: 2000, typing() {}, sendText: async () => ({ id: "sent" }) }, engine: { send: async () => { turns++; return { reply: "Hello", thread: "t" }; } } });
+  const path = `/hooks/facebook/${conn.id}`;
+  const challenge = await call(port, { path: `${path}?hub.mode=subscribe&hub.verify_token=${verify}&hub.challenge=hello`, host: "public.example.com" });
+  assert.equal(challenge.status, 200); assert.equal(challenge.text, "hello");
+  assert.equal((await call(port, { path: `${path}?hub.mode=subscribe&hub.verify_token=wrong&hub.challenge=hello` })).status, 403);
+  const body = { object: "page", entry: [{ id: "123", messaging: [{ sender: { id: "u" }, recipient: { id: "123" }, message: { mid: "m1", text: "hello" } }] }] };
+  assert.equal((await call(port, { method: "POST", path, body })).status, 403);
+  assert.equal(turns, 0);
+  const headers = { "X-Hub-Signature-256": "sha256=" + createHmac("sha256", secret).update(JSON.stringify(body)).digest("hex") };
+  assert.equal((await call(port, { method: "POST", path, body, headers })).status, 200);
+  assert.equal((await call(port, { method: "POST", path, body, headers })).status, 200);
+  await until(() => turns === 1); assert.equal(store.state.inbox.filter((e) => e.eventId === "m1").length, 1);
+  assert.equal((await call(port, { path: "/api/state", host: "public.example.com" })).status, 421);
 });

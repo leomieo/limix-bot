@@ -42,6 +42,21 @@ const sh = (command: string) => new Promise<string>((resolve, reject) => {
   execFile("sh", ["-c", command], { timeout: 60_000 }, (error, stdout, stderr) => (error ? reject(new Error(`${error.message}\n${stderr}`)) : resolve(stdout)));
 });
 
+it("channel media reaches an isolated real server and remains scoped to its API thread", async () => {
+  fixture = await launchVerificationServer({ ...process.env, FAKE_CLAUDE_VERSION: "2.1.284" });
+  const { url } = fixture.info;
+  const api = appApi(url);
+  const bot = (await runControlOmb(["new-bot", "--name", "Media fixture", "--url", url]) as any).bot;
+  const on = await api("POST", `/api/bots/${bot.id}/bot-api`, { enabled: true });
+  const result = await call(on.url, on.key, { message: "Read the attached note", attachments: [{ name: "note.txt", mime: "text/plain", data: Buffer.from("channel media fixture").toString("base64") }] });
+  expect(result.status).toBe(200);
+  expect(result.body.reply).toBe("hello from fake claude");
+  const lines = (await api("GET", `/api/threads/${result.body.thread}/messages`)).messages as any[];
+  expect(lines.find((line) => line.role === "user").text).toContain("note.txt");
+  expect(JSON.stringify(result.body)).not.toContain(fixture.info.dataDir);
+  expect((await call(on.url, "invalid", { message: "x", attachments: [{ name: "x.txt", mime: "text/plain", data: "eA==" }] })).status).toBe(401);
+}, hostTimeout(60_000));
+
 it("answers the card's own curl with the bot's reply, and refuses a wrong key, an API that is off, and an eleventh call in a minute", async () => {
   fixture = await launchVerificationServer({ ...process.env, FAKE_CLAUDE_VERSION: "2.1.284" });
   const { url } = fixture.info;

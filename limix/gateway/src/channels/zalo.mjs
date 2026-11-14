@@ -1,3 +1,5 @@
+import { publicMedia } from "../public-media.mjs";
+import { downloadMedia } from "../media.mjs";
 // Zalo Bot Platform API (https://docs.zaloplatforms.com/zalo-bot, checked 2026-11-11):
 // POST https://bot-api.zaloplatforms.com/bot<TOKEN>/<method>, JSON body.
 // getUpdates long-polls and returns ONE update object in `result` (not an array); it has no offset parameter.
@@ -5,8 +7,9 @@
 import { ChannelError } from "./telegram.mjs";
 
 export class ZaloChannel {
-  constructor({ token, apiBase = "https://bot-api.zaloplatforms.com", fetchImpl = fetch, pollTimeoutSec = 25, emptyPollDelayMs = 3000 }) {
+  constructor({ token, publicMediaBase = "", apiBase = "https://bot-api.zaloplatforms.com", fetchImpl = fetch, pollTimeoutSec = 25, emptyPollDelayMs = 3000 }) {
     this.token = token;
+    this.publicMediaBase = publicMediaBase;
     this.apiBase = apiBase.replace(/\/+$/, "");
     this.fetch = fetchImpl;
     this.pollTimeoutSec = pollTimeoutSec;
@@ -32,7 +35,7 @@ export class ZaloChannel {
     if (res.ok && data.ok) return data.result;
     const code = Number(data.error_code ?? res.status);
     if (code === 401) throw new ChannelError("credential_invalid", "Token Zalo sai hoặc đã hết hạn");
-    if (code === 408) return null;
+    if (code === 408 && method === "getUpdates") return null;
     if (code === 429) throw new ChannelError("rate_limited", "Zalo báo vượt hạn mức", 10_000);
     const failure = new ChannelError("platform_error", `Zalo lỗi ${code} (${method}): ${data.description ?? ""}`);
     failure.httpCode = code;
@@ -79,13 +82,25 @@ export class ZaloChannel {
         chatType: String(m.chat?.chat_type ?? "PRIVATE").toUpperCase() === "PRIVATE" ? "private" : "group",
         senderId: String(m.from?.id ?? ""),
         senderName: m.from?.display_name ?? "",
-        text: isText && typeof m.text === "string" ? m.text : undefined,
+        text: isText ? m.text : m.caption,
+        attachments: result.event_name === "message.image.received" && m.photo_url ? [{ kind: "image", url: m.photo_url, name: "photo.jpg" }] : result.event_name === "message.voice.received" && m.voice_url ? [{ kind: "audio", url: m.voice_url, name: "voice.aac", mime: "audio/aac" }] : [],
       }],
     };
   }
 
   async sendText(chatId, text) {
     return this.api("sendMessage", { chat_id: chatId, text });
+  }
+
+  async downloadAttachment(item, maxBytes) {
+    const loaded = await downloadMedia(item.url, { hosts: [".zaloapp.com", ".zalo.me", ".zadn.vn", ".zalo.ai"], maxBytes, fetchImpl: this.fetch });
+    return { ...loaded, mime: item.mime || loaded.mime };
+  }
+
+  async sendAttachment(chatId, item, context = {}) {
+    if (item.kind !== "image" && !(item.kind === "audio" && item.mime === "audio/aac" && context.chatType === "private")) throw new Error("Zalo chỉ gửi ảnh hoặc thoại AAC trong chat riêng.");
+    const url = publicMedia.publish(this.publicMediaBase, item);
+    return item.kind === "image" ? this.api("sendPhoto", { chat_id: chatId, photo: url }) : this.api("sendVoice", { chat_id: chatId, voice_url: url });
   }
 
   async typing(chatId) {

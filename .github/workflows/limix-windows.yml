@@ -42,7 +42,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Verify gateway clipboard
         run: |
-          node --test electron/limix-gateway-clipboard.node-test.mjs limix/gateway/test/web.test.mjs
+          node --test electron/limix-gateway-clipboard.node-test.mjs limix/gateway/test/*.test.mjs
           node node_modules/vitest/vitest.mjs run src/components/LimixGatewayClipboard.dom.test.ts src/lib/copy-text.test.ts src/lib/copy-text.guard.test.ts
       - name: clean build outputs
         shell: bash

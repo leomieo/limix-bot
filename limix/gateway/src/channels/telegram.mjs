@@ -1,3 +1,4 @@
+import { downloadMedia } from "../media.mjs";
 // Telegram Bot API (https://core.telegram.org/bots/api): long polling with getUpdates.
 // Polling and a webhook cannot both be active for one bot; a 409 from getUpdates means another consumer holds it.
 
@@ -17,7 +18,7 @@ export class TelegramChannel {
     this.pollTimeoutSec = pollTimeoutSec;
     this.platform = "telegram";
     this.maxLength = 4096;
-    this.capabilities = { text: true, attachments: false, groups: false, typing: true, provisioning: "token" };
+    this.capabilities = { text: true, attachments: true, groups: true, typing: true, provisioning: "token" };
   }
 
   async api(method, body, timeoutMs = 15_000) {
@@ -25,8 +26,8 @@ export class TelegramChannel {
     try {
       res = await this.fetch(`${this.apiBase}/bot${this.token}/${method}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body ?? {}),
+        headers: body instanceof FormData ? {} : { "Content-Type": "application/json" },
+        body: body instanceof FormData ? body : JSON.stringify(body ?? {}),
         signal: AbortSignal.timeout(timeoutMs),
       });
     } catch (error) {
@@ -45,6 +46,7 @@ export class TelegramChannel {
 
   async getMe() {
     const me = await this.api("getMe");
+    this.selfId = me.id;
     return { id: String(me.id), username: me.username ?? "", name: me.first_name ?? "" };
   }
 
@@ -74,17 +76,50 @@ export class TelegramChannel {
         chatType: m.chat.type === "private" ? "private" : "group",
         senderId: String(m.from.id),
         senderName: [m.from.first_name, m.from.last_name].filter(Boolean).join(" ") || m.from.username || "",
-        text: typeof m.text === "string" ? m.text : undefined,
+        text: m.text ?? m.caption,
+        messageId: String(m.message_id),
+        topicId: m.message_thread_id,
+        replyToBot: Boolean(this.selfId && m.reply_to_message?.from?.id === this.selfId),
+        attachments: telegramAttachments(m),
       });
     }
     return { events, cursor: next };
   }
 
-  async sendText(chatId, text) {
-    return this.api("sendMessage", { chat_id: chatId, text, link_preview_options: { is_disabled: true } });
+  async sendText(chatId, text, context = {}) {
+    return this.api("sendMessage", { chat_id: chatId, text, ...(context.topicId ? { message_thread_id: context.topicId } : {}), link_preview_options: { is_disabled: true } });
+  }
+
+  async downloadAttachment(item, maxBytes) {
+    const file = await this.api("getFile", { file_id: item.fileId });
+    if (!file.file_path || file.file_path.split("/").some((part) => part === "..") || file.file_size > maxBytes) throw new Error("Không thể tải tệp Telegram hoặc tệp quá lớn.");
+    const loaded = await downloadMedia(`${this.apiBase}/file/bot${this.token}/${file.file_path}`, { hosts: ["api.telegram.org"], maxBytes, fetchImpl: this.fetch });
+    return { ...loaded, mime: item.mime || loaded.mime };
+  }
+
+  async sendAttachment(chatId, item, context = {}) {
+    const kind = item.kind || "file";
+    const [method, field] = ({ image: ["sendPhoto", "photo"], video: ["sendVideo", "video"], audio: ["sendAudio", "audio"], file: ["sendDocument", "document"] })[kind];
+    const form = new FormData();
+    form.set("chat_id", chatId);
+    if (context.topicId) form.set("message_thread_id", String(context.topicId));
+    form.set(field, new Blob([Buffer.from(item.data, "base64")], { type: item.mime }), item.name);
+    return this.api(method, form, 60_000);
   }
 
   async typing(chatId) {
     await this.api("sendChatAction", { chat_id: chatId, action: "typing" }).catch(() => {});
   }
+}
+
+export function telegramAttachments(m) {
+  if (m.photo?.length) {
+    const photo = m.photo.at(-1);
+    return [{ kind: "image", fileId: photo.file_id, size: photo.file_size, mime: "image/jpeg", name: "photo.jpg" }];
+  }
+  for (const [key, kind, mime, name] of [["video", "video", "video/mp4", "video.mp4"], ["animation", "video", "video/mp4", "animation.mp4"], ["voice", "audio", "audio/ogg", "voice.ogg"], ["audio", "audio", "audio/mpeg", "audio.mp3"], ["document", "file", "application/octet-stream", "document.bin"]]) {
+    const file = m[key];
+    if (file) return [{ kind, fileId: file.file_id, size: file.file_size, mime: file.mime_type || mime, name: file.file_name || name }];
+  }
+  return [];
 }

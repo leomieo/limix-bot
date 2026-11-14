@@ -33,7 +33,7 @@ test("Discord: identifies with the three intents and hands over a direct message
   ws.emit({ op: 0, s: 1, t: "READY", d: { session_id: "s", user: { id: "900" } } });
   ws.emit({ op: 0, s: 2, t: "MESSAGE_CREATE", d: { id: "1", channel_id: "55", author: { id: "7", username: "an" }, content: "xin chào" } });
   const { events } = await pending;
-  assert.deepEqual(events, [{ eventId: "1", chatId: "55", chatType: "private", senderId: "7", senderName: "an", text: "xin chào" }]);
+  assert.deepEqual(events, [{ eventId: "1", chatId: "55", chatType: "private", senderId: "7", senderName: "an", text: "xin chào", attachments: [], mentionedBot: undefined, replyToBot: false }]);
   ch.close();
 });
 

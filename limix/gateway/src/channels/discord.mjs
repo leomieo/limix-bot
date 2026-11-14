@@ -1,3 +1,4 @@
+import { downloadMedia, mediaKind } from "../media.mjs";
 // Discord bot (https://discord.com/developers/docs/events/gateway): one WebSocket to the Gateway (outbound only, no public
 // address needed) for incoming messages, the REST API for replies. In the Developer Portal the bot needs the
 // "Message Content Intent" switched on (Bot > Privileged Gateway Intents), or it sees empty messages in servers.
@@ -16,7 +17,7 @@ export class DiscordChannel {
     this.pollTimeoutSec = pollTimeoutSec;
     this.platform = "discord";
     this.maxLength = 2000;
-    this.capabilities = { text: true, attachments: false, groups: false, typing: true, provisioning: "token" };
+    this.capabilities = { text: true, attachments: true, groups: true, typing: true, provisioning: "token" };
     this.queue = [];
     this.waiter = null;
     this.fatal = null;
@@ -35,8 +36,8 @@ export class DiscordChannel {
     try {
       res = await this.fetch(`${this.apiBase}${path}`, {
         method,
-        headers: { Authorization: `Bot ${this.token}`, "Content-Type": "application/json", "User-Agent": "LimixBot (https://github.com/leomieo/limix-bot, 0.3)" },
-        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+        headers: { Authorization: `Bot ${this.token}`, ...(body instanceof FormData ? {} : { "Content-Type": "application/json" }), "User-Agent": "LimixBot (https://github.com/leomieo/limix-bot, 0.3)" },
+        ...(body === undefined ? {} : { body: body instanceof FormData ? body : JSON.stringify(body) }),
         signal: AbortSignal.timeout(timeoutMs),
       });
     } catch (error) {
@@ -115,6 +116,9 @@ export class DiscordChannel {
       senderId: String(m.author?.id ?? ""),
       senderName: m.author?.global_name || m.author?.username || "",
       text: typeof m.content === "string" && m.content ? m.content : undefined,
+      mentionedBot: m.mentions?.some((u) => String(u.id) === this.selfId),
+      replyToBot: String(m.referenced_message?.author?.id) === this.selfId,
+      attachments: (m.attachments ?? []).map((a) => ({ kind: mediaKind(a.content_type), url: a.url, name: a.filename, mime: a.content_type, size: a.size })),
     });
     this.wake();
   }
@@ -142,6 +146,18 @@ export class DiscordChannel {
 
   async sendText(chatId, text) {
     return this.api("POST", `/channels/${encodeURIComponent(chatId)}/messages`, { content: text, allowed_mentions: { parse: [] } });
+  }
+
+  async downloadAttachment(item, maxBytes) {
+    const loaded = await downloadMedia(item.url, { hosts: ["cdn.discordapp.com", "media.discordapp.net"], maxBytes, fetchImpl: this.fetch });
+    return { ...loaded, mime: item.mime || loaded.mime };
+  }
+
+  async sendAttachment(chatId, item) {
+    const form = new FormData();
+    form.set("payload_json", JSON.stringify({ allowed_mentions: { parse: [] }, attachments: [{ id: 0, filename: item.name }] }));
+    form.set("files[0]", new Blob([Buffer.from(item.data, "base64")], { type: item.mime }), item.name);
+    return this.api("POST", `/channels/${encodeURIComponent(chatId)}/messages`, form, 60_000);
   }
 
   async typing(chatId) {

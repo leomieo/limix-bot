@@ -7,6 +7,10 @@
 
 ## 1. Trạng thái hiện tại (luôn ghi đè cho đúng)
 
+- **2026-11-14 media connections:** implemented Telegram/Discord binary media receive/send, Zalo image/voice receive and image/private AAC send via optional HTTPS, Facebook Fanpage signed webhook + Page responses. Per-connection controls and scoped Bot API attachments, authorization before download, bounded CDN fetch and partial-send status. Facebook personal/WhatsApp/Zalo OA remain unavailable; no verified official personal API. See `PLAN_CHANNEL_MEDIA.md`. Verification: gateway 49/49 PASS_MOCK; Bot API/attachment/ingress 104 passed, 1 skipped; targeted full-server/media 3 passed; TypeScript build PASS. Live accounts/HTTPS/packaged delivery NOT_TESTED. Changes prepared on channel-media branch; no new desktop release. Existing Windows symlink fixture fails EPERM before exercising code. Cloud stays off.
+
+- **Yêu cầu mới — kết nối đa phương tiện:** đã rà soát gateway Telegram/Zalo/Discord: chỉ có đường truyền chữ, attachments=false và router chặn non-text; chưa có Facebook adapter. Kế hoạch `PLAN_CHANNEL_MEDIA.md`; chưa triển khai/chưa kiểm gửi nhận media thật. Chủ dự án đã chọn cả Facebook Fanpage và tài khoản cá nhân; cần hai loại kết nối riêng, chưa xác minh cơ chế hỗ trợ tài khoản cá nhân.
+
 - **Đã phát hành 0.3.36:** sao chép mã liên kết chủ bot không còn báo thành công khi clipboard bị từ chối. Cửa sổ gateway dùng session riêng, chỉ cấp clipboard-sanitized-write cho main frame đúng origin/cửa sổ; có fallback chọn văn bản và lỗi rõ ràng. Mã tại 879367663; desktop CI 43603805772 success gồm Windows, Linux, Mac Apple Silicon/Intel và publish. Latest public v0.3.36; đã kiểm ba feed và năm liên kết bộ cài, Windows tải về khớp SHA-512.
 
 - **Đang phát triển 2026-11-14:** đồng bộ dữ liệu tài khoản là module ẩn/tắt vì chưa có server; chuyển máy Offline bằng file có mật khẩu, chỉ nhập vào app bằng hoặc mới hơn; dọn trùng quản lý skills; chuẩn hóa English technical core; bổ sung macOS/Linux. Kế hoạch và giới hạn: `PLAN_ACCOUNT_DATA.md`. Desktop v0.3.36 đã được phát hành công khai cho Windows x64, macOS Apple Silicon/Intel và Linux x64; xem mốc phát hành bên dưới.
@@ -72,6 +76,10 @@
 | R10 | Máy chủ Claude không đẩy được tag git (chỉ đẩy nhánh) | Build kích hoạt bằng push lên `main`; tag phát hành do workflow tự tạo | Đã xử lý |
 
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
+
+- **2026-11-14 media connections:** implemented Telegram/Discord binary media receive/send, Zalo image/voice receive and image/private AAC send via optional HTTPS, Facebook Fanpage signed webhook + Page responses. Per-connection controls and scoped Bot API attachments, authorization before download, bounded CDN fetch and partial-send status. Facebook personal/WhatsApp/Zalo OA remain unavailable; no verified official personal API. See `PLAN_CHANNEL_MEDIA.md`. Verification: gateway 49/49 PASS_MOCK; Bot API/attachment/ingress 104 passed, 1 skipped; targeted full-server/media 3 passed; TypeScript build PASS. Live accounts/HTTPS/packaged delivery NOT_TESTED. Changes prepared on channel-media branch; no new desktop release. Existing Windows symlink fixture fails EPERM before exercising code. Cloud stays off.
+
+- 2026-11-14 | Codex | Rà soát yêu cầu media đa nền tảng, đối chiếu tài liệu chính thức Telegram/Discord/Messenger/Zalo; ghi PLAN_CHANNEL_MEDIA.md. Phát hiện thiếu cả adapter media, router và hợp đồng truyền tệp vào/ra bot. Zalo sendVoice chỉ AAC chat riêng, không nhóm. Đây là kết quả khảo sát và kế hoạch, chưa phải tính năng đã thực hiện.
 
 - 2026-11-14 | Codex | Hoàn tất phát hành v0.3.36: Actions 43603805772 toàn bộ jobs success; API latest draft=false/prerelease=false; kiểm ba updater feeds đúng phiên bản, đủ năm stable downloads và Content-Length khớp. Log publish: PASS release 0.3.36 Windows/macOS arm64/x64/Linux feeds/hashes. Tải bộ cài Windows 298303717 byte về releases/0.3.36, xác minh SHA-512 theo updater. Bản sửa clipboard đã public, chưa xác minh cài đặt/nút copy trên app của chủ dự án.
 

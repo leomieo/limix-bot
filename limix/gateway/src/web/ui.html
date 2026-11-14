@@ -245,7 +245,16 @@ dialog .actions { display:flex; justify-content:flex-end; gap:8px; margin-top:6p
         <label><input type="radio" name="platform" value="telegram" checked><span class="avatar telegram"><svg class="i" aria-hidden="true"><use href="#i-send"/></svg></span><span style="display:grid;gap:2px"><b>Telegram</b><span class="help">Token từ @BotFather</span></span></label>
         <label><input type="radio" name="platform" value="zalo"><span class="avatar zalo"><svg class="i" aria-hidden="true"><use href="#i-chat"/></svg></span><span style="display:grid;gap:2px"><b>Zalo</b><span class="help">Token từ bot.zaloplatforms.com</span></span></label>
         <label><input type="radio" name="platform" value="discord"><span class="avatar discord"><svg class="i" aria-hidden="true"><use href="#i-chat"/></svg></span><span style="display:grid;gap:2px"><b>Discord</b><span class="help">Token từ Developer Portal</span></span></label>
+        <label><input type="radio" name="platform" value="facebook"><span class="avatar">f</span><span><b>Facebook Fanpage</b><span class="help">Messenger Platform · webhook HTTPS</span></span></label>
+        <label><input type="radio" name="platform" value="facebook_personal" disabled><span><b>Facebook cá nhân</b><span class="help">Chưa hỗ trợ: chưa có API chính thức được xác minh</span></span></label>
       </div>
+    </div>
+    <div id="facebookFields" hidden>
+      <label class="field"><span>Page ID</span><input name="pageId" inputmode="numeric"></label>
+      <label class="field"><span>Graph API version</span><input name="apiVersion" value="v22.0" placeholder="v22.0"></label>
+      <label class="field"><span>Meta App Secret</span><input name="appSecret" type="password" autocomplete="off"></label>
+      <label class="field"><span>Webhook Verify Token (tự đặt, ít nhất 16 ký tự)</span><input name="verifyToken" type="password" autocomplete="off"></label>
+      <p class="help">Dùng Page access token có quyền pages_messaging. Sau khi tạo, cấu hình callback HTTPS và đăng ký sự kiện messages trong Meta App. App Review cần hoàn tất để phục vụ khách ngoài vai trò thử nghiệm.</p>
     </div>
     <label class="field"><span>Token của bot</span><input name="token" type="password" autocomplete="off" required placeholder="Dán token vào đây"><span class="help" id="tokenHelp">Telegram: nhắn @BotFather → /newbot → copy token.</span></label>
     <label class="field"><span>Tên hiển thị (không bắt buộc)</span><input name="name" maxlength="60" placeholder="Ví dụ: Trợ lý bán hàng"></label>
@@ -293,7 +302,7 @@ const GROUP = {
   all: ["Mọi tin nhắn", "Trả lời mọi tin trong nhóm. Dễ bị ồn và tốn lượt AI."],
   off: ["Không trả lời trong nhóm", "Bot chỉ trả lời khi nhắn riêng."],
 };
-const PLATFORM = { telegram:"Telegram", zalo:"Zalo", discord:"Discord" };
+const PLATFORM = { telegram:"Telegram", zalo:"Zalo", discord:"Discord", facebook:"Facebook Fanpage" };
 let APP_BOTS = { inside: false, bots: [] };
 function appBotOptions() {
   if (!APP_BOTS.inside) return `<option value="">Nhập tay địa chỉ và khóa</option>`;
@@ -421,6 +430,19 @@ function botView(c) {
             </div>
             <button class="btn primary" type="submit">${icon("check")}Lưu</button></form></details></section>
     </div>
+    <section class="card"><h2>Tệp và media</h2><p class="sub">${esc(c.mediaSupport?.note || "")}</p>
+      <form class="mediaForm" data-id="${c.id}">
+        ${c.platform === "facebook" ? `<p class="help">Callback: HTTPS của bạn + <code>${esc(c.webhookPath)}</code>. Chỉ chuyển tiếp /hooks/facebook/* và /hooks/limix-media/* tới cổng gateway; không công khai giao diện quản trị.</p>` : ""}
+        ${["facebook", "zalo"].includes(c.platform) ? `<label class="field"><span>Địa chỉ HTTPS để gửi media (không bắt buộc)</span><input name="publicMediaBase" type="url" value="${esc(c.publicMediaBase || "")}" placeholder="https://bot.example.com"><span class="help">Cần proxy /hooks/limix-media/* tới gateway. Khi bật, tệp gửi có liên kết bí mật tồn tại 5 phút để nền tảng tải về. Không có server HTTPS: vẫn nhận media, chưa gửi media qua URL.</span></label>` : ""}
+
+        <label><input type="checkbox" name="receive" ${c.media?.receive !== false ? "checked" : ""}> Nhận tệp từ người được phép nhắn</label>
+        <label><input type="checkbox" name="send" ${c.media?.send !== false ? "checked" : ""} > Gửi tệp do bot tạo ${!c.mediaSupport?.send.length ? "(chưa hỗ trợ)" : ""}</label>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin:12px 0">${Object.entries({ image: "Ảnh", video: "Video", audio: "Âm thanh", file: "Tài liệu / tệp" }).map(([kind, label]) => `<label><input type="checkbox" name="kinds" value="${kind}" ${(c.media?.kinds || ["image", "video", "audio", "file"]).includes(kind) ? "checked" : ""} ${!c.mediaSupport?.receive.includes(kind) && !c.mediaSupport?.send.includes(kind) ? "disabled" : ""}> ${label}</label>`).join("")}</div>
+        <label class="field"><span>Dung lượng mỗi tệp (MB, tổng tối đa 10 MB/tin)</span><input name="maxMB" type="number" min="1" max="10" value="${Math.max(1, Math.floor((c.media?.maxBytes || 10485760) / 1048576))}" required></label>
+        <label class="field"><span>Số tệp tối đa mỗi tin</span><input name="maxCount" type="number" min="1" max="4" value="${c.media?.maxCount || 4}" required></label>
+        <p class="help">Tệp nhận được lưu trong dữ liệu của Limix Bot. Khả năng hiểu ảnh, nghe âm thanh hoặc phân tích video còn phụ thuộc AI và công cụ của bot. Không tự chạy tệp nhận được.</p>
+        <button class="btn primary" type="submit">Lưu thiết lập media</button>
+      </form></section>
     <section class="card"><h2>${icon("users")}Trong nhóm chat</h2><p class="sub">Khi bạn thêm bot vào một nhóm Zalo, Telegram hoặc kênh Discord. Bot chỉ trả lời người đã được phép nhắn cho bot.</p>
       <div class="seg" role="radiogroup" aria-label="Trong nhóm chat">${Object.entries(GROUP).map(([k, [t, d]]) => `<label><input type="radio" name="group-${c.id}" value="${k}" data-group="${c.id}" ${k === (c.groupMode || "mention") ? "checked" : ""}><span><b>${t}</b><span>${d}</span></span></label>`).join("")}</div></section>
     <section class="card"><h2>${icon("shield")}Ai được nhắn cho bot</h2><p class="sub">Áp dụng ngay, không cần chạy lại.</p>
@@ -573,8 +595,9 @@ $("#q").addEventListener("input", renderList);
 const dlg = $("#addDialog"), form = $("#addForm");
 function syncForm() {
   syncManual(form);
+  $("#facebookFields").hidden = form.platform.value !== "facebook";
   $("#ombFields").hidden = form.engineKind.value !== "openmausbot";
-  $("#tokenHelp").textContent = form.platform.value === "discord" ? "Discord: discord.com/developers → New Application → Bot → Reset Token → copy; bật Message Content Intent." : form.platform.value === "zalo" ? "Zalo: đăng nhập bot.zaloplatforms.com → tạo bot → copy token." : "Telegram: nhắn @BotFather → /newbot → copy token.";
+  $("#tokenHelp").textContent = form.platform.value === "facebook" ? "Facebook: nhập Page access token, không dùng token tài khoản cá nhân." : form.platform.value === "discord" ? "Discord: discord.com/developers → New Application → Bot → Reset Token → copy; bật Message Content Intent." : form.platform.value === "zalo" ? "Zalo: đăng nhập bot.zaloplatforms.com → tạo bot → copy token." : "Telegram: nhắn @BotFather → /newbot → copy token.";
 }
 function openAdd() { form.reset(); $("#addError").textContent = ""; void loadAppBots(); syncForm(); dlg.showModal(); form.token.focus(); }
 form.addEventListener("change", syncForm);
@@ -599,6 +622,16 @@ form.addEventListener("submit", async (ev) => {
 refresh(true);
 void loadAppBots();
 setInterval(() => refresh(false), 4000);
+document.addEventListener("submit", async (event) => {
+  const form = event.target.closest(".mediaForm");
+  if (!form) return;
+  event.preventDefault();
+  const data = new FormData(form);
+  try {
+    await api(`/api/connections/${form.dataset.id}/media`, { receive: data.has("receive"), send: data.has("send"), kinds: data.getAll("kinds"), maxBytes: Number(data.get("maxMB")) * 1048576, maxCount: Number(data.get("maxCount")), ...(data.has("publicMediaBase") ? { publicMediaBase: data.get("publicMediaBase").trim() } : {}) });
+    toast("Đã lưu thiết lập media."); await refresh(true);
+  } catch (error) { toast(error.message, true); }
+});
 </script>
 </body>
 </html>

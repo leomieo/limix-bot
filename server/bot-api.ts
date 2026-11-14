@@ -249,7 +249,7 @@ export const BOT_API_MESSAGE_DATA = "[UNTRUSTED BOT API MESSAGE]";
 
 /** Security: the tag names a stored file for the turn to load, so a caller's copy of it never reaches the turn. */
 export function withoutAttachedImages(message: string): string {
-  return defuse(message).replace(/<(\s*attached-image)/gi, "($1");
+  return defuse(message).replace(/<(\s*attached-(?:image|file))/gi, "($1");
 }
 
 /** The caller's words go to the model as data from outside, never as the person's request, and can't pass for a note. */

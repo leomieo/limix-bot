@@ -1,3 +1,4 @@
+import { mediaPolicy, receiveMedia, checkMedia } from "./media.mjs";
 // Decides what to do with one accepted inbound message: commands, access (owner / approved / pairing),
 // then one engine call per message, serialized per session so a thread never gets two turns at once.
 import { splitMessage } from "./chunk.mjs";
@@ -16,7 +17,7 @@ export const TEXT = {
     "/id — xem ID của bạn",
     "/pair — xin quyền dùng bot (gửi mã cho chủ bot duyệt)",
   ].join("\n"),
-  textOnly: "Hiện Limix chỉ hỗ trợ tin nhắn chữ. Ảnh, tệp và giọng nói sẽ có ở bản sau.",
+  textOnly: "Loại tin nhắn này chưa được kết nối hỗ trợ. Hãy gửi văn bản hoặc loại tệp đã bật trong thiết lập.",
   ownerOnly: "Bot này hiện chỉ dành cho chủ bot.",
   pairCode: (code) => `Mã ghép cặp của bạn: ${code}\nGửi mã này cho chủ bot để được duyệt (mã hết hạn sau 1 giờ).`,
   pairPending: "Yêu cầu của bạn đang chờ chủ bot duyệt.",
@@ -36,11 +37,11 @@ export const TEXT = {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-export async function sendWithRetry(channel, chatId, text, attempts = 3) {
+export async function sendWithRetry(channel, chatId, text, attempts = 3, context = {}) {
   let lastError;
   for (let i = 0; i < attempts; i++) {
     try {
-      return await channel.sendText(chatId, text);
+      return await channel.sendText(chatId, text, context);
     } catch (error) {
       lastError = error;
       if (error.code === "credential_invalid") throw error;
@@ -82,8 +83,8 @@ export class Router {
     this.declined = new Map();
   }
 
-  async reply(channel, chatId, text) {
-    for (const part of splitMessage(text, channel.maxLength)) await sendWithRetry(channel, chatId, part);
+  async reply(channel, chatId, text, context = {}) {
+    for (const part of splitMessage(text, channel.maxLength)) await sendWithRetry(channel, chatId, part, 3, context);
   }
 
   /** Handles one event that the store already accepted. Never throws. */
@@ -100,14 +101,14 @@ export class Router {
 
   async process({ conn, channel, engine, event }) {
     if (event.chatType !== "private") return this.processGroup({ conn, channel, engine, event });
-    if (event.text === undefined) {
+    if (event.text === undefined && !event.attachments?.length) {
       await this.reply(channel, event.chatId, TEXT.textOnly);
       return "unsupported";
     }
-    const text = event.text.trim();
+    const text = (event.text ?? "").trim();
     const cmd = /^\/(\w+)(?:@\w+)?(?:\s+([\s\S]*))?$/.exec(text);
     const role = roleOf(conn, event.senderId);
-    const sessionKey = Store.sessionKey(conn.id, event.chatId, event.senderId);
+    const sessionKey = Store.sessionKey(conn.id, event.topicId ? `${event.chatId}:${event.topicId}` : event.chatId, event.senderId);
 
     if (cmd) {
       const name = cmd[1].toLowerCase();
@@ -174,18 +175,18 @@ export class Router {
    * already serves; a stranger in a group is never sent a pairing code there. One shared conversation per group. */
   async processGroup({ conn, channel, engine, event }) {
     const mode = conn.groupMode ?? "mention";
-    if (mode === "off" || event.text === undefined) return "ignored_group";
-    const raw = event.text.trim();
-    const called = calledIn(conn, raw);
+    if (mode === "off" || (event.text === undefined && !event.attachments?.length)) return "ignored_group";
+    const raw = (event.text ?? "").trim();
+    const called = event.mentionedBot || calledIn(conn, raw);
     if (mode !== "all" && !called && !event.replyToBot) return "ignored_group";
     const text = stripCall(conn, raw);
-    if (!text) return "ignored_group";
+    if (!text && !event.attachments?.length) return "ignored_group";
     if (/^\/(link|approve|pair)\b/i.test(text)) {
       await this.reply(channel, event.chatId, "Lệnh này chỉ dùng khi nhắn riêng cho bot.");
       return "command";
     }
     if (roleOf(conn, event.senderId) === "unknown") return "ignored_group";
-    const sessionKey = Store.sessionKey(conn.id, event.chatId, "group");
+    const sessionKey = Store.sessionKey(conn.id, event.topicId ? `${event.chatId}:${event.topicId}` : event.chatId, "group");
     const said = event.senderName ? `${event.senderName}: ${text}` : text;
     return this.enqueue(sessionKey, () => this.runTurn({ conn, channel, engine, event, text: said, sessionKey }));
   }
@@ -223,15 +224,49 @@ export class Router {
   }
 
   async runTurn({ conn, channel, engine, event, text, sessionKey }) {
+    if (roleOf(conn, event.senderId) === "unknown" || conn.enabled === false) return "declined";
     channel.typing(event.chatId);
     const typing = setInterval(() => channel.typing(event.chatId), TYPING_EVERY_MS);
     try {
       // Only the linked owner, in a private chat, gets the owner lane (any AI); everyone else stays confined.
       const owner = roleOf(conn, event.senderId) === "owner" && event.chatType === "private";
-      const answer = await engine.send({ message: text, thread: this.store.getThread(sessionKey), owner });
+      const policy = mediaPolicy(conn.media);
+      let attachments;
+      try {
+        attachments = await receiveMedia(channel, event.attachments, policy);
+      } catch {
+        await this.reply(channel, event.chatId, "Không nhận được tệp: kiểm tra loại tệp, giới hạn dung lượng và quyền nhận media trong thiết lập kết nối.", event);
+        return "media_rejected";
+      }
+      const answer = await engine.send({ message: text || "Please inspect the attached files.", attachments, thread: this.store.getThread(sessionKey), owner });
       if (answer.thread) this.store.setThread(sessionKey, answer.thread);
       if (typeof answer.reply === "string") {
-        await this.reply(channel, event.chatId, answer.reply.trim() || TEXT.emptyReply);
+        if (answer.reply.trim()) await this.reply(channel, event.chatId, answer.reply.trim(), event);
+        const outgoing = answer.attachments ?? [];
+        if (outgoing.length) {
+          try {
+            checkMedia(outgoing, policy, "send");
+            if (!channel.sendAttachment) throw new Error("unsupported");
+            if (["zalo", "facebook"].includes(conn.platform) && !conn.publicMediaBase) throw new Error("public media is not configured");
+            if (conn.platform === "zalo" && outgoing.some((a) => a.kind !== "image" && !(a.kind === "audio" && a.mime === "audio/aac" && event.chatType === "private"))) throw new Error("unsupported Zalo attachment");
+          } catch {
+            await this.reply(channel, event.chatId, "Bot đã tạo tệp nhưng kết nối này chưa cho phép gửi loại tệp đó. Xem tệp trong Limix Bot.", event);
+            return "media_blocked";
+          }
+          let delivered = 0;
+          for (const item of outgoing) {
+            try {
+              const receipt = await channel.sendAttachment(event.chatId, item, event);
+              if (!receipt?.message_id && !receipt?.id) throw new Error("Missing platform receipt");
+              delivered++;
+              this.store.log(conn.id, "media", `Nền tảng nhận tệp ${delivered}/${outgoing.length}: ${String(receipt?.message_id ?? receipt?.id ?? "accepted")}`);
+            } catch {
+              await this.reply(channel, event.chatId, `Đã gửi ${delivered}/${outgoing.length} tệp. Tệp tiếp theo chưa xác nhận gửi thành công; không tự gửi lại để tránh trùng.`, event);
+              return "media_partial";
+            }
+          }
+        } else if (!answer.reply.trim()) await this.reply(channel, event.chatId, TEXT.emptyReply, event);
+        if (answer.mediaError) await this.reply(channel, event.chatId, "Một số tệp Bot tạo vượt giới hạn gửi. Xem bản đầy đủ trong Limix Bot.", event);
         return "replied";
       }
       if (answer.status === "needs_approval") {

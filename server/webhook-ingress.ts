@@ -28,14 +28,14 @@ export function json(res: ServerResponse, status: number, body: JsonValue): void
   res.end(JSON.stringify(body));
 }
 
-export async function readRawBody(req: IncomingMessage): Promise<string> {
+export async function readRawBody(req: IncomingMessage, maxBytes = MAX_WEBHOOK_BODY_BYTES): Promise<string> {
   const chunks: Buffer[] = [];
   let bytes = 0;
   try {
     for await (const chunk of req) {
       const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
       bytes += buffer.length;
-      if (bytes > MAX_WEBHOOK_BODY_BYTES) {
+      if (bytes > maxBytes) {
         throw Object.assign(new Error("Webhook body is too large"), { status: 413 });
       }
       chunks.push(buffer);

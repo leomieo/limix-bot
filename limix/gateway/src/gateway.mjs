@@ -1,3 +1,4 @@
+import { FacebookChannel } from "./channels/facebook.mjs";
 // Runs one polling consumer per enabled connection and hands accepted messages to the router.
 // Security invariant: a connection never takes over a bot that another consumer (webhook or poller) holds.
 import { EchoEngine, OpenMausBotEngine } from "./engines/openmausbot.mjs";
@@ -12,6 +13,7 @@ const sleep = (ms, signal) => new Promise((resolve) => {
 });
 
 export const PLATFORMS = {
+  facebook: (opts) => new FacebookChannel(opts),
   telegram: (opts) => new TelegramChannel(opts),
   zalo: (opts) => new ZaloChannel(opts),
   discord: (opts) => new DiscordChannel(opts),
@@ -20,7 +22,7 @@ export const PLATFORMS = {
 export function defaultMakeChannel(conn, token, overrides = {}) {
   const make = PLATFORMS[conn.platform];
   if (!make) throw new Error(`Nền tảng chưa hỗ trợ: ${conn.platform}`);
-  return make({ token, ...(overrides[conn.platform] ?? {}) });
+  return make({ token, pageId: conn.pageId, apiVersion: conn.apiVersion, publicMediaBase: conn.publicMediaBase, ...(overrides[conn.platform] ?? {}) });
 }
 
 export function defaultMakeEngine(conn, secrets) {
@@ -39,6 +41,7 @@ export class Gateway {
     this.makeEngine = makeEngine;
     this.router = new Router({ store, pairing });
     this.running = new Map();
+    this.active = new Map();
     this.interrupted = store.takeInterrupted();
   }
 
@@ -57,8 +60,18 @@ export class Gateway {
     const controller = new AbortController();
     const done = this.loop(conn, controller.signal).catch((error) => {
       this.setStatus(id, error.code === "credential_invalid" ? "credential_invalid" : "error", error.message);
-    }).finally(() => this.running.delete(id));
+    }).finally(() => { this.running.delete(id); this.active.delete(id); });
     this.running.set(id, { controller, done });
+  }
+
+  receiveWebhook(id, events) {
+    const active = this.active.get(id);
+    const conn = this.store.getConnection(id);
+    if (!active || !conn?.enabled) return false;
+    for (const event of events) {
+      if (this.store.acceptEvent({ ...event, connectionId: id })) void this.router.handle({ conn, ...active, event });
+    }
+    return true;
   }
 
   async stop(id, status = "stopped") {
@@ -102,6 +115,7 @@ export class Gateway {
   async loop(conn, signal) {
     const channel = this.makeChannel(conn, this.secrets.get(conn.tokenRef));
     const engine = this.makeEngine(conn, this.secrets);
+    this.active.set(conn.id, { channel, engine });
     signal.addEventListener("abort", () => channel.close?.(), { once: true });
     this.setStatus(conn.id, "starting", "");
 

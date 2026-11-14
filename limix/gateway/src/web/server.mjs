@@ -1,3 +1,6 @@
+import { facebookEvents, validFacebookSignature } from "../channels/facebook.mjs";
+import { publicBase, publicMedia } from "../public-media.mjs";
+import { mediaPolicy } from "../media.mjs";
 // Local management app. Listens on 127.0.0.1 only.
 // Security invariants: every /api call needs the per-run admin token that is only embedded in the page itself
 // (another website cannot read it), and the Host header must be this machine (blocks DNS rebinding).
@@ -22,7 +25,7 @@ function send(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
-async function readBody(req) {
+async function readBody(req, raw = false) {
   let size = 0;
   const parts = [];
   for await (const chunk of req) {
@@ -30,6 +33,7 @@ async function readBody(req) {
     if (size > MAX_BODY) throw Object.assign(new Error("Dữ liệu quá lớn"), { status: 413 });
     parts.push(chunk);
   }
+  if (raw) return Buffer.concat(parts);
   if (!parts.length) return {};
   try {
     return JSON.parse(Buffer.concat(parts).toString("utf8"));
@@ -54,6 +58,10 @@ export function publicConnection(conn, gateway) {
       ? { kind: "openmausbot", endpoint: conn.engine.endpoint, keyMasked: conn.engine.keyMasked }
       : { kind: "echo" },
     createdAt: conn.createdAt,
+    pageId: conn.pageId, apiVersion: conn.apiVersion, publicMediaBase: conn.publicMediaBase || "",
+    webhookPath: conn.platform === "facebook" ? `/hooks/facebook/${conn.id}` : undefined,
+    media: mediaPolicy(conn.media),
+    mediaSupport: conn.platform === "zalo" ? { receive: ["image", "audio"], send: conn.publicMediaBase ? ["image", "audio"] : [], note: "Zalo Bot: nhận ảnh/thoại; gửi ảnh và thoại AAC (chỉ chat riêng) khi cấu hình HTTPS media. Video và tài liệu chưa có API được xác minh." } : { receive: ["image", "video", "audio", "file"], send: conn.platform === "facebook" && !conn.publicMediaBase ? [] : ["image", "video", "audio", "file"], note: conn.platform === "facebook" ? "Fanpage: cần webhook HTTPS, quyền pages_messaging, App Review và tuân thủ thời hạn phản hồi. Gửi media cần HTTPS media." : conn.platform === "discord" ? "Cần quyền Attach Files, Send Messages và Message Content Intent để nhận đủ nội dung." : "Theo giới hạn Telegram Bot API; tệp trong mỗi tin tối đa tổng 10 MB." },
   };
 }
 
@@ -89,13 +97,16 @@ export function createApp({ store, secrets, pairing, gateway, makeChannel = defa
     "POST /api/connections": async (body) => {
       const platform = String(body.platform ?? "");
       const token = String(body.token ?? "").trim();
-      if (!["telegram", "zalo", "discord"].includes(platform)) throw Object.assign(new Error("Chọn Telegram, Zalo hoặc Discord"), { status: 400 });
+      if (!["telegram", "zalo", "discord", "facebook"].includes(platform)) throw Object.assign(new Error("Chọn Telegram, Zalo, Discord hoặc Facebook Fanpage"), { status: 400 });
       if (!token) throw Object.assign(new Error("Chưa nhập token của bot"), { status: 400 });
       if (store.listConnections().some((c) => c.platform === platform && c.tokenFingerprint === hashCode(token))) {
         throw Object.assign(new Error("Bot này đã được kết nối rồi"), { status: 409 });
       }
+      const media = mediaPolicy(body.media);
+      const publicMediaBase = publicBase(body.publicMediaBase || "");
+      if (platform === "facebook" && (!/^[A-Za-z0-9_-]{16,256}$/.test(body.verifyToken || "") || !/^[a-fA-F0-9]{32}$/.test(body.appSecret || ""))) throw Object.assign(new Error("Fanpage cần App Secret và Verify Token ít nhất 16 ký tự."), { status: 400 });
       const engine = buildEngine(body);
-      const channel = makeChannel({ platform }, token);
+      const channel = makeChannel({ platform, pageId: body.pageId, apiVersion: body.apiVersion || "v22.0", publicMediaBase }, token);
       let identity;
       try {
         identity = await channel.getMe();
@@ -105,6 +116,9 @@ export function createApp({ store, secrets, pairing, gateway, makeChannel = defa
       const engineCheck = await engine.check();
       const conn = store.addConnection({
         platform,
+        media,
+        publicMediaBase,
+        ...(platform === "facebook" ? { pageId: String(body.pageId), apiVersion: body.apiVersion || "v22.0", appSecretRef: secrets.put(body.appSecret), verifyTokenRef: secrets.put(body.verifyToken) } : {}),
         name: String(body.name ?? "").trim().slice(0, 60) || identity.name || identity.username || platform,
         botIdentity: identity,
         tokenRef: secrets.put(token),
@@ -136,6 +150,8 @@ export function createApp({ store, secrets, pairing, gateway, makeChannel = defa
       const conn = store.getConnection(id);
       await gateway.stop(id);
       secrets.delete(conn.tokenRef);
+      if (conn.appSecretRef) secrets.delete(conn.appSecretRef);
+      if (conn.verifyTokenRef) secrets.delete(conn.verifyTokenRef);
       secrets.delete(conn.engine?.keyRef);
       pairing.forgetConnection(id);
       store.removeConnection(id);
@@ -148,6 +164,12 @@ export function createApp({ store, secrets, pairing, gateway, makeChannel = defa
       return { code, expiresInMinutes: LINK_CODE_TTL_MS / 60_000 };
     },
 
+    "POST /api/connections/:id/media": (body, id) => {
+      store.updateConnection(id, { media: mediaPolicy(body), ...(body.publicMediaBase !== undefined ? { publicMediaBase: publicBase(body.publicMediaBase) } : {}) });
+      const active = gateway.active?.get(id);
+      if (active) active.channel.publicMediaBase = store.getConnection(id).publicMediaBase || "";
+      return publicConnection(store.getConnection(id), gateway);
+    },
     "POST /api/connections/:id/group": (body, id) => {
       if (!["mention", "all", "off"].includes(body.groupMode)) throw Object.assign(new Error("Chế độ nhóm không hợp lệ"), { status: 400 });
       store.updateConnection(id, { groupMode: body.groupMode });
@@ -222,6 +244,24 @@ export function createApp({ store, secrets, pairing, gateway, makeChannel = defa
 
   const server = createServer(async (req, res) => {
     try {
+      const publicUrl = new URL(req.url, "http://localhost");
+      if (publicMedia.serve(req, res, publicUrl.pathname)) return;
+      const hook = /^\/hooks\/facebook\/([\w-]+)$/.exec(publicUrl.pathname);
+      if (hook) {
+        const conn = store.getConnection(hook[1]);
+        if (!conn || conn.platform !== "facebook" || !conn.enabled) return send(res, 404, { error: "Not found" });
+        if (req.method === "GET") {
+          if (publicUrl.searchParams.get("hub.mode") !== "subscribe" || !sameSecret(publicUrl.searchParams.get("hub.verify_token"), secrets.get(conn.verifyTokenRef))) return send(res, 403, { error: "Invalid verification" });
+          res.writeHead(200, { "Content-Type": "text/plain", "Cache-Control": "no-store" });
+          return res.end(publicUrl.searchParams.get("hub.challenge") || "");
+        }
+        if (req.method !== "POST") return send(res, 405, { error: "Method not allowed" });
+        const raw = await readBody(req, true);
+        if (!validFacebookSignature(raw, req.headers["x-hub-signature-256"], secrets.get(conn.appSecretRef))) return send(res, 403, { error: "Invalid signature" });
+        const events = facebookEvents(JSON.parse(raw.toString("utf8")), conn.pageId);
+        if (!gateway.receiveWebhook(conn.id, events)) return send(res, 503, { error: "Connection stopped" });
+        return send(res, 200, { ok: true });
+      }
       if (!allowedHosts.has(req.headers.host ?? "")) return send(res, 421, { error: "Sai địa chỉ máy" });
       const url = new URL(req.url, `http://${req.headers.host}`);
       if (req.method === "GET" && url.pathname === "/") {

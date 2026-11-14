@@ -1,3 +1,5 @@
+import { channelAttachmentSchema, channelReplyAttachments, saveChannelAttachments } from "./limix-channel-media.ts";
+import { deleteAttachment } from "./attachments.ts";
 // The Bot API's two sides. Outside: `POST /hooks/api/bots/<id>/messages` on the webhook receiver, a bearer key, a
 // message in, the bot's reply out; the turn it starts is outside work (the "api" trigger), so it never acts for the
 // person, is told the message came from outside, and anything that needs an approval waits for the person in the thread.
@@ -26,6 +28,7 @@ const APP_PATH = /^\/api\/bots\/([\w-]{1,128})\/bot-api(?:\/(new-key))?$/;
 
 const callSchema = z.object({
   message: z.string().min(1).max(BOT_API_MAX_MESSAGE_CHARS),
+  attachments: z.array(channelAttachmentSchema).max(4).optional(),
   thread: z.string().regex(/^[\w-]{1,128}$/).optional(),
   /** Seconds to wait for the reply, for a caller that knows nothing in its path drops a quiet connection. */
   wait: z.number().min(0).max(BOT_API_MAX_WAIT_MS / 1000).optional(),
@@ -135,7 +138,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     const after = next === -1 ? rest : rest.slice(0, next);
     if (pendingCard(after)) return { thread: threadId, status: "needs_approval" };
     if (deps.threadBusy(botId, threadId)) return { thread: threadId, status: "working" };
-    return { reply: replyText(after), thread: threadId };
+    return { reply: replyText(after), thread: threadId, ...channelReplyAttachments(after) };
   }
 
   async function runCall(botId: string, call: z.output<typeof callSchema>, turnStarted: () => void, owner = false): Promise<{ status: number; body: BotApiReply }> {
@@ -159,21 +162,22 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       store.patchTask(botId, threadId, { botApi: true, outside: true });
       if (owner) markLimixOwnerThread(threadId);
     }
+    const media = await saveChannelAttachments(call.attachments ?? []);
     const receivedAt = Date.now();
-    const userMessage = store.appendMessage(threadId, { role: "user", kind: "text", text: message, via: "api" });
+    const userMessage = store.appendMessage(threadId, { role: "user", kind: "text", text: [message, media.tags].filter(Boolean).join("\n\n"), ...(media.saved.length ? { attachments: media.saved } : {}), via: "api" });
     const after = () => { const all = store.messagesFor(threadId!); return all.slice(all.findIndex((line) => line.id === userMessage.id) + 1); };
     let settled: TurnOutcome | undefined;
     let dispatchError: string | undefined;
     markRunning(botId, threadId, true);
     try {
-      await deps.startTurn(botId, botApiPrompt(message, receivedAt), {
+      await deps.startTurn(botId, [botApiPrompt(message, receivedAt), media.tags].filter(Boolean).join("\n\n"), {
         threadId, automationSource: "api", unattended: true, userMessage,
         onSettled: (outcome) => { settled = outcome; markRunning(botId, threadId!, false); },
         onDispatchError: (message) => { dispatchError = message; markRunning(botId, threadId!, false); },
       });
     } catch (error) {
       markRunning(botId, threadId, false);
-      if (opened) deps.discard?.(botId, threadId);
+      if (opened) { deps.discard?.(botId, threadId); for (const item of media.saved) deleteAttachment(item.path); }
       const busy = z.object({ code: z.enum(["thread_busy", "thread_limit"]) }).safeParse(error).success;
       fail(busy ? 409 : 502, busy ? BUSY : COULD_NOT_ANSWER, error instanceof Error ? error.message : String(error));
     }
@@ -188,7 +192,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     }
     if (pendingCard(after())) return { status: 202, body: { thread: threadId, status: "needs_approval" } };
     if (!settled.ok) fail(502, COULD_NOT_ANSWER, settled.text);
-    return { status: 200, body: { reply: replyText(after()), thread: threadId } };
+    return { status: 200, body: { reply: replyText(after()), thread: threadId, ...channelReplyAttachments(after()) } };
   }
 
   const door: IngressDoor = async (req, res, url) => {
@@ -237,10 +241,12 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       }
       let call: z.output<typeof callSchema>;
       try {
-        const raw = await readRawBody(req);
+        const raw = await readRawBody(req, 15 * 1024 * 1024);
         const contentType = header(req, "content-type")?.toLowerCase() ?? "";
         if (!contentType.includes("json")) fail(415, "Send JSON: Content-Type: application/json");
-        const parsed = callSchema.safeParse(parseJson(raw));
+        const input = parseJson(raw);
+        if (input && typeof input === "object" && "message" in input && typeof input.message === "string" && input.message.length > BOT_API_MAX_MESSAGE_CHARS) fail(413, "Message is too long");
+        const parsed = callSchema.safeParse(input);
         if (!parsed.success) fail(400, schemaIssue(parsed.error, "Send {\"message\": \"…\"}"));
         call = parsed.data;
       } catch (error) {

@@ -98,13 +98,13 @@ export class OpenMausBotEngine {
   }
 
   /** Sends one message. Resolves {reply, thread} or {status: "needs_approval" | "working", thread}. */
-  async send({ message, thread, signal, owner = false }) {
-    const body = { message, wait: this.waitSeconds, ...(thread ? { thread } : {}) };
+  async send({ message, attachments = [], thread, signal, owner = false }) {
+    const body = { message, ...(attachments.length ? { attachments } : {}), wait: this.waitSeconds, ...(thread ? { thread } : {}) };
     let answer;
     try {
       answer = await this.call("POST", { body, owner, timeoutMs: (this.waitSeconds + 15) * 1000 });
     } catch (error) {
-      if (error.code === "thread_missing" && thread) return this.send({ message, signal, owner });
+      if (error.code === "thread_missing" && thread) return this.send({ message, attachments, signal, owner });
       throw error;
     }
     const deadline = Date.now() + this.maxWaitMs;
