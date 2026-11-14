@@ -7,6 +7,8 @@
 
 ## 1. Trạng thái hiện tại (luôn ghi đè cho đúng)
 
+- 2026-11-15 Xeon beta preparation: owner reports two E5-2680 v4 CPUs (56 logical processors total), Windows with node/docker/wsl commands, different Internet networks and AnyDesk access. Added deploy/windows-beta/start.ps1 using published npm 0.3.47, separate beta data and ports, Tailscale by default, per-bot desktop limit one/4 GiB/2 CPUs. Syntax and read-only preflight PASS on the local i9 only.
+
 - 2026-11-15 preparing 0.3.47: reviewed Vietnamese UI terminology across 10,234 locale keys; 389 changed values. Memory upkeep is Tu cap nhat bo nho; actor distinguishes automatic system changes. Department => nhom bot, conversation thread => cuoc tro chuyen, effort => muc do suy luan. Complete locale/placeholder validation PASS.
 
 - 2026-11-15 preparing 0.3.46: team settings includes common folder bulk apply to current bots and individually targeted approval changes (ask/auto/full). Existing per-bot validation and trusted-approval IPC retained. 276 targeted tests PASS; TypeScript PASS; guarded source reproduction PASS.
@@ -80,6 +82,8 @@
 
 ## 4. Vấn đề mở / rủi ro
 
+- Xeon Node version, Docker daemon/WSL readiness and Windows version remain unverified. No live server was started on Xeon. Tailscale installation/sign-in/HTTPS, cross-network pairing, real model and desktop acceptance pending. Computer-use skill prohibits terminal automation, so owner executes the remote PowerShell step.
+
 - Review covers locale catalog and targeted context checks, not manual visual acceptance of every screen. i18n tests have two baseline failures (branding expectation and incomplete pt-br pack); MemorySection and team bulk checks PASS.
 
 - Team folder is saved on current bot records, not a persistent department default. New members require reapplying. Explicit thread folders remain selected. No packaged UI acceptance performed.
@@ -118,6 +122,8 @@
 | R10 | Máy chủ Claude không đẩy được tag git (chỉ đẩy nhánh) | Build kích hoạt bằng push lên `main`; tag phát hành do workflow tự tạo | Đã xử lý |
 
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
+
+- 2026-11-15 prepared a Windows beta server launcher and bilingual guide for testing server connection and server-hosted bot desktops while keeping daily Windows use.
 
 - 2026-11-15 revised Vietnamese product terminology and corrected skill hint placeholder mismatch; reproducible reviewed key map applied after branding patches.
 
