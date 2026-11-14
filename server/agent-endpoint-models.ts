@@ -50,7 +50,7 @@ async function readCatalog(response: Response, limit: number): Promise<string | 
 /** Resolves the catalog for per-agent selection without storing a provider-wide model choice. */
 export async function discoverAgentEndpointModels(entry: InstanceConfig, fetchImpl: typeof fetch = fetch): Promise<void> {
   const codex = entry.driver === "codex";
-  const config = entry.config as { endpoint?: { url: string; models: string[] }; endpointModels?: string[] };
+  const config = entry.config as { endpoint?: { profile?: string; url: string; models: string[] }; endpointModels?: string[] };
   const setModels = (models: string[]) => { if (codex) config.endpoint!.models = models; else config.endpointModels = models; };
   if (!isGatewayEndpoint(entry)) return setModels(officialModels(codex));
   const env = entry.environment ?? {};
@@ -67,7 +67,8 @@ export async function discoverAgentEndpointModels(entry: InstanceConfig, fetchIm
   try {
     // A redirect must never replay the credential to another address.
     response = await fetchImpl(modelsUrl, {
-      headers, redirect: "manual", signal: AbortSignal.timeout(10_000),
+      headers: config.endpoint?.profile === "xingchi" && target.href === "https://api.xingchiapi.com/v1/models"
+        ? { ...headers, "x-openai-actor-authorization": "local-image-extension" } : headers, redirect: "manual", signal: AbortSignal.timeout(10_000),
     });
   } catch (error) {
     const timeout = error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
@@ -98,5 +99,9 @@ export async function discoverAgentEndpointModels(entry: InstanceConfig, fetchIm
     if (typeof id === "string" && id.length <= 160 && pattern.test(id) && (codex || id !== "default")) models.add(id);
   }
   if (!models.size) throw failure(`The gateway returned no supported model IDs. Connect a provider account in the gateway and check its /models catalog.${TYPE_MODEL}`);
-  setModels([...models]);
+  const ordered = [...models];
+  if (config.endpoint?.profile === "xingchi") {
+    const preferred = ["gpt-6.1-sol", "gpt-6-astra"];
+    setModels([...preferred.filter(id => models.has(id)), ...ordered.filter(id => !preferred.includes(id))]);
+  } else setModels(ordered);
 }

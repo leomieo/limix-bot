@@ -1,3 +1,4 @@
+import { XINGCHI_URL } from "../../shared/xingchi";
 import { useState } from "react";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 
@@ -27,10 +28,10 @@ const draftOf = (instance: InstanceInfo): Draft => ({
   model: "",
 });
 
-function EndpointForm({ instance, engine, onDone }: { instance?: InstanceInfo; engine: Engine; onDone: () => void }) {
+export function EndpointForm({ instance, engine, onDone, xingchi = false }: { xingchi?: boolean; instance?: InstanceInfo; engine: Engine; onDone: () => void }) {
   const { dispatch } = useStore();
   const official = OFFICIAL[engine];
-  const [draft, setDraft] = useState<Draft>(instance ? draftOf(instance) : EMPTY);
+  const [draft, setDraft] = useState<Draft>(instance ? draftOf(instance) : xingchi ? { ...EMPTY, name: "Xingchi (Codex Responses)", url: XINGCHI_URL } : EMPTY);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const field = (key: keyof Draft) => ({
@@ -47,6 +48,7 @@ function EndpointForm({ instance, engine, onDone }: { instance?: InstanceInfo; e
     setError(null);
     const body = {
       displayName: draft.name.trim(),
+      ...(xingchi ? { profile: "xingchi" } : {}),
       baseUrl: draft.url.trim() || official.url,
       ...(draft.token.trim() ? { token: draft.token.trim() } : {}),
       // Empty lets the server read the host's model list.
@@ -75,7 +77,7 @@ function EndpointForm({ instance, engine, onDone }: { instance?: InstanceInfo; e
       </label>
       <label className="flex flex-col gap-1 text-[12px] font-medium text-ink">
         {t("claudeEndpoints.baseUrl")}
-        <input {...field("url")} type="url" maxLength={2048} placeholder={official.url} aria-label={t("claudeEndpoints.baseUrl")} className={cn(INPUT, "font-mono")} />
+        <input {...field("url")} readOnly={xingchi} type="url" maxLength={2048} placeholder={official.url} aria-label={t("claudeEndpoints.baseUrl")} className={cn(INPUT, "font-mono")} />
       </label>
       <label className="flex flex-col gap-1 text-[12px] font-medium text-ink">
         {t("claudeEndpoints.token")}

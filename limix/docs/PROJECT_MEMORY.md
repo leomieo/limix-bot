@@ -7,6 +7,8 @@
 
 ## 1. Trạng thái hiện tại (luôn ghi đè cho đúng)
 
+- 0.3.43 adds a dedicated Xingchi Codex Responses preset in More AI providers. The image tool uses the selected preset for that conversation, retaining image limits.
+
 - 2026-11-15 preparing 0.3.42: always advertise native generate_image, including missing setup; stable English routing instructions; reject Composio image-generation slugs (direct and multi-execute) before upstream. Missing setup returns Settings path and no fabricated success. 82 targeted tests PASS + one isolated real-server/fake-engine MCP test PASS; TypeScript PASS. Desktop 0.3.41 CI 43624714392 completed success across all platforms and publish. New routing release pending.
 
 - 2026-11-15 preparing 0.3.41: hidden channel conversations with online Limix password reauthentication through main IPC, one-use review ticket, five-minute HttpOnly cookie, lock/expiry. Scoped sender identity and internal chat separation implemented. 60 gateway tests, 74 server/navigation and 35 visibility/privacy tests PASS; isolated real HTTP fixture with fake engine confirms hidden snapshots/transcripts and cross-user refusal. Live account password entry/Zalo/Telegram NOT_TESTED. Native release pending CI.
@@ -70,6 +72,8 @@
 
 ## 4. Vấn đề mở / rủi ro
 
+- Xingchi account permissions and packaged UI remain unverified. Network and sandbox permissions remain scoped by Limix.
+
 - 2026-11-15 image routing: live Xingchi capability/403 account entitlement NOT_TESTED. Native image limits and person-turn rules unchanged. Connector guard recognizes image-generation slugs, not arbitrary opaque workbench code; do not claim universal prevention of external image services. 9 pre-existing system-prompt/catalog golden-budget tests fail identically on HEAD (baseline verified); no new failures in targeted routing tests.
 
 - Channel privacy 0.3.41: application access control, not encrypted-at-rest storage. Online account verification required. Archive/search/activity access is unavailable while channel review is locked. Raw files remain accessible to the OS account owner. Live account verification and packaged runtime NOT_TESTED.
@@ -98,6 +102,8 @@
 | R10 | Máy chủ Claude không đẩy được tag git (chỉ đẩy nhánh) | Build kích hoạt bằng push lên `main`; tag phát hành do workflow tự tạo | Đã xử lý |
 
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
+
+- 2026-11-15 added Xingchi preset, isolated endpoint key, model discovery and same-provider image routing. Focused tests 100/100 with simulated provider.
 
 - 2026-11-15: Fixed native image tool disappearing before setup; added stable image routing rules and Composio image-call rejection; 82 unit/route tests and 1 isolated server MCP test PASS. Confirmed prior 0.3.41 desktop CI successful. Prepared 0.3.42; live image service not verified.
 

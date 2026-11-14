@@ -1,0 +1,152 @@
+{
+  "server/codex-endpoints.ts": [
+    {
+      "before": "import { randomUUID",
+      "after": "import { XINGCHI_URL } from \"../shared/xingchi.ts\";\nimport { randomUUID"
+    },
+    {
+      "before": ".extend({ model:",
+      "after": ".extend({ profile: z.literal(\"xingchi\").optional(), model:"
+    },
+    {
+      "before": "codexEndpointSchema.partial()",
+      "after": "codexEndpointSchema.omit({ profile: true }).partial()"
+    },
+    {
+      "before": "endpoint?: { url:",
+      "after": "endpoint?: { profile?: \"xingchi\"; url:"
+    },
+    {
+      "before": "const instanceId = ",
+      "after": "if (body.profile && endpointBaseUrl(body.baseUrl) !== XINGCHI_URL) throw new Error(\"The Xingchi preset requires its official endpoint.\");\n  const instanceId = "
+    },
+    {
+      "before": "endpoint: { url: endpointBaseUrl",
+      "after": "endpoint: { ...(body.profile ? { profile: body.profile } : {}), url: endpointBaseUrl"
+    },
+    {
+      "before": "  // A saved credential",
+      "after": "  if (configOf(entry).endpoint?.profile && address !== XINGCHI_URL) throw new Error(\"The Xingchi preset requires its official endpoint.\");\n  // A saved credential"
+    }
+  ],
+  "server/drivers/codex-endpoint-config.ts": [
+    {
+      "before": "/** A Responses",
+      "after": "import { XINGCHI_URL } from \"../../shared/xingchi.ts\";\n\n/** A Responses"
+    },
+    {
+      "before": "  models: string[];",
+      "after": "  models: string[];\n  profile?: \"xingchi\";"
+    },
+    {
+      "before": "{ url?: unknown; models?",
+      "after": "{ profile?: unknown; url?: unknown; models?"
+    },
+    {
+      "before": "  return { url: url.href",
+      "after": "  if (value.profile !== undefined && (value.profile !== \"xingchi\" || url.href.replace(/\\/$/, \"\") !== XINGCHI_URL)) throw new Error(\"Invalid Xingchi endpoint.\");\n  return { ...(value.profile === \"xingchi\" ? { profile: \"xingchi\" as const } : {}), url: url.href"
+    },
+    {
+      "before": "    \"-c\", \"features.tool_search=false\"];",
+      "after": "    \"-c\", \"features.tool_search=false\",\n    ...(config.profile === \"xingchi\" ? [\n      \"-c\", 'model_providers.openmaus_endpoint.http_headers={ \"x-openai-actor-authorization\" = \"local-image-extension\" }',\n      \"-c\", 'model_providers.openmaus_endpoint.model_catalog_url=\"' + XINGCHI_URL + '/models\"',\n      \"-c\", 'review_model=\"gpt-6.1-sol\"', \"-c\", 'web_search=\"live\"',\n      \"-c\", \"disable_response_storage=true\", \"-c\", \"features.api_key_model_discovery=true\",\n      \"-c\", \"features.goals=true\",\n      // Image requests go through the metered Limix tool on this same endpoint.\n      \"-c\", \"features.image_generation=false\",\n    ] : [])];"
+    }
+  ],
+  "server/agent-endpoint-models.ts": [
+    {
+      "before": "endpoint?: { url:",
+      "after": "endpoint?: { profile?: string; url:"
+    },
+    {
+      "before": "  setModels([...models]);",
+      "after": "  const ordered = [...models];\n  if (config.endpoint?.profile === \"xingchi\") {\n    const preferred = [\"gpt-6.1-sol\", \"gpt-6-astra\"];\n    setModels([...preferred.filter(id => models.has(id)), ...ordered.filter(id => !preferred.includes(id))]);\n  } else setModels(ordered);"
+    },
+    {
+      "before": "headers, redirect:",
+      "after": "headers: config.endpoint?.profile === \"xingchi\" && target.href === \"https://api.xingchiapi.com/v1/models\"\n        ? { ...headers, \"x-openai-actor-authorization\": \"local-image-extension\" } : headers, redirect:"
+    }
+  ],
+  "src/components/ClaudeEndpoints.tsx": [
+    {
+      "before": "import { useState",
+      "after": "import { XINGCHI_URL } from \"../../shared/xingchi\";\nimport { useState"
+    },
+    {
+      "before": "function EndpointForm({ instance, engine, onDone }: {",
+      "after": "export function EndpointForm({ instance, engine, onDone, xingchi = false }: { xingchi?: boolean;"
+    },
+    {
+      "before": "instance ? draftOf(instance) : EMPTY",
+      "after": "instance ? draftOf(instance) : xingchi ? { ...EMPTY, name: \"Xingchi (Codex Responses)\", url: XINGCHI_URL } : EMPTY"
+    },
+    {
+      "before": "displayName: draft.name.trim(),",
+      "after": "displayName: draft.name.trim(),\n      ...(xingchi ? { profile: \"xingchi\" } : {}),"
+    },
+    {
+      "before": "{...field(\"url\")} type",
+      "after": "{...field(\"url\")} readOnly={xingchi} type"
+    }
+  ],
+  "src/components/EnginesSettings.tsx": [
+    {
+      "before": "import { ClaudeEndpoints, CodexEndpoints",
+      "after": "import { EndpointForm, ClaudeEndpoints, CodexEndpoints"
+    },
+    {
+      "before": "  const others = rows.filter",
+      "after": "  const [addingXingchi, setAddingXingchi] = useState(false);\n  const canAdd = !rows.length || rows.some(instance => !instance.readOnly);\n  const others = rows.filter"
+    },
+    {
+      "before": "{others.length > 0 && (",
+      "after": "{(others.length > 0 || canAdd) && ("
+    },
+    {
+      "before": "count: String(others.length)",
+      "after": "count: String(others.length + Number(canAdd))"
+    },
+    {
+      "before": "          <EngineSections instances={others}",
+      "after": "          {canAdd && <div className=\"rounded-xl border border-hairline/50 bg-inset p-4\">\n            <div className=\"flex items-center justify-between gap-3\">\n              <strong className=\"text-sm\">Xingchi (Codex Responses)</strong>\n              {!addingXingchi && <button type=\"button\" className=\"ui-button\" onClick={() => setAddingXingchi(true)}>{t(\"settings.simple.ai.setUp\")}</button>}\n            </div>\n            {addingXingchi && <EndpointForm engine=\"codex\" xingchi onDone={() => setAddingXingchi(false)} />}\n          </div>}\n          <EngineSections instances={others}"
+    }
+  ],
+  "server/index.ts": [
+    {
+      "before": "import { createImageToolRoutes }",
+      "after": "import { xingchiTurnImages } from \"./xingchi-turn-images.ts\";\nimport { createImageToolRoutes }"
+    },
+    {
+      "before": "createImageToolRoutes({ config: () => cfg,",
+      "after": "createImageToolRoutes({ config: (ctx) => {\n  const selection = ctx.botId && turnSelection(ctx.botId, ctx.threadId);\n  return selection ? xingchiTurnImages(cfg, providerConfigs()[selection.instanceId], selection.model) : cfg;\n},"
+    },
+    {
+      "before": "imageTools.internal({ method, path, res, json,",
+      "after": "imageTools.internal({ botId: internalSender.id, method, path, res, json,"
+    }
+  ],
+  "server/routes/image-tools.ts": [
+    {
+      "before": "export interface ImageRouteContext {",
+      "after": "export interface ImageRouteContext {\n  botId?: string;"
+    },
+    {
+      "before": "config: () => ImageCredentials",
+      "after": "config: (ctx: ImageRouteContext) => ImageCredentials"
+    },
+    {
+      "before": "cfg: deps.config(),",
+      "after": "cfg: deps.config(ctx),"
+    }
+  ],
+  "server/limix-image-routing.ts": [
+    {
+      "before": "It uses the image provider explicitly configured in Settings > AI > Image generation.",
+      "after": "The Xingchi Codex Responses preset uses its own connection and selected model for images. Other connections use the image provider configured in Settings > AI > Image generation."
+    }
+  ],
+  "server/agent-endpoint-models.test.ts": [
+    {
+      "before": "localhost refers to OpenMausBot's server",
+      "after": "localhost refers to Limix Bot's server"
+    }
+  ]
+}

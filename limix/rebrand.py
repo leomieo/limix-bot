@@ -2134,3 +2134,11 @@ for rel, edits in json.loads((ROOT / "limix/patches/image-routing.json").read_te
                 s = must(s, patch["before"], patch["after"])
         return s
     edit(rel, image_routing_patch)
+
+for rel, edits in json.loads((ROOT / "limix/patches/xingchi.json").read_text(encoding="utf-8")).items():
+    def xingchi_patch(s, edits=edits):
+        for patch in edits:
+            if patch["after"] not in s:
+                s = must(s, patch["before"], patch["after"])
+        return s
+    edit(rel, xingchi_patch)

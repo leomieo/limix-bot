@@ -96,6 +96,7 @@ export async function generateImageForTurn(raw: unknown, deps: ImageToolDeps): P
 }
 
 export interface ImageRouteContext {
+  botId?: string;
   method: string;
   path: string;
   res: ServerResponse;
@@ -130,7 +131,7 @@ export function imageTurn(store: ImageTurnStore, threadId: string, requireActive
   };
 }
 
-export function createImageToolRoutes(deps: ImageTurnStore & { config: () => ImageCredentials; dataDir: string; fetchImpl?: typeof fetch }) {
+export function createImageToolRoutes(deps: ImageTurnStore & { config: (ctx: ImageRouteContext) => ImageCredentials; dataDir: string; fetchImpl?: typeof fetch }) {
   const inFlight = new Map<string, number>();
   const daily = createImageDailyCap(deps.dataDir);
   return {
@@ -139,7 +140,7 @@ export function createImageToolRoutes(deps: ImageTurnStore & { config: () => Ima
       const turn = imageTurn(deps, ctx.threadId, ctx.requireActive);
       const call = new AbortController();
       ctx.res.once("close", () => { if (!ctx.res.writableEnded) call.abort(); });
-      const outcome = await generateImageForTurn(await ctx.readBody(), { cfg: deps.config(), personTurn: ctx.personTurn, daily, fetchImpl: deps.fetchImpl, turn, inFlight, signal: call.signal });
+      const outcome = await generateImageForTurn(await ctx.readBody(), { cfg: deps.config(ctx), personTurn: ctx.personTurn, daily, fetchImpl: deps.fetchImpl, turn, inFlight, signal: call.signal });
       ctx.json(ctx.res, outcome.status, outcome.body);
     },
   };

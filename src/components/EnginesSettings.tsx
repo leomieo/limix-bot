@@ -10,7 +10,7 @@ import { ApiKeyEngineManage, EngineSetup, EngineUpdateNotice, EngineWarningNotic
 import { AppCopyNotice } from "./EngineAppCopy";
 import { forgetAppCopySwitches } from "@/state/engine-install";
 import { AccountsCard, AddAccount, accountGroupOf, accountsReady, type AccountGroup } from "./EngineAccounts";
-import { ClaudeEndpoints, CodexEndpoints } from "./ClaudeEndpoints";
+import { EndpointForm, ClaudeEndpoints, CodexEndpoints } from "./ClaudeEndpoints";
 import { ClaudeBedrockEndpoints } from "./ClaudeBedrock";
 import { DEVICE_SIGN_IN_COPY, deviceSignInProvider } from "./DeviceSignIn";
 import { AntigravityFreeSpace } from "./AntigravityFreeSpace";
@@ -431,6 +431,8 @@ function SimpleEngines({ rows, isReady, renderEngine, more }: {
 }) {
   const [opened, setOpened] = useState<string | null>(null);
   const featured = rows.filter((instance) => isReady(instance) || instance.authentication !== undefined);
+  const [addingXingchi, setAddingXingchi] = useState(false);
+  const canAdd = !rows.length || rows.some(instance => !instance.readOnly);
   const others = rows.filter((instance) => !featured.includes(instance));
   return (
     <>
@@ -458,9 +460,9 @@ function SimpleEngines({ rows, isReady, renderEngine, more }: {
           })}
         </SettingsRows>
       </SettingsGroup>
-      {others.length > 0 && (
+      {(others.length > 0 || canAdd) && (
         <SettingsDisclosureRow
-          title={t("settings.simple.ai.more", { count: String(others.length) })}
+          title={t("settings.simple.ai.more", { count: String(others.length + Number(canAdd)) })}
           trailing={<span aria-hidden="true" className="flex items-center -space-x-1">
             {others.slice(0, 4).map((instance) => (
               <span key={instance.instanceId} className="flex size-[18px] items-center justify-center rounded-full bg-menu"><InstanceProviderMark instance={instance} size={14} subtle /></span>
@@ -468,6 +470,13 @@ function SimpleEngines({ rows, isReady, renderEngine, more }: {
           </span>}
           {...more}
         >
+          {canAdd && <div className="rounded-xl border border-hairline/50 bg-inset p-4">
+            <div className="flex items-center justify-between gap-3">
+              <strong className="text-sm">Xingchi (Codex Responses)</strong>
+              {!addingXingchi && <button type="button" className="ui-button" onClick={() => setAddingXingchi(true)}>{t("settings.simple.ai.setUp")}</button>}
+            </div>
+            {addingXingchi && <EndpointForm engine="codex" xingchi onDone={() => setAddingXingchi(false)} />}
+          </div>}
           <EngineSections instances={others} isReady={isReady} renderEngine={(instance) => renderEngine(instance)} />
         </SettingsDisclosureRow>
       )}
