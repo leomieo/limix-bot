@@ -48,6 +48,8 @@ jobs:
           pnpm exec vitest run server/limix-transfer-account.test.ts server/workspace-backup-http.test.ts src/components/LimixSignOutDialog.test.ts src/components/LimixToolsDialog.scan.dom.test.ts server/limix-transfer-version.test.ts server/limix-hub-download.test.ts server/workspace-backup.test.ts src/components/WorkspaceBackupSettings.test.ts src/components/SkillsSection.behavior.test.ts
       - name: Prepare pinned Python and uv
         run: node scripts/prepare-limix-runtime.mjs
+      - name: Verify selected upstream improvements
+        run: node scripts/verify-limix-upstream.mjs
       - name: Build macOS Apple Silicon and Intel
         if: matrix.platform == 'macos'
         run: pnpm package:mac
@@ -59,8 +61,8 @@ jobs:
         run: |
           node scripts/smoke-limix-packaged.mjs 'release/mac-arm64/Limix Bot.app/Contents/MacOS/Limix Bot' 'release/mac-arm64/Limix Bot.app/Contents/Resources'
           v=$(node -p "require('./package.json').version")
-          cp "release/Limix Bot-$v-arm64.dmg" release/LimixBot-Apple-Silicon.dmg
-          cp "release/Limix Bot-$v-x64.dmg" release/LimixBot-Intel.dmg
+          cp "release/LimixBot-$v-arm64.dmg" release/LimixBot-Apple-Silicon.dmg
+          cp "release/LimixBot-$v-x64.dmg" release/LimixBot-Intel.dmg
       - name: Check packaged Linux server
         if: matrix.platform == 'linux'
         run: |

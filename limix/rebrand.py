@@ -2092,3 +2092,11 @@ for rel, edits in json.loads((ROOT / "limix/patches/offline-desktop.json").read_
                 s = must(s, patch["before"], patch["after"])
         return s
     edit(rel, apply_offline_desktop_patch)
+
+for rel, edits in json.loads((ROOT / "limix/patches/upstream-0.1.155.json").read_text(encoding="utf-8")).items():
+    def apply_upstream_patch(s, edits=edits):
+        for patch in edits:
+            if patch["after"] not in s:
+                s = must(s, patch["before"], patch["after"])
+        return s
+    edit(rel, apply_upstream_patch)
