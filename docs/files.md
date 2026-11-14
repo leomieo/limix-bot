@@ -1,6 +1,6 @@
 # Files: lent folders on My Cloud, get your bots' work
 
-Files is a top-level page in the desktop app, for people with a MausBot Cloud ("My Cloud"). It does two jobs:
+Files is a top-level page in the desktop app, for people with a Limix Bot Cloud ("My Cloud"). It does two jobs:
 
 - **Lent folders, even while this computer sleeps.** Every folder lent to My Cloud (each moved bot's project folder, a folder added here) also gets a copy on My Cloud, kept up to date while this computer is on. The home folder, which this computer lends My Cloud by itself (`docs/cloud-pro.md`, "This computer works for your Clouds"), is too broad for a copy and stays live only. While it is away, bots read that copy, and a change to a folder lent with editing waits on My Cloud and lands here when the computer is back. Nobody chooses anything: what fits is copied, the rest stays live only.
 - **Your bots' work.** What Cloud bots make comes down to `Documents/MausBot/<bot>/<conversation>` on this computer.
@@ -55,7 +55,7 @@ Folders shared from the Files page before lent folders keep working. Once this c
 - **Folders that are never shared:**
   - the home folder or anything above it;
   - a drive root or a mount point;
-  - MausBot's own folders: its data folder and `Documents/MausBot`;
+  - Limix Bot's own folders: its data folder and `Documents/MausBot`;
   - folders of keys and settings: `.ssh`, `.aws`, `.gnupg`, `.config`, `Library`, `AppData` and similar;
   - a folder inside, or around, one already shared.
 - **This computer's version always wins.** A file new or changed here is uploaded. If a bot edits the copy anyway, the next pass puts this computer's version back, and the bot's version stays in My Cloud's trash. Files a bot adds to the copy stay on My Cloud and never come down.

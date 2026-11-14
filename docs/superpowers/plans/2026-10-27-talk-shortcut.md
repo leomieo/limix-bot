@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** On macOS, hold ⌃⌥Space in any app, speak, let go of ⌃⌥, and the words go to MausBot's "Quick asks" chat on this Mac's server while a small box that never takes focus shows the live words and then the reply.
+**Goal:** On macOS, hold ⌃⌥Space in any app, speak, let go of ⌃⌥, and the words go to Limix Bot's "Quick asks" chat on this Mac's server while a small box that never takes focus shows the live words and then the reply.
 
-**Architecture:** `globalShortcut` sees the press; the existing speech helper sees the release (`--finish-on-release`, polling `CGEventSource.flagsState`). Small injected-dependency modules in Electron main do the rest: `talk-keys` (presets), `talk-shortcut` (registration and call presence), `talk-server` (find MausBot, keep the Quick asks chat, send, follow `/api/events`), `talk-panel` (the non-activating box), `talk-session` (the ask state machine). `speech.mjs` gains sinks so main can own a speech session without a window.
+**Architecture:** `globalShortcut` sees the press; the existing speech helper sees the release (`--finish-on-release`, polling `CGEventSource.flagsState`). Small injected-dependency modules in Electron main do the rest: `talk-keys` (presets), `talk-shortcut` (registration and call presence), `talk-server` (find Limix Bot, keep the Quick asks chat, send, follow `/api/events`), `talk-panel` (the non-activating box), `talk-session` (the ask state machine). `speech.mjs` gains sinks so main can own a speech session without a window.
 
 **Tech Stack:** Electron ^43.5.0 main (ESM `.mjs`, preload `.cjs`), Swift helper (`swiftc`), Node `node:test` for `electron/*.node-test.mjs`, vitest (+ happy-dom) for `electron/*.test.mjs`, `server/`, `src/`; React settings row.
 
@@ -16,7 +16,7 @@
 - Keys, exactly: `ctrl-opt-space` → `Control+Alt+Space`, release `control,option`, label `⌃⌥Space` (default); `ctrl-shift-space` → `Control+Shift+Space`, `control,shift`, `⌃⇧Space`; `opt-shift-space` → `Alt+Shift+Space`, `option,shift`, `⌥⇧Space`.
 - `desktop-prefs.json` gains `talkShortcut` (absent = on), `talkKey`, `quickAsks` (per server). Only fields that were set are written.
 - Asks always go to this computer's own server, never the Cloud or team page the window shows. The chat is titled exactly `Quick asks`, created on first use with `select: false`, reused, recreated when gone.
-- The box never takes focus and never raises the MausBot window: `type:"panel"`, `focusable:false`, `showInactive()`, never `show()`/`focus()`.
+- The box never takes focus and never raises the Limix Bot window: `type:"panel"`, `focusable:false`, `showInactive()`, never `show()`/`focus()`.
 - Timings: reply box hides 12 s after it settles unless the pointer is over it; no answer in 120 s → "Still working · Open chat"; reply text is plain, at most 400 characters.
 - Copy fixed by the spec: `Talk to MausBot from any app`, `Hold {key}, speak, let go`, `{key} is used by another app`, `Voice is in use in MausBot`, `Open MausBot to talk`, `Still working · Open chat`. Settings strings go in `src/locales/en.json` only (other languages fall back; `pnpm i18n:check` must pass). The box's own copy is English in v1: main has no locale catalogs.
 - New bridge keys (`talkShortcut`, `callActive`) stay out of `REMOTE_SAFE`; their IPC is `localOnly` (`call:active`: `localOrHome`, see Task 8).
@@ -27,8 +27,8 @@
 ## Review Focus
 
 - A tap let go before any word is heard (the recognizer then reports `recognition-error` with nothing heard): the box closes silently, never an error. Pinned in Task 7.
-- A second ask while MausBot is still answering the first in the same chat: each box shows its own answer; the first turn's deltas and `turn.completed` never end the second box. Pinned in Task 5.
-- The Quick asks chat was deleted, or two presses race on first use: exactly one new chat, and the chat open in the MausBot window never switches. Pinned in Tasks 1 and 5.
+- A second ask while Limix Bot is still answering the first in the same chat: each box shows its own answer; the first turn's deltas and `turn.completed` never end the second box. Pinned in Task 5.
+- The Quick asks chat was deleted, or two presses race on first use: exactly one new chat, and the chat open in the Limix Bot window never switches. Pinned in Tasks 1 and 5.
 - The page reloads or its renderer crashes during a call: afterwards the shortcut works again instead of saying "Voice is in use" forever. Pinned in Tasks 4 and 9.
 - A reply with markup or Markdown (`<img src=x onerror=…>`, `**bold**`, links): shown as plain text, never parsed as HTML. Pinned in Task 6.
 
@@ -44,7 +44,7 @@
 | `electron/talk-keys.mjs` (new) | the three presets |
 | `electron/desktop-prefs.mjs`, `.d.mts` (modify) | talk prefs, Quick asks chat per server, injectable store |
 | `electron/talk-shortcut.mjs`, `.d.mts` (new) | register/unregister with prefs; call presence |
-| `electron/talk-server.mjs`, `.d.mts` (new) | find MausBot, Quick asks chat, SSE reading, reply tracking, ask |
+| `electron/talk-server.mjs`, `.d.mts` (new) | find Limix Bot, Quick asks chat, SSE reading, reply tracking, ask |
 | `electron/talk-panel.mjs`, `electron/talk-panel-preload.cjs` (new) | the box window, its `data:` page, `isTalkPanel` |
 | `electron/talk-session.mjs` (new) | the ask state machine |
 | `electron/main.mjs`, `electron/preload.cjs`, `src/types/ogb.d.ts` (modify) | wiring, `appWindows()`, IPC, bridge |
@@ -56,7 +56,7 @@
 
 ### Task 1: Create a chat without selecting it
 
-`POST /api/bots/:id/tasks` always passes `activate = true` (`server/routes/tasks.ts:194` → `server/store.ts:2205`), so creating Quick asks would switch the chat the MausBot window shows.
+`POST /api/bots/:id/tasks` always passes `activate = true` (`server/routes/tasks.ts:194` → `server/store.ts:2205`), so creating Quick asks would switch the chat the Limix Bot window shows.
 
 **Files:**
 - Modify: `server/routes/tasks.ts:162-198`
@@ -386,7 +386,7 @@ git commit -m "feat(talk): the talk shortcut setting, its keys and registration"
 
 Tracker rules (the algorithm the tests do not fully determine): frames for other threads, and every frame before `{ kind: "message", message: { role: "user", sendId } }` with this ask's `sendId`, return null; that frame returns `thinking`. After it: `runtime` `content.delta` (`streamKind: "assistant_text"`) appends to a buffer that restarts when `itemId` changes → `reply` with the buffer; `runtime` `item.completed` (`itemType: "assistant_text"`) and a `message` with `role: "bot", kind: "text"` replace the shown text → `reply`; a `message` with `role: "bot", kind: "options"` whose `card` is not `answered`, `dismissed` or `expired`, or a `runtime` `request.opened` → `needs-you`; `runtime` `turn.completed` → `done` with its `ok` and the last shown text.
 
-`prepare()`: `GET /api/bots?messages=0` (a rejected request or non-2xx → `server-down`; no MausBot → `no-mausbot`); reuse `prefs.quickAsksChat(serverKey())` when its `botId` is MausBot's and MausBot's `tasks` still list its `threadId`; else `POST /api/bots/:id/tasks` with exactly `{ title: QUICK_ASKS_TITLE, select: false }`, save and return it. One prepare in flight at a time: a second call while one runs gets the same promise.
+`prepare()`: `GET /api/bots?messages=0` (a rejected request or non-2xx → `server-down`; no Limix Bot → `no-mausbot`); reuse `prefs.quickAsksChat(serverKey())` when its `botId` is Limix Bot's and Limix Bot's `tasks` still list its `threadId`; else `POST /api/bots/:id/tasks` with exactly `{ title: QUICK_ASKS_TITLE, select: false }`, save and return it. One prepare in flight at a time: a second call while one runs gets the same promise.
 
 `ask()`: `GET /api/events?screens=off` first; wait for its `{ kind: "hello" }` frame; then `POST /api/bots/:botId/messages` with exactly `{ text, threadId, sendId }` (non-2xx → `refused`). Resolve on `done` (`"failed"` when `ok` is false and the text is empty) or `needs-you`; the stream ending first → `lost`; `signal` aborting → reject with `signal.reason` and cancel the stream. `content-type: application/json` on both POSTs.
 
@@ -774,7 +774,7 @@ git commit -m "feat(talk): wire the talk shortcut into the desktop app"
 **Interfaces:**
 - Consumes: `window.ogb.talkShortcut`, `window.ogb.callActive` (Task 8); `useOnCall`, `startCall`, `endCall` (`src/lib/call.ts`); `useLiveMedia`, `isLiveCallRunning`, `LiveMediaPhase` (`src/lib/live-call-media.ts`).
 - Produces: `callInProgress(onCall: string | null, phase: LiveMediaPhase): boolean`; `useReportCallPresence(): void` (reports on mount and on every change, so a reloaded page clears a stale `true`); `TalkShortcutRow()`.
-- Strings: `settings.talk.title` "Talk to MausBot from any app", `settings.talk.subtitle` "Hold {key}, speak, let go. MausBot answers in a small box at the bottom of the screen; click it to open the chat.", `settings.talk.aria` "Talk to MausBot from any app", `settings.talk.keyAria` "Talk shortcut", `settings.talk.taken` "{key} is used by another app. Pick another shortcut.". Keywords: `"talk"`, `"voice"`, `"shortcut"`, `"hotkey"`, `"hold to talk"`, `"push to talk"`, `"quick asks"`.
+- Strings: `settings.talk.title` "Talk to Limix Bot from any app", `settings.talk.subtitle` "Hold {key}, speak, let go. Limix Bot answers in a small box at the bottom of the screen; click it to open the chat.", `settings.talk.aria` "Talk to Limix Bot from any app", `settings.talk.keyAria` "Talk shortcut", `settings.talk.taken` "{key} is used by another app. Pick another shortcut.". Keywords: `"talk"`, `"voice"`, `"shortcut"`, `"hotkey"`, `"hold to talk"`, `"push to talk"`, `"quick asks"`.
 - Row: hidden without the bridge or when `!state.available`; `SettingRow` with the `Switch`; when on, a `Select size="sm"` of `state.keys` (labels) in the row's `message`, and under it `role="alert"` `settings.talk.taken` when `state.taken`; each change shows the state `set()` returns.
 
 - [ ] **Step 1: Write the failing tests**
@@ -842,17 +842,17 @@ git commit -m "feat(talk): Settings row, and calls tell main they hold the micro
 
 `talk-shortcut.md` sections (in this repo's recipe style, see `docs/verification/local-environments.md`):
 1. **Floor: automated checks** — `node --test electron/talk-*.node-test.mjs electron/desktop-prefs.node-test.mjs electron/preload.node-test.mjs electron/speech-helper-release.node-test.mjs`; `pnpm exec vitest run electron/speech.test.mjs server/task-select.test.ts server/talk-server.e2e.test.ts src/lib/call-presence.test.ts src/components/TalkShortcutRow.test.ts --maxWorkers=1`; `pnpm typecheck && pnpm lint && pnpm i18n:check`. What they prove and what they do not (the real hotkey, the microphone, focus, Spaces).
-2. **Setup** — a packaged build of the branch installed beside, never over, the installed OpenMausBot (maintainers: the OMB2 side-by-side build), launched with `OMB_DATA_DIR=$HOME/.openmausbot-test` unless the check needs real bots; only one running app may hold the key. Composer dictation used once first so Microphone and Speech Recognition are granted.
+2. **Setup** — a packaged build of the branch installed beside, never over, the installed Limix Bot (maintainers: the OMB2 side-by-side build), launched with `OMB_DATA_DIR=$HOME/.openmausbot-test` unless the check needs real bots; only one running app may hold the key. Composer dictation used once first so Microphone and Speech Recognition are granted.
 3. **By hand**, each with its expected result:
    - Settings → General shows the row, on, "Hold ⌃⌥Space, speak, let go".
-   - In Safari's address bar: hold ⌃⌥, tap Space, say "what can you do", let go of ⌃⌥. Live words, then the reply, bottom-centre of that display. `osascript -e 'tell application "System Events" to name of first application process whose frontmost is true'` prints `Safari` before and after; the caret still blinks in Safari; the MausBot window stays behind.
+   - In Safari's address bar: hold ⌃⌥, tap Space, say "what can you do", let go of ⌃⌥. Live words, then the reply, bottom-centre of that display. `osascript -e 'tell application "System Events" to name of first application process whose frontmost is true'` prints `Safari` before and after; the caret still blinks in Safari; the Limix Bot window stays behind.
    - The box hides 12 s after the reply; with the pointer on it, it stays until the pointer leaves.
-   - Clicking it brings MausBot forward on the "Quick asks" chat; the chat open before the ask had not changed until then.
+   - Clicking it brings Limix Bot forward on the "Quick asks" chat; the chat open before the ask had not changed until then.
    - In a full-screen app and on another Space, the box shows there.
    - Tap and let go without speaking: the box closes, no error.
-   - During a voice call, and while composer dictation is on: "Voice is in use in MausBot"; the call or dictation carries on.
+   - During a voice call, and while composer dictation is on: "Voice is in use in Limix Bot"; the call or dictation carries on.
    - Delete the Quick asks chat, ask again: a new Quick asks chat.
-   - Switch to ⌃⇧Space: ⌃⌥Space does nothing in MausBot any more; ⌃⇧Space works and ends on letting go of ⌃ or ⇧.
+   - Switch to ⌃⇧Space: ⌃⌥Space does nothing in Limix Bot any more; ⌃⇧Space works and ends on letting go of ⌃ or ⇧.
    - Turn it off: the key does nothing.
    - With System Settings → Keyboard → Keyboard Shortcuts → Input Sources → "Select next source in Input menu" on (⌃⌥Space): note whether Settings shows "⌃⌥Space is used by another app" or the press never arrives; either way ⌃⇧Space must work.
    - Dev loop: `pnpm dev:server`, `pnpm dev`, `pnpm dev:desktop`: an ask reaches the dev server through Vite's `/api` proxy.
@@ -875,7 +875,7 @@ git commit -m "docs(verification): talk shortcut recipe"
 
 ## Self-review
 
-- **Spec coverage.** Key via `globalShortcut` + helper release (Tasks 2, 4); repeat presses ignored, press during a reply starts anew (7); registration failure shown in Settings (4, 9); speech sinks, `speechBusy`, `replaced()` (3); `call:active` and refusal during calls or dictation (4, 7, 8, 9); the box, its window flags, `data:` page with strict CSP, `open()`/`dismiss()` only, states, 12 s hide unless hovered, click opens the chat, panel skipped by every window list (6, 7, 8); local server, MausBot lookup, owner header, send with `sendId`, SSE follow, needs-you, 120 s, empty transcript, server down (5, 7, 8); prefs, Settings row, hidden without Apple speech, not in `REMOTE_SAFE` (4, 8, 9); Quick asks chat created, reused, recreated, per server (1, 4, 5); testing section (all tasks, 10). Dev reaching the dev server (8, 10).
-- **Deviations from the spec, on purpose.** The ask posts `threadId` (the spec's `{text, sendId}` would land in MausBot's selected chat, `server/routes/bot-messages.ts:202`, against the Quick asks decision). Speech sink tests live in vitest `electron/speech.test.mjs`, not a node-test, because `speech.mjs` imports Electron's `app`. `call:active` is `localOrHome`, not `localOnly`, so a Live call on My Cloud's page also blocks the shortcut. The box's copy is English in v1.
+- **Spec coverage.** Key via `globalShortcut` + helper release (Tasks 2, 4); repeat presses ignored, press during a reply starts anew (7); registration failure shown in Settings (4, 9); speech sinks, `speechBusy`, `replaced()` (3); `call:active` and refusal during calls or dictation (4, 7, 8, 9); the box, its window flags, `data:` page with strict CSP, `open()`/`dismiss()` only, states, 12 s hide unless hovered, click opens the chat, panel skipped by every window list (6, 7, 8); local server, Limix Bot lookup, owner header, send with `sendId`, SSE follow, needs-you, 120 s, empty transcript, server down (5, 7, 8); prefs, Settings row, hidden without Apple speech, not in `REMOTE_SAFE` (4, 8, 9); Quick asks chat created, reused, recreated, per server (1, 4, 5); testing section (all tasks, 10). Dev reaching the dev server (8, 10).
+- **Deviations from the spec, on purpose.** The ask posts `threadId` (the spec's `{text, sendId}` would land in Limix Bot's selected chat, `server/routes/bot-messages.ts:202`, against the Quick asks decision). Speech sink tests live in vitest `electron/speech.test.mjs`, not a node-test, because `speech.mjs` imports Electron's `app`. `call:active` is `localOrHome`, not `localOnly`, so a Live call on My Cloud's page also blocks the shortcut. The box's copy is English in v1.
 - **Types.** `TalkView`, `TalkChat`, `TalkUpdate`, `TalkShortcutState`, `TalkKeyId` and every factory name are spelled the same in each task's Interfaces and tests.
 - **Left open to the implementer.** Exact page markup and CSS within the tokens given; the Swift parsing style.

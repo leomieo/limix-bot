@@ -1,7 +1,7 @@
-# OpenMausBot MCP server
+# Limix Bot MCP server
 
-The OpenMausBot desktop app includes a local stdio MCP server. It lets another MCP client coordinate your
-OpenMausBot team while the desktop app and its harness are running.
+The Limix Bot desktop app includes a local stdio MCP server. It lets another MCP client coordinate your
+Limix Bot team while the desktop app and its harness are running.
 
 ## What it can do
 
@@ -32,7 +32,7 @@ The same operations are also commands of their own, for scripts and CI:
 
 ## From a source checkout
 
-Start OpenMausBot, then configure the MCP client to run:
+Start Limix Bot, then configure the MCP client to run:
 
 ```json
 {
@@ -52,7 +52,7 @@ loopback without one. A hosted or shared server with service loopback trust
 session for almost every tool, reads included. To authorize an external MCP
 client:
 
-1. In OpenMausBot, open **Settings → Phone → Set up a phone** and reveal the
+1. In Limix Bot, open **Settings → Phone → Set up a phone** and reveal the
    one-time pairing code.
 2. Exchange it locally (remove spaces from the displayed code):
 
@@ -105,8 +105,8 @@ On Ubuntu `.deb` installs, the executable is normally `/opt/OpenMausBot/openmaus
 
 ## Connection discovery
 
-With no configuration, the MCP process probes OpenMausBot's three desktop ports (`8799`, `18799`, and `28799`)
-and accepts only a health response that identifies itself as OpenMausBot. This handles the desktop's normal
+With no configuration, the MCP process probes Limix Bot's three desktop ports (`8799`, `18799`, and `28799`)
+and accepts only a health response that identifies itself as Limix Bot. This handles the desktop's normal
 fallback when another local process already owns port 8799.
 
 Set `OMB_PORT` to force one local port, or `OPENMAUSBOT_URL` to use an explicit HTTP(S) origin. Plain HTTP is

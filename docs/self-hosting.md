@@ -1,13 +1,13 @@
-# Self-hosting the MausBot server
+# Self-hosting the Limix Bot server
 
-To keep MausBot and its agents on your current computer and use a VPS only as a
+To keep Limix Bot and its agents on your current computer and use a VPS only as a
 bot’s remote desktop, see [Bring Your Own VPS](byo-vps.md) and the
 [published setup guide](https://docs.openmausbot.com/docs/computers/byo-vps).
 
 Run the server on a machine you control (a VPS, a home server, a Mac mini in a
 closet). Then connect the desktop app, browsers and phones to it. Every path
 below ends the same way: the server prints **one link**, and you paste it into
-MausBot under **＋ → Connect to a server**.
+Limix Bot under **＋ → Connect to a server**.
 
 > **Security first:** the server listens on `127.0.0.1:8799`, and a program on
 > that machine counts as its owner. Never forward that port yourself. Let one
@@ -28,7 +28,7 @@ For server feature switches, defaults and configuration-file instructions, see
 | Tailscale on the server and your devices | `npx openmausbot serve --tailscale` | `https://<machine>.<tailnet>.ts.net/pair#code=…` |
 | Only this network (home or office) | `npx openmausbot serve --lan` | `http://192.168.1.20:8799/pair#code=…` |
 | Nothing at all | `npx openmausbot login`, then `npx openmausbot serve --tunnel` | `https://c-….openmausbot.com/pair#code=…` |
-| Only the phone app, from anywhere (a machine with no tunnel address, for now) | `npx openmausbot login --relay`, then `npx openmausbot serve --relay` | a QR for the MausBot app ([MausBot Relay](phone-relay-server.md)) |
+| Only the phone app, from anywhere (a machine with no tunnel address, for now) | `npx openmausbot login --relay`, then `npx openmausbot serve --relay` | a QR for the Limix Bot app ([Limix Bot Relay](phone-relay-server.md)) |
 
 `--lan` can be added to any of the others. Plain `http://` is only for a
 private network: the desktop app accepts it on LAN addresses, Tailscale
@@ -71,8 +71,8 @@ Each way in has its own Reach line:
 - `--tailscale`: `… · your tailnet`
 - `--tunnel`: `… · MausBot web address`
 
-Paste the link into MausBot: **＋ → Connect to a server**. The sheet names the
-server it found ("✓ hetzner-1 · MausBot 0.1.147 · HTTPS"), and **Connect to
+Paste the link into Limix Bot: **＋ → Connect to a server**. The sheet names the
+server it found ("✓ hetzner-1 · Limix Bot 0.1.147 · HTTPS"), and **Connect to
 hetzner-1** finishes. You can also type the address (`maus.example.com`,
 `192.168.1.20:8799`) and the pairing code in their own fields.
 
@@ -121,7 +121,7 @@ would answer the whole internet over plain http. More options are in
 ### Docker with your own domain
 
 On a fresh Ubuntu 22.04 or 24.04 server (x86-64), one command checks the
-server, installs MausBot under `/opt/openmausbot` and ends with HTTPS on your
+server, installs Limix Bot under `/opt/openmausbot` and ends with HTTPS on your
 domain:
 
 ```sh
@@ -170,11 +170,11 @@ npx openmausbot pair
 | "This points at this computer (127.0.0.1), not at the server." | A link to `127.0.0.1` or `localhost`, which is the computer you're on. | Use the address other devices reach the server at: run `openmausbot pair` on the server, or choose a way in. |
 | "Can't reach 192.168.1.20:8799. Check the server is running and reachable from this computer." | Nothing answers there. | Start it with a way in (`serve --lan` for this network), and check a firewall allows the port. |
 | "maus.example.com doesn't exist yet." / "…certificate isn't valid yet." | DNS or the certificate isn't ready. | Wait for the DNS record, or give a new server a minute. |
-| "That address answers, but it isn't a MausBot server." | Something else answers there, often a proxy pointing at the wrong port. | Point it at `http://127.0.0.1:8799`. |
-| "That's a sign-in code from an email…" / "That's a code from an older MausBot…" / "That's a script key…" | The wrong kind of code. | On the server, run `openmausbot pair` for a 12-character pairing code. |
+| "That address answers, but it isn't a Limix Bot server." | Something else answers there, often a proxy pointing at the wrong port. | Point it at `http://127.0.0.1:8799`. |
+| "That's a sign-in code from an email…" / "That's a code from an older Limix Bot…" / "That's a script key…" | The wrong kind of code. | On the server, run `openmausbot pair` for a 12-character pairing code. |
 | "Too many wrong codes. Try again at 11:19." | Five wrong codes in five minutes from one address. | Wait until then, or make a new code. |
 | `Reach    ✗ https://… doesn't reach this server (connection refused).` | Your tunnel or proxy doesn't reach port 8799. | Point it at `http://127.0.0.1:8799`, then run `openmausbot status`. |
-| `Reach    ✗ https://… answers as a different server.` | The address leads to another MausBot server. | Point the tunnel at this machine's port. |
+| `Reach    ✗ https://… answers as a different server.` | The address leads to another Limix Bot server. | Point the tunnel at this machine's port. |
 | `Reach    … https://… doesn't answer yet` (`--domain`) | DNS isn't pointing here yet, or ports 80 and 443 are closed. | Fix the A record and open the ports; the certificate follows. |
 | `--lan: this machine has no private network address…` | A VPS with only a public address. | Use `--public-url`, `--domain` or `--tailscale`. |
 | `tailscale: HTTPS certificates are off for this tailnet, so this server listens on http://…` | Tailscale can't serve HTTPS yet, so the server listens on its own tailnet address. It works, and only your tailnet reaches it. | For an `https://` address, turn on HTTPS certificates at https://login.tailscale.com/admin/dns, then run `serve --tailscale` again. |
@@ -243,7 +243,7 @@ too.
   this user, the server listens on this machine's own tailnet addresses at
   `http://<name>:<port>` and answers only tailnet peers that use that exact
   name. Otherwise `serve` checks that
-  no other MausBot server already answers on this machine's name. Then it
+  no other Limix Bot server already answers on this machine's name. Then it
   runs `tailscale serve --https=443 http://127.0.0.1:8799` in the foreground,
   so the share ends when `serve` stops. A marker file in the data dir lets the
   next start turn off a share that a crashed run left behind. It never
@@ -389,7 +389,7 @@ docker compose exec omb claude                       # each CLI you listed in EN
 docker compose exec omb openmausbot pair             # prints a code, a link and a QR
 ```
 
-Paste the link (`https://<DOMAIN>/pair#code=…`) into MausBot under **＋ →
+Paste the link (`https://<DOMAIN>/pair#code=…`) into Limix Bot under **＋ →
 Connect to a server**, or open it in a browser, and it is paired; see "Using it from your computer" for what a session is. Webhook
 URLs (`https://<DOMAIN>/hooks/wh_…`) work without a session, and that is the
 base the app prints on new hooks because the stack sets
@@ -504,7 +504,7 @@ Like `opencode` in a terminal, it reads provider keys from its environment
 (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_API_KEY`,
 `KIMI_API_KEY`, `MOONSHOT_API_KEY`, `MINIMAX_API_KEY`) and offers those
 providers' models, billed to that key. It does so only where the server's
-environment is one person's own: never on MausBot Cloud, a hosted team
+environment is one person's own: never on Limix Bot Cloud, a hosted team
 workspace, an organisation-managed desktop, or a server whose sign-in list
 lets other people in (users, more than one admin, or a whole domain).
 Providers added with `opencode auth login` work everywhere.
@@ -599,7 +599,7 @@ From the **desktop app**, choose **＋ → Connect to a server** and paste the
 link. You can also type the address (`maus.example.com`,
 `192.168.1.20:8799`, a `*.ts.net` name) and the pairing code in its own
 field. The sheet looks the address up and names what it found, for example
-"✓ hetzner-1 · MausBot 0.1.147 · HTTPS". A bare address tries https first,
+"✓ hetzner-1 · Limix Bot 0.1.147 · HTTPS". A bare address tries https first,
 then plain http when the address is private. Plain http works only on a
 private network (LAN addresses, Tailscale's 100.64/10 and `*.ts.net`,
 `*.local`); a public http address is refused with what to do instead.
@@ -621,7 +621,7 @@ use the apps on this computer's screen, and run the MCP servers you keep for
 it, while the app is open. Folders and the terminal are added in **Settings →
 Servers**, where each server of yours has a **Share this computer** switch and
 **Choose what it can use**; the switch turns it off at once, and the menu bar's
-OpenMausBot item pauses it with your Clouds. The server needs nothing turned on:
+Limix Bot item pauses it with your Clouds. The server needs nothing turned on:
 it takes a computer from its owner's pairings only, and a phone code or another
 person's pairing is never asked. Set `features.sharedComputers` to `false` in the
 server's config to turn this off, or to `true` to let every paired session lend
@@ -663,7 +663,7 @@ To move by hand instead, export a backup from this computer in **Settings →
 Backups → Export backup**, then import it on the server in **Settings → Backups
 → Import backup**. API keys, engine sign-ins and paired devices stay where they
 are on both sides; routines arrive paused. An older desktop app's **Copy this
-computer here** is answered with "Update OpenMausBot to bring your bots here by
+computer here** is answered with "Update Limix Bot to bring your bots here by
 itself."
 
 Only conversations you start yourself on that server can use what you share;
@@ -744,7 +744,7 @@ server at all.
 For development, `pnpm dev:server` sets `OMB_DEV_TRUST_LOCAL_BROWSER=1`, so a
 browser on Vite's dev page (`pnpm dev`) is the owner as before. The server
 honours it only when it runs from source with owner trust, logs a warning, and
-ignores it in a build, the desktop app, a hosted workspace and MausBot Cloud.
+ignores it in a build, the desktop app, a hosted workspace and Limix Bot Cloud.
 Run `OMB_DEV_TRUST_LOCAL_BROWSER=0 pnpm dev:server` to try the sign-in.
 
 ### Loopback trust: owner or service
@@ -779,7 +779,7 @@ Set `OMB_LOOPBACK_TRUST=service` on a self-hosted server people share (with
 an email sign-in list, say), or `OMB_LOOPBACK_TRUST=owner` to opt a hosted
 workspace back into the old behaviour (the log then warns). Any other value
 means `service`. The desktop app ignores the setting: its local changes
-already need the app's own per-launch capability. MausBot Cloud ignores
+already need the app's own per-launch capability. Limix Bot Cloud ignores
 it too and is always `service` (docs/cloud-pro.md).
 
 With `service` on a self-hosted server:
@@ -845,7 +845,7 @@ is bootstrapped; while it does, Settings refuses to change that list and says
 which variable to change instead. One that is empty, as `.env.example` and the
 Compose files leave them, leaves the list to Settings.
 
-The code itself comes from `accounts.openmausbot.com`, the OpenMausBot
+The code itself comes from `accounts.openmausbot.com`, the Limix Bot
 account service, so your server needs no email credentials. Your server asks
 it to send the code, checks the answer, and then issues its own session
 cookie: the browser only ever talks to your server, and who is welcome is
@@ -854,7 +854,7 @@ their own: ten in a minute from one address pause sign-in there for a minute. Se
 `openmausbot devices` and can be revoked the same way.
 
 To send the codes through your own mail server instead, so nobody signs in
-through the account service and no MausBot account is made, give the server
+through the account service and no Limix Bot account is made, give the server
 an SMTP address:
 
 ```sh
@@ -889,7 +889,7 @@ hosted workspace refuses them.
 
 ### Who may answer a card
 
-Approval cards are the provider's own (see the approval modes); OpenMausBot
+Approval cards are the provider's own (see the approval modes); Limix Bot
 adds none. On a workspace several people share — portal membership, or an
 email sign-in list that names users — it narrows only whose answer counts,
 and only when the card can be traced to a person:
@@ -1033,7 +1033,7 @@ is the reference implementation.
 
 In a paired admin browser, as in the desktop app, **Take control** turns the
 Computer panel's picture into the live desktop for Local VMs and your own VPS,
-through the same address as OpenMausBot; **Full screen** fills the window with
+through the same address as Limix Bot; **Full screen** fills the window with
 the same session. Shared, per-bot and pool Local VMs connect through their
 managed container's loopback port. VPS desktops connect
 through an SSH tunnel opened by the server. Neither needs an additional public
