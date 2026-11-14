@@ -21,7 +21,16 @@
 
 ## Getting started
 
-1. Download the appropriate available package from [Releases](https://github.com/leomieo/limix-bot/releases) and install it. [Website downloads](https://limixmedia.com) show platform packages when they are published.
+Desktop installers are available for Windows, macOS and Linux. Choose the package for your operating system and processor:
+
+| Platform | Download the latest release |
+|---|---|
+| Windows 10/11 · x64 | [Windows installer (.exe)](https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-setup.exe) |
+| macOS · Apple Silicon (M-series) | [Apple Silicon installer (.dmg)](https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-Apple-Silicon.dmg) |
+| macOS · Intel | [Intel installer (.dmg)](https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-Intel.dmg) |
+| Linux · x64 | [AppImage](https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-Linux-x64.AppImage) · [DEB for Ubuntu/Debian](https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-Linux-x64.deb) |
+
+1. Download the matching package above and install it. You can also use [website downloads](https://limixmedia.com) or browse [all release assets](https://github.com/leomieo/limix-bot/releases/latest).
 2. Sign in with your Limix account.
 3. Open **Settings → AI**, select a supported provider and sign in or configure its API.
 4. Create a bot with **+** in the sidebar, set its role and start a chat.
@@ -29,7 +38,7 @@
 
 ## Requirements and limitations
 
-- Download only a platform package actually listed in the release. Windows x64, macOS Apple Silicon, macOS Intel and Linux x64 are separate build targets.
+- Supported desktop packages: Windows x64, macOS Apple Silicon, macOS Intel and Linux x64. Choose the package that matches your machine; Linux ARM64 packages are not currently provided.
 - Installers are not yet publisher-signed; macOS notarization is not configured. Review operating-system warnings and permissions carefully.
 - Local virtual desktops require a compatible container runtime such as Docker Desktop.
 - Remote access requires the host to remain powered on, online and running Limix Bot.
@@ -68,6 +77,14 @@ Developed by **Leox ৹ Limix AI**.
 <p align="center">
   <a href="https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-setup.exe"><img src="https://img.shields.io/badge/T%E1%BA%A3i%20cho-Windows%2010%2F11-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Tải cho Windows"></a>
   &nbsp;
+  <a href="https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-Apple-Silicon.dmg"><img src="https://img.shields.io/badge/macOS-Apple%20Silicon-111111?style=for-the-badge&logo=apple&logoColor=white" alt="Tải cho macOS Apple Silicon"></a>
+  &nbsp;
+  <a href="https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-Intel.dmg"><img src="https://img.shields.io/badge/macOS-Intel-555555?style=for-the-badge&logo=apple&logoColor=white" alt="Tải cho macOS Intel"></a>
+  &nbsp;
+  <a href="https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-Linux-x64.AppImage"><img src="https://img.shields.io/badge/Linux-x64-111111?style=for-the-badge&logo=linux&logoColor=white" alt="Tải cho Linux x64"></a>
+</p>
+
+<p align="center">
   <a href="https://github.com/leomieo/limix-bot/releases"><img src="https://img.shields.io/github/v/release/leomieo/limix-bot?style=for-the-badge&label=Phi%C3%AAn%20b%E1%BA%A3n&color=111111" alt="Phiên bản mới nhất"></a>
   &nbsp;
   <a href="LICENSE"><img src="https://img.shields.io/badge/Gi%E1%BA%A5y%20ph%C3%A9p-Apache%202.0-555555?style=for-the-badge" alt="Apache 2.0"></a>
@@ -106,7 +123,16 @@ Developed by **Leox ৹ Limix AI**.
 
 ## Bắt đầu
 
-1. **Tải** [LimixBot-setup.exe](https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-setup.exe) và chạy để cài.
+Limix Bot đã có bộ cài cho Windows, macOS và Linux. Chọn đúng hệ điều hành và bộ xử lý của máy:
+
+| Nền tảng | Tải phiên bản mới nhất |
+|---|---|
+| Windows 10/11 · x64 | [Bộ cài Windows (.exe)](https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-setup.exe) |
+| macOS · Apple Silicon (dòng chip M) | [Bộ cài Apple Silicon (.dmg)](https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-Apple-Silicon.dmg) |
+| macOS · Intel | [Bộ cài Intel (.dmg)](https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-Intel.dmg) |
+| Linux · x64 | [AppImage](https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-Linux-x64.AppImage) · [DEB cho Ubuntu/Debian](https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-Linux-x64.deb) |
+
+1. **Tải và cài đặt** gói phù hợp ở bảng trên. Bạn cũng có thể tải tại [limixmedia.com](https://limixmedia.com) hoặc xem [toàn bộ tệp của bản phát hành mới nhất](https://github.com/leomieo/limix-bot/releases/latest).
 2. **Đăng nhập** tài khoản Limix khi ứng dụng yêu cầu.
 3. **Kết nối AI:** vào **Cài đặt → AI**, chọn AI bạn có và đăng nhập.
 4. **Tạo bot đầu tiên** bằng nút **+** ở thanh bên, đặt tên và giao việc ngay trong khung chat.
@@ -119,8 +145,8 @@ Developed by **Leox ৹ Limix AI**.
 
 ## Yêu cầu và lưu ý
 
-- **Hệ điều hành:** Chọn gói có sẵn trên [Releases](https://github.com/leomieo/limix-bot/releases). Các mục tiêu build gồm Windows x64, macOS Apple Silicon, macOS Intel và Linux x64.
-- **Cảnh báo khi cài:** bộ cài chưa được ký số. Nếu Windows SmartScreen hiện cảnh báo, chọn **More info → Run anyway**.
+- **Hệ điều hành:** Windows x64, macOS Apple Silicon, macOS Intel và Linux x64. Chọn đúng gói cho máy; hiện chưa có bộ cài Linux ARM64.
+- **Cảnh báo khi cài:** bộ cài chưa được ký số; bản macOS chưa được Apple chứng thực (notarization). Hãy kiểm tra nguồn tải và quyền được yêu cầu trước khi tiếp tục.
 - **Máy ảo riêng cho bot** cần Docker Desktop. Limix Bot có nút cài sẵn trong **Cài đặt → Kỹ năng → Công cụ cho kỹ năng**.
 - **Điều khiển qua Internet** cần máy tính đang bật, có mạng và đang chạy Limix Bot.
 - **Ngôn ngữ:** giao diện tiếng Việt và tiếng Anh.
