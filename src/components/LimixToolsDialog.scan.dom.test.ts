@@ -97,3 +97,30 @@ it("installs a standalone tool without opening the project picker", async () => 
     if (original) Object.defineProperty(window, "ogb", original); else Reflect.deleteProperty(window, "ogb");
   }
 });
+
+it("uses one full-width tab at a time and collapses prose guidance by skill", async () => {
+  setLocale("en");
+  const snapshot = { supported: true, items: [{ id: "node", name: "Node.js", why: "JavaScript runtime", size: "30 MB", installed: true, job: null }], skillScan: { skillCount: 1, requirements: [
+    { kind: "npm", name: "remotion", status: "missing", skill: "Video", directory: "/video", evidence: "npm install remotion" },
+    { kind: "review", name: "Long prose instruction", status: "review", skill: "Video", directory: "/video", evidence: "Review this workflow before running it." },
+  ] } };
+  const original = Object.getOwnPropertyDescriptor(window, "ogb");
+  Object.defineProperty(window, "ogb", { configurable: true, value: { limixTools: { scan: vi.fn().mockResolvedValue(snapshot) } } });
+  const host = document.createElement("div"); document.body.append(host); const root = createRoot(host);
+  try {
+    flushSync(() => root.render(createElement(LimixToolsDialog, { onClose: () => {} })));
+    await vi.waitFor(() => expect(document.querySelectorAll('[role="tabpanel"]').length).toBe(2));
+    const base = document.getElementById("limix-tools-base-panel")!, requirements = document.getElementById("limix-tools-requirements-panel")!;
+    expect(base.hidden).toBe(false); expect(requirements.hidden).toBe(true);
+    flushSync(() => document.getElementById("limix-tools-requirements-tab")!.click());
+    expect(base.hidden).toBe(true); expect(requirements.hidden).toBe(false);
+    const group = [...requirements.querySelectorAll("details")].find(node => node.querySelector("summary")?.textContent?.includes("Video"))!;
+    expect(group.open).toBe(false);
+    const missing = [...requirements.querySelectorAll("button")].find(node => node.textContent?.startsWith("Missing"))!;
+    flushSync(() => missing.click()); expect(missing.getAttribute("aria-pressed")).toBe("true");
+    expect(requirements.textContent).toContain("remotion");
+  } finally {
+    flushSync(() => root.unmount()); host.remove();
+    if (original) Object.defineProperty(window, "ogb", original); else Reflect.deleteProperty(window, "ogb");
+  }
+});
