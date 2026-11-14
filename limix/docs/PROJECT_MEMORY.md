@@ -254,3 +254,5 @@
 - 2026-11-14: Chủ dự án yêu cầu README, Code of Conduct, Contributing, Security dùng song ngữ Anh–Việt; Apache-2.0 LICENSE giữ nguyên. Đã thêm hai phần có anchor chuyển ngôn ngữ cho cả 4 file, đồng bộ overlay và README.limix.md, ghi quy tắc AGENTS. Kiểm tra anchor, link file, code fences, thương hiệu và overlay đạt; LICENSE không thay đổi. README chuyển cách mô tả nền tảng sang gói thực sự có trên Releases, tránh hứa khả năng chưa phát hành.
 
 - 2026-11-14 Codex sandbox mismatch reported on another computer (user confirmed). Earlier Other-provider turns succeeded. No direct access to that failing runtime; root cause unverified. Add requested/resolved sandbox types to refusal, retain fail-closed check and never start a mismatched turn. Request retry with updated CLI or working provider.
+
+- 2026-11-15 release: 0.3.37 public, desktop run 43616981774 success across Windows/Linux/macOS ARM64 + Intel smoke + publish. Public metadata verifier passed three feeds and five stable downloads. 0.3.38 build run 43618462299 contains Mac Docker and sandbox diagnostics; publication pending. No live Zalo/Codex issue repair claimed.
