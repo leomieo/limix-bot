@@ -1,3 +1,4 @@
+import { assertTransferAccount, transferAccountHash } from "./limix-transfer-account.ts";
 import { assertTransferVersion } from "./limix-transfer-version.ts";
 // Encrypted filesystem snapshot: quiesce writers before create/commit; restore runs before config/store load.
 import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID, scrypt } from "node:crypto";
@@ -64,6 +65,7 @@ const RESTORE_WARNING = "Restoring pauses routines, webhooks and calendar calls,
 
 type Entry = { path: string; type: "file" | "directory"; size: number; mode: number; sha256?: string };
 interface Manifest extends WorkspaceBackupPrivateMetadata {
+  account?: string;
   sourceDataDir: string;
   entries: Entry[];
 }
@@ -78,10 +80,12 @@ export interface CreateWorkspaceBackupOptions {
   clientState?: WorkspaceBackupClientState;
   appVersion?: string;
   omitMedia?: boolean;
+  accountId?: string;
 }
 type CreatedWorkspaceBackup = { id: string; path: string; summary: WorkspaceBackupSummary };
 export interface WorkspaceRestoreResult {
   restored: boolean;
+  blockedReason?: string;
   rolledBack?: boolean;
   id?: string;
   safetyCopyPath?: string;
@@ -429,6 +433,7 @@ export async function createWorkspaceBackupSnapshot(dataDir: string, options: Cr
       exclusions: options.omitMedia ? [...EXCLUSION_NOTES, "Media files and attachment/upload folders are omitted from this offline transfer."] : EXCLUSION_NOTES, warnings,
     };
     const manifest: Manifest = {
+      ...(options.accountId !== undefined ? { account: transferAccountHash(options.accountId) } : {}),
       summary, sourceDataDir: resolve(dataDir), clientState: options.clientState ?? {}, entries,
     };
     writeJson(join(snapshot, "manifest.json"), manifest);
@@ -459,7 +464,7 @@ function validateManifest(value: unknown): Manifest {
     value.sourceDataDir.length > 4096 || value.sourceDataDir.includes("\0") ||
     value.sourceDataDir === posix.parse(value.sourceDataDir).root || value.sourceDataDir === win32.parse(value.sourceDataDir).root ||
     value.sourceDataDir.replaceAll("\\", "/").split("/").some((part) => part === "." || part === "..") ||
-    Object.keys(value).some((key) => !["summary", "sourceDataDir", "clientState", "entries"].includes(key)) ||
+    Object.keys(value).some((key) => !["summary", "sourceDataDir", "clientState", "entries", "account"].includes(key)) ||
     Object.keys(value.summary).some((key) => !["format", "version", "id", "createdAt", "appVersion", "files", "directories", "bytes", "bots", "groups", "threads", "messages", "exclusions", "warnings"].includes(key)) || !record(value.clientState) ||
     !Object.values(value.clientState).every((item) => typeof item === "string") || !Array.isArray(value.entries) ||
     value.entries.length > MAX_WORKSPACE_BACKUP_FILES) throw new Error("Invalid or unsupported workspace backup metadata.");
@@ -471,6 +476,7 @@ function validateManifest(value: unknown): Manifest {
   for (const key of ["exclusions", "warnings"] as const) {
     if (!Array.isArray(value.summary[key]) || !value.summary[key].every((item) => typeof item === "string")) throw new Error("Invalid workspace backup summary.");
   }
+  if (value.account !== undefined && (typeof value.account !== "string" || !/^[0-9a-f]{64}$/.test(value.account))) throw new Error("Invalid backup account binding.");
   const names = new Map<string, string>();
   let bytes = 0;
   let files = 0;
@@ -601,7 +607,7 @@ function validateStaged(directory: string, expected?: Map<string, { type: string
   return manifest;
 }
 
-export async function stageWorkspaceBackup(dataDir: string, archivePath: string, options: { password: string; currentAppVersion?: string }) {
+export async function stageWorkspaceBackup(dataDir: string, archivePath: string, options: { password: string; currentAppVersion?: string; accountId?: string | null }) {
   const job = newJob(dataDir);
   const plaintext = join(job.directory, "archive.tar");
   try {
@@ -613,6 +619,7 @@ export async function stageWorkspaceBackup(dataDir: string, archivePath: string,
     const tar = await import("tar");
     await tar.x({ file: plaintext, cwd: staged, strict: true, preservePaths: false, umask: 0o077, noChmod: true, brotli: false, zstd: false });
     const manifest = validateStaged(staged, expected);
+    if (manifest.account || options.accountId !== undefined) assertTransferAccount(manifest.account, options.accountId);
     if (options.currentAppVersion !== undefined) assertTransferVersion(manifest.summary.appVersion, options.currentAppVersion);
     rmSync(plaintext);
     writeJson(join(job.directory, "ready.json"), { id: job.id, summary: manifest.summary });
@@ -638,12 +645,14 @@ export function stagedWorkspaceData(dataDir: string, id: string): { data: string
   return { data: join(staged, "data"), sourceDataDir: validateManifest(privateJson(join(staged, "manifest.json"))).sourceDataDir };
 }
 
-export function commitPendingWorkspaceRestore(dataDir: string, id: string) {
+export function commitPendingWorkspaceRestore(dataDir: string, id: string, options: { accountId?: string | null; currentAppVersion?: string } = {}) {
   const root = backupRoot(dataDir);
   if (existsSync(join(root, "pending-restore.json"))) throw new Error("A workspace restore is already waiting for restart.");
   if (existsSync(join(root, `safety-${id}`))) throw new Error("This restore was already attempted. Preview the backup again to create a fresh restore attempt.");
   const metadata = readStagedWorkspaceBackup(dataDir, id);
   const manifest = validateStaged(join(jobPath(dataDir, id), "staged"));
+  if (manifest.account || options.accountId !== undefined) assertTransferAccount(manifest.account, options.accountId);
+  if (options.currentAppVersion !== undefined) assertTransferVersion(manifest.summary.appVersion, options.currentAppVersion);
   // Adapt before persisting a restart request: a broken legacy file must not trap later boots.
   prepareRestore(dataDir, id, manifest);
   writeJson(join(root, "pending-restore.json"), { id });
@@ -890,7 +899,7 @@ function finishRestore(dataDir: string, id: string, consumePending = true): Last
 }
 
 /** Call after the data-directory lease, before anything reads app state; the old tree stays under .backups/safety-ID. */
-export function applyPendingWorkspaceRestore(dataDir: string): WorkspaceRestoreResult {
+export function applyPendingWorkspaceRestore(dataDir: string, options: { accountId?: string | null; currentAppVersion?: string } = {}): WorkspaceRestoreResult {
   const root = backupRoot(dataDir);
   const journalFile = join(root, "restore-journal.json");
   const pendingFile = join(root, "pending-restore.json");
@@ -924,6 +933,13 @@ export function applyPendingWorkspaceRestore(dataDir: string): WorkspaceRestoreR
   }
   const staged = join(jobPath(dataDir, pending.id), "staged");
   const manifest = validateStaged(staged);
+  try {
+    if (manifest.account || options.accountId !== undefined) assertTransferAccount(manifest.account, options.accountId);
+    if (options.currentAppVersion !== undefined) assertTransferVersion(manifest.summary.appVersion, options.currentAppVersion);
+  } catch (error) {
+    rmSync(pendingFile, { force: true });
+    return { restored: false, blockedReason: error instanceof Error ? error.message : "Restore blocked" };
+  }
   const prepared = prepareRestore(dataDir, pending.id, manifest);
   folder(join(safetyCopyPath, "data"));
   const journal: RestoreJournal = {

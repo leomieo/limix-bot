@@ -30,8 +30,8 @@ for (const target of targets) {
       const archive = join(scratch, `${name}.tgz`), extracted = join(scratch, name);
       writeFileSync(archive, bytes); mkdirSync(extracted);
       execFileSync('tar', ['-xzf', archive, '-C', extracted]);
-      if (name === 'python') cpSync(join(extracted, 'python'), join(destination, 'python'), { recursive: true });
-      else cpSync(join(extracted, `uv-${triple}`), join(destination, 'uv'), { recursive: true });
+      if (name === 'python') cpSync(join(extracted, 'python'), join(destination, 'python'), { recursive: true, verbatimSymlinks: true });
+      else cpSync(join(extracted, `uv-${triple}`), join(destination, 'uv'), { recursive: true, verbatimSymlinks: true });
     }
     if (target === `${process.platform}-${process.arch}`) {
       execFileSync(join(destination, 'python', 'bin', 'python3'), ['--version'], { stdio: 'inherit' });
@@ -39,4 +39,8 @@ for (const target of targets) {
     }
     console.log(`Prepared checksummed Python/uv: ${target}`);
   } finally { rmSync(scratch, { recursive: true, force: true }); }
+  if (target === `${process.platform}-${process.arch}`) {
+    execFileSync(join(destination, 'python', 'bin', 'python3'), ['--version'], { stdio: 'inherit' });
+    execFileSync(join(destination, 'uv', 'uv'), ['--version'], { stdio: 'inherit' });
+  }
 }

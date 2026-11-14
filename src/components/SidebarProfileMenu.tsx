@@ -1,3 +1,4 @@
+import { LimixSignOutDialog } from "./LimixSignOutDialog";
 import { LIMIX_PHONE_APPS_ENABLED } from "../../shared/limix-features";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -606,6 +607,7 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
   const accounts = useAccounts();
 
   const limixAccount = useLimixAccount();
+  const [limixSignOutOpen, setLimixSignOutOpen] = useState(false);
   const items = withLimixSignOut(limixAccount, profileMenuItems({
     phone: simple && LIMIX_PHONE_APPS_ENABLED
       ? simplePhoneItems({ connected: phone.kind === "connected", onGetApp: () => setPhoneAppOpen(true) })
@@ -643,7 +645,7 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
     onHelp: () => void openExternalLink(HELP_CENTER_URL),
     onFeedback: () => void openExternalLink(FEEDBACK_URL),
     onAccount: openCloudAccount,
-  }));
+  }), () => setLimixSignOutOpen(true));
   const noteworthy = update && updateNoteworthy(update.phase, update.pending) && !updateHasButton(update.phase);
   const needsYou = account?.automationsNeedYou === true;
   const initials = profileInitials(profile);
@@ -716,6 +718,7 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
           </span>
         )}
       />
+      {limixSignOutOpen && limixAccount && <LimixSignOutDialog username={limixAccount.username} onClose={() => setLimixSignOutOpen(false)} />}
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
       {limixPhoneOpen && <LimixPhoneDialog onClose={() => setLimixPhoneOpen(false)} />}
       {limixToolsOpen && <LimixToolsDialog asking={limixToolsOpen.asking} onClose={() => setLimixToolsOpen(null)} />}

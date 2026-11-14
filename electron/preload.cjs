@@ -412,7 +412,7 @@ const bridge = {
   },
   pickFolder: (current) => ipcRenderer.invoke("desktop:pick-folder", current),
   limixGateway: { open: () => ipcRenderer.invoke("limix-gateway:open") },
-  limixAccount: { info: () => ipcRenderer.invoke("limix-account:info"), signOut: () => ipcRenderer.invoke("limix-account:sign-out") },
+  limixAccount: { info: () => ipcRenderer.invoke("limix-account:info"), signOut: username => ipcRenderer.invoke("limix-account:sign-out", String(username)) },
   limixTools: { state: () => ipcRenderer.invoke("limix-tools:state"), scan: () => ipcRenderer.invoke("limix-tools:scan"), install: (ids) => ipcRenderer.invoke("limix-tools:install", ids), installRequirement: (id, project) => ipcRenderer.invoke("limix-tools:install-requirement", id, project), installRequirements: (ids, project) => ipcRenderer.invoke("limix-tools:install-requirements", ids, project), shouldAsk: () => ipcRenderer.invoke("limix-tools:should-ask"), markAsked: () => ipcRenderer.invoke("limix-tools:asked") },
   limixPhone: { state: () => ipcRenderer.invoke("limix-phone:state"), set: (on) => ipcRenderer.invoke("limix-phone:set", on === true) },
   exportDiagnostics: () => ipcRenderer.invoke("desktop:export-diagnostics"),

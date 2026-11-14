@@ -18,6 +18,8 @@ export function limixRuntimeEnv({ resourcesPath, userData, env = process.env, ex
     path.join(python, "Scripts"),
     path.join(root, "uv"),
     path.join(tools, "bin"),
+    path.join(tools, "npm-tools"),
+    path.join(tools, "npm-tools", "bin"),
     path.join(userBase, "Python312", "Scripts"),
     path.join(userBase, "bin"),
     // Installed later from "Công cụ cho kỹ năng" (limix-tools.mjs); listed now so a tool works without a restart.

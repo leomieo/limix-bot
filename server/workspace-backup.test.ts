@@ -894,6 +894,35 @@ describe("encrypted full workspace backups", () => {
     expect(readPendingWorkspaceRestoreMetadata(target)).toBeNull();
   });
 
+  it("requires the exporting account at preview, commit and restart", async () => {
+    const root = directory();
+    writeFileSync(join(root, "source-marker.txt"), "source");
+    const exported = await createWorkspaceBackup(root, { password: PASSWORD, appVersion: "0.3.32", accountId: "limix:alice" });
+    await expect(stageWorkspaceBackup(directory(), exported.path, { password: PASSWORD, currentAppVersion: "0.3.32", accountId: "limix:bob" })).rejects.toThrow(/tài khoản/);
+    await expect(stageWorkspaceBackup(directory(), exported.path, { password: PASSWORD, currentAppVersion: "0.3.32" })).rejects.toThrow(/đăng nhập/);
+    const target = directory();
+    writeFileSync(join(target, "local-marker.txt"), "keep local");
+    const staged = await stageWorkspaceBackup(target, exported.path, { password: PASSWORD, currentAppVersion: "0.3.32", accountId: "limix:alice" });
+    expect(() => commitPendingWorkspaceRestore(target, staged.id, { accountId: "limix:bob", currentAppVersion: "0.3.32" })).toThrow(/tài khoản/);
+    commitPendingWorkspaceRestore(target, staged.id, { accountId: "limix:alice", currentAppVersion: "0.3.32" });
+    const blocked = applyPendingWorkspaceRestore(target, { accountId: "limix:bob", currentAppVersion: "0.3.32" });
+    expect(blocked.restored).toBe(false);
+    expect(blocked.blockedReason).toContain("tài khoản");
+    expect(readFileSync(join(target, "local-marker.txt"), "utf8")).toBe("keep local");
+    expect(existsSync(join(target, "source-marker.txt"))).toBe(false);
+  });
+
+  it("restores an account-bound archive on the same account and newer app", async () => {
+    const root = directory();
+    writeFileSync(join(root, "marker.txt"), "portable");
+    const exported = await createWorkspaceBackup(root, { password: PASSWORD, appVersion: "0.3.32", accountId: "limix:alice" });
+    const target = directory();
+    const staged = await stageWorkspaceBackup(target, exported.path, { password: PASSWORD, currentAppVersion: "0.3.33", accountId: "limix:alice" });
+    commitPendingWorkspaceRestore(target, staged.id, { accountId: "limix:alice", currentAppVersion: "0.3.33" });
+    expect(applyPendingWorkspaceRestore(target, { accountId: "limix:alice", currentAppVersion: "0.3.33" }).restored).toBe(true);
+    expect(readFileSync(join(target, "marker.txt"), "utf8")).toBe("portable");
+  });
+
   it("offline transfer omits media but preserves learned skills and memory", async () => {
     const root = directory();
     mkdirSync(join(root, "uploads"), { recursive: true });

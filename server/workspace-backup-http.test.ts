@@ -54,7 +54,7 @@ beforeEach(async () => {
 async function listen(extra: Partial<Parameters<typeof createWorkspaceBackupRoutes>[0]> = {}) {
   const authenticate = (req: IncomingMessage) => resolveRequestAuth(req, { sessions, cookieName: "fixture", streamPath: "/api/events", url: new URL(req.url!, url) });
   const routes = createWorkspaceBackupRoutes({
-    dataDir, appVersion: "0.1.71", restored: {},
+    dataDir, appVersion: "0.1.71", restored: {}, accountId: () => "limix:fixture",
     readBody: async (req, limit = 1_000_000) => {
       const chunks: Buffer[] = [];
       let bytes = 0;
@@ -162,7 +162,7 @@ it("keeps a validated stage after rejecting a malformed or oversized upload", as
     expect(existsSync(join(dataDir, ".backups", preview.id))).toBe(true);
   }
   expect((await post("/api/workspace-backup/restore", { id: preview.id, confirmation: "REPLACE" })).status).toBe(200);
-  expect(archive.commit).toHaveBeenCalledWith(dataDir, preview.id);
+  expect(archive.commit).toHaveBeenCalledWith(dataDir, preview.id, { accountId: "limix:fixture", currentAppVersion: "0.1.71" });
 });
 
 it("accepts drafts between 1 and 2 MiB and enforces the preference cap in UTF-8 bytes", async () => {
@@ -209,4 +209,10 @@ it("leaves the restart to the person where no launcher restarts the server", asy
   expect(restored.status).toBe(200);
   expect(await restored.json()).not.toHaveProperty("restarting");
   expect(await status()).toMatchObject({ pendingRestore: true });
+});
+
+it("takes the export owner from the host even if a request forges another account", async () => {
+  const response = await post("/api/workspace-backup/export", { password: PASSWORD, accountId: "limix:bob" });
+  expect(response.status).toBe(200);
+  expect(archive.create).toHaveBeenCalledWith(dataDir, expect.objectContaining({ accountId: "limix:fixture" }));
 });

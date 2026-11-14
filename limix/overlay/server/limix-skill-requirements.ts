@@ -12,7 +12,7 @@ import { workspaceDir } from "./workspace.ts";
 import type { BotRecord } from "./store.ts";
 
 type Kind = "bin" | "npm" | "python" | "env" | "mcp" | "review";
-export interface SkillRequirement { kind: Kind; name: string; required?: string; evidence: string; optional?: boolean }
+export interface SkillRequirement { kind: Kind; name: string; required?: string; evidence: string; optional?: boolean; installScope?: "tool" | "project" }
 interface Source { name: string; directory: string; projects: string[] }
 export interface SkillRequirementResult extends SkillRequirement {
   skill: string;
@@ -37,7 +37,7 @@ export function extractSkillRequirements(text: string): SkillRequirement[] {
       out.push({ kind: "review", name: raw, evidence });
       return;
     }
-    out.push({ kind, name, ...(match?.[2] ? { required: match[2] } : {}), evidence });
+    out.push({ kind, name, ...(kind === "npm" && !["remotion", "@remotion/cli"].includes(name) && /\bnpm\s+(?:install|i)\b[^\n]*\s(?:-g|--global)(?:\s|$)/.test(evidence.split(/\s#|[;&|]/)[0]!) ? { installScope: "tool" as const } : {}), ...(match?.[2] ? { required: match[2] } : {}), evidence });
   };
   const read = (value: unknown, kind: Kind, evidence: string) => {
     if (Array.isArray(value)) for (const item of value) add(typeof item === "string" ? kind : "review", typeof item === "string" ? item : JSON.stringify(item), evidence);
@@ -224,6 +224,7 @@ export async function scanSkillRequirements(bots: readonly Pick<BotRecord, "id" 
         const pkg = findSkillNpmPackage(req.name, [source.directory, ...source.projects, ...projects, ...bots.filter((b) => !b.computer || b.computer === "local").map((b) => b.cwd ?? workspaceDir(b.id)), join(process.env.APPDATA ?? home, "npm")]);
         result.status = pkg ? req.required && req.required !== "*" ? "review" : "found" : "missing";
         if (pkg) Object.assign(result, pkg);
+        if (req.installScope === "tool" && BIN.test(req.name) && !findSkillBinary(req.name, dirs)) result.status = "missing";
       } else if (req.kind === "env") result.status = process.env[req.name] ? "found" : "missing";
       else if (req.kind === "python") {
         const pkg = findSkillPythonPackage(req.name, [source.directory, ...source.projects, ...projects, ...bots.filter((b) => !b.computer || b.computer === "local").map((b) => b.cwd ?? workspaceDir(b.id))]);

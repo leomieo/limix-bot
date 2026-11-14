@@ -50,6 +50,10 @@ export async function installSkillPackage({ requirement, project, node, npmCli, 
   if (!(await fsp.stat(cwd)).isDirectory()) throw new Error("Choose a project folder");
   if (requirement.kind === "npm") {
     if (!node || !npmCli) throw new Error("Install Node.js with npm first");
+    if (requirement.installScope === "tool") {
+      await run(node, [npmCli, "install", "--global", "--prefix", cwd, "--no-audit", "--no-fund", "--", ...packages], { cwd });
+      return cwd;
+    }
     const manifest = path.join(cwd, "package.json");
     try {
       JSON.parse(await fsp.readFile(manifest, "utf8"));

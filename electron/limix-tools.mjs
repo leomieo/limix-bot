@@ -32,7 +32,7 @@ export function limixToolPaths(userData) {
 /** The folders put on PATH (they may not exist yet; a missing folder on PATH is harmless). */
 export function limixToolPathDirs(userData) {
   const p = limixToolPaths(userData);
-  return [p.node, path.join(p.ffmpeg, "bin"), path.join(p.jdk, "bin"), path.join(p.jadx, "bin"), path.join(p.ghidra, "support")];
+  return [p.node, path.join(p.ffmpeg, "bin"), path.join(p.jdk, "bin"), path.join(p.jadx, "bin"), path.join(p.ghidra, "support"), path.join(p.tools, "npm-tools"), path.join(p.tools, "npm-tools", "bin")];
 }
 
 /** The list the window shows. `recommended` ones are asked about once on a new computer. */
@@ -359,6 +359,10 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
   const installRequirement = async (id, project) => {
     const req = skillScan?.requirements?.find((row) => skillRequirementId(row) === id);
     if (!req || !(skillPackageSpec(req) || skillBaseTool(req))) throw new Error(lxm("Hãy quét lại và chọn gói hợp lệ.", "Scan again and select a valid package."));
+    if (req.installScope === "tool" || skillBaseTool(req)) {
+      project = path.join(p.tools, "npm-tools");
+      await fsp.mkdir(project, { recursive: true });
+    }
     if (typeof project !== "string" || !path.isAbsolute(project)) throw new Error(lxm("Chọn thư mục dự án cần cài.", "Choose the project folder to install into."));
     const cwd = await fsp.realpath(project);
     for (const protectedRoot of [resourcesPath, process.resourcesPath, ...[...(skillScan?.requirements ?? [])].map((r) => r.directory)].filter(Boolean)) {

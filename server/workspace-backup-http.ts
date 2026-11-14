@@ -1,3 +1,4 @@
+import { transferAccountHash } from "./limix-transfer-account.ts";
 import { randomUUID } from "node:crypto";
 import { createReadStream, createWriteStream, existsSync, lstatSync, mkdirSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -22,7 +23,7 @@ const EXPIRES_MS = 60 * 60_000;
 const passwordSchema = z.string().min(12, "Use a password of at least 12 characters.").max(1024);
 const failure = (message: string, status = 400) => Object.assign(new Error(message), { status });
 type Artifact = { owner: string; kind: "download" | "upload" | "staged"; path?: string; expires: number; summary?: WorkspaceBackupSummary };
-type RestoreResult = { id?: string; restored?: boolean; safetyCopyPath?: string; clientState?: Record<string, string> };
+type RestoreResult = { blockedReason?: string; id?: string; restored?: boolean; safetyCopyPath?: string; clientState?: Record<string, string> };
 
 export function isWorkspaceBackupSessionControl(method: string, path: string): boolean {
   return (method === "GET" && path === "/api/auth/sessions") ||
@@ -34,6 +35,7 @@ export function isWorkspaceBackupSessionControl(method: string, path: string): b
 export function createWorkspaceBackupRoutes(options: {
   dataDir: string;
   appVersion: string;
+  accountId?: () => string | null;
   readBody: (req: IncomingMessage, limit?: number) => Promise<unknown>;
   exclusive: <T>(work: () => Promise<T>, keepLocked?: boolean) => Promise<T>;
   authorized: (req: IncomingMessage, auth: RequestAuth) => boolean;
@@ -43,6 +45,7 @@ export function createWorkspaceBackupRoutes(options: {
    * again (My Cloud), since the person there has no app to quit or process to restart. */
   restart?: () => void;
 }) {
+  const account = () => { const id = options.accountId?.() ?? null; transferAccountHash(id); return id!; };
   const artifacts = new Map<string, Artifact>();
   let operating = false;
   const json = (res: ServerResponse, status: number, body: unknown) => {
@@ -108,6 +111,8 @@ export function createWorkspaceBackupRoutes(options: {
       if (method === "GET" && path === `${PREFIX}/status`) {
         json(res, 200, {
           ...options.status(),
+          accountReady: Boolean(options.accountId?.()),
+          blockedReason: options.restored.blockedReason ?? null,
           ...(options.restart ? { restarts: true } : {}),
           lastRestoreId: options.restored.restored ? options.restored.id : null,
           safetyCopyPath: options.restored.safetyCopyPath ?? null,
@@ -125,11 +130,12 @@ export function createWorkspaceBackupRoutes(options: {
         const body = z.object({ password: passwordSchema, omitMedia: z.boolean().default(false), clientState: z.record(z.string(), z.string()).default({}) }).parse(await options.readBody(req, MAX_CLIENT_STATE_BYTES + 8 * 1024));
         if (Buffer.byteLength(JSON.stringify(body.clientState)) > MAX_CLIENT_STATE_BYTES) throw failure("Saved drafts exceed the 2 MB backup preference limit.", 413);
         const clientState = Object.fromEntries(Object.entries(body.clientState).filter(([key]) => WORKSPACE_BACKUP_CLIENT_KEYS.includes(key as typeof WORKSPACE_BACKUP_CLIENT_KEYS[number])));
+        const currentAccount = account();
         const result = await operate(() => options.exclusive(async () => {
           check(req, auth);
           replacePrevious(auth, ["download"]);
           if (artifacts.size >= 4) throw failure("There are already four backup files in progress. Restart or wait an hour before creating another.", 409);
-          return createWorkspaceBackup(options.dataDir, { password: body.password, clientState, appVersion: options.appVersion, omitMedia: body.omitMedia });
+          return createWorkspaceBackup(options.dataDir, { password: body.password, clientState, appVersion: options.appVersion, omitMedia: body.omitMedia, accountId: currentAccount });
         }));
         try { check(req, auth); } catch (error) { removeWorkspaceBackupJob(options.dataDir, result.id); throw error; }
         artifacts.set(result.id, { owner: owner(auth), kind: "download", path: result.path, summary: result.summary, expires: Date.now() + EXPIRES_MS });
@@ -181,7 +187,7 @@ export function createWorkspaceBackupRoutes(options: {
       if (method === "POST" && path === `${PREFIX}/preview`) {
         const body = z.object({ id: z.string().uuid(), password: passwordSchema }).parse(await options.readBody(req));
         const artifact = get(body.id, auth, "upload");
-        const result = await operate(() => stageWorkspaceBackup(options.dataDir, artifact.path!, { password: body.password, currentAppVersion: options.appVersion }));
+        const result = await operate(() => stageWorkspaceBackup(options.dataDir, artifact.path!, { password: body.password, currentAppVersion: options.appVersion, accountId: account() }));
         try { check(req, auth); } catch (error) { removeWorkspaceBackupJob(options.dataDir, result.id); throw error; }
         try { unlinkSync(artifact.path!); } catch {}
         artifacts.delete(body.id);
@@ -194,7 +200,7 @@ export function createWorkspaceBackupRoutes(options: {
         get(body.id, auth, "staged");
         const result = await operate(() => options.exclusive(async () => {
           check(req, auth);
-          return commitPendingWorkspaceRestore(options.dataDir, body.id);
+          return commitPendingWorkspaceRestore(options.dataDir, body.id, { accountId: account(), currentAppVersion: options.appVersion });
         }, true));
         artifacts.delete(body.id);
         const restart = options.restart;
