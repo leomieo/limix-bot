@@ -1,15 +1,13 @@
-Limix Bot 0.3.47
+Limix Bot 0.3.48
 
 ## Tiếng Việt
 
-- Chỉnh 389 chuỗi tiếng Việt để rõ chức năng và thống nhất thuật ngữ.
-- Memory upkeep được gọi là Tự cập nhật bộ nhớ. Nhật ký phân biệt thay đổi do hệ thống ghi nhớ tự động thực hiện.
-- Dùng Nhóm bot, Cuộc trò chuyện và Mức độ suy luận trong các mục tương ứng. Làm rõ nhãn quyền thực hiện và nội dung trợ giúp bộ nhớ, thư mục, kỹ năng.
-- Sửa biến tên bot trong hướng dẫn kỹ năng. Toàn bộ 10.234 khóa tiếng Việt đạt kiểm tra tính đầy đủ và biến nội suy.
+- Thiết kế lại hộp thoại cho phép máy chủ điều khiển máy tính theo giao diện sáng/tối của Limix Bot.
+- Hiển thị tên, địa chỉ máy chủ và giải thích rõ quyền xem màn hình, thao tác ứng dụng. Thư mục và terminal được cấp riêng trong Cài đặt → Máy chủ.
+- Để sau được chọn mặc định. Đóng hoặc nhấn Escape đều từ chối. Hộp thoại vẫn do tiến trình chính quản lý.
 
 ## English
 
-- Revise 389 Vietnamese UI strings for clearer function and consistent terminology.
-- Describe memory upkeep as automatic memory updates and identify the automatic system in its journal.
-- Clarify bot groups, conversation threads, reasoning effort, approval modes and memory/folder/skill help.
-- Correct the bot-name placeholder count in skill help. All 10,234 Vietnamese locale keys pass completeness and placeholder validation.
+- Redesign the own-server computer access confirmation to match Limix Bot’s light/dark appearance.
+- Show server identity and address, with clear screen/application scope and separately granted folder/terminal access.
+- Default to Not now; closing or pressing Escape declines. Consent remains controlled by the main process.

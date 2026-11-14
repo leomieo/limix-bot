@@ -1,0 +1,52 @@
+{
+  "electron/server-lending.mjs": [
+    {
+      "before": "environments, active = () => null,",
+      "after": "environments, confirmOwn, active = () => null,"
+    },
+    {
+      "before": "  const allows = async (env, parent = window()) => {",
+      "after": "  const allows = async (env, parent = window()) => {\n    if (confirmOwn) return (await confirmOwn(env, parent)) === true;"
+    }
+  ],
+  "electron/main.mjs": [
+    {
+      "before": "import { createComputerSharing,",
+      "after": "import { createServerAccessDialog } from \"./server-access-dialog.mjs\";\nimport { createComputerSharing,"
+    },
+    {
+      "before": "const serverLending = installServerLending({ ipcMain,",
+      "after": "const serverLending = installServerLending({ confirmOwn: createServerAccessDialog({ BrowserWindow, dark: () => nativeTheme.shouldUseDarkColors, icon: APP_ICON, t: nativeT }), ipcMain,"
+    }
+  ],
+  "src/locales/en.json": [
+    {
+      "before": "\"native.lend.own.title\": \"Let {name} use this computer?\"",
+      "after": "\"native.lend.own.title\": \"Allow {name} to control this computer?\""
+    },
+    {
+      "before": "\"native.lend.own.detail\": \"Its bots can then see and use the apps on your screen while this app is open. In Settings → Servers you can also let them use folders you choose and run commands in a terminal. Turn it off there any time, or pause it from the Limix Bot icon's menu.\"",
+      "after": "\"native.lend.own.detail\": \"Bots on this server can view this computer’s screen and interact with its apps while Limix Bot is open. Folder access and terminal commands are granted separately in Settings → Servers. Stop sharing there, or pause it from the Limix Bot menu.\""
+    }
+  ],
+  "src/locales/vi.json": [
+    {
+      "before": "\"native.lend.own.title\": \"Cho {name} dùng máy tính này?\"",
+      "after": "\"native.lend.own.title\": \"Cho {name} điều khiển máy tính này?\""
+    },
+    {
+      "before": "\"native.lend.own.detail\": \"Khi đó bot của nó có thể xem và dùng các ứng dụng trên màn hình khi ứng dụng này đang mở. Trong Cài đặt → Máy chủ, bạn cũng có thể cho chúng dùng thư mục bạn chọn và chạy lệnh trong terminal. Tắt ở đó bất cứ lúc nào, hoặc tạm dừng từ menu biểu tượng Limix Bot.\"",
+      "after": "\"native.lend.own.detail\": \"Bot trên máy chủ này có thể xem màn hình và thao tác với ứng dụng trên máy tính đang mở Limix Bot. Quyền dùng thư mục và chạy lệnh được cấp riêng trong Cài đặt → Máy chủ. Bạn có thể tắt chia sẻ tại đó hoặc tạm dừng từ menu Limix Bot.\""
+    }
+  ],
+  "electron/lend-own-server.node-test.mjs": [
+    {
+      "before": "Let Garage use this computer?",
+      "after": "Allow Garage to control this computer?"
+    },
+    {
+      "before": "/apps on your screen.*folders you choose and run commands in a terminal/s",
+      "after": "/screen and interact with its apps.*Folder access and terminal commands are granted separately/s"
+    }
+  ]
+}

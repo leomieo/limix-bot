@@ -222,8 +222,8 @@ test("right after pairing a server of the person's own, one popup in main's own 
   const allowed = mainLending({ response: 0 });
   await allowed.lending.offer(allowed.win);
   assert.equal(allowed.calls.boxes.length, 1);
-  assert.deepEqual(allowed.calls.boxes[0], { type: "question", message: "Let Garage use this computer?", detail: allowed.calls.boxes[0].detail, buttons: ["Allow", "Not now"], defaultId: 1, cancelId: 1 });
-  assert.match(allowed.calls.boxes[0].detail, /apps on your screen.*folders you choose and run commands in a terminal/s);
+  assert.deepEqual(allowed.calls.boxes[0], { type: "question", message: "Allow Garage to control this computer?", detail: allowed.calls.boxes[0].detail, buttons: ["Allow", "Not now"], defaultId: 1, cancelId: 1 });
+  assert.match(allowed.calls.boxes[0].detail, /screen and interact with its apps.*Folder access and terminal commands are granted separately/s);
   assert.deepEqual(allowed.calls.lent, [["garage", { folders: [], terminal: false, computer: true }]]);
 
   const notNow = mainLending({ response: 1 });
@@ -247,7 +247,7 @@ test("Settings: each server of the person's own has the switch, which asks the s
   assert.equal((await handlers.get("sharing:state")({}, "garage")).own, true, "its state reads without the maintainer flag");
   const lent = await handlers.get("sharing:allow")({}, "garage");
   assert.equal(lent.enabled, true);
-  assert.equal(calls.boxes[0].message, "Let Garage use this computer?");
+  assert.equal(calls.boxes[0].message, "Allow Garage to control this computer?");
   assert.deepEqual(calls.lent, [["garage", { folders: [], terminal: false, computer: true }]]);
   await handlers.get("sharing:save")({}, "garage", { folders: [], terminal: true, computer: true });
   assert.deepEqual(calls.lent.at(-1), ["garage", { folders: [], terminal: true, computer: true }], "a change lends as theirs, never through the maintainer path");

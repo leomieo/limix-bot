@@ -14,7 +14,7 @@ const OWN_CHECK_MS = 30_000;
  * `flag()`: the maintainer flag, read now. `environments()`: the saved places. `active()`: the place on screen.
  * `openSettings(id)`: Settings → Servers with that server's computer access open.
  */
-export function installServerLending({ ipcMain, guard, sharing, dialogs, validate, dialog, window, saved, candidate, flag, environments, active = () => null,
+export function installServerLending({ ipcMain, guard, sharing, dialogs, validate, dialog, window, saved, candidate, flag, environments, confirmOwn, active = () => null,
   openSettings = () => {}, now = Date.now, t = nativeText.englishText.t, log = () => {} }) {
   const checked = new Map();
   /** A server of the person's own: one lent to before as theirs, else asked of the server, at most every 30 s. */
@@ -34,6 +34,7 @@ export function installServerLending({ ipcMain, guard, sharing, dialogs, validat
   };
   /** The one question, the same after pairing and from Settings' switch. */
   const allows = async (env, parent = window()) => {
+    if (confirmOwn) return (await confirmOwn(env, parent)) === true;
     const options = { type: "question", message: t("native.lend.own.title", { name: env.name }), detail: t("native.lend.own.detail"),
       buttons: [t("native.lend.own.allow"), t("native.dialog.share.notNow")], defaultId: 1, cancelId: 1 };
     return (await (parent ? dialog.showMessageBox(parent, options) : dialog.showMessageBox(options))).response === 0;

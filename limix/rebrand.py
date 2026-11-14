@@ -2167,3 +2167,11 @@ for key, value in vi_review.items():
         raise RuntimeError("Missing reviewed Vietnamese key: " + key)
     vi_copy[key] = value
 (ROOT / "src/locales/vi.json").write_text(json.dumps(vi_copy, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+for rel, edits in json.loads((ROOT / "limix/patches/server-access-dialog.json").read_text(encoding="utf-8")).items():
+    def server_access_dialog_patch(s, edits=edits):
+        for patch in edits:
+            if patch["after"] not in s:
+                s = must(s, patch["before"], patch["after"])
+        return s
+    edit(rel, server_access_dialog_patch)

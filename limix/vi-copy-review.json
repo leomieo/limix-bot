@@ -387,5 +387,7 @@
   "skills.library.subtitle": "Kho kỹ năng đã lưu trên máy. Quản lý và nhập kỹ năng tại đây; thêm hoặc gỡ kỹ năng trong cài đặt của từng bot → Kỹ năng (Skills).",
   "botSettings.sections.skills": "Kỹ năng (Skills)",
   "skills.library.allAssigned": "Bot này đã có mọi kỹ năng trong kho.",
-  "skills.library.manageHint": "Tải kỹ năng mới trong Cài đặt → Kỹ năng (Skills), rồi thêm cho từng bot ở mục Kỹ năng (Skills) của bot."
+  "skills.library.manageHint": "Tải kỹ năng mới trong Cài đặt → Kỹ năng (Skills), rồi thêm cho từng bot ở mục Kỹ năng (Skills) của bot.",
+  "native.lend.own.title": "Cho {name} điều khiển máy tính này?",
+  "native.lend.own.detail": "Bot trên máy chủ này có thể xem màn hình và thao tác với ứng dụng trên máy tính đang mở Limix Bot. Quyền dùng thư mục và chạy lệnh được cấp riêng trong Cài đặt → Máy chủ. Bạn có thể tắt chia sẻ tại đó hoặc tạm dừng từ menu Limix Bot."
 }
