@@ -1,0 +1,8 @@
+{
+  "server/drivers/codex.ts": [
+    {
+      "before": "throw new Error(\"Codex did not apply the requested sandbox mode; cannot safely start the turn.\");",
+      "after": "throw new Error(`Codex did not apply the requested sandbox mode (requested: ${String(requested.type)}; resolved: ${sandbox.type}); cannot safely start the turn. Update Codex and retry, or use another AI provider for this bot.`);"
+    }
+  ]
+}

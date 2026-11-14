@@ -196,7 +196,7 @@ function withResolvedSandbox(params: CodexApprovalParams, session: unknown): Cod
     throw new Error("Codex did not return its resolved sandbox policy. Update Codex, then retry; the turn was not started because its permissions could not be verified.");
   }
   if (sandbox.type !== requested.type) {
-    throw new Error("Codex did not apply the requested sandbox mode; cannot safely start the turn.");
+    throw new Error(`Codex did not apply the requested sandbox mode (requested: ${String(requested.type)}; resolved: ${sandbox.type}); cannot safely start the turn. Update Codex and retry, or use another AI provider for this bot.`);
   }
   return { ...params, turn: { ...params.turn, sandboxPolicy: sandbox } };
 }

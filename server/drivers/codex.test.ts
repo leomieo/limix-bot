@@ -907,6 +907,7 @@ process.stdout.write(JSON.stringify({jsonrpc:'2.0',id:m.id,result})+'\\n');});`)
     if (!sandbox || !("type" in sandbox)) {
       expect(recorder.events.some(event => event.type === "runtime.error" && event.message.includes("Update Codex"))).toBe(true);
     }
+    if (sandbox && "type" in sandbox) expect(recorder.events.some(event => event.type === "runtime.error" && event.message.includes("requested: workspaceWrite; resolved: dangerFullAccess"))).toBe(true);
     const calls = JSON.parse(readFileSync(dump, "utf8")).calls;
     expect(calls.some((call: { method: string }) => call.method === "turn/start")).toBe(false);
   });
