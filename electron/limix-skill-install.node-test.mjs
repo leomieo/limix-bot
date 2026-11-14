@@ -35,7 +35,7 @@ test("Python installs use the project virtual environment", async () => {
     await writeFile(python, "fixture");
     await installSkillPackage({ requirement: { kind: "python", name: "pydantic", required: ">=2" }, project: root, platform: "win32", run: async (...args) => calls.push(args) });
     assert.equal(calls.length, 1);
-    assert.equal(calls[0][0], python);
+    assert.equal(calls[0][0], await (await import("node:fs/promises")).realpath(python));
     assert.deepEqual(calls[0][1], ["-m", "pip", "install", "--disable-pip-version-check", "--", "pydantic>=2"]);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
