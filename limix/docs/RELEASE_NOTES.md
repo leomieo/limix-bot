@@ -1,4 +1,4 @@
-Limix Bot 0.3.33 — Windows, macOS Apple Silicon, macOS Intel và Linux x64.
+Limix Bot 0.3.34 — Windows, macOS Apple Silicon, macOS Intel và Linux x64.
 
 - Thêm **Chuyển máy Offline**: xuất file có mật khẩu, nhập lại trên máy mới. Giữ bot, lịch sử văn bản, bộ nhớ và skills; bỏ media/tệp đính kèm. Chỉ tài khoản Limix đã xuất file mới được nhập lại, và chỉ nhập vào phiên bản bằng hoặc mới hơn bản đã xuất; xem trước, xác nhận thay thế và khởi động lại. Tài khoản AI/kết nối cần đăng nhập lại; ổ đĩa máy ảo không nằm trong file.
 - Đồng bộ dữ liệu theo tài khoản được phát triển dưới dạng module ẩn và tiếp tục tắt vì chưa có server. Chưa tự tải dữ liệu khách lên mạng.
@@ -11,3 +11,5 @@ Bản cài chưa có chứng thư ký số của nhà phát hành. macOS chưa �
 
 - Thay xác nhận đăng xuất kiểu hệ điều hành bằng hộp thoại theo giao diện app, có trạng thái đang xử lý và lỗi.
 - Công cụ CLI khai báo cài global (ví dụ agent-desktop) dùng thư mục công cụ riêng của Limix Bot; thư viện của dự án được giải thích trước khi người dùng bấm chọn thư mục.
+
+- Thiết kế lại Công cụ cho kỹ năng: hai tab toàn chiều ngang, bộ lọc trạng thái, gom hướng dẫn thủ công theo skill và thu gọn mặc định; không còn cột trái trống khi cuộn.

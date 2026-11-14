@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { Check, Download, Loader2, ScanSearch, X } from "lucide-react";
 import { lx } from "@/lib/limix-text";
@@ -18,6 +18,9 @@ export const limixTools = (): Bridge | undefined => (window as unknown as { ogb?
 const button = "inline-flex items-center gap-1.5 rounded-lg border border-hairline/60 bg-raised px-3 py-1.5 text-[13px] text-ink hover:bg-raised-hover disabled:opacity-50";
 
 export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => void; asking?: boolean }) {
+  const [tab, setTab] = useState<"tools" | "requirements">("tools");
+  const [filter, setFilter] = useState<"all" | "missing" | "found" | "review">("all");
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<ToolsState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [installation, setInstallation] = useState<{ rows: SkillRequirement[]; project: string; baseIds: string[] } | null>(null);
@@ -92,6 +95,13 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
     }
   };
 
+  const activeTab = state?.items.length ? tab : "requirements";
+  const requirements = state?.skillScan?.requirements ?? [];
+  const packages = requirements.filter(row => row.kind !== "review");
+  const visiblePackages = packages.filter(row => filter === "all" || row.status === filter);
+  const manualGroups = new Map<string, SkillRequirement[]>();
+  for (const row of requirements.filter(row => row.kind === "review")) manualGroups.set(row.skill, [...(manualGroups.get(row.skill) ?? []), row]);
+  const switchTab = (next: "tools" | "requirements") => { setTab(next); if (scrollRef.current) scrollRef.current.scrollTop = 0; };
   const missing = state?.items.filter((item) => !item.installed) ?? [];
   const missingRecommended = missing.filter((item) => item.recommended);
   const missingPackages = (state?.skillScan?.requirements ?? []).filter((row) => row.id && row.installable && row.status === "missing");
@@ -124,8 +134,6 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
     <p className="text-[13px] text-ink-secondary">{lx("Mở mục này trong ứng dụng Limix Bot trên máy tính.", "Open this in the Limix Bot desktop app.")}</p>
   ) : !state ? (
     <Loader2 size={15} className="animate-spin text-ink-secondary" />
-  ) : !state.supported ? (
-    <p className="text-[13px] text-ink-secondary">{lx("Tự cài công cụ hiện chỉ có trên Windows.", "Installing tools automatically is only available on Windows for now.")}</p>
   ) : (
     <div className="flex flex-col gap-3">
       {asking && missingRecommended.length > 0 && (
@@ -133,16 +141,8 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
           {lx(`Máy này còn thiếu ${missingRecommended.length} công cụ mà các kỹ năng có sẵn của bot cần. Cài ngay?`, `This computer is missing ${missingRecommended.length} tools the bot's built-in skills need. Install them now?`)}
         </p>
       )}
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[12px] leading-relaxed text-ink-secondary">
-          {lx("Quét công cụ cơ bản và đọc yêu cầu của các kỹ năng có sẵn hoặc đã tải về. Xem kết quả trong mục Yêu cầu của kỹ năng đã cài.", "Scan base tools and read requirements from bundled or downloaded skills. See the Installed skill requirements section for details.")}
-        </p>
-        <button type="button" className={`${button} shrink-0`} disabled={scanning || busy} onClick={() => void scan()}>
-          {scanning ? <Loader2 size={14} className="animate-spin" /> : <ScanSearch size={14} />}{lx("Quét máy", "Scan this computer")}
-        </button>
-      </div>
-      <div className={state.skillScan ? "grid grid-cols-1 items-start gap-5 @[820px]/tools:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]" : ""}>
-      <div className="flex min-w-0 flex-col gap-3">
+      {state.supported === false && <p className="rounded-lg bg-raised p-3 text-[12px] text-ink-secondary">{lx("Có thể quét và xem yêu cầu trên máy này. Cài công cụ tự động hiện hỗ trợ Windows.", "You can scan and inspect requirements here. Automatic tool installation currently supports Windows.")}</p>}
+      <div role="tabpanel" id="limix-tools-base-panel" aria-labelledby="limix-tools-base-tab" hidden={activeTab !== "tools"} className="min-w-0 space-y-3">
       <ul className="flex flex-col divide-y divide-hairline/40 rounded-xl border border-hairline/40 bg-card">
         {state.items.map((item) => {
           const job = item.job;
@@ -170,7 +170,7 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
                 ) : job?.status === "working" ? (
                   <Loader2 size={15} className="animate-spin text-ink-secondary" />
                 ) : (
-                  <button type="button" className={button} onClick={() => void install([item.id])}>
+                  <button type="button" className={button} disabled={busy || !state.supported} onClick={() => void install([item.id])}>
                     <Download size={14} />{job?.status === "error" ? lx("Thử lại", "Retry") : lx("Cài", "Install")}
                   </button>
                 )}
@@ -179,24 +179,24 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
           );
         })}
       </ul>
-      {error && <p className="text-[12px] text-danger">{error}</p>}
+
       <div className="flex flex-wrap items-center gap-2">
         {missingRecommended.length > 0 && (
-          <button type="button" className={button} disabled={busy} onClick={() => void install(missingRecommended.map((item) => item.id))}>
+          <button type="button" className={button} disabled={busy || !state.supported} onClick={() => void install(missingRecommended.map((item) => item.id))}>
             <Download size={14} />{lx("Cài các công cụ cần cho kỹ năng có sẵn", "Install the tools the built-in skills need")}
           </button>
         )}
         {missing.length > 0 && (
-          <button type="button" className={button} disabled={busy} onClick={() => void install(missing.map((item) => item.id))}>
+          <button type="button" className={button} disabled={busy || !state.supported} onClick={() => void install(missing.map((item) => item.id))}>
             {lx("Cài công cụ cơ bản còn thiếu", "Install missing base tools")}
           </button>
         )}
         {asking && <button type="button" className={button} onClick={onClose}>{lx("Để sau", "Later")}</button>}
       </div>
       </div>
-      {state.skillScan && <section className="min-w-0" aria-label={lx("Yêu cầu của kỹ năng đã cài", "Installed skill requirements")}>
+      {state.skillScan && <section role="tabpanel" id="limix-tools-requirements-panel" aria-labelledby="limix-tools-requirements-tab" hidden={activeTab !== "requirements"} className="min-w-0" aria-label={lx("Yêu cầu của kỹ năng đã cài", "Installed skill requirements")}>
         <h3 className="text-[14px] font-medium text-ink">{lx("Yêu cầu của kỹ năng đã cài", "Installed skill requirements")}</h3>
-        {missingPackages.length > 0 && limixTools()?.installRequirements && <button type="button" className={`${button} mt-3`} disabled={busy || scanning} onClick={() => void prepareInstall(missingPackages, missing.map((item) => item.id))}><Download size={14} />{lx("Cài tất cả còn thiếu", "Install all missing requirements")}</button>}
+        {missingPackages.length > 0 && limixTools()?.installRequirements && <button type="button" className={`${button} mt-3`} disabled={busy || scanning || !state.supported} onClick={() => void prepareInstall(missingPackages, missing.map((item) => item.id))}><Download size={14} />{lx("Cài tất cả còn thiếu", "Install all missing requirements")}</button>}
         {installation && <div className="my-3 rounded-xl border border-hairline/40 bg-raised p-3 text-[12px]">
           <p className="font-medium text-ink">{needsProject ? lx("Chọn dự án cần các thư viện này", "Choose the project that needs these libraries") : lx("Cài vào thư mục công cụ của Limix Bot", "Install into Limix Bot’s tools folder")}</p>
           {needsProject && <><p className="mt-1 text-ink-secondary">{lx("Thư viện như Remotion cần nằm trong dự án đang làm. Bấm nút dưới để chọn thư mục; công cụ dùng chung sẽ được cài riêng trong Limix Bot.", "Libraries such as Remotion belong in the project you are working on. Choose its folder below; shared tools are installed separately in Limix Bot.")}</p><button type="button" className={`${button} mt-2`} onClick={() => void chooseProject()}>{lx("Chọn thư mục dự án…", "Choose project folder…")}</button><p className="mt-1 break-all text-ink-secondary">{installation.project || lx("Chưa chọn thư mục", "No folder selected")}</p></>}
@@ -207,24 +207,36 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
         {state.skillScan.error ? <p role="alert" className="mt-2 text-[12px] text-danger">{lx("Chưa đọc được yêu cầu kỹ năng: ", "Could not read skill requirements: ")}{state.skillScan.error}</p> : <>
           <p className="mt-1 text-[12px] text-ink-secondary">{lx(`Đã đọc ${state.skillScan.skillCount ?? 0} kỹ năng. Kết quả kiểm tra trên máy chạy Limix Bot; môi trường Docker và cloud cần kiểm tra riêng.`, `Read ${state.skillScan.skillCount ?? 0} skills. Checks apply to the computer running Limix Bot; Docker and cloud environments need separate checks.`)}</p>
           <p className="mt-1 text-[12px] text-ink-tertiary">{lx("Gồm yêu cầu khai báo và công cụ được nhắc trong hướng dẫn. Xem nguồn để phân biệt yêu cầu bắt buộc và ví dụ; ràng buộc phiên bản chưa xác minh sẽ hiện Cần kiểm tra.", "Includes declared requirements and tools mentioned in instructions. Inspect the source to distinguish prerequisites from examples; unverified version constraints are marked Needs review.")}</p>
+          <div className="mt-4 flex flex-wrap gap-2" aria-label={lx("Lọc trạng thái", "Filter status")}>
+            {([['all', lx('Tất cả', 'All')], ['missing', lx('Còn thiếu', 'Missing')], ['found', lx('Đã có', 'Found')], ['review', lx('Cần xác minh', 'Needs review')]] as const).map(([key, label]) => <button key={key} type="button" aria-pressed={filter === key} className={`${button} aria-pressed:border-ink/40 aria-pressed:bg-control aria-pressed:font-semibold`} onClick={() => setFilter(key)}>{label} <span className="text-ink-tertiary">{packages.filter(row => key === 'all' || row.status === key).length}</span></button>)}
+          </div>
+          {visiblePackages.length === 0 && <p className="mt-4 rounded-xl border border-hairline/40 p-4 text-[13px] text-ink-secondary">{lx("Không có công cụ trong nhóm này.", "No tools in this group.")}</p>}
           <ul className="mt-3 flex flex-col divide-y divide-hairline/40 rounded-xl border border-hairline/40">
-            {(state.skillScan.requirements ?? []).map((req, index) => <li key={`${req.directory}:${index}`} className="px-3 py-2 text-[12px]">
+
+            {visiblePackages.map((req, index) => <li key={`${req.directory}:${index}`} className="px-4 py-3 text-[13px]">
               <div className="flex items-start justify-between gap-3">
-                <span className="min-w-0 break-words font-medium text-ink">{req.name}{req.required && ` ${req.required}`}{req.optional && <span className="ms-1 font-normal text-ink-tertiary">· {lx("Tùy chọn", "Optional")}</span>}</span>
+                <span className="min-w-0 break-words text-[14px] font-medium text-ink">{req.name}{req.required && ` ${req.required}`}{req.optional && <span className="ms-1 font-normal text-ink-tertiary">· {lx("Tùy chọn", "Optional")}</span>}</span>
                 <span className={req.status === "missing" ? "shrink-0 text-danger" : "shrink-0 text-ink-secondary"}>{req.status === "found" ? lx("Đã tìm thấy", "Found") : req.status === "missing" ? lx("Chưa tìm thấy", "Not found") : lx("Cần kiểm tra", "Needs review")}</span>
               </div>
               <p className="mt-1 break-words text-ink-secondary" title={req.directory}>{req.skill} · {req.kind}{req.version && ` · ${req.version}`}</p>
               {req.status === "review" && <p className="mt-1 text-ink-tertiary">{lx("Chưa xác minh tự động: có thể là hướng dẫn, yêu cầu cấu hình hoặc giới hạn phiên bản. Xem nguồn bên dưới.", "Not automatically verified: this may be setup guidance, configuration or a version constraint. See the source below.")}</p>}
-              {req.job?.status === "working" ? <p className="mt-1 flex items-center gap-1 text-ink-secondary"><Loader2 size={12} className="animate-spin" />{req.job.step ?? lx("Đang cài", "Installing")}</p> : req.installable && req.id && req.status === "missing" && limixTools()?.installRequirements ? <button type="button" className={`${button} mt-2`} disabled={busy || scanning} onClick={() => void prepareInstall([req])}><Download size={12} />{req.job?.status === "error" ? lx("Thử lại", "Retry") : lx("Cài", "Install")}</button> : null}
+              {req.job?.status === "working" ? <p className="mt-1 flex items-center gap-1 text-ink-secondary"><Loader2 size={12} className="animate-spin" />{req.job.step ?? lx("Đang cài", "Installing")}</p> : req.installable && req.id && req.status === "missing" && limixTools()?.installRequirements ? <button type="button" className={`${button} mt-2`} disabled={busy || scanning || !state.supported} onClick={() => void prepareInstall([req])}><Download size={12} />{req.job?.status === "error" ? lx("Thử lại", "Retry") : lx("Cài", "Install")}</button> : null}
               {req.job?.status === "error" && <p role="alert" className="mt-1 text-danger">{req.job.message}</p>}
               {req.job?.status === "done" && <p className="mt-1 break-all text-ink-secondary">{lx("Đã chạy cài đặt tại ", "Installation completed in ")}{req.job.project}</p>}
               <details className="mt-1 text-ink-tertiary"><summary className="cursor-pointer">{lx("Xem nguồn yêu cầu", "Requirement source")}</summary><pre className="mt-1 whitespace-pre-wrap break-words font-sans">{req.evidence}{req.where && `\n${req.where}`}</pre></details>
             </li>)}
           </ul>
+          {manualGroups.size > 0 && <div className="mt-5 space-y-2">
+            <h4 className="text-[13px] font-medium text-ink">{lx("Hướng dẫn cần xem thêm", "Guidance to review")}</h4>
+            <p className="text-[12px] leading-relaxed text-ink-tertiary">{lx("Các đoạn hướng dẫn chưa đủ thông tin để tự kiểm tra. Mở từng kỹ năng khi cần; đây không phải danh sách phần mềm còn thiếu.", "These instructions do not provide enough information for an automatic check. Expand a skill when needed; these are not missing software packages.")}</p>
+            {[...manualGroups].map(([name, rows]) => <details key={name} className="rounded-xl border border-hairline/40 bg-card px-4 py-3 text-[12px]">
+              <summary className="cursor-pointer font-medium text-ink">{name} <span className="ms-1 font-normal text-ink-tertiary">{rows.length} {lx("mục", "items")}</span></summary>
+              <ul className="mt-3 divide-y divide-hairline/40">{rows.map((row, index) => <li key={index} className="py-2 text-ink-secondary"><pre className="whitespace-pre-wrap break-words font-sans">{row.evidence}</pre></li>)}</ul>
+            </details>)}
+          </div>}
           {!!state.skillScan.warnings?.length && <details className="mt-2 text-[12px] text-ink-secondary"><summary className="cursor-pointer">{lx(`Có ${state.skillScan.warnings.length} mục chưa đọc đủ`, `${state.skillScan.warnings.length} items could not be fully read`)}</summary><ul>{state.skillScan.warnings.map((warning, index) => <li key={index} className="break-words">{warning}</li>)}</ul></details>}
         </>}
       </section>}
-      </div>
       <p className="text-[12px] text-ink-tertiary">
         {lx("Công cụ được tải từ trang chính thức của từng dự án, kiểm tra mã an toàn, rồi đặt trong thư mục riêng của Limix Bot. Bạn có thể đóng cửa sổ này, việc cài vẫn tiếp tục.", "Tools are downloaded from each project's official site, checked with a hash, and kept in Limix Bot's own folder. You can close this window; installing carries on.")}
       </p>
@@ -239,7 +251,18 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
           <h2 id="limix-tools-title" className="text-[17px] font-semibold text-ink">{lx("Công cụ cho kỹ năng", "Tools for skills")}</h2>
           <button type="button" onClick={onClose} aria-label={lx("Đóng", "Close")} className="rounded-lg p-1.5 text-ink-secondary hover:bg-raised hover:text-ink"><X size={16} /></button>
         </div>
-        <div className="min-h-0 overflow-y-auto overscroll-contain p-5">{body}</div>
+        <div className="shrink-0 space-y-3 border-b border-hairline/40 px-5 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="min-w-0 flex-1 text-[12px] leading-relaxed text-ink-secondary">{lx("Chỉ quét kỹ năng có sẵn và đã tải về. Công cụ cơ bản và yêu cầu của skills được hiển thị riêng.", "Only bundled and downloaded skills are scanned. Base tools and skill requirements are shown separately.")}</p>
+            <button type="button" className={`${button} shrink-0`} disabled={scanning || busy} onClick={() => void scan()}>{scanning ? <Loader2 size={14} className="animate-spin" /> : <ScanSearch size={14} />}{lx("Quét máy", "Scan this computer")}</button>
+          </div>
+          <div role="tablist" aria-label={lx("Nhóm công cụ", "Tool categories")} className="grid grid-cols-2 gap-2">
+            <button id="limix-tools-base-tab" role="tab" aria-selected={activeTab === "tools"} aria-controls="limix-tools-base-panel" type="button" className={`${button} justify-center aria-selected:border-ink/40 aria-selected:bg-control aria-selected:font-semibold`} onClick={() => switchTab("tools")}>{lx("Công cụ cơ bản", "Base tools")} <span className="text-ink-tertiary">{state?.items.length ?? 0}</span></button>
+            <button id="limix-tools-requirements-tab" role="tab" aria-selected={activeTab === "requirements"} aria-controls="limix-tools-requirements-panel" type="button" className={`${button} justify-center aria-selected:border-ink/40 aria-selected:bg-control aria-selected:font-semibold`} onClick={() => switchTab("requirements")}>{lx("Yêu cầu của skills", "Skill requirements")} <span className="text-ink-tertiary">{packages.length}</span></button>
+          </div>
+          {error && <p role="alert" className="break-words text-[12px] text-danger">{error}</p>}
+        </div>
+        <div ref={scrollRef} className="min-h-0 overflow-y-auto overscroll-contain p-5">{body}</div>
       </div>
       </div>
     </div>

@@ -214,3 +214,5 @@
 - 2026-11-14 CI 43548573503: macOS kiểm thử Node phát hiện assertion đường dẫn /var và /private/var khác nhau sau canonicalize. Đã sửa kỳ vọng test dùng realpath (mã cài đặt đúng); Windows/Linux tiếp tục chạy. Site 43548604239 success gồm kiểm tra live FAQ đóng, đủ 4 placeholder và downloads.js khớp nguồn.
 
 - 2026-11-14 CI 43548740166: Windows success; Mac đã build cả hai kiến trúc, health packaged Apple Silicon đạt, đang upload; Linux packaged server health đạt. Lỗi gom artifact Linux do electron-builder đặt tên x86_64.AppImage nhưng workflow dùng x64.AppImage. Đã sửa tham chiếu file đúng; vẫn giữ all-platform publish gate.
+
+- 2026-11-14 chỉnh theo ảnh mới: Công cụ cho kỹ năng bỏ hai cột cuộn chung, dùng 2 tab full width + bộ lọc trạng thái; đoạn review gom theo skill trong details đóng mặc định. 4/4 DOM tests đạt, Electron43 fixture render 1400x1000 và 620x760 cả hai tab đạt containment/full width/no horizontal overflow; ảnh temp limix-tools-tabs-cBMzhH đã xem. Không thao tác app/dữ liệu thật. Bản đích chuyển 0.3.34 vì npm/image 0.3.33 đã public; all-platform desktop vẫn chưa phát hành.
