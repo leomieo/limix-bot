@@ -14,9 +14,8 @@ export function useLimixAccount(): { username: string; email: string } | null {
   return account;
 }
 
-/** Adds "Đăng xuất" at the end of the account menu. The desktop app asks to confirm, signs out and restarts at the
- * sign-in window. */
-export function withLimixSignOut(account: { username: string; email: string } | null, items: SidebarMenuItem[]): SidebarMenuItem[] {
+/** Adds sign-out through the caller’s themed app confirmation. */
+export function withLimixSignOut(account: { username: string; email: string } | null, items: SidebarMenuItem[], onSignOut: () => void): SidebarMenuItem[] {
   if (!account || !window.ogb?.limixAccount) return items;
   return [...items, {
     key: "limix-sign-out",
@@ -24,6 +23,6 @@ export function withLimixSignOut(account: { username: string; email: string } | 
     subtitle: account.username ? lx(`Tài khoản Limix: ${account.username}`, `Limix account: ${account.username}`) : lx("Tài khoản Limix", "Limix account"),
     icon: <LogOut size={16} aria-hidden />,
     separatorBefore: true,
-    onSelect: () => { void window.ogb?.limixAccount?.signOut().catch(() => undefined); },
+    onSelect: onSignOut,
   }];
 }

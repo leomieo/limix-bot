@@ -144,14 +144,14 @@ export function ConfirmDialogCard({
           {cancelLabel}
         </button>
         {alternative && <button type="button" data-confirm-alternative onClick={alternative.onClick} disabled={pending}
-          className="rounded-xl bg-accent px-4 py-2 text-[13px] font-medium text-white hover:brightness-110">{alternative.label}</button>}
+          className="rounded-xl bg-accent px-4 py-2 text-[13px] font-medium text-accent-ink hover:brightness-110">{alternative.label}</button>}
         <button
           type="button"
           onClick={onConfirm}
           disabled={pending}
           className={cn(
             "rounded-xl px-4 py-2 text-[13px] font-medium",
-            danger ? "bg-danger text-white hover:brightness-110" : "bg-accent text-white hover:brightness-110",
+            danger ? "bg-danger text-white hover:brightness-110" : "bg-accent text-accent-ink hover:brightness-110",
           )}
         >
           {confirmLabel}

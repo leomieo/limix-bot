@@ -59,3 +59,7 @@ it("finds Python dependencies inside a virtual environment using distribution me
   writeFileSync(join(metadata, "METADATA"), "Name: my-package\nVersion: 1.2\n");
   expect(findSkillPythonPackage("my_package", [root])).toMatchObject({ version: "1.2" });
 });
+
+it("marks explicitly global npm CLI installs as app tools", () => {
+  expect(extractSkillRequirements("npm install -g agent-desktop")).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "npm", name: "agent-desktop", installScope: "tool" })]));
+});

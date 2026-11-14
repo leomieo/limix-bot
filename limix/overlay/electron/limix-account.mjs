@@ -167,6 +167,7 @@ export async function limixSignOut() {
 export function limixRemoteCredential() { return remoteCredential(); }
 
 export async function limixAccountGate({ app, BrowserWindow, ipcMain, safeStorage, shell, dialog, iconPath, log = () => {}, baseUrl }) {
+  delete process.env.LIMIX_ACCOUNT_USER_ID;
   if (!baseUrl) return true;
   const userData = app.getPath("userData");
   const store = fileStore(path.join(userData, "limix-account.json"), safeStorage);
@@ -189,6 +190,9 @@ export async function limixAccountGate({ app, BrowserWindow, ipcMain, safeStorag
     const signedIn = await showLoginWindow({ BrowserWindow, ipcMain, shell, iconPath, client, notice, username: store.read().username ?? "" });
     if (!signedIn) return false;
   }
+
+  const identity = remoteCredential();
+  if (identity) process.env.LIMIX_ACCOUNT_USER_ID = identity.userId;
 
   // The profile (Settings > General) shows the Limix account's name and e-mail until the owner types their own.
   { const saved = store.read() ?? {}; if (saved.email) process.env.LIMIX_ACCOUNT_EMAIL = String(saved.email); if (saved.username) process.env.LIMIX_ACCOUNT_NAME = String(saved.username); }

@@ -39,3 +39,13 @@ test("Python installs use the project virtual environment", async () => {
     assert.deepEqual(calls[0][1], ["-m", "pip", "install", "--disable-pip-version-check", "--", "pydantic>=2"]);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
+
+test("standalone npm tools use the managed prefix without writing a project manifest", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "limix-cli-install-"));
+  const calls = [];
+  try {
+    await installSkillPackage({ requirement: { kind: "npm", name: "agent-desktop", installScope: "tool" }, project: root, node: "node", npmCli: "npm-cli.js", run: async (...args) => calls.push(args) });
+    assert.deepEqual(calls[0][1], ["npm-cli.js", "install", "--global", "--prefix", await (await import("node:fs/promises")).realpath(root), "--no-audit", "--no-fund", "--", "agent-desktop"]);
+    await assert.rejects(readFile(path.join(root, "package.json")), { code: "ENOENT" });
+  } finally { await rm(root, { recursive: true, force: true }); }
+});

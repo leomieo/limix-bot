@@ -33,6 +33,7 @@ jobs:
     timeout-minutes: 90
     env:
       CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: pnpm/action-setup@ff378ebe6b225b0680b81c1ad4498ae0d1d3a5e3
@@ -43,8 +44,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Verify transfer and skill changes
         run: |
-          node --test limix/account-sync/account-sync.test.mjs
-          pnpm exec vitest run server/limix-transfer-version.test.ts server/limix-hub-download.test.ts server/workspace-backup.test.ts src/components/WorkspaceBackupSettings.test.ts src/components/SkillsSection.behavior.test.ts
+          node --test limix/account-sync/account-sync.test.mjs electron/limix-sign-out.node-test.mjs electron/limix-skill-install.node-test.mjs
+          pnpm exec vitest run server/limix-transfer-account.test.ts server/workspace-backup-http.test.ts src/components/LimixSignOutDialog.test.ts src/components/LimixToolsDialog.scan.dom.test.ts server/limix-transfer-version.test.ts server/limix-hub-download.test.ts server/workspace-backup.test.ts src/components/WorkspaceBackupSettings.test.ts src/components/SkillsSection.behavior.test.ts
       - name: Prepare pinned Python and uv
         run: node scripts/prepare-limix-runtime.mjs
       - name: Build macOS Apple Silicon and Intel

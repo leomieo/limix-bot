@@ -6252,7 +6252,7 @@
   "settings.import.appsLocalOnly": "Chỉ ứng dụng máy tính trên máy đang chạy {app} mới mang được kỹ năng và công cụ của máy đó vào.",
   "settings.import.grokTitle": "Chuyển từ Grok Bot",
   "settings.import.grokSubtitle": "Mang một bot sang cùng kỹ năng, tác vụ định kỳ, ký ức và ứng dụng của nó.",
-  "backup.scope": "Chuyển máy bằng file có mật khẩu: bot, lịch sử, bộ nhớ, skills đã cài và tự học, cấu hình không chứa thông tin đăng nhập. Không mang media hoặc tệp đính kèm. Trên máy mới, cài Limix Bot bằng hoặc mới hơn phiên bản đã xuất rồi nhập file và khởi động lại. Nhập file sẽ thay thế dữ liệu hiện tại; app giữ bản an toàn để khôi phục.",
+  "backup.scope": "Chuyển máy bằng file có mật khẩu: bot, lịch sử, bộ nhớ, skills đã cài và tự học, cấu hình không chứa thông tin đăng nhập. Không mang media hoặc tệp đính kèm. Trên máy mới, cài Limix Bot bằng hoặc mới hơn phiên bản đã xuất rồi nhập file và khởi động lại. Nhập file sẽ thay thế dữ liệu hiện tại; app giữ bản an toàn để khôi phục. Chỉ tài khoản Limix đã xuất file mới được nhập lại; tên hồ sơ tự sửa không thay đổi quyền này.",
   "backup.excluded": "Thông tin đăng nhập tài khoản và kết nối đã lưu không được đưa vào. Hãy kết nối lại tài khoản trên máy mới; thông tin đăng nhập hiện có ở máy đích giữ nguyên. Đăng nhập vào các ứng dụng AI khác và ổ đĩa của máy ảo từ xa cũng không được đưa vào.",
   "backup.privacy": "Đoạn chat, bản nháp và tệp người dùng không được tự động ẩn thông tin nhạy cảm và có thể chứa dữ liệu bí mật do bạn dán vào. Hãy giữ kín bản sao lưu này và cất giữ mật khẩu cẩn thận; mật khẩu không thể khôi phục.",
   "backup.export": "Xuất bản sao lưu đầy đủ",

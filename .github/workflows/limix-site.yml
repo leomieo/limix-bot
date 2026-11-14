@@ -71,4 +71,15 @@ jobs:
           for host in limixmedia.com www.limixmedia.com; do
             code=$(curl -s -o /dev/null -w '%{http_code}' "https://$host/")
             echo "$host -> $code"
+            test "$code" = 200
           done
+      - name: verify deployed FAQ and download script
+        run: |
+          curl -fsSL https://limixmedia.com/ -o "$RUNNER_TEMP/site.html"
+          if grep -Eq '<details[^>]* open([ >]|$)' "$RUNNER_TEMP/site.html"; then
+            echo "::error::FAQ must start collapsed"
+            exit 1
+          fi
+          test "$(grep -o 'data-release-asset=' "$RUNNER_TEMP/site.html" | wc -l)" -eq 4
+          curl -fsSL https://limixmedia.com/downloads.js -o "$RUNNER_TEMP/downloads.js"
+          cmp limix/site/public/downloads.js "$RUNNER_TEMP/downloads.js"

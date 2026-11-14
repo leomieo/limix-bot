@@ -59,8 +59,11 @@ it("reviews missing packages and the destination before starting the batch insta
     flushSync(() => root.render(createElement(LimixToolsDialog, { onClose: vi.fn() })));
     await vi.waitFor(() => expect(button("Install all missing requirements")).toBeDefined());
     flushSync(() => button("Install all missing requirements").click());
-    await vi.waitFor(() => expect(document.body.textContent).toContain("C:/Video project"));
+    await vi.waitFor(() => expect(document.body.textContent).toContain("No folder selected"));
     expect(installRequirements).not.toHaveBeenCalled();
+    expect(button("Install packages").disabled).toBe(true);
+    flushSync(() => button("Choose project folder…").click());
+    await vi.waitFor(() => expect(button("Install packages").disabled).toBe(false));
     flushSync(() => button("Install packages").click());
     await vi.waitFor(() => expect(installRequirements).toHaveBeenCalledWith(["req-remotion"], "C:/Video project"));
   } finally {
@@ -68,5 +71,29 @@ it("reviews missing packages and the destination before starting the batch insta
     host.remove();
     if (original) Object.defineProperty(window, "ogb", original);
     else Reflect.deleteProperty(window, "ogb");
+  }
+});
+
+it("installs a standalone tool without opening the project picker", async () => {
+  setLocale("en");
+  const snapshot = { supported: true, items: [], skillScan: { skillCount: 1, requirements: [
+    { id: "req-cli", installable: true, installScope: "tool", packages: ["agent-desktop"], skill: "windows", directory: "/skills/windows", kind: "npm", name: "agent-desktop", status: "missing", evidence: "npm install -g agent-desktop" },
+  ] } };
+  const pickFolder = vi.fn(), installRequirements = vi.fn().mockResolvedValue(snapshot);
+  const original = Object.getOwnPropertyDescriptor(window, "ogb");
+  Object.defineProperty(window, "ogb", { configurable: true, value: { pickFolder, limixTools: { scan: vi.fn().mockResolvedValue(snapshot), installRequirements } } });
+  const host = document.createElement("div"); document.body.append(host); const root = createRoot(host);
+  try {
+    flushSync(() => root.render(createElement(LimixToolsDialog, { onClose: () => {} })));
+    const button = (text: string) => [...document.querySelectorAll("button")].find(node => node.textContent === text)!;
+    await vi.waitFor(() => expect(button("Install all missing requirements")).toBeDefined());
+    flushSync(() => button("Install all missing requirements").click());
+    expect(pickFolder).not.toHaveBeenCalled();
+    expect(document.body.textContent).toContain("Limix Bot’s tools folder");
+    flushSync(() => button("Install packages").click());
+    await vi.waitFor(() => expect(installRequirements).toHaveBeenCalledWith(["req-cli"], ""));
+  } finally {
+    flushSync(() => root.unmount()); host.remove();
+    if (original) Object.defineProperty(window, "ogb", original); else Reflect.deleteProperty(window, "ogb");
   }
 });

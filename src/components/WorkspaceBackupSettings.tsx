@@ -1,3 +1,4 @@
+import { lx } from "@/lib/limix-text";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Download, Loader2, Upload } from "lucide-react";
 import type { WorkspaceBackupSummary } from "../../shared/workspace-backup";
@@ -6,7 +7,7 @@ import { intlLocale, t } from "@/lib/i18n";
 import { applyWorkspaceClientState, collectWorkspaceClientState, WORKSPACE_RESTORE_MARKER } from "@/lib/workspace-backup-client";
 import { Card } from "./SettingsPrimitives";
 
-type BackupStatus = { busy: boolean; pendingRestore?: boolean; restarts?: boolean; lastRestoreId?: string };
+type BackupStatus = { busy: boolean; accountReady?: boolean; blockedReason?: string | null; pendingRestore?: boolean; restarts?: boolean; lastRestoreId?: string };
 const inputClass = "w-full rounded-lg border border-hairline/50 bg-inset px-3 py-2 text-[14px] text-ink disabled:opacity-50";
 const buttonClass = "cursor-pointer inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2 text-[13px] font-medium text-accent-ink disabled:opacity-40";
 const validPassword = (value: string) => value.length >= 12 && value.length <= 1024;
@@ -95,7 +96,7 @@ export function WorkspaceBackupSettings() {
   const refresh = async () => {
     try {
       const result: BackupStatus = await api("/api/workspace-backup/status");
-      if (alive.current) { setStatus(result); setError(null); }
+      if (alive.current) { setStatus(result); setError(result.blockedReason ?? (result.accountReady === false ? lx("Mở Chuyển máy Offline tại Máy tính này và đăng nhập tài khoản Limix để tiếp tục.", "Open Offline computer transfer on This computer and sign in to Limix to continue.") : null)); }
     } catch (cause) {
       if (alive.current) { setStatus(null); setError(cause instanceof Error ? cause.message : String(cause)); }
     }
@@ -107,7 +108,7 @@ export function WorkspaceBackupSettings() {
   }, []);
 
   const perform = async (operation: NonNullable<typeof busy>, work: () => Promise<void>) => {
-    if (lock.current || !status || status.busy || status.pendingRestore) return;
+    if (lock.current || !status || status.busy || status.pendingRestore || status.accountReady === false) return;
     lock.current = true;
     setBusy(operation);
     setError(null);
@@ -173,7 +174,7 @@ export function WorkspaceBackupSettings() {
     if (alive.current) { setStatus({ busy: false, pendingRestore: true, restarts: restarting }); setPreview(null); setConfirmation(""); }
   });
 
-  const disabled = busy !== null || !status || status.busy || Boolean(status.pendingRestore);
+  const disabled = busy !== null || !status || status.busy || status.accountReady === false || Boolean(status.pendingRestore);
   return <>
     <section className="space-y-2 px-4">
         <p className="text-[13px] leading-relaxed text-ink-secondary">{t("backup.scope")}</p>

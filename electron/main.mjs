@@ -1,3 +1,4 @@
+import { createLimixSignOutHandler } from "./limix-sign-out.mjs";
 import { app, autoUpdater as nativeAutoUpdater, BrowserWindow, Tray, WebContentsView, clipboard, desktopCapturer, dialog, globalShortcut, ipcMain, Menu, nativeImage, Notification, net, powerMonitor, powerSaveBlocker, safeStorage, screen, session, shell, systemPreferences, utilityProcess, nativeTheme } from "electron";
 import { LIMIX_ACCOUNT_URL, LIMIX_CLOUD_ENABLED, LIMIX_ORGANIZATION_ENABLED } from "./limix-features.mjs";
 import { limixAccountGate, limixAccountInfo, limixRemoteCredential, limixSignOut } from "./limix-account.mjs";
@@ -3211,18 +3212,9 @@ function releaseDesktopDataDirLease() {
 ipcMain.handle("limix-gateway:open", localOnly("limix-gateway:open", () => limixGateway ? limixGateway.open() : Promise.reject(new Error(lxm("Chương trình kết nối chưa sẵn sàng.", "The connector program is not ready yet.")))));
 app.on("will-quit", () => limixGateway?.stop());
 ipcMain.handle("limix-account:info", localOnly("limix-account:info", () => limixAccountInfo()));
-ipcMain.handle("limix-account:sign-out", localOnly("limix-account:sign-out", async (event) => {
-  const info = limixAccountInfo();
-  if (!info) return false;
-  const owner = BrowserWindow.fromWebContents(event.sender) ?? undefined;
-  const { response } = await dialog.showMessageBox(owner, { type: "question", title: "Limix Bot", buttons: [lxm("Đăng xuất", "Sign out"), lxm("Hủy", "Cancel")], defaultId: 1, cancelId: 1,
-    message: lxm(`Đăng xuất khỏi tài khoản ${info.username || "Limix"}?`, `Sign out of the account ${info.username || "Limix"}?`),
-    detail: lxm("Máy này sẽ được gỡ khỏi tài khoản và ứng dụng khởi động lại ở màn hình đăng nhập. Bot, cuộc trò chuyện và dữ liệu trên máy vẫn được giữ nguyên.", "This computer will be removed from the account and the app restarts at the sign-in window. Bots, conversations and data on this computer are kept.") });
-  if (response !== 0) return false;
-  await limixSignOut();
-  app.relaunch(); app.quit();
-  return true;
-}));
+const confirmLimixSignOut = createLimixSignOutHandler({ info: limixAccountInfo, signOut: limixSignOut, relaunch: () => { app.relaunch(); app.quit(); } });
+ipcMain.handle("limix-account:sign-out", localOnly("limix-account:sign-out", (_event, username) => confirmLimixSignOut(username)));
+
 let limixTools = null;
 ipcMain.handle("limix-tools:state", localOnly("limix-tools:state", () => limixTools ? limixTools.state() : { supported: false, items: [] }));
 ipcMain.handle("limix-tools:install", localOnly("limix-tools:install", (_event, ids) => limixTools ? limixTools.install(Array.isArray(ids) ? ids.map(String) : []) : { supported: false, items: [] }));
