@@ -7,6 +7,8 @@
 
 ## 1. Trạng thái hiện tại (luôn ghi đè cho đúng)
 
+- 2026-11-15 desktop update schedule: change existing hourly check to every six hours (Windows/macOS/Linux). Keep startup check after 15 seconds and manual check via updater coordinator. Requires app process running; no OS background service introduced. Reproducible via rebrand.py.
+
 - 2026-11-14 Mac Docker: per-tool installable flag enables Docker on macOS without enabling Windows-only installers. Official arch-specific DMG download, hdiutil verify then open; done means installer opened, not installed. Detect /Applications, user Applications and ~/.docker/bin. Source + overlays/workflows aligned. 3 helper tests and 4 tools UI tests pass (mock); actual DMG installation on a Mac NOT_TESTED. Prepared 0.3.38 for all-platform CI.
 
 - **2026-11-14 media connections:** implemented Telegram/Discord binary media receive/send, Zalo image/voice receive and image/private AAC send via optional HTTPS, Facebook Fanpage signed webhook + Page responses. Per-connection controls and scoped Bot API attachments, authorization before download, bounded CDN fetch and partial-send status. Facebook personal/WhatsApp/Zalo OA remain unavailable; no verified official personal API. See `PLAN_CHANNEL_MEDIA.md`. Verification: gateway 49/49 PASS_MOCK; Bot API/attachment/ingress 104 passed, 1 skipped; targeted full-server/media 3 passed; TypeScript build PASS. Live accounts/HTTPS/packaged delivery NOT_TESTED. Release 0.3.37 requested: promoting reviewed channel-media changes to main for all-platform build; publication pending CI. Existing Windows symlink fixture fails EPERM before exercising code. Cloud stays off.
@@ -60,6 +62,8 @@
 
 ## 4. Vấn đề mở / rủi ro
 
+- 2026-11-15 desktop update schedule: change existing hourly check to every six hours (Windows/macOS/Linux). Keep startup check after 15 seconds and manual check via updater coordinator. Requires app process running; no OS background service introduced. Reproducible via rebrand.py.
+
 | # | Vấn đề | Ảnh hưởng | Trạng thái |
 |---|---|---|---|
 | R1 | Bot API chạy giới hạn → bot qua Telegram chỉ trò chuyện | Tính năng từ xa hạn chế | Mở |
@@ -78,6 +82,8 @@
 | R10 | Máy chủ Claude không đẩy được tag git (chỉ đẩy nhánh) | Build kích hoạt bằng push lên `main`; tag phát hành do workflow tự tạo | Đã xử lý |
 
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
+
+- 2026-11-15 desktop update schedule: change existing hourly check to every six hours (Windows/macOS/Linux). Keep startup check after 15 seconds and manual check via updater coordinator. Requires app process running; no OS background service introduced. Reproducible via rebrand.py.
 
 - 2026-11-14 Mac Docker: per-tool installable flag enables Docker on macOS without enabling Windows-only installers. Official arch-specific DMG download, hdiutil verify then open; done means installer opened, not installed. Detect /Applications, user Applications and ~/.docker/bin. Source + overlays/workflows aligned. 3 helper tests and 4 tools UI tests pass (mock); actual DMG installation on a Mac NOT_TESTED. Prepared 0.3.38 for all-platform CI.
 
@@ -256,3 +262,5 @@
 - 2026-11-14 Codex sandbox mismatch reported on another computer (user confirmed). Earlier Other-provider turns succeeded. No direct access to that failing runtime; root cause unverified. Add requested/resolved sandbox types to refusal, retain fail-closed check and never start a mismatched turn. Request retry with updated CLI or working provider.
 
 - 2026-11-15 release: 0.3.37 public, desktop run 43616981774 success across Windows/Linux/macOS ARM64 + Intel smoke + publish. Public metadata verifier passed three feeds and five stable downloads. 0.3.38 build run 43618462299 contains Mac Docker and sandbox diagnostics; publication pending. No live Zalo/Codex issue repair claimed.
+
+- 2026-11-15 six-hour updater verified: syntax PASS, updater Vitest 10/10 (fake clock checks boundary before/at six hours), coordinator/recheck Node tests 57/57. Prepared 0.3.39 with prior 0.3.38 changes for all-platform publication. Not a six-hour wall-clock or installed app verification.
