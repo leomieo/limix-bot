@@ -160,6 +160,7 @@
   "markdown.loading": "Đang mở tệp…",
   "markdown.tooLarge": "Tệp này quá lớn để xem trước trong ứng dụng (2 MB). Hãy tải bản gốc để xem.",
   "markdown.loadFailed": "Không thể mở tệp này. Kiểm tra kết nối rồi thử lại. Hỗ trợ tệp văn bản UTF-8.",
+  "markdown.refused": "Không mở được tệp này: {reason}",
   "markdown.rendered": "Xem có định dạng",
   "table.loading": "Đang mở bảng…",
   "table.tooLarge": "Tệp này quá lớn để xem trước trong ứng dụng (10 MB, 100.000 hàng, 200 cột hoặc 500.000 ô). Tải xuống tệp gốc để xem toàn bộ.",

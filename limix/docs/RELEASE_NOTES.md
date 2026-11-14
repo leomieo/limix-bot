@@ -1,4 +1,18 @@
-Limix Bot 0.3.34 — Windows, macOS Apple Silicon, macOS Intel và Linux x64.
+Limix Bot 0.3.35 — Windows, macOS Apple Silicon, macOS Intel và Linux x64.
+
+Tích hợp có chọn lọc từ OpenMausBot 0.1.155:
+
+- Kéo phòng chat để sắp xếp trong thanh bên; hỗ trợ Alt+↑/↓, lưu thứ tự và đồng bộ giữa các cửa sổ.
+- Đính kèm file nén ZIP, TAR/GZ, 7z… trong chat dưới dạng tệp; ứng dụng không tự giải nén.
+- Đánh dấu ảnh được gửi lại từ lịch sử để AI phân biệt ảnh cũ với yêu cầu mới.
+- Khôi phục hiển thị mức dùng Claude theo chu kỳ 5 giờ và tuần; tôn trọng cấu hình tắt đọc mức dùng.
+- Sửa lỗi tên MCP dành riêng của Copilot và giới hạn OpenCode Go làm ảnh hưởng nhầm tới model miễn phí.
+- Sửa phân biệt bot bị hệ thống dừng với người dùng chủ động dừng; tránh gửi lặp yêu cầu đánh dấu đã đọc.
+- Mở xem trước Markdown Windows-1252 và hiển thị lý do server từ chối tệp rõ hơn.
+
+Đây là bản tích hợp chọn lọc, không phải nhập toàn bộ upstream. Cloud và đồng bộ tài khoản vẫn tắt. Danh sách nguồn và phần chưa tích hợp: `limix/docs/UPSTREAM_0.1.155.md` trong mã nguồn.
+
+Bao gồm các cải tiến từ 0.3.34:
 
 - Thêm **Chuyển máy Offline**: xuất file có mật khẩu, nhập lại trên máy mới. Giữ bot, lịch sử văn bản, bộ nhớ và skills; bỏ media/tệp đính kèm. Chỉ tài khoản Limix đã xuất file mới được nhập lại, và chỉ nhập vào phiên bản bằng hoặc mới hơn bản đã xuất; xem trước, xác nhận thay thế và khởi động lại. Tài khoản AI/kết nối cần đăng nhập lại; ổ đĩa máy ảo không nằm trong file.
 - Đồng bộ dữ liệu theo tài khoản được phát triển dưới dạng module ẩn và tiếp tục tắt vì chưa có server. Chưa tự tải dữ liệu khách lên mạng.
