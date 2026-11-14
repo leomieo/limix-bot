@@ -57,7 +57,7 @@ test("Windows: the person's item has a name of its own, apart from lending's hid
   login.follow(true);
   login.choose(true);
   assert.equal(login.chosen(), true);
-  assert.deepEqual(app.items.get("OpenMausBot at login"), { args: [] }, "no hidden flag");
+  assert.deepEqual(app.items.get("Limix Bot at login"), { args: [] }, "no hidden flag");
   login.follow(false);
   assert.equal(login.chosen(), true, "lending stopping leaves it");
   login.choose(false);
@@ -103,7 +103,7 @@ test("Windows: turning it off removes every entry that starts the app, and lendi
   assert.equal(login.chosen(), false, "lending keeps to the person's choice");
   login.choose(true);
   login.follow(true);
-  assert.deepEqual([...app.items].sort(), [["OpenMausBot at login", { args: [], enabled: true }], ["electron.app.OpenMausBot", { args: ["--omb-hidden"], enabled: true }]]);
+  assert.deepEqual([...app.items].sort(), [["Limix Bot at login", { args: [], enabled: true }], ["electron.app.OpenMausBot", { args: ["--omb-hidden"], enabled: true }]]);
 });
 
 test("Linux: the person's autostart entry has no hidden flag and no lending mark, and lending never removes it", async t => {
@@ -119,6 +119,31 @@ test("Linux: the person's autostart entry has no hidden flag and no lending mark
   assert.equal(existsSync(entry), true, "lending stopping leaves it");
   login.choose(false);
   assert.equal(existsSync(entry), false);
+});
+
+test("Windows: quotes a query path containing spaces and enables an entry disabled in Startup apps", async t => {
+  const dir = await temp(t);
+  const app = windowsApp([{ name: "Limix Bot at login", enabled: false }]);
+  const get = app.getLoginItemSettings.bind(app);
+  const executable = "C:\\Program Files\\Limix Bot\\Limix Bot.exe";
+  app.getLoginItemSettings = (options = {}) => options.path === `"${executable}"` ? get(options) : { openAtLogin: false, launchItems: [] };
+  const login = createOpenAtLogin({ app, file: path.join(dir, "win.json"), platform: "win32", home: dir, execPath: executable });
+  assert.equal(login.chosen(), false);
+  login.choose(true);
+  assert.equal(login.chosen(), true);
+  login.choose(false);
+  assert.equal(login.chosen(), false);
+  assert.equal(app.items.size, 0);
+});
+
+test("a startup write that does not take effect is reported as a failure", async t => {
+  const dir = await temp(t);
+  const app = windowsApp();
+  app.setLoginItemSettings = () => {};
+  const login = createOpenAtLogin({ app, file: path.join(dir, "win.json"), platform: "win32", home: dir });
+  const handlers = new Map();
+  installOpenAtLogin({ ipcMain: { handle: (channel, handler) => handlers.set(channel, handler) }, guard: (_channel, handler) => handler, loginItem: login, changed: () => {} });
+  assert.throws(() => handlers.get("open-at-login:set")({}, true), /did not apply the startup setting/);
 });
 
 test("a build that cannot add a login item offers no switch and changes nothing", async t => {

@@ -30,10 +30,11 @@ export function createOpenAtLogin({ app, file, platform = process.platform, env 
   const store = (fields) => { try { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, JSON.stringify({ ...saved(), ...fields })); } catch {} };
   const added = () => saved().added === true;
   const remember = (value) => store({ added: value });
-  /** Electron 43.7 on Windows: `openAtLogin` compares the Run entry's arguments with the `args` asked about (none by
-   * default), so lending's `--omb-hidden` entry reads as off; `launchItems` lists the entries that start this executable,
-   * each with its name, arguments and whether Task Manager has it enabled. */
-  const windowsStartsApp = () => (app.getLoginItemSettings().launchItems ?? []).filter(item => item.enabled !== false);
+  /** Electron 43.7.9 parses Windows' query path as a command line, so spaces need surrounding quotes.
+   * https://github.com/electron/electron/pull/54364 */
+  const windowsQuery = (args = []) => app.getLoginItemSettings({ path: `"${execPath}"`, args });
+  const windowsItems = () => windowsQuery().launchItems ?? [];
+  const windowsStartsApp = () => windowsItems().filter(item => item.enabled !== false);
   const ours = () => { try { return fs.readFileSync(autostart, "utf8").includes(MARK); } catch { return false; } };
   return {
     follow(on) {
@@ -47,9 +48,9 @@ export function createOpenAtLogin({ app, file, platform = process.platform, env 
           return;
         }
         if (platform === "win32") {
-          const settings = { args: [HIDDEN_ARG] };
+          const settings = { args: [HIDDEN_ARG], path: execPath };
           if (on && saved().declined === true) return;
-          if (app.getLoginItemSettings(settings).openAtLogin !== on) app.setLoginItemSettings({ openAtLogin: on, ...settings });
+          if (windowsQuery(settings.args).openAtLogin !== on) app.setLoginItemSettings({ openAtLogin: on, ...settings });
           return;
         }
         const set = app.getLoginItemSettings().openAtLogin === true;
@@ -76,8 +77,8 @@ export function createOpenAtLogin({ app, file, platform = process.platform, env 
         return;
       }
       if (platform === "win32") {
-        if (on) app.setLoginItemSettings({ openAtLogin: true, args: [], name: CHOSEN_NAME });
-        else for (const item of windowsStartsApp()) app.setLoginItemSettings({ openAtLogin: false, args: item.args ?? [], name: item.name });
+        if (on) app.setLoginItemSettings({ openAtLogin: true, enabled: true, path: execPath, args: [], name: CHOSEN_NAME });
+        else for (const item of windowsItems()) app.setLoginItemSettings({ openAtLogin: false, path: execPath, args: item.args ?? [], name: item.name });
         store({ declined: !on });
         return;
       }
@@ -98,5 +99,11 @@ export function createOpenAtLogin({ app, file, platform = process.platform, env 
 export function installOpenAtLogin({ ipcMain, guard, loginItem, changed }) {
   const state = () => ({ available: loginItem.available(), on: loginItem.chosen() });
   ipcMain.handle("open-at-login:state", guard("open-at-login:state", state));
-  ipcMain.handle("open-at-login:set", guard("open-at-login:set", (_event, on) => { loginItem.choose(on === true); changed(); return state(); }));
+  ipcMain.handle("open-at-login:set", guard("open-at-login:set", (_event, on) => {
+    loginItem.choose(on === true);
+    changed();
+    const next = state();
+    if (next.available && next.on !== (on === true)) throw new Error("The system did not apply the startup setting. Check this app in the system startup settings.");
+    return next;
+  }));
 }
