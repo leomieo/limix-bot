@@ -1,3 +1,76 @@
+[English](#english) · [Tiếng Việt](#tieng-viet)
+
+<a id="english"></a>
+
+# Limix Bot Security Policy
+
+Limix Bot welcomes responsible reports of vulnerabilities affecting the application, server and user data. Report privately so the project can investigate and address issues before information can be misused.
+
+## Reporting a vulnerability
+
+Email **[tqtuan@limixmedia.com](mailto:tqtuan@limixmedia.com)** with the subject **[Limix Bot — Security Report]**.
+
+**Do not open a public Issue or Pull Request containing exploit details, credentials or user data.** Use [Issues](https://github.com/leomieo/limix-bot/issues) for ordinary bugs and the [Code of Conduct](CODE_OF_CONDUCT.md) for community incidents.
+
+## What to include
+
+- Limix Bot version, operating system and deployment type: desktop or a server you manage.
+- Affected component and the conditions required to reproduce the issue.
+- Minimal reproduction steps in a test environment you control.
+- Expected and actual results, and the potential impact.
+- Redacted evidence, such as screenshots, short logs or a minimal proof of concept.
+- A way to contact you; if you want public acknowledgment, explicitly state your preference and display name.
+
+Do not send passwords, recovery codes, tokens, API keys, session cookies or a complete real user profile. Use synthetic data or the minimum sanitized information required. Revoke or rotate any secrets accidentally exposed through the relevant service.
+
+## Areas of concern
+
+Examples include:
+
+- Bypassing authentication, authorization or bot/tool permissions.
+- Unauthorized access across accounts, sessions, bots or data boundaries.
+- Exposure of credentials, secrets or private data through the UI, APIs, logs or exports.
+- Unauthorized command/code execution or file access outside the permitted scope.
+- Problems in device pairing, remote connections, software updates or package verification.
+- Failures in account binding, version checks or restoration for Offline computer transfer.
+- Untrusted content causing a reproducible breach of an enforced protection boundary. Identify the permission bypassed and the actual action, rather than submitting only model-generated text.
+
+For external AI services and platforms, distinguish a Limix Bot integration issue from a problem in that service. Report vulnerabilities entirely within a third-party service to its operator.
+
+## Versions and verification
+
+When possible, reproduce on the latest stable version from [Releases](https://github.com/leomieo/limix-bot/releases). If an issue occurs only in an older version, include that version and its reproduction steps.
+
+Accepting a report does not mean every older version is supported or will receive a separate patch. The scope and remedy depend on verification, impact and compatibility.
+
+## Responsible testing
+
+- Test only devices, accounts and environments you own or are explicitly authorized to test.
+- Use disposable profiles, synthetic data and the minimum required privileges.
+- Do not access, copy, change, delete or publish another person's data.
+- Do not disrupt services, send high traffic, guess passwords or automatically scan running infrastructure without permission.
+- If you encounter data you are not authorized to access, stop and report it; do not expand access to gather more evidence.
+
+This policy does not authorize testing third-party systems or access beyond existing permission.
+
+## Handling and disclosure
+
+The project reviews reports, may request further evidence, and discusses mitigation or fixes. Response and remediation depend on severity and reproducibility; no fixed response or resolution deadline is currently promised.
+
+Coordinate disclosure timing so users have an opportunity to apply protections. Avoid disclosing personal data, secrets or details unnecessary for defense.
+
+Report information should be shared only as necessary for investigation and resolution. Public acknowledgment requires the reporter's agreement. The project currently announces no bug bounty program or payment commitment.
+
+## Protecting your installation
+
+Download through official Limix Bot channels, apply security updates and grant bot permissions or install skills only from sources you trust. Review and remove sensitive information before sharing screenshots, logs or backups for support.
+
+---
+
+[English](#english) · [Tiếng Việt](#tieng-viet)
+
+<a id="tieng-viet"></a>
+
 # Chính sách bảo mật Limix Bot
 
 Limix Bot tiếp nhận các báo cáo có trách nhiệm về lỗ hổng ảnh hưởng đến ứng dụng, máy chủ và dữ liệu người dùng. Vui lòng báo cáo riêng để dự án có thể xác minh và khắc phục trước khi thông tin có thể bị lợi dụng.

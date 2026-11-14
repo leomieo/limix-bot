@@ -1,3 +1,74 @@
+[English](#english) · [Tiếng Việt](#tieng-viet)
+
+<a id="english"></a>
+
+# Limix Bot Community Code of Conduct
+
+Limix Bot welcomes a collaborative, respectful and responsible community. Users, contributors and maintainers share responsibility for a space where people can ask questions, exchange ideas and improve the product safely.
+
+## Scope
+
+This policy applies to project-managed Issues, Pull Requests, Discussions when enabled, and official Limix Bot support channels. It also applies when someone is authorized to represent the project in community activities.
+
+## Expected behavior
+
+- Communicate respectfully across differences in experience, language, opinions and personal circumstances.
+- Critique specific problems, code or behavior, using examples and verifiable evidence.
+- Be patient with newcomers. Ask for clarification before assuming another person's intentions.
+- Accept constructive feedback, acknowledge mistakes and correct inaccurate information.
+- Clearly distinguish tested results, limitations and unverified claims when reporting problems or proposing changes.
+- Respect privacy, intellectual property and the consent of people whose data is involved.
+
+## Unacceptable behavior
+
+- Harassment, threats, insults, discrimination or personal attacks.
+- Inappropriate sexual content, unwanted attention or continued contact after being asked to stop.
+- Unauthorized disclosure of personal information, customer data, private conversations, credentials, tokens or API keys.
+- Impersonating a member, maintainer or Limix Bot representative; fabricating evidence or deliberately misleading others.
+- Spam, unrelated advertising, deliberate disruption or repeated conduct after a warning.
+- Distributing malware, phishing, unauthorized intrusion or targeted exploitation instructions through community channels.
+- Using bots, automated accounts or AI tools to carry out prohibited conduct. Operators are responsible for what their tools contribute to the community.
+- Retaliation against someone reporting a concern or helping a review.
+
+Technical disagreement and constructive criticism are welcome. Disagreeing with a maintainer or a project decision is not, by itself, a violation.
+
+## Reporting a concern
+
+Email **[tqtuan@limixmedia.com](mailto:tqtuan@limixmedia.com)** privately with the subject **[Limix Bot — Community Report]**.
+
+Where possible, include relevant links, dates, a description and supporting evidence. Share only what is needed; redact personal information and secrets from screenshots and logs. Do not publicly disclose sensitive information to demonstrate a violation.
+
+For software vulnerabilities or risks of data exposure, follow the **[Security Policy](SECURITY.md)**. Report ordinary product bugs and feature requests through **[Issues](https://github.com/leomieo/limix-bot/issues)**.
+
+Maintainers should handle reports carefully and share information only as necessary to review or address an incident, or meet legal obligations. Absolute confidentiality cannot be guaranteed in every situation.
+
+## Enforcement
+
+Maintainers consider context, impact, evidence and repeated behavior. Depending on the incident, they may:
+
+1. Request clarification, edits or removal of content.
+2. Issue a reminder or written warning.
+3. Temporarily restrict participation or close a discussion.
+4. Ban participation in project-managed community spaces for an appropriate period or permanently.
+
+These measures do not have to occur in sequence. Serious incidents may require immediate restrictions to protect participants. Community enforcement does not automatically lock an application account or delete user data.
+
+Maintainers must follow this policy too. A maintainer with a conflict of interest should step back from reviewing an incident when another suitable maintainer can take over.
+
+## Requesting reconsideration
+
+Someone affected by an enforcement measure may email the reporting address with the decision, reasons for reconsideration and additional information. Reviews should consider evidence and consistent application of this policy. Private information about the parties should not be published merely to justify a decision.
+
+## Related documents
+
+[Contributing](CONTRIBUTING.md) · [Security Policy](SECURITY.md) · [License](LICENSE)
+
+---
+
+[English](#english) · [Tiếng Việt](#tieng-viet)
+
+<a id="tieng-viet"></a>
+
 # Quy tắc ứng xử cộng đồng Limix Bot
 
 Limix Bot hướng đến một cộng đồng hợp tác, tôn trọng và có trách nhiệm. Người dùng, người đóng góp và người quản lý dự án đều có trách nhiệm tạo môi trường để mọi người có thể đặt câu hỏi, trao đổi ý tưởng và cải thiện sản phẩm một cách an toàn.

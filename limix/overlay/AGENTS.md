@@ -8,6 +8,8 @@ isolated fixture; never verify mutations against the user's live app or data.
 
 Use Limix Bot for product-facing names, release notes, commit subjects/bodies and public project summaries. Do not add upstream project names, upstream author names or Co-authored-by trailers to integration commits. Integrate changes under the Limix Bot identity. Preserve required copyright, LICENSE, NOTICE and third-party notices. Preserve protocol identifiers, migration aliases and compatibility paths unless a verified migration replaces them. Keep precise source provenance in engineering records, outside product copy. Do not rewrite unrelated historical authorship.
 
+Public repository documents README.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md and SECURITY.md must provide matching English and Vietnamese sections with language navigation. Keep the Apache-2.0 LICENSE text unchanged. Keep documentation overlays and README brand assets aligned.
+
 ## Comments
 
 Write a comment only for what the code cannot say:
