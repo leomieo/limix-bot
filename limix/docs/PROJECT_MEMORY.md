@@ -7,7 +7,7 @@
 
 ## 1. Trạng thái hiện tại (luôn ghi đè cho đúng)
 
-- 2026-11-15 preparing 0.3.47: reviewed Vietnamese UI terminology across 10,234 locale keys; 390 changed values. Memory upkeep is Tu cap nhat bo nho; actor distinguishes automatic system changes. Department => nhom bot, conversation thread => cuoc tro chuyen, effort => muc do suy luan. Complete locale/placeholder validation PASS.
+- 2026-11-15 preparing 0.3.47: reviewed Vietnamese UI terminology across 10,234 locale keys; 389 changed values. Memory upkeep is Tu cap nhat bo nho; actor distinguishes automatic system changes. Department => nhom bot, conversation thread => cuoc tro chuyen, effort => muc do suy luan. Complete locale/placeholder validation PASS.
 
 - 2026-11-15 preparing 0.3.46: team settings includes common folder bulk apply to current bots and individually targeted approval changes (ask/auto/full). Existing per-bot validation and trusted-approval IPC retained. 276 targeted tests PASS; TypeScript PASS; guarded source reproduction PASS.
 
