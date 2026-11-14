@@ -4,6 +4,11 @@ name: Limix Site
 
 on:
   workflow_dispatch:
+    inputs:
+      configure_domains:
+        description: Reconfigure existing domain bindings
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths: ["limix/site/**"]
@@ -37,6 +42,7 @@ jobs:
           npm install --no-audit --no-fund --no-save --no-package-lock wrangler@4.125.0
           npx wrangler deploy
       - name: point limixmedia.com and www at the site
+        if: inputs.configure_domains
         run: |
           api=https://api.cloudflare.com/client/v4
           auth=(-H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json")

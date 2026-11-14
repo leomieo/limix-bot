@@ -894,6 +894,22 @@ describe("encrypted full workspace backups", () => {
     expect(readPendingWorkspaceRestoreMetadata(target)).toBeNull();
   });
 
+  it("offline transfer omits media but preserves learned skills and memory", async () => {
+    const root = directory();
+    mkdirSync(join(root, "uploads"), { recursive: true });
+    mkdirSync(join(root, "workspaces", "bot", "skills", "learned"), { recursive: true });
+    writeFileSync(join(root, "uploads", "photo.png"), "media");
+    writeFileSync(join(root, "workspaces", "bot", "skills", "learned", "SKILL.md"), "Learned instructions");
+    writeFileSync(join(root, "workspaces", "bot", "MEMORY.md"), "Remember customer preferences");
+    const exported = await createWorkspaceBackup(root, { password: PASSWORD, appVersion: "0.3.31", omitMedia: true });
+    const target = directory();
+    const staged = await stageWorkspaceBackup(target, exported.path, { password: PASSWORD, currentAppVersion: "0.3.32" });
+    const restored = join(target, ".backups", staged.id, "staged", "data");
+    expect(existsSync(join(restored, "uploads", "photo.png"))).toBe(false);
+    expect(readFileSync(join(restored, "workspaces", "bot", "skills", "learned", "SKILL.md"), "utf8")).toBe("Learned instructions");
+    expect(readFileSync(join(restored, "workspaces", "bot", "MEMORY.md"), "utf8")).toContain("customer preferences");
+  });
+
   it("validates password strength, client preferences and downgrade compatibility", async () => {
     const root = directory();
     await expect(createWorkspaceBackup(root, { password: "short-password".slice(0, 11) })).rejects.toThrow(/at least 12/);

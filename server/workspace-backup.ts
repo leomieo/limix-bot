@@ -1,3 +1,4 @@
+import { assertTransferVersion } from "./limix-transfer-version.ts";
 // Encrypted filesystem snapshot: quiesce writers before create/commit; restore runs before config/store load.
 import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID, scrypt } from "node:crypto";
 import {
@@ -76,6 +77,7 @@ export interface CreateWorkspaceBackupOptions {
   password: string;
   clientState?: WorkspaceBackupClientState;
   appVersion?: string;
+  omitMedia?: boolean;
 }
 type CreatedWorkspaceBackup = { id: string; path: string; summary: WorkspaceBackupSummary };
 export interface WorkspaceRestoreResult {
@@ -342,6 +344,7 @@ export async function createWorkspaceBackupSnapshot(dataDir: string, options: Cr
       for (const name of readdirSync(directory).sort()) {
         if (!prefix && excluded(name)) continue;
         const path = prefix ? `${prefix}/${name}` : name;
+        if (options.omitMedia && (/^(?:attachments|uploads|media|screenshots)(?:\/|$)/i.test(path) || /\.(?:png|jpe?g|gif|webp|avif|bmp|ico|svg|heic|heif|tiff?|dng|mp4|m4v|mkv|mov|webm|avi|mpeg|mpg|3gp|m2ts|mts|flv|wmv|mp3|wav|ogg|flac|m4a|aac|opus|wma|aiff?)$/i.test(name))) continue;
         if (excludedWorkspaceAuthPath(path) || ephemeralWorkspaceTokenPath(path) || redownloadedOrgLibraryPath(path) || liveDataEnginePath(path)) continue;
         if (privacy && omittedAsTeamPrivate(path, privacy)) continue;
         // Reject noncanonical spellings: a case-sensitive host must not export auth paths active on Windows/Mac.
@@ -423,7 +426,7 @@ export async function createWorkspaceBackupSnapshot(dataDir: string, options: Cr
       directories: entries.filter((entry) => entry.type === "directory").length, bytes,
       bots: countJsonArray(join(snapshot, "data", "bots.json")), groups: countJsonArray(join(snapshot, "data", "groups.json")),
       ...databaseCounts(join(snapshot, "data", "messages.db")),
-      exclusions: EXCLUSION_NOTES, warnings,
+      exclusions: options.omitMedia ? [...EXCLUSION_NOTES, "Media files and attachment/upload folders are omitted from this offline transfer."] : EXCLUSION_NOTES, warnings,
     };
     const manifest: Manifest = {
       summary, sourceDataDir: resolve(dataDir), clientState: options.clientState ?? {}, entries,
@@ -610,13 +613,7 @@ export async function stageWorkspaceBackup(dataDir: string, archivePath: string,
     const tar = await import("tar");
     await tar.x({ file: plaintext, cwd: staged, strict: true, preservePaths: false, umask: 0o077, noChmod: true, brotli: false, zstd: false });
     const manifest = validateStaged(staged, expected);
-    const versions = [manifest.summary.appVersion, options.currentAppVersion ?? ""].map((version) => /^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/.exec(version)?.slice(1).map(Number));
-    if (versions[0] && versions[1]) {
-      for (let i = 0; i < 3; i++) {
-        if (versions[0][i] > versions[1][i]) throw new Error("This backup was made by a newer Limix Bot version. Update the app before restoring it.");
-        if (versions[0][i] < versions[1][i]) break;
-      }
-    }
+    if (options.currentAppVersion !== undefined) assertTransferVersion(manifest.summary.appVersion, options.currentAppVersion);
     rmSync(plaintext);
     writeJson(join(job.directory, "ready.json"), { id: job.id, summary: manifest.summary });
     return { id: job.id, summary: manifest.summary };

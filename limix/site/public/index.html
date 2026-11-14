@@ -351,7 +351,7 @@ header { background: color-mix(in srgb, var(--bg) 78%, transparent); }
       <a href="https://github.com/leomieo/limix-bot" target="_blank" rel="noopener">GitHub</a>
     </nav>
     <a class="btn btn-ghost" href="/dang-ky">Đăng ký</a>
-    <a class="btn btn-primary" href="https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-setup.exe">Tải về</a>
+    <a class="btn btn-primary" href="#tai-ve">Tải về</a>
   </div>
 </header>
 
@@ -359,13 +359,13 @@ header { background: color-mix(in srgb, var(--bg) 78%, transparent); }
   <section class="hero">
     <div class="wrap hero-grid">
       <div>
-        <span class="pill rise"><b>BETA</b> Ứng dụng cho Windows 10 và 11</span>
+        <span class="pill rise"><b>BETA</b> Windows · macOS · Linux</span>
         <h1 class="rise d1">Cả một đội bot AI, <em>ngay trên máy bạn.</em></h1>
         <p class="lead rise d2">Tạo nhiều bot, mỗi bot một việc. Bot có máy tính riêng để làm việc thật, tự học kỹ năng mới và trả lời khách trên Telegram, Zalo, Discord bằng tài khoản AI bạn đang có.</p>
         <div class="cta-row rise d3">
-          <a class="btn btn-primary" href="https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-setup.exe">
+          <a class="btn btn-primary" href="#tai-ve">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
-            Tải cho Windows
+            Chọn bản tải về
           </a>
           <a class="btn btn-ghost" href="#tinh-nang">Xem bot làm được gì</a>
         </div>
@@ -559,7 +559,7 @@ header { background: color-mix(in srgb, var(--bg) 78%, transparent); }
       <div>
         <details><summary>Limix Bot có mất phí không?</summary><p>Limix Bot đang là bản Beta và được dùng miễn phí. Khi ra bản thương mại, ứng dụng sẽ tính phí. Phí dịch vụ AI (gói Claude, ChatGPT, Gemini… hoặc khóa API) bạn vẫn trả trực tiếp cho từng nhà cung cấp.</p></details>
         <details><summary>Tôi không biết lập trình, có dùng được không?</summary><p>Được. Mọi việc làm bằng giao diện tiếng Việt: tạo bot, kết nối AI, nối Telegram, Zalo, Discord và cài kỹ năng đều bằng vài cú bấm.</p></details>
-        <details open><summary>Máy cần cấu hình thế nào?</summary>
+        <details><summary>Máy cần cấu hình thế nào?</summary>
           <div class="spec-wrap"><table class="spec">
             <thead><tr><th scope="col"></th><th scope="col">Tối thiểu<small>Bot dùng AI trên mạng, không máy ảo</small></th><th scope="col">Đề xuất<small>Có máy ảo riêng cho bot</small></th></tr></thead>
             <tbody>
@@ -570,7 +570,7 @@ header { background: color-mix(in srgb, var(--bg) 78%, transparent); }
               <tr><th scope="row">Mạng</th><td>Internet ổn định</td><td>Internet ổn định, cáp hoặc Wi-Fi mạnh</td></tr>
             </tbody>
           </table></div>
-          <p>Mỗi máy ảo của bot mặc định dùng 4 GB RAM và 2 nhân CPU (đặt được từ 2 GB). Máy ảo cần Docker Desktop; Limix Bot có nút cài sẵn. Bản macOS và Linux chưa phát hành.</p>
+          <p>Mỗi máy ảo của bot mặc định dùng 4 GB RAM và 2 nhân CPU (đặt được từ 2 GB). Máy ảo cần Docker Desktop trên Windows/macOS hoặc Docker Engine trên Linux. Nút cài công cụ tự động hiện hỗ trợ Windows. Chọn đúng bản Windows, macOS Apple Silicon, macOS Intel hoặc Linux ở mục tải về. Các bản chưa có tệp phát hành sẽ được ghi rõ.</p>
         </details>
         <details><summary>Ngữ cảnh trò chuyện đầy thì sao?</summary><p>Bot tự tóm tắt các tin nhắn cũ thành một ghi chú ngắn rồi làm tiếp. Toàn bộ cuộc trò chuyện vẫn được giữ để bạn xem lại; bạn cũng có thể bấm Thu gọn ngay.</p></details>
         <details><summary>Vì sao Windows cảnh báo khi cài?</summary><p>Bộ cài chưa được ký số. Khi Windows SmartScreen hiện cảnh báo, chọn More info rồi Run anyway.</p></details>
@@ -578,15 +578,19 @@ header { background: color-mix(in srgb, var(--bg) 78%, transparent); }
     </div>
   </section>
 
-  <section class="final">
+  <section class="final" id="tai-ve">
     <div class="wrap">
       <div class="final-box c-violet">
         <svg class="ghost" viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" rx="224"/><path fill-rule="evenodd" d="M269 344H533C593 344 641 392 641 452V672C641 732 593 780 533 780H269C209 780 161 732 161 672V452C161 392 209 344 269 344ZM491 244H755C815 244 863 292 863 352V572C863 632 815 680 755 680H491C431 680 383 632 383 572V352C383 292 431 244 491 244Z"/></svg>
         <span class="eyebrow">Bắt đầu</span>
         <h2>Tạo bot đầu tiên của bạn ngay hôm nay.</h2>
-        <p class="lead">Tải bộ cài cho Windows, kết nối AI bạn đang có và giao việc đầu tiên.</p>
+        <p class="lead">Chọn bản phù hợp với máy, kết nối AI bạn đang có và giao việc đầu tiên. macOS: xem loại chip trong  → Giới thiệu về máy Mac này.</p>
         <div class="cta-row" style="margin-top:8px">
           <a class="btn btn-primary" href="https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-setup.exe">Tải Limix Bot cho Windows</a>
+          <span class="btn btn-ghost" data-release-asset="LimixBot-Apple-Silicon.dmg">macOS Apple Silicon · Đang chuẩn bị</span>
+          <span class="btn btn-ghost" data-release-asset="LimixBot-Intel.dmg">macOS Intel · Đang chuẩn bị</span>
+          <span class="btn btn-ghost" data-release-asset="LimixBot-Linux-x64.AppImage">Linux x64 AppImage · Đang chuẩn bị</span>
+          <span class="btn btn-ghost" data-release-asset="LimixBot-Linux-x64.deb">Linux x64 DEB · Đang chuẩn bị</span>
           <a class="btn btn-ghost" href="https://github.com/leomieo/limix-bot/releases" target="_blank" rel="noopener">Có gì mới</a>
         </div>
       </div>
@@ -628,5 +632,6 @@ header { background: color-mix(in srgb, var(--bg) 78%, transparent); }
 })();
 </script>
 
+  <script src="/downloads.js" defer></script>
 </body>
 </html>

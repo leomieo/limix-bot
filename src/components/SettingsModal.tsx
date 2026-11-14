@@ -132,11 +132,12 @@ export const SIMPLE_PAGES: SimpleSettingsPage[] = [
   { id: "skills", labelKey: "settings.section.skills", icon: BookOpen, sections: ["skills"], keywords: ["skills", "skill hub", "library", "kỹ năng", "thư viện"] },
   { id: "computer", labelKey: "settings.simple.page.computer", icon: Monitor, sections: ["companion", "desktopWorkspaces", "computer", "logins"] },
   { id: "billing", labelKey: "settings.simple.page.billing", icon: Gauge, sections: ["usage", "cloudAccount"], keywords: ["billing", "included", "allowance", "cloud hours", "voice"] },
+  { id: "backups", labelKey: "settings.section.backups", icon: Archive, sections: ["backups"], keywords: ["chuyển máy offline", "transfer", "export", "import", "restore", "sao lưu"] },
   { id: "updates", labelKey: "settings.simple.page.updates", icon: CloudDownload, sections: ["updates"],
     keywords: ["update", "version", "release", "product updates", "newsletter", "email updates", "welcome", "tour", "diagnostics", "logs", "support"] },
 ];
 
-export const SIMPLE_HIDDEN_SECTIONS: readonly AppSettingsSection[] = ["backups", "experimental", "workspaces", "decisionModel", "imageGeneration"];
+export const SIMPLE_HIDDEN_SECTIONS: readonly AppSettingsSection[] = ["experimental", "workspaces", "decisionModel", "imageGeneration"];
 
 
 export const SIMPLE_FOLDED: Partial<Record<AppSettingsSection, SimpleDisclosureId>> = {

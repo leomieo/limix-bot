@@ -42,7 +42,7 @@ const button = (tree: ReactElement<Props>[], text: string) => tree.find((node) =
 const flush = async () => { for (let i = 0; i < 12; i++) await Promise.resolve(); };
 
 beforeEach(() => {
-  fixture.values = [[skill()], false, "", "", null, null, "", "", false, "", "bot"];
+  fixture.values = [[skill()], false, "", "", null, null, "", "", false, "", { current: false }];
   fixture.modal.mockClear();
   fixture.request.mockReset();
   vi.stubGlobal("fetch", vi.fn(async (url: string, options?: RequestInit) => response(options?.method === "PATCH" ? {} : url.endsWith("order-audit") ? { text: source } : { skills: [skill()] })));
@@ -73,40 +73,10 @@ describe("Skills library review and assignment controls", () => {
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
-  it("makes a reviewed skill available to every bot from the library", async () => {
-    named(render(), "Every bot").props.onClick!();
-    await flush();
-    expect(fetch).toHaveBeenCalledWith("/api/skills-library/order-audit", expect.objectContaining({
-      method: "PATCH",
-      body: '{"everyBot":true}',
-    }));
-  });
-
-  it("blocks a simultaneous second assignment and reads current assignments before the next PUT", async () => {
-    const rows = [skill("alpha"), skill("beta")];
-    fixture.values[0] = rows;
-    let unblock!: (value: Response) => void;
-    const delayed = new Promise<Response>((resolve) => { unblock = resolve; });
-    const writes: string[][] = [];
-    vi.mocked(fetch).mockImplementation(async (_url, options) => {
-      if (options?.method === "PUT") {
-        const next = JSON.parse(options.body as string).skills as string[];
-        writes.push(next);
-        for (const row of rows) row.assignedBots = next.includes(row.name) ? [{ id: "bot", name: "Pepper" }] : [];
-      }
-      return response({ skills: rows }) as Response;
-    }).mockImplementationOnce(() => delayed);
-    const buttons = render().filter((node) => node.type === "button" && node.props.children === "Assign");
-    buttons[0]!.props.onClick!();
-    buttons[1]!.props.onClick!();
-    expect(fetch).toHaveBeenCalledTimes(1);
-    expect(render().filter((node) => node.props.children === "Assign").every((node) => node.props.disabled)).toBe(true);
-    unblock(response({ skills: rows }) as Response);
-    await flush();
-    expect(writes).toEqual([["alpha"]]);
-    render().filter((node) => node.type === "button" && node.props.children === "Assign")[1]!.props.onClick!();
-    await flush();
-    expect(writes).toEqual([["alpha"], ["alpha", "beta"]]);
+  it("keeps assignment controls out of the global library", () => {
+    const tree = render();
+    expect(tree.some(node => node.props.children === "Assign" || node.props["aria-label"] === "Every bot")).toBe(false);
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it("requires the same source review before enabling a per-bot library skill", async () => {

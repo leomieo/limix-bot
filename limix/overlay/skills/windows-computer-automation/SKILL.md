@@ -1,6 +1,6 @@
 ---
 name: windows-computer-automation
-description: Coordinate an AI agent or bot that controls Windows through Agent Desktop and Windows-MCP. Use it to read the screen, work windows, type, drive a browser, and manage apps, files or processes; pick the right tool, respect permissions, keep bots from fighting over the mouse, verify results and never repeat an action blindly. Also helps design or fix the integration of these two MCP servers into a multi-agent AI app. (vi: điều khiển máy tính, tự động hóa Windows, thao tác cửa sổ, chụp màn hình)
+description: "Coordinate an AI agent or bot that controls Windows through Agent Desktop and Windows-MCP. Use it to read the screen, work windows, type, drive a browser, and manage apps, files or processes; pick the right tool, respect permissions, keep bots from fighting over the mouse, verify results and never repeat an action blindly. Also helps design or fix the integration of these two MCP servers into a multi-agent AI app. (vi: điều khiển máy tính, tự động hóa Windows, thao tác cửa sổ, chụp màn hình)"
 ---
 
 # Windows Computer Automation

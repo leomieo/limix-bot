@@ -102,12 +102,12 @@ describe("Settings search in Simple mode", () => {
     flushSync(() => document.querySelector<HTMLButtonElement>("[data-settings-more]")!.click());
     expect(heading()).toBe("More settings");
     expect([...document.querySelectorAll("[data-settings-more-section]")].map((row) => row.getAttribute("data-settings-more-section")))
-      .toEqual(["decisionModel", "imageGeneration", "backups", "experimental"]);
+      .toEqual(["decisionModel", "imageGeneration", "experimental"]);
     const limits = document.querySelector('[data-settings-block="limits"]')!;
     expect(limits.querySelector("h3")!.textContent).toBe("Limits");
     for (const title of ["Group turns", "Tool time limit", "Parallel threads", "Automatic recovery", "Event log cleanup"]) expect(limits.textContent, title).toContain(title);
-    flushSync(() => document.querySelector<HTMLButtonElement>('[data-settings-more-section="backups"]')!.click());
-    expect(fixture.dispatch).toHaveBeenLastCalledWith({ type: "toggleAppSettings", open: true, section: "backups" });
+    flushSync(() => document.querySelector<HTMLButtonElement>('[data-settings-more-section="experimental"]')!.click());
+    expect(fixture.dispatch).toHaveBeenLastCalledWith({ type: "toggleAppSettings", open: true, section: "experimental" });
     expect(heading()).toBe("General");
     flushSync(() => document.querySelector<HTMLButtonElement>("[data-settings-more]")!.click());
     flushSync(() => [...document.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === "Back")!.click());
@@ -131,13 +131,11 @@ describe("Settings search in Simple mode", () => {
   });
 
   it("finds a hidden page and a limit as More settings, and opens each where it lives", () => {
-    type("backups");
-    const page = document.querySelector<HTMLButtonElement>('[data-settings-more-result="backups"]')!;
-    expect(page.textContent).toBe("Backups · More settings");
+    type("offline");
+    const page = document.querySelector<HTMLButtonElement>('[data-settings-page="backups"]')!;
+    expect(page.textContent).toContain("Offline computer transfer");
     flushSync(() => page.click());
     expect(fixture.dispatch).toHaveBeenLastCalledWith({ type: "toggleAppSettings", open: true, section: "backups" });
-    expect(search().value).toBe("");
-
     type("parallel");
     const limit = document.querySelector<HTMLButtonElement>('[data-settings-more-result="settings.threads.title"]')!;
     expect(limit.textContent).toBe("Parallel threads · More settings");

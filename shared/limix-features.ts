@@ -7,3 +7,6 @@ export const LIMIX_CLOUD_ENABLED: boolean = false;
 /** Limix has no phone app of its own yet (OpenMausBot's iPhone/Android apps are MausBot-branded and their source is not
  * published). While false the "Get the phone app" dialog, menu entry and App Store / APK codes are hidden. */
 export const LIMIX_PHONE_APPS_ENABLED: boolean = false;
+
+/** Account data sync stays hidden until a Limix storage server is deployed and verified. */
+export const LIMIX_ACCOUNT_SYNC_ENABLED: boolean = false;
