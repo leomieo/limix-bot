@@ -66,7 +66,7 @@ jobs:
         run: |
           node scripts/smoke-limix-packaged.mjs release/linux-unpacked/openmausbot release/linux-unpacked/resources
           v=$(node -p "require('./package.json').version")
-          cp "release/LimixBot-$v-x64.AppImage" release/LimixBot-Linux-x64.AppImage
+          cp "release/LimixBot-$v-x86_64.AppImage" release/LimixBot-Linux-x64.AppImage
           cp "$(find release -maxdepth 1 -name '*.deb' -print -quit)" release/LimixBot-Linux-x64.deb
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
