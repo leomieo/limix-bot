@@ -2158,3 +2158,12 @@ for rel, edits in json.loads((ROOT / "limix/patches/team-workspace.json").read_t
                 s = must(s, patch["before"], patch["after"])
         return s
     edit(rel, team_workspace_patch)
+
+# Vietnamese product copy reviewed against the UI roles and runtime behavior.
+vi_copy = json.loads((ROOT / "src/locales/vi.json").read_text(encoding="utf-8"))
+vi_review = json.loads((ROOT / "limix/vi-copy-review.json").read_text(encoding="utf-8"))
+for key, value in vi_review.items():
+    if key not in vi_copy:
+        raise RuntimeError("Missing reviewed Vietnamese key: " + key)
+    vi_copy[key] = value
+(ROOT / "src/locales/vi.json").write_text(json.dumps(vi_copy, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
