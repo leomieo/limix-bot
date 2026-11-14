@@ -7,18 +7,18 @@
 
 ## 1. Trạng thái hiện tại (luôn ghi đè cho đúng)
 
-- **Đang sửa 0.3.36:** sao chép mã liên kết chủ bot không còn báo thành công khi clipboard bị từ chối. Cửa sổ gateway dùng session riêng, chỉ cấp clipboard-sanitized-write cho main frame đúng origin/cửa sổ; có fallback chọn văn bản và lỗi rõ ràng. Chưa phát hành 0.3.36.
+- **Đã phát hành 0.3.36:** sao chép mã liên kết chủ bot không còn báo thành công khi clipboard bị từ chối. Cửa sổ gateway dùng session riêng, chỉ cấp clipboard-sanitized-write cho main frame đúng origin/cửa sổ; có fallback chọn văn bản và lỗi rõ ràng. Mã tại 879367663; desktop CI 43603805772 success gồm Windows, Linux, Mac Apple Silicon/Intel và publish. Latest public v0.3.36; đã kiểm ba feed và năm liên kết bộ cài, Windows tải về khớp SHA-512.
 
-- **Đang phát triển 2026-11-14:** đồng bộ dữ liệu tài khoản là module ẩn/tắt vì chưa có server; chuyển máy Offline bằng file có mật khẩu, chỉ nhập vào app bằng hoặc mới hơn; dọn trùng quản lý skills; chuẩn hóa English technical core; bổ sung macOS/Linux. Kế hoạch và giới hạn: `PLAN_ACCOUNT_DATA.md`. Desktop v0.3.35 đã được phát hành công khai cho Windows x64, macOS Apple Silicon/Intel và Linux x64; xem mốc phát hành bên dưới.
+- **Đang phát triển 2026-11-14:** đồng bộ dữ liệu tài khoản là module ẩn/tắt vì chưa có server; chuyển máy Offline bằng file có mật khẩu, chỉ nhập vào app bằng hoặc mới hơn; dọn trùng quản lý skills; chuẩn hóa English technical core; bổ sung macOS/Linux. Kế hoạch và giới hạn: `PLAN_ACCOUNT_DATA.md`. Desktop v0.3.36 đã được phát hành công khai cho Windows x64, macOS Apple Silicon/Intel và Linux x64; xem mốc phát hành bên dưới.
 
 - **Hướng chính (đổi 2026-11-11 18:41):** Limix Bot = **bản fork đổi thương hiệu của OpenMausBot** (giao diện như mausbot.com), phát hành file cài Windows `.exe` qua GitHub Actions của repo `leomieo/limix-bot`. `limix-gateway` (cổng Telegram/Zalo) là module sẽ gộp vào app ở mốc sau.
-- **Mốc hoàn tất:** desktop v0.3.35 đã public; workflow 43554086881 success ở Windows, Linux, macOS Apple Silicon, Intel smoke và publish. GitHub Releases API xác nhận latest v0.3.35, draft=false, prerelease=false và đủ bộ cài cho bốn loại máy.
-- **Bản đã phát hành:** v0.3.35 — https://github.com/leomieo/limix-bot/releases/tag/v0.3.35. Có EXE, hai kiến trúc DMG/ZIP, Linux AppImage/DEB và ba feed cập nhật. Đã kiểm trạng thái CI và danh mục asset qua API; chưa kiểm cập nhật 0.3.35 trực tiếp trên app của người dùng hoặc tải lại toàn bộ asset để đối chiếu hash tại máy làm việc.
+- **Mốc hoàn tất:** desktop v0.3.36 đã public; workflow 43603805772 success ở Windows, Linux, macOS Apple Silicon, Intel smoke và publish. Publisher xác nhận feeds/hashes toàn bộ nền tảng.
+- **Bản đã phát hành:** v0.3.36 — https://github.com/leomieo/limix-bot/releases/tag/v0.3.36. Ba feed cập nhật đúng 0.3.36; năm liên kết tải stable trả đúng kích thước từ GitHub. Bộ cài Windows tại `F:\Tool tu build\Limix Bot\releases\0.3.36\LimixBot-0.3.36-setup.exe`, 298303717 byte, tải thật và khớp SHA-512 trong latest.yml. Chưa cài trên dữ liệu người dùng hoặc xác minh GUI cập nhật tự động.
 - **Đã làm được:** script `limix/rebrand.py` (chạy lại được, ổn định); logo đen trắng (hai khối bo tròn chồng nhau); linh vật mới 0.2.9: sao xanh ngọc + kính đen + mắt phát sáng (`limix/face.py`, rebrand bước 6a/6b/6d); tiếng Việt đủ 10210/10210 chuỗi; báo lỗi về hộp thư chủ dự án; Cloud là mô-đun ẩn; kiểm tra: 0 lỗi cú pháp, chạy từ bản sạch 6f226f15 → trùng khớp (trừ số phiên bản)
 - **Đã kiểm trên GitHub Actions (run 43018860396, thành công):** cài thư viện, typecheck + build, cấu trúc gói, `Limix Bot.exe`, kênh cập nhật leomieo/limix-bot, máy chủ đóng gói trả lời /api/health
 - **CHƯA kiểm:** 30 máy ảo cùng chạy trên phần cứng thật; cập nhật/cài đặt 0.3.31 qua giao diện ứng dụng của chủ dự án; tự khởi động sau khi đăng xuất/đăng nhập Windows hoặc reboot. Khởi động cùng Windows đã thử API native với registry fixture riêng.
 - **Ủy quyền hiện tại:** chủ dự án đã yêu cầu đẩy thay đổi lên GitHub và phát hành để ứng dụng tự cập nhật; cho phép này thay thế luật tạm thời không push ngày 2026-11-12.
-- **Bước tiếp theo:** kiểm tra cài đặt/cập nhật v0.3.35 trên máy thực tế; macOS chưa ký số/notarize. Cloud account sync tiếp tục ẩn/tắt.
+- **Bước tiếp theo:** kiểm tra cài đặt/cập nhật v0.3.36 và nút sao chép trên máy thực tế; macOS chưa ký số/notarize. Cloud account sync tiếp tục ẩn/tắt.
 
 ## 2. Bản đồ thư mục dự án
 
@@ -72,6 +72,8 @@
 | R10 | Máy chủ Claude không đẩy được tag git (chỉ đẩy nhánh) | Build kích hoạt bằng push lên `main`; tag phát hành do workflow tự tạo | Đã xử lý |
 
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
+
+- 2026-11-14 | Codex | Hoàn tất phát hành v0.3.36: Actions 43603805772 toàn bộ jobs success; API latest draft=false/prerelease=false; kiểm ba updater feeds đúng phiên bản, đủ năm stable downloads và Content-Length khớp. Log publish: PASS release 0.3.36 Windows/macOS arm64/x64/Linux feeds/hashes. Tải bộ cài Windows 298303717 byte về releases/0.3.36, xác minh SHA-512 theo updater. Bản sửa clipboard đã public, chưa xác minh cài đặt/nút copy trên app của chủ dự án.
 
 - 2026-11-14 | Codex | Sửa lỗi clipboard ở gateway: mã cũ nuốt NotAllowedError nhưng vẫn báo Đã sao chép; cửa sổ gateway dùng default session với quyền chỉ dành cho origin app chính nên không được cấp ghi clipboard. Thêm session gateway tách biệt với quyền ghi hạn chế theo cửa sổ/origin/main frame, từ chối đọc clipboard và mọi quyền khác; web UI chờ kết quả, fallback execCommand, timeout 3 giây, báo lỗi/chọn mã khi thất bại. 5 kiểm thử UI và 2 kiểm thử quyền đạt; 4 HTTP gateway tests đạt. Electron 43 fixture trên cổng ngẫu nhiên xác nhận quyền ghi theo gesture granted và đọc denied. Chưa ghi thử clipboard hệ điều hành để giữ nguyên clipboard ảnh hiện có; chưa kiểm bản cài thực tế. Kiểm tra mở rộng phát hiện 2 guard tests thất bại vì LimixPhoneBrowser gọi clipboard trực tiếp từ trước; chuyển hai nút chép link/mã điện thoại sang useCopyFeedback dùng chung, có fallback và báo lỗi. Kiểm thử cuối đạt 27/27 Vitest clipboard/UI, 19/19 Electron clipboard và 32/32 gateway (HTTP/API/channels giả lập); không phải xác minh gửi tin nền tảng thật. TypeScript UI đã qua. Đồng bộ overlay/workflow nguồn; thêm kiểm thử gateway/clipboard trên cả ba OS; chuẩn bị 0.3.36.
 
