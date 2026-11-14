@@ -68,7 +68,7 @@ export function AboutDialog({ open, onClose }: { open: boolean; onClose: () => v
         <p className="mt-3 text-[13px] leading-relaxed text-ink-secondary">
           {t("about.tagline", { app: APP_NAME })}
         </p>
-        <p className="mt-2 text-[12px] text-ink-secondary" title="Based on OpenMausBot (Apache-2.0)">Leox ৹ Limix AI</p>
+        <p className="mt-2 text-[12px] text-ink-secondary">Leox ৹ Limix AI</p>
         <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-[13px]">
           <AboutLink href={APP_REPOSITORY} label="GitHub" />
           <AboutLink href={DOCS_URL} label={t("about.docs")} />
