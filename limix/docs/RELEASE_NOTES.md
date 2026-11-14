@@ -1,13 +1,13 @@
-Limix Bot 0.3.45
+Limix Bot 0.3.46
 
 ## Tiếng Việt
 
-- Rút gọn thiết lập kết nối: chọn nền tảng, dán token, chọn bot AI và kết nối.
-- Thu gọn tên hiển thị, chế độ thử, quyền truy cập và thiết lập media.
-- Tự tạo mã xác nhận chủ bot sau khi kết nối. Mã giữ trên màn hình khi làm mới và được bỏ khi xác nhận chủ bot hoặc hết hạn. Nếu tạo mã thất bại, có thể bấm tạo lại.
+- Thêm tab Thư mục làm việc trong cài đặt nhóm để áp dụng một thư mục cho các bot hiện có. Bot đang bận được báo riêng.
+- Tab quyền cho phép chọn một thành viên hoặc cả nhóm, với các mức Hỏi trước, Tự làm việc được phép và Toàn quyền theo khả năng của engine.
+- Cuộc chat có thư mục riêng giữ thư mục đó. Thành viên mới cần áp dụng thư mục nhóm lại.
 
 ## English
 
-- Simplify connection setup to platform, token and AI bot selection.
-- Fold optional display name, echo mode, access and media settings.
-- Prepare the owner verification code automatically after connecting. Keep it visible across refreshes until ownership is verified or the code expires, with manual retry available.
+- Add a Working folder tab to team settings for applying one folder to current members, with per-bot results.
+- Target one member or the whole team when applying Ask, Auto or Full approval modes, subject to engine support and existing approval checks.
+- Chats with explicit folders retain those choices. Reapply the folder when adding new members.

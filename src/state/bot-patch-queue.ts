@@ -44,6 +44,7 @@ export type BotUpdatePatch = Partial<
     | "modelSelection"
   >
 > & {
+  cwd?: string | null;
   computer?: Bot["computer"] | null;
   connectorTools?: Bot["connectorTools"] | null;
   connectorScopes?: Bot["connectorScopes"] | null;
@@ -60,8 +61,9 @@ export type BotUpdatePatch = Partial<
 
 export type BotStatePatch = Omit<
   BotUpdatePatch,
-  "computer" | "connectorTools" | "connectorScopes" | "phoneApps" | "acknowledgeLocalAuto" | "applyToAllThreads" | "keepThreadModels" | "threadId" | "mainThreadChoice"
+  "cwd" | "computer" | "connectorTools" | "connectorScopes" | "phoneApps" | "acknowledgeLocalAuto" | "applyToAllThreads" | "keepThreadModels" | "threadId" | "mainThreadChoice"
 > & {
+  cwd?: string;
   mainThreadId?: string;
   computer?: Bot["computer"];
   connectorTools?: Bot["connectorTools"];
@@ -121,6 +123,7 @@ const stateOverlay = (patch: BotUpdatePatch): BotStatePatch => {
     keepThreadModels: _keepThreadModels,
     threadId: _threadId,
     mainThreadChoice,
+    cwd,
     computer,
     connectorTools,
     connectorScopes,
@@ -128,6 +131,8 @@ const stateOverlay = (patch: BotUpdatePatch): BotStatePatch => {
     ...fields
   } = patch;
   const normalized: BotStatePatch = { ...fields };
+  if (cwd === null) normalized.cwd = undefined;
+  else if (cwd !== undefined) normalized.cwd = cwd;
   if (computer === null) normalized.computer = undefined;
   else if (computer !== undefined) normalized.computer = computer;
   if (connectorTools === null) normalized.connectorTools = undefined;

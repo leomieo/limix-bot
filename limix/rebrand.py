@@ -2150,3 +2150,11 @@ for rel, edits in json.loads((ROOT / "limix/patches/channel-review-path.json").r
                 s = must(s, patch["before"], patch["after"])
         return s
     edit(rel, channel_review_path_patch)
+
+for rel, edits in json.loads((ROOT / "limix/patches/team-workspace.json").read_text(encoding="utf-8")).items():
+    def team_workspace_patch(s, edits=edits):
+        for patch in edits:
+            if patch["after"] not in s:
+                s = must(s, patch["before"], patch["after"])
+        return s
+    edit(rel, team_workspace_patch)

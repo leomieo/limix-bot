@@ -207,7 +207,7 @@ describe("who can use a department's bots", () => {
     const viewOnly = shared("atlas", { everyone: "none", people: {} }, { yourAccess: "chat" });
     const owned = shared("owned", { everyone: "none", people: {} });
     const plan = planTeamChange([own, viewOnly, owned], instances, { kind: "access", person: { email: ADA, level: "chat" } });
-    expect(plan.map((row) => row.status === "skip" ? row.reason : row.status)).toEqual(["it's someone's own MausBot", "you can't change who can use it", "unchanged"]);
+    expect(plan.map((row) => row.status === "skip" ? row.reason : row.status)).toEqual(["it's someone's own Limix Bot", "you can't change who can use it", "unchanged"]);
   });
 
   it("plans again from the bot's latest sharing, so a grant another admin removed after the preview stays removed", () => {
@@ -231,3 +231,12 @@ describe("who can use a department's bots", () => {
   });
 });
 
+
+it("applies a common folder through per-bot persistence and reports partial failures", async () => {
+  const rows = planTeamChange([bot("same", { cwd: "/project" }), bot("busy", { busy: true }), bot("ok"), bot("denied")], instances, { kind: "workspace", cwd: "/project" });
+  expect(rows.map(row => row.status)).toEqual(["unchanged", "skip", "apply", "apply"]);
+  const persist = vi.fn(async (one: Bot, patch: unknown) => { expect(patch).toEqual({ cwd: "/project" }); if (one.id === "denied") throw new Error("folder unavailable"); });
+  const results = await applyTeamPlan(rows, persist);
+  expect(persist).toHaveBeenCalledTimes(2);
+  expect(results.map(row => row.status)).toEqual(["unchanged", "skipped", "applied", "skipped"]);
+});

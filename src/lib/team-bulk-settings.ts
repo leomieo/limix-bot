@@ -13,6 +13,7 @@ export const TEAM_APPROVAL_MODES = ["ask", "edits", "auto", "full"] as const sat
 export type TeamApprovalMode = (typeof TEAM_APPROVAL_MODES)[number];
 
 export type TeamChange =
+  | { kind: "workspace"; cwd: string }
   | { kind: "approval"; mode: TeamApprovalMode }
   | { kind: "model"; model?: string; effort?: EffortLevel | null }
   /** A person's level null takes them off; the bot's owner is never listed, so they are left out for the bot they own. */
@@ -86,6 +87,11 @@ export function planAccess(bot: Bot, change: Extract<TeamChange, { kind: "access
 export function planTeamChange(bots: readonly Bot[], instances: readonly InstanceInfo[], change: TeamChange): TeamPlanRow[] {
   return bots.map((bot): TeamPlanRow => {
     if (change.kind === "access") return planAccess(bot, change);
+    if (change.kind === "workspace") {
+      if (bot.cwd === change.cwd) return { bot, status: "unchanged" };
+      if (bot.busy) return { bot, status: "skip", reason: t("teamSettings.skip.busy") };
+      return { bot, status: "apply", patch: { cwd: change.cwd } };
+    }
     const engine = engineOf(bot, instances);
     const engineName = engine?.displayName ?? bot.modelSelection.instanceId;
     if (change.kind === "approval") {

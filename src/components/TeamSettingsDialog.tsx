@@ -9,7 +9,6 @@ import {
   planAccess,
   planNeedsLocalAutoConsent,
   planTeamChange,
-  TEAM_APPROVAL_MODES,
   teamBots,
   teamEffortChoices,
   teamModelChoices,
@@ -29,7 +28,7 @@ import { LocalComputerAutoWarning } from "./LocalComputerAutoWarning";
 import { effortLabel } from "./ModelPicker";
 import { Select } from "./Select";
 
-type Tab = "approval" | "model" | "access";
+type Tab = "workspace" | "approval" | "model" | "access";
 const KEEP = "";
 const ENGINE_DEFAULT = "default";
 const ADD = "chat";
@@ -56,7 +55,10 @@ export function TeamSettingsRows({ rows }: { rows: ReadonlyArray<TeamPlanRow | T
 
 export function TeamSettingsDialog({ team, onClose }: { team: string; onClose: () => void }) {
   const { state, dispatch } = useStore();
-  const [tab, setTab] = useState<Tab>("approval");
+  const [tab, setTab] = useState<Tab>("workspace");
+  const [folder, setFolder] = useState<string | null>(null);
+  const [target, setTarget] = useState(KEEP);
+  const [folderError, setFolderError] = useState("");
   const [mode, setMode] = useState<TeamApprovalMode | null>(null);
   const [model, setModel] = useState<string>(KEEP);
   const [effort, setEffort] = useState<string>(KEEP);
@@ -78,7 +80,13 @@ export function TeamSettingsDialog({ team, onClose }: { team: string; onClose: (
   latestBots.current = state.bots;
   const models = useMemo(() => teamModelChoices(bots, state.instances), [bots, state.instances]);
   const efforts = useMemo(() => teamEffortChoices(bots, state.instances, EFFORT_LEVELS), [bots, state.instances]);
-  const change: TeamChange | null = tab === "approval"
+  const commonFolder = bots.length && bots.every(bot => bot.cwd === bots[0].cwd) ? bots[0].cwd ?? "" : "";
+  const chooseFolder = async () => {
+    setFolderError("");
+    try { const chosen = await window.ogb?.pickFolder?.(folder ?? commonFolder); if (chosen) setFolder(chosen); }
+    catch (error) { setFolderError(error instanceof Error ? error.message : String(error)); }
+  };
+  const change: TeamChange | null = tab === "workspace" ? folder?.trim() ? { kind: "workspace", cwd: folder.trim() } : null : tab === "approval"
     ? mode ? { kind: "approval", mode } : null
     : tab === "access" ? everyone === KEEP && person === KEEP ? null
       : {
@@ -92,7 +100,7 @@ export function TeamSettingsDialog({ team, onClose }: { team: string; onClose: (
         ...(model === KEEP ? {} : { model }),
         ...(effort === KEEP ? {} : { effort: effort === ENGINE_DEFAULT ? null : effort as EffortLevel }),
       };
-  const plan = change ? planTeamChange(bots, state.instances, change) : [];
+  const plan = change ? planTeamChange(tab === "approval" && target ? bots.filter(bot => bot.id === target) : bots, state.instances, change) : [];
   const applying = plan.filter((row) => row.status === "apply").length;
 
   useEffect(() => {
@@ -133,7 +141,7 @@ export function TeamSettingsDialog({ team, onClose }: { team: string; onClose: (
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onMouseDown={(event) => event.stopPropagation()}>
       <div ref={dialog} role="dialog" aria-modal="true" aria-labelledby="team-settings-title" data-testid="team-settings-dialog"
-        className="max-h-[90vh] w-full max-w-[460px] overflow-y-auto rounded-2xl border border-hairline/50 bg-panel p-5 text-ink shadow-2xl"
+        className="max-h-[90vh] w-full max-w-[620px] overflow-y-auto rounded-2xl border border-hairline/50 bg-panel p-5 text-ink shadow-2xl"
         onKeyDown={(event) => { if (event.key === "Escape" && !consent) { event.stopPropagation(); close(); } }}>
         <div className="mb-2 flex items-center justify-between gap-3">
           <h2 id="team-settings-title" className="text-[17px] font-semibold">{t("teamSettings.title", { name: team || t("teamSettings.general") })}</h2>
@@ -153,14 +161,31 @@ export function TeamSettingsDialog({ team, onClose }: { team: string; onClose: (
           <>
             <p className="mb-3 text-[13px] leading-relaxed text-ink-secondary">{t("teamSettings.intro", { count: bots.length })}</p>
             <div className="mb-3 flex gap-1 rounded-lg bg-inset p-0.5" role="tablist">
+              <button type="button" role="tab" aria-selected={tab === "workspace"} disabled={running} className={tabClass(tab === "workspace")} onClick={() => setTab("workspace")}>{t("teamSettings.workspace")}</button>
               <button type="button" role="tab" aria-selected={tab === "approval"} disabled={running} className={tabClass(tab === "approval")} onClick={() => setTab("approval")}>{t("teamSettings.tab.approval")}</button>
               <button type="button" role="tab" aria-selected={tab === "model"} disabled={running} className={tabClass(tab === "model")} onClick={() => setTab("model")}>{t("teamSettings.tab.model")}</button>
               {teamName && <button type="button" role="tab" aria-selected={tab === "access"} disabled={running} className={tabClass(tab === "access")} onClick={() => setTab("access")}>{t("teamSettings.tab.access")}</button>}
             </div>
-            {tab === "approval" ? (
+            {tab === "workspace" ? (
+              <div className="space-y-3">
+                <p className="text-[13px] text-ink-secondary">{t("teamSettings.workspaceHint")}</p>
+                <label className="block text-[13px]">{t("teamSettings.workspace")}
+                  <input aria-label={t("teamSettings.workspace")} disabled={running} className="mt-1 w-full rounded-lg border border-hairline bg-inset p-2 font-mono" value={folder ?? commonFolder} onChange={event => setFolder(event.target.value)} />
+                </label>
+                {window.ogb?.pickFolder && <button type="button" disabled={running} className="ui-button" onClick={() => void chooseFolder()}>{t("room.folder.choose")}</button>}
+                {folderError && <p role="alert" className="text-danger">{folderError}</p>}
+                <ul className="space-y-2">{bots.map(bot => <li key={bot.id} className="rounded-lg bg-inset p-2 text-[13px]"><strong>{bot.name}</strong><div className="break-all font-mono text-ink-secondary">{bot.cwd || t("botPanel.folder.private")}</div></li>)}</ul>
+              </div>
+            ) : tab === "approval" ? (
               <fieldset disabled={running} className="flex flex-col gap-1">
                 <legend className="sr-only">{t("teamSettings.tab.approval")}</legend>
-                {approvalModeOptions().filter((option) => (TEAM_APPROVAL_MODES as readonly string[]).includes(option.mode)).map((option) => (
+                <label className="mb-2 text-[13px]">{t("teamSettings.permissionTarget")}
+                  <Select aria-label={t("teamSettings.permissionTarget")} className="mt-1 w-full" value={target} onChange={event => { setTarget(event.target.value); setMode(null); }}>
+                    <option value="">{t("teamSettings.allMembers")}</option>
+                    {bots.map(bot => <option key={bot.id} value={bot.id}>{bot.name}</option>)}
+                  </Select>
+                </label>
+                {approvalModeOptions().filter((option) => ["ask", "auto", "full"].includes(option.mode)).map((option) => (
                   <label key={option.mode} className={cn("flex cursor-pointer items-start gap-2 rounded-lg px-3 py-2", mode === option.mode ? "bg-raised" : "hover:bg-raised/60")}>
                     <input type="radio" name="team-approval" className="mt-1" checked={mode === option.mode}
                       onChange={() => setMode(option.mode as TeamApprovalMode)} />

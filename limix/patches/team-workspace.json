@@ -1,0 +1,98 @@
+{
+  "src/lib/team-bulk-settings.ts": [
+    {
+      "before": "export type TeamChange =",
+      "after": "export type TeamChange =\n  | { kind: \"workspace\"; cwd: string }"
+    },
+    {
+      "before": "    if (change.kind === \"access\") return planAccess(bot, change);",
+      "after": "    if (change.kind === \"access\") return planAccess(bot, change);\n    if (change.kind === \"workspace\") {\n      if (bot.cwd === change.cwd) return { bot, status: \"unchanged\" };\n      if (bot.busy) return { bot, status: \"skip\", reason: t(\"teamSettings.skip.busy\") };\n      return { bot, status: \"apply\", patch: { cwd: change.cwd } };\n    }"
+    }
+  ],
+  "src/components/TeamSettingsDialog.tsx": [
+    {
+      "before": "type Tab = \"approval\" | \"model\" | \"access\";",
+      "after": "type Tab = \"workspace\" | \"approval\" | \"model\" | \"access\";"
+    },
+    {
+      "before": "useState<Tab>(\"approval\")",
+      "after": "useState<Tab>(\"workspace\")"
+    },
+    {
+      "before": "  const [mode, setMode]",
+      "after": "  const [folder, setFolder] = useState<string | null>(null);\n  const [target, setTarget] = useState(KEEP);\n  const [folderError, setFolderError] = useState(\"\");\n  const [mode, setMode]"
+    },
+    {
+      "before": "  const change: TeamChange | null = tab === \"approval\"",
+      "after": "  const commonFolder = bots.length && bots.every(bot => bot.cwd === bots[0].cwd) ? bots[0].cwd ?? \"\" : \"\";\n  const chooseFolder = async () => {\n    setFolderError(\"\");\n    try { const chosen = await window.ogb?.pickFolder?.(folder ?? commonFolder); if (chosen) setFolder(chosen); }\n    catch (error) { setFolderError(error instanceof Error ? error.message : String(error)); }\n  };\n  const change: TeamChange | null = tab === \"workspace\" ? folder?.trim() ? { kind: \"workspace\", cwd: folder.trim() } : null : tab === \"approval\""
+    },
+    {
+      "before": "planTeamChange(bots, state.instances, change)",
+      "after": "planTeamChange(tab === \"approval\" && target ? bots.filter(bot => bot.id === target) : bots, state.instances, change)"
+    },
+    {
+      "before": "className=\"max-h-[90vh] w-full max-w-[460px]",
+      "after": "className=\"max-h-[90vh] w-full max-w-[620px]"
+    },
+    {
+      "before": "              <button type=\"button\" role=\"tab\" aria-selected={tab === \"approval\"}",
+      "after": "              <button type=\"button\" role=\"tab\" aria-selected={tab === \"workspace\"} disabled={running} className={tabClass(tab === \"workspace\")} onClick={() => setTab(\"workspace\")}>{t(\"teamSettings.workspace\")}</button>\n              <button type=\"button\" role=\"tab\" aria-selected={tab === \"approval\"}"
+    },
+    {
+      "before": "            {tab === \"approval\" ? (",
+      "after": "            {tab === \"workspace\" ? (\n              <div className=\"space-y-3\">\n                <p className=\"text-[13px] text-ink-secondary\">{t(\"teamSettings.workspaceHint\")}</p>\n                <label className=\"block text-[13px]\">{t(\"teamSettings.workspace\")}\n                  <input aria-label={t(\"teamSettings.workspace\")} disabled={running} className=\"mt-1 w-full rounded-lg border border-hairline bg-inset p-2 font-mono\" value={folder ?? commonFolder} onChange={event => setFolder(event.target.value)} />\n                </label>\n                {window.ogb?.pickFolder && <button type=\"button\" disabled={running} className=\"ui-button\" onClick={() => void chooseFolder()}>{t(\"room.folder.choose\")}</button>}\n                {folderError && <p role=\"alert\" className=\"text-danger\">{folderError}</p>}\n                <ul className=\"space-y-2\">{bots.map(bot => <li key={bot.id} className=\"rounded-lg bg-inset p-2 text-[13px]\"><strong>{bot.name}</strong><div className=\"break-all font-mono text-ink-secondary\">{bot.cwd || t(\"botPanel.folder.private\")}</div></li>)}</ul>\n              </div>\n            ) : tab === \"approval\" ? ("
+    },
+    {
+      "before": "                <legend className=\"sr-only\">{t(\"teamSettings.tab.approval\")}</legend>",
+      "after": "                <legend className=\"sr-only\">{t(\"teamSettings.tab.approval\")}</legend>\n                <label className=\"mb-2 text-[13px]\">{t(\"teamSettings.permissionTarget\")}\n                  <Select aria-label={t(\"teamSettings.permissionTarget\")} className=\"mt-1 w-full\" value={target} onChange={event => { setTarget(event.target.value); setMode(null); }}>\n                    <option value=\"\">{t(\"teamSettings.allMembers\")}</option>\n                    {bots.map(bot => <option key={bot.id} value={bot.id}>{bot.name}</option>)}\n                  </Select>\n                </label>"
+    },
+    {
+      "before": "(TEAM_APPROVAL_MODES as readonly string[]).includes(option.mode)",
+      "after": "[\"ask\", \"auto\", \"full\"].includes(option.mode)"
+    },
+    {
+      "before": "  TEAM_APPROVAL_MODES,\n",
+      "after": ""
+    }
+  ],
+  "src/locales/en.json": [
+    {
+      "before": "\n}\n",
+      "after": ",\n  \"teamSettings.workspace\": \"Working folder\",\n  \"teamSettings.workspaceHint\": \"Apply this folder to the bots currently in this team. Existing chats with their own selected folder keep that folder. Add new members to the same folder by applying again.\",\n  \"teamSettings.permissionTarget\": \"Apply permissions to\",\n  \"teamSettings.allMembers\": \"All team members\"\n\n}\n"
+    }
+  ],
+  "src/locales/vi.json": [
+    {
+      "before": "\n}\n",
+      "after": ",\n  \"teamSettings.workspace\": \"Thư mục làm việc\",\n  \"teamSettings.workspaceHint\": \"Áp dụng thư mục cho các bot hiện có trong nhóm. Cuộc chat đã chọn thư mục riêng tiếp tục dùng thư mục đó. Khi thêm thành viên mới, áp dụng lại để dùng cùng thư mục.\",\n  \"teamSettings.permissionTarget\": \"Áp dụng quyền cho\",\n  \"teamSettings.allMembers\": \"Tất cả thành viên\"\n\n}\n"
+    }
+  ],
+  "src/state/bot-patch-queue.ts": [
+    {
+      "before": "  >\n> & {\n  computer?: Bot[\"computer\"] | null;\n  connectorTools?: Bot[\"connectorTools\"] | null;\n",
+      "after": "  >\n> & {\n  cwd?: string | null;\n  computer?: Bot[\"computer\"] | null;\n  connectorTools?: Bot[\"connectorTools\"] | null;\n"
+    },
+    {
+      "before": "export type BotStatePatch = Omit<\n  BotUpdatePatch,\n  \"computer\" | \"connectorTools\" | \"connectorScopes\" | \"phoneApps\" | \"acknowledgeLocalAuto\" | \"applyToAllThreads\" | \"keepThreadModels\" | \"threadId\" | \"mainThreadChoice\"\n> & {\n  mainThreadId?: string;\n  computer?: Bot[\"computer\"];\n",
+      "after": "export type BotStatePatch = Omit<\n  BotUpdatePatch,\n  \"cwd\" | \"computer\" | \"connectorTools\" | \"connectorScopes\" | \"phoneApps\" | \"acknowledgeLocalAuto\" | \"applyToAllThreads\" | \"keepThreadModels\" | \"threadId\" | \"mainThreadChoice\"\n> & {\n  cwd?: string;\n  mainThreadId?: string;\n  computer?: Bot[\"computer\"];\n"
+    },
+    {
+      "before": "    threadId: _threadId,\n    mainThreadChoice,\n    computer,\n    connectorTools,\n",
+      "after": "    threadId: _threadId,\n    mainThreadChoice,\n    cwd,\n    computer,\n    connectorTools,\n"
+    },
+    {
+      "before": "  } = patch;\n  const normalized: BotStatePatch = { ...fields };\n  if (computer === null) normalized.computer = undefined;\n  else if (computer !== undefined) normalized.computer = computer;\n",
+      "after": "  } = patch;\n  const normalized: BotStatePatch = { ...fields };\n  if (cwd === null) normalized.cwd = undefined;\n  else if (cwd !== undefined) normalized.cwd = cwd;\n  if (computer === null) normalized.computer = undefined;\n  else if (computer !== undefined) normalized.computer = computer;\n"
+    }
+  ],
+  "src/state/store.tsx": [
+    {
+      "before": "        connectorScopes, phoneApps,\n        ...rest",
+      "after": "        connectorScopes, phoneApps, cwd,\n        ...rest"
+    },
+    {
+      "before": "const botPatch: Partial<Bot> = { ...rest, ",
+      "after": "const botPatch: Partial<Bot> = { ...rest, ...(cwd !== undefined && { cwd: cwd ?? undefined }), "
+    }
+  ]
+}

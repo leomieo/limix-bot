@@ -160,6 +160,7 @@ describe("bot patch queue", () => {
         sent.push(patch);
         return bot({
           ...patch,
+          cwd: patch.cwd ?? undefined,
           computer: patch.computer ?? undefined,
           connectorTools: patch.connectorTools ?? undefined,
           connectorScopes: patch.connectorScopes ?? undefined,

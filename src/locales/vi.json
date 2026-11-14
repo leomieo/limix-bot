@@ -10228,5 +10228,10 @@
   "phoneUpdate.open": "Mở Điện thoại và thiết bị",
   "remote.devices.pairAgain": "Ghép nối lại",
   "vm.cloud.ofBot": "Máy tính của bot {name}",
-  "vm.cloud.machineId": "Mã máy: {id}"
+  "vm.cloud.machineId": "Mã máy: {id}",
+  "teamSettings.workspace": "Thư mục làm việc",
+  "teamSettings.workspaceHint": "Áp dụng thư mục cho các bot hiện có trong nhóm. Cuộc chat đã chọn thư mục riêng tiếp tục dùng thư mục đó. Khi thêm thành viên mới, áp dụng lại để dùng cùng thư mục.",
+  "teamSettings.permissionTarget": "Áp dụng quyền cho",
+  "teamSettings.allMembers": "Tất cả thành viên"
+
 }

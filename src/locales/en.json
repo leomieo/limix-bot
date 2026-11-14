@@ -10228,5 +10228,10 @@
   "phoneUpdate.open": "Open Phone & devices",
   "remote.devices.pairAgain": "Pair again",
   "vm.cloud.ofBot": "Computer of bot {name}",
-  "vm.cloud.machineId": "Machine ID: {id}"
+  "vm.cloud.machineId": "Machine ID: {id}",
+  "teamSettings.workspace": "Working folder",
+  "teamSettings.workspaceHint": "Apply this folder to the bots currently in this team. Existing chats with their own selected folder keep that folder. Add new members to the same folder by applying again.",
+  "teamSettings.permissionTarget": "Apply permissions to",
+  "teamSettings.allMembers": "All team members"
+
 }
