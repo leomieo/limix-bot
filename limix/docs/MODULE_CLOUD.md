@@ -53,3 +53,7 @@ Lộ trình gợi ý: (1) dịch vụ cài `limixbot serve` trên VPS của khá
 ## Đồng bộ dữ liệu theo tài khoản (2026-11-14)
 
 Module riêng, tiếp tục ẩn/tắt vì chủ dự án chưa có server. Không cần máy Cloud chạy bot để triển khai lưu trữ sau này. Kế hoạch và các bước còn thiếu: [PLAN_ACCOUNT_DATA.md](PLAN_ACCOUNT_DATA.md). Hiện ưu tiên **Chuyển máy Offline** bằng file mã hóa; không bật `LIMIX_CLOUD_ENABLED`.
+
+## Managed Cloud beta — 2026-11-15
+
+Chủ dự án đã chọn cho khách sử dụng server của Limix, với địa chỉ **bot.limixmedia.com**. Trình tự và các hạng mục cần triển khai nằm trong [PLAN_MANAGED_CLOUD_BETA.md](PLAN_MANAGED_CLOUD_BETA.md). Trạng thái hiện tại là kế hoạch triển khai; Cloud cũ vẫn tắt và chưa có controller tự cấp máy. Máy Xeon chạy Windows được dùng thử nội bộ, khách sẽ kết nối qua HTTPS công khai.

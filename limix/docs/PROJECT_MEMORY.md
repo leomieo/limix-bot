@@ -7,6 +7,8 @@
 
 ## 1. Trạng thái hiện tại (luôn ghi đè cho đúng)
 
+- 2026-11-15 owner selected managed customer Cloud on owner infrastructure, public endpoint bot.limixmedia.com. Recorded PLAN_MANAGED_CLOUD_BETA.md with account-verified provisioning, tenant isolation, durable jobs, automatic client connection, host capacity and acceptance. This is a design record, not implemented provisioning.
+
 - 2026-11-15 preparing 0.3.48: replaced own-server lending popup with a main-owned static Electron modal matching app colors. Shows server identity and origin, explicit screen/app scope and separately granted folder/terminal access. Default Not now; close/Escape decline; page scripts off, resources blocked, only nonce-bound form navigation can approve. 19 node tests PASS, locale validation PASS, real isolated Electron screenshot and Allow form interaction PASS.
 
 - 2026-11-15 Xeon beta preparation: owner reports two E5-2680 v4 CPUs (56 logical processors total), Windows with node/docker/wsl commands, different Internet networks and AnyDesk access. Added deploy/windows-beta/start.ps1 using published npm 0.3.47, separate beta data and ports, Tailscale by default, per-bot desktop limit one/4 GiB/2 CPUs. Syntax and read-only preflight PASS on the local i9 only.
@@ -84,6 +86,8 @@
 
 ## 4. Vấn đề mở / rủi ro
 
+- Managed Cloud controller, host worker, public HTTPS routing and beta UI are not implemented. Public DNS lookup for bot.limixmedia.com returned no records during this check. Running one Tailscale server does not establish customer-ready Cloud provisioning.
+
 - Server access dialog verified in isolated Electron, not in an installed 0.3.48 app or a live remote permission grant. The new dialog applies to own-server initial/screen sharing consent; other native permission prompts retain their existing UI.
 
 - Xeon Node version, Docker daemon/WSL readiness and Windows version remain unverified. No live server was started on Xeon. Tailscale installation/sign-in/HTTPS, cross-network pairing, real model and desktop acceptance pending. Computer-use skill prohibits terminal automation, so owner executes the remote PowerShell step.
@@ -126,6 +130,8 @@
 | R10 | Máy chủ Claude không đẩy được tag git (chỉ đẩy nhánh) | Build kích hoạt bằng push lên `main`; tag phát hành do workflow tự tạo | Đã xử lý |
 
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
+
+- 2026-11-15 recorded owner decisions: customers use owner server, require only Limix Bot, and connect through bot.limixmedia.com. Added managed Cloud beta architecture and acceptance plan.
 
 - 2026-11-15 redesigned own-server computer access confirmation, clarified English/Vietnamese copy, retained main-process permission ownership and added regression coverage.
 
