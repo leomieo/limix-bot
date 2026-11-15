@@ -2,6 +2,7 @@
 // subtree.
 import { Check } from "lucide-react";
 import { SKINS, applySkin, resolveSkin, type SkinId } from "@/lib/skins";
+import { takeOffTheme } from "@/lib/theme/runtime";
 import { cn } from "@/lib/cn";
 import { t, tFromServer } from "@/lib/i18n";
 import { setDressUp, useDressUp } from "@/lib/festival-dress";
@@ -91,6 +92,7 @@ export function SkinPicker() {
               type="button"
               onClick={() => {
                 applySkin(skin.id);
+                takeOffTheme();
               }}
               aria-pressed={selected}
               className={cn(

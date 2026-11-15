@@ -25,6 +25,7 @@ import { CloudUsageDetails, CloudUsageSummaryView, useCloudUsageSettings } from 
 import { Card, SettingRow, SettingsDisclosureRow, SettingsGroup, SettingsRows } from "./SettingsPrimitives";
 import { UsageSection } from "./UsageSection";
 import { PlanUsageSummary } from "./PlanUsage";
+import { CustomThemesSettings } from "./CustomThemesSettings";
 import { SkinPicker } from "./SkinPicker";
 import { useSkinChoice } from "./ThemeRow";
 import { resolveSkin, SKINS } from "@/lib/skins";
@@ -149,6 +150,7 @@ export function SimpleLooksPage({ onBack, toolCalls = true }: { onBack: () => vo
     <>
       <div><button type="button" className="ui-button" onClick={onBack}>{t("settings.simple.looks.back")}</button></div>
       <div data-settings-block="looks"><SkinPicker /></div>
+      <CustomThemesSettings />
       {toolCalls && <SettingsRows><ToolCallsRow /></SettingsRows>}
     </>
   );

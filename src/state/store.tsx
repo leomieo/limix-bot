@@ -54,7 +54,7 @@ import {
 import type { Routine, RoutineInput, RoutineRun, RoutineRunStatusFilter } from "@/lib/routines";
 import type { WebhookAttempt, WebhookIngressStatus, WebhookTrigger } from "@/lib/webhooks";
 import { duplicateBotProfile, restrictedCopyRequest } from "@/lib/bot-duplicate";
-import { applyWindowPref } from "@/lib/window-prefs";
+import { applyWindowPref } from "@/lib/window-prefs"; import { applyThemeFrame } from "@/lib/theme/runtime";
 import { botShowsUnread } from "@/lib/bot-unread";
 import { placeUnreadDivider, threadOpensUnread, threadReadCursor, unreadDividerFor, type UnreadDivider } from "@/lib/unread-divider";
 import type { ComputerStart } from "@/lib/computer-start";
@@ -3223,9 +3223,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           }
           break;
         }
-        case "window-pref":
-          applyWindowPref(frame);
-          break;
+        case "window-pref": applyWindowPref(frame); break;
+        case "theme": applyThemeFrame(frame); break;
         case "config":
           rawDispatch({
             type: "configStatus",
