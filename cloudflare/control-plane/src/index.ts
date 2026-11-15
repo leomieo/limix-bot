@@ -1,3 +1,4 @@
+import { managedHostAssignments } from "./managed-host";
 import { managedWorkspace } from "./managed-workspace";
 import { z } from "zod";
 
@@ -78,6 +79,7 @@ async function route(
   const url = new URL(request.url);
   if (request.method === "OPTIONS") return preflight(request, config);
 
+  if (url.pathname === "/v1/managed-cloud/host/assignments") return managedHostAssignments(request, env);
   if (url.pathname === "/v1/managed-cloud/workspace") return managedWorkspace(request, env);
 
   if (url.pathname.startsWith("/api/auth/")) {

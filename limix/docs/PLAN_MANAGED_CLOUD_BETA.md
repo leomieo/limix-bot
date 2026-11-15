@@ -6,7 +6,7 @@ Khách sử dụng hạ tầng của chủ dự án. Địa chỉ dịch vụ: *
 
 Máy chủ beta dự kiến là máy Windows của chủ dự án, hai Xeon E5-2680 v4, 64 GB RAM, vẫn dùng làm việc hằng ngày. Tailscale đang dùng cho kiểm tra nội bộ hai máy. Dịch vụ khách hàng cần HTTPS công khai và xác thực tài khoản độc lập với mạng Tailscale.
 
-Đây là phạm vi phát triển tiếp theo. Chưa có controller tự cấp máy, chưa có máy Cloud của khách được tạo, và chưa xác minh HTTPS ở tên miền đã chọn. Không bật công tắc Cloud cũ trỏ tới dịch vụ bên ngoài.
+Bản beta hiện có bộ điều phối cấp môi trường chạy bot trên Docker theo tài khoản. Đã chạy thử với hai môi trường cục bộ. Chưa xác minh HTTPS và đăng nhập nhà cung cấp trên Xeon. Không bật công tắc Cloud cũ trỏ tới dịch vụ bên ngoài.
 
 ## Customer flow
 
@@ -44,4 +44,9 @@ The user supplied a screenshot of a running isolated Limix Server 0.3.47 on Wind
 
 ## Beta workspace requests
 
-The operator enrolls a canonical Limix principal in the control plane D1 table managed_cloud_beta (migration 0018). GET /v1/managed-cloud/workspace reports the signed-in account's state. POST on the same URL queues its request once. A queued ID represents a reservation in the registry only. Host allocation, connection grants and desktop integration are pending. The Xeon tunnel was shown Healthy with one replica and no routes. Keep the existing local operator workspace private.
+The operator enrolls a canonical Limix principal in the control plane D1 table managed_cloud_beta (migration 0018). GET /v1/managed-cloud/workspace reports the signed-in account's state. POST on the same URL queues its request once. A queued ID represents a reservation in the registry only. The operator-side host reconciles the queue and the desktop account menu can submit and refresh requests. Public account-bound connect grants are pending. The Xeon tunnel was shown Healthy with one replica and no routes. Keep the existing local operator workspace private.
+
+
+## Beta runtime on the operator host
+
+The enrolled account owns its Limix Server, messaging gateway, engine HOME, paired sessions and Docker network. A Cloud Computer is separately attached when a bot needs a desktop. The installed AI CLIs have independent account storage. The worker reports runtime health separately from provider login or delivery. The Xeon host uses the setup in [deploy/managed-beta](../../deploy/managed-beta/README.md). The new host listener is loopback-only. A public tenant origin, automatic pairing and real remote acceptance remain pending.

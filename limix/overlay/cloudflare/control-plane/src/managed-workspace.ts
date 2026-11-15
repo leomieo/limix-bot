@@ -13,9 +13,12 @@ export async function managedWorkspace(request: Request, env: Env): Promise<Resp
     ).bind(crypto.randomUUID(), new Date().toISOString(), principal).run();
   }
   const row = await env.DB.prepare(
-    "SELECT workspace_id FROM managed_cloud_beta WHERE principal = ?",
-  ).bind(principal).first<{ workspace_id: string | null }>();
+    "SELECT workspace_id, runtime_state, runtime_seen FROM managed_cloud_beta WHERE principal = ?",
+  ).bind(principal).first<{ workspace_id: string | null; runtime_state: string | null; runtime_seen: number | null }>();
   if (!row) throw new HTTPError(403, "beta_enrollment_required");
   if (!row.workspace_id) return json({ state: "available" });
-  return json({ state: "queued", workspaceId: row.workspace_id }, request.method === "POST" ? 202 : 200);
+  const state = row.runtime_seen && row.runtime_state
+    ? (Date.now() / 1000 - row.runtime_seen < 180 ? row.runtime_state : "host_unreachable")
+    : "queued";
+  return json({ state, workspaceId: row.workspace_id }, request.method === "POST" ? 202 : 200);
 }

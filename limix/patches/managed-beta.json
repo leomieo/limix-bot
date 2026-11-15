@@ -1,0 +1,48 @@
+{
+  "electron/main.mjs": [
+    {
+      "before": "import { limixAccountGate,",
+      "after": "import { managedBetaState } from \"./limix-managed-beta.mjs\";\nimport { limixAccountGate,"
+    },
+    {
+      "before": "ipcMain.handle(\"limix-account:info\",",
+      "after": "ipcMain.handle(\"limix-account:managed-beta\", localOnly(\"limix-account:managed-beta\", (_event, provision) => managedBetaState(limixRemoteCredential(), provision === true)));\nipcMain.handle(\"limix-account:info\","
+    }
+  ],
+  "electron/preload.cjs": [
+    {
+      "before": "limixAccount: { review:",
+      "after": "limixAccount: { managedBeta: provision => ipcRenderer.invoke(\"limix-account:managed-beta\", provision === true), review:"
+    }
+  ],
+  "src/types/ogb.d.ts": [
+    {
+      "before": "limixAccount?: { review(",
+      "after": "limixAccount?: { managedBeta?(provision: boolean): Promise<string>; review("
+    }
+  ],
+  "src/components/SidebarProfileMenu.tsx": [
+    {
+      "before": "import { useLimixAccount,",
+      "after": "import { useManagedBetaItem } from \"@/lib/limix-managed-beta\";\nimport { useLimixAccount,"
+    },
+    {
+      "before": "  const items = withLimixSignOut(",
+      "after": "  const betaItems = useManagedBetaItem(remote ? undefined : limixAccount?.username);\n  const items = [...betaItems, ...withLimixSignOut("
+    },
+    {
+      "before": "  }), () => setLimixSignOutOpen(true));",
+      "after": "  }), () => setLimixSignOutOpen(true))];"
+    }
+  ],
+  "cloudflare/control-plane/src/index.ts": [
+    {
+      "before": "import { managedWorkspace }",
+      "after": "import { managedHostAssignments } from \"./managed-host\";\nimport { managedWorkspace }"
+    },
+    {
+      "before": "  if (url.pathname === \"/v1/managed-cloud/workspace\")",
+      "after": "  if (url.pathname === \"/v1/managed-cloud/host/assignments\") return managedHostAssignments(request, env);\n  if (url.pathname === \"/v1/managed-cloud/workspace\")"
+    }
+  ]
+}

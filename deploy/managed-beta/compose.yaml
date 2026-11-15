@@ -1,0 +1,60 @@
+services:
+  home:
+    image: ${LIMIX_HOME_IMAGE:?Set the operator-built Limix server image}
+    pull_policy: never
+    user: maus
+    init: true
+    restart: unless-stopped
+    cpus: 2
+    mem_limit: 4g
+    pids_limit: 512
+    shm_size: 512m
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:mode=1777,size=256m
+      - /run:mode=1777,size=16m
+    labels:
+      com.limix.managed-home: "beta-xeon"
+    environment:
+      HOME: /data
+      LIMIX_GATEWAY_SIDECAR: "1"
+      OMB_TUNNEL_SOCKET: /run/limix-edge/http.sock
+      OMB_DATA_DIR: /data/.limixbot
+    volumes:
+      - data:/data
+      - sockets:/run/limix-edge
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8799/api/health >/dev/null && curl -fsS http://127.0.0.1:8790/healthz >/dev/null"]
+      interval: 30s
+      timeout: 6s
+      retries: 3
+      start_period: 45s
+  edge:
+    image: ${LIMIX_HOME_IMAGE:?Set the operator-built Limix server image}
+    pull_policy: never
+    command: ["node", "/opt/limix-edge.mjs"]
+    user: maus
+    restart: unless-stopped
+    read_only: true
+    healthcheck:
+      disable: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 96m
+    pids_limit: 32
+    tmpfs: [/data]
+    volumes:
+      - sockets:/run/limix-edge:ro
+      - ./edge.mjs:/opt/limix-edge.mjs:ro
+    ports: ["127.0.0.1::8080"]
+volumes:
+  data: {}
+  sockets:
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: mode=1777,size=1m

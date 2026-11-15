@@ -433,7 +433,7 @@ const __APP_VERSION__: string;
       /** Limix Bot: opens the Telegram / Zalo / Discord connector window. */
       limixGateway?: { open(): Promise<void> };
       /** Limix Bot: the Limix account this computer is signed in to, and signing out (confirms, then restarts). */
-      limixAccount?: { review(password: string): Promise<{ token: string }>; info(): Promise<{ username: string; email: string } | null>; signOut(username: string): Promise<boolean> };
+      limixAccount?: { managedBeta?(provision: boolean): Promise<string>; review(password: string): Promise<{ token: string }>; info(): Promise<{ username: string; email: string } | null>; signOut(username: string): Promise<boolean> };
       /** Limix Bot: this computer's Limix Bot in a phone browser on the same Wi-Fi. */
       limixPhone?: { state(): Promise<{ on: boolean; active: boolean }>; set(on: boolean): Promise<void> };
       /** Writes the redacted diagnostics report to a user-chosen file;

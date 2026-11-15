@@ -7,6 +7,8 @@
 
 ## 1. Trạng thái hiện tại (luôn ghi đè cho đúng)
 
+- Managed Cloud beta can allocate a per-account server + gateway, with isolated persistent CLI HOME and a loopback pairing edge. Enrolled desktop users can request provisioning from their account menu.
+
 - Managed beta workspace requests now use verified Limix sessions and a D1 registry in source.
 
 - 2026-11-15 owner selected managed customer Cloud on owner infrastructure, public endpoint bot.limixmedia.com. Recorded PLAN_MANAGED_CLOUD_BETA.md with account-verified provisioning, tenant isolation, durable jobs, automatic client connection, host capacity and acceptance. This is a design record, not implemented provisioning.
@@ -88,6 +90,8 @@
 
 ## 4. Vấn đề mở / rủi ro
 
+- The beta has no automatic public account-to-home grant, no verified live subscription or message delivery on Xeon, and no managed per-bot cloud computer allocator. Windows Docker startup before login has not been validated.
+
 - The host allocator and customer connection are pending. No public route or live deployment verified.
 
 - Managed Cloud controller, host worker, public HTTPS routing and beta UI are not implemented. Public DNS lookup for bot.limixmedia.com returned no records during this check. Running one Tailscale server does not establish customer-ready Cloud provisioning.
@@ -134,6 +138,8 @@
 | R10 | Máy chủ Claude không đẩy được tag git (chỉ đẩy nhánh) | Build kích hoạt bằng push lên `main`; tag phát hành do workflow tự tạo | Đã xử lý |
 
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
+
+- 2026-11-15: Built managed runtime image with Codex/Claude, verified two isolated Docker homes, pairing A rejected by B, retained volume after recreation. Control plane verification used local D1 with mock accounts.
 
 - 2026-11-15: Added enrolled-account workspace requests with retry deduplication. Xeon tunnel screenshot shows Healthy, one replica, no routes.
 
