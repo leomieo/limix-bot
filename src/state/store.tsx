@@ -1,4 +1,4 @@
-import { LIMIX_CLOUD_ENABLED } from "../../shared/limix-features";
+import { LIMIX_CLOUD_SALES } from "../../shared/limix-features";
 import { cloudAsleep, onCloudPower } from "../lib/cloud-power";
 import { api, ApiError, retryRequest, snapshotArrays } from "./api";
 import {
@@ -1562,7 +1562,7 @@ export function reducer(state: AppState, action: Action): AppState {
       };
     }
     case "openCloudAdd":
-      if (!LIMIX_CLOUD_ENABLED) return state.cloudHowTo ? { ...state, cloudHowTo: false } : state;
+      if (!LIMIX_CLOUD_SALES) return state.cloudHowTo ? { ...state, cloudHowTo: false } : state;
       return { ...state, cloudAdd: state.cloudAdd ?? { source: action.source, ...(action.signIn ? { signIn: true as const } : {}) }, cloudHowTo: false };
     case "closeCloudAdd":
       return state.cloudAdd ? { ...state, cloudAdd: null } : state;

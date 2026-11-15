@@ -28,6 +28,23 @@ test("fresh startup stays local with no enrollment, browser, or network; explici
   assert.equal(f.requests.find(row => row.route.endsWith("/session")).token, `Bearer ${accessToken}`);
 });
 
+test("Limix: the desktop's Limix sign-in becomes a Cloud sign-in, with no browser, and asks for a trial", async t => {
+  const f = await fixture(t);
+  assert.equal((await f.client.start()).status, "signed-out");
+  assert.equal((await f.client.signInWithLimix("not a bearer")).status, "signed-out");
+  assert.deepEqual(f.requests, [], "a malformed bearer is never sent");
+  assert.equal((await f.client.signInWithLimix("limix.cGM.wrong-token")).status, "signed-out");
+  f.limixTrial = "none";
+  const state = await f.client.signInWithLimix("limix.cGM.fixture-token");
+  assert.equal(state.status, "connected"); assert.equal(state.limixTrial, "none"); assert.deepEqual(f.browsers, []);
+  assert.equal(f.saved.token, accessToken);
+  assert.ok(!JSON.stringify(f.states).includes("fixture-token"), "the Limix bearer never reaches a published state");
+  const asked = await f.client.requestTrial();
+  assert.equal(asked.outcome, "requested"); assert.equal(asked.state.limixTrial, "pending");
+  assert.equal((await f.client.signInWithLimix("limix.cGM.fixture-token")).status, "connected", "a second call while signed in changes nothing");
+  assert.equal(f.requests.filter(row => row.route === "/api/cloud/desktop/limix-token").length, 2);
+});
+
 test("checkout/browser return cannot activate Pro; only refreshed server state can, and revocation removes it", async t => {
   const f = await fixture(t); await f.connect();
   await f.client.openDashboard("https://attacker.example.test?paid=true");
