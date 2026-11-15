@@ -50,3 +50,5 @@ The operator enrolls a canonical Limix principal in the control plane D1 table m
 ## Beta runtime on the operator host
 
 The enrolled account owns its Limix Server, messaging gateway, engine HOME, paired sessions and Docker network. A Cloud Computer is separately attached when a bot needs a desktop. The installed AI CLIs have independent account storage. The worker reports runtime health separately from provider login or delivery. The Xeon host uses the setup in [deploy/managed-beta](../../deploy/managed-beta/README.md). The new host listener is loopback-only. A public tenant origin, automatic pairing and real remote acceptance remain pending.
+
+Bàn giao ngày 15/11/2026 gồm các điểm vào mã, bằng chứng kiểm thử và thứ tự triển khai tiếp theo. [Bàn giao Cloud beta](HANDOFF_MANAGED_CLOUD_BETA.md).
