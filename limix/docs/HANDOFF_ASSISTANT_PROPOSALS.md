@@ -29,7 +29,7 @@ Baseline lỗi sẵn 154 test (phần lớn index.test.ts, môi trường sandbo
 - server/no-omb-cards.e2e.test.ts (4 test: Full/Auto, tạo đội + lưu team fact với Undo)
 - server/starter-bots.e2e.test.ts: "a Chief's create_bot and team setup make bots past five..."
 
-Việc cần quyết (hỏi người dùng nếu chưa rõ): (a) giữ "luôn hỏi duyệt" -> sửa 10 test sang kỳ vọng thẻ pending rồi duyệt qua `/api/threads/:id/respond`; hoặc (b) chỉ bắt duyệt cho `propose_team_setup`, để `create_bot` tạo ngay như gốc (ít test phải sửa nhưng lệch yêu cầu "hỏi người duyệt"). Lưu ý "team fact" (no-omb-cards) có thể bị ảnh hưởng ngoài ý muốn: kiểm tra `autoApply` có đang chặn cả phần lưu team fact không, nếu có thì đó là lỗi cần sửa vì yêu cầu chỉ nói về đề xuất bot/nhóm.
+**ĐÃ QUYẾT: người dùng chọn cách A** (luôn hỏi duyệt cho cả create_bot và đề xuất đội; sửa 10 test theo hành vi mới; kiểm tra riêng 4 test team fact). Hai phương án đã cân nhắc: (a) giữ "luôn hỏi duyệt" -> sửa 10 test sang kỳ vọng thẻ pending rồi duyệt qua `/api/threads/:id/respond`; hoặc (b) chỉ bắt duyệt cho `propose_team_setup`, để `create_bot` tạo ngay như gốc (ít test phải sửa nhưng lệch yêu cầu "hỏi người duyệt"). Lưu ý "team fact" (no-omb-cards) có thể bị ảnh hưởng ngoài ý muốn: kiểm tra `autoApply` có đang chặn cả phần lưu team fact không, nếu có thì đó là lỗi cần sửa vì yêu cầu chỉ nói về đề xuất bot/nhóm.
 
 ## Mẹo môi trường
 Không có Docker; npm cần `npm_config_noproxy=localhost NO_PROXY=localhost`; vitest chạy full rất chậm (chạy nền, dùng `--reporter=json --outputFile`).
