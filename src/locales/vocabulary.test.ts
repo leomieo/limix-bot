@@ -40,6 +40,11 @@ function retiredIn(text: string, boat: RegExp = BOAT): string[] {
 const PENDING_KEY_PREFIXES: string[] = [];
 const CHECKED_PACKS = ["pt-br"];
 const EN_ALLOWED: Record<string, string> = {
+  "vm.cloud.needsKey": "Limix Bot: the own-key Boat setup names Boat, whose key it is",
+  "vm.cloud.notConnected": "Limix Bot: the own-key Boat setup names Boat, whose key it is",
+  "keys.boat.label": "Limix Bot: the own-key Boat setup names Boat, whose key it is",
+  "keys.boat.placeholder": "Limix Bot: the own-key Boat setup names Boat, whose key it is",
+  "keys.boat.warning": "Limix Bot: the own-key Boat setup names Boat, whose key it is",
   "botAccess.cloud.boat": "the own-key provider picker names its two providers, Boat and a VPS",
   "botAccess.cloud.hostedBackendDescription": "the own-key provider picker names its two providers, Boat and a VPS",
   "botAccess.cloud.vpsAutoDescription": "the own-key provider picker's VPS line names its Cloud choice",
@@ -59,6 +64,9 @@ const ALLOWED: ReadonlyArray<{ file: string; snippet?: string; why: string }> = 
   { file: "shared/credential-request.ts", snippet: "when Boat is selected", why: "the card that asks for a person's own Boat key" },
   { file: "server/boat-create-idempotency.ts", snippet: "unnamed Boat", why: "own-key repair: boat.dev's own name for a machine" },
   { file: "src/lib/boat-offer.ts", snippet: "MausBot introduced me", why: "the email a person sends Boat to claim its credit" },
+  { file: "src/lib/boat-offer.ts", snippet: "Limix Bot introduced me", why: "Limix Bot: the email a person sends Boat to claim its credit" },
+  { file: "src/components/keys/key-catalog.ts", snippet: "Boat", why: "Limix Bot: the own-key list names the Boat key" },
+  { file: "server/boat.ts", snippet: "That isn't a Boat or Instabox API key", why: "Limix Bot: a refused own key names whose key it should be" },
   { file: "server/workspace-backup.ts", snippet: "OMB-WORKSPACE-1", why: "a backup file's format marker" },
   { file: "electron/company-backups.mjs", snippet: "OMB-WORKSPACE-1", why: "a backup file's format marker" },
 ];
@@ -117,6 +125,8 @@ describe("one name per thing", () => {
     const offending = Object.entries(locales).filter(([code]) => code !== "en").flatMap(([code, pack]) =>
       Object.entries(pack)
         .filter(([key]) => !PENDING_KEY_PREFIXES.some((prefix) => key.startsWith(prefix)))
+        // Limix Bot: Vietnamese weekday chips abbreviate Thứ Ba as T3.
+        .filter(([key]) => !(code === "vi" && key === "routines.interval.dayChips"))
         .filter(([key, value]) => /\bOMB\b|\bT3\b/.test(value!) || productNames.some(([, pattern]) => pattern.test(value!))
           || (/MausBot Cloud/.test((en as Record<string, string>)[key]!) && !/MausBot Cloud/.test(value!))
           || (/boat/i.test(value!) && !/\bboats?\b/i.test((en as Record<string, string>)[key]!)))
