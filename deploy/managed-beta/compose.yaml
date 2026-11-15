@@ -15,7 +15,6 @@ services:
     cap_drop:
       - ALL
     tmpfs:
-      - /tmp:mode=1777,size=256m
       - /run:mode=1777,size=16m
     labels:
       com.limix.managed-home: "beta-xeon"
@@ -25,6 +24,7 @@ services:
       OMB_TUNNEL_SOCKET: /run/limix-edge/http.sock
       OMB_DATA_DIR: /data/.limixbot
     volumes:
+      - scratch:/tmp
       - data:/data
       - sockets:/run/limix-edge
     healthcheck:
@@ -53,6 +53,7 @@ services:
     ports: ["127.0.0.1::8080"]
 volumes:
   data: {}
+  scratch: {}
   sockets:
     driver_opts:
       type: tmpfs

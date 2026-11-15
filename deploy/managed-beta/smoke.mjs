@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 
@@ -27,6 +28,17 @@ try {
     execute(project, "sh", "-ec", "test ! -S /var/run/docker.sock && test -w /data");
   }
   const [a, b] = projects;
+  console.log(execute(a, "node", "--input-type=module", "-e", readFileSync(new URL("./smoke-antigravity.mjs", import.meta.url), "utf8")));
+  // The API receives a synthetic key on an isolated operator connection; no upstream inference is needed.
+  const fakeKey = "fixture-" + randomUUID();
+  const keyConfig = { displayName: "Isolation fixture", url: "https://example.invalid/v1", models: ["fixture"], key: fakeKey };
+  const created = execute(a, "curl", "-fsS", "-H", "content-type: application/json", "-d",
+    JSON.stringify(keyConfig), "http://127.0.0.1:8799/api/instances/openai-compat");
+  assert(!created.includes(fakeKey));
+  const { instanceId } = JSON.parse(created);
+  assert.match(instanceId, /^openai-compat-/);
+  const verifyKey = `const fs=require('node:fs');const file=process.env.OMB_DATA_DIR+'/config.json';const cfg=fs.existsSync(file)?JSON.parse(fs.readFileSync(file)):{};const key=cfg.instances?.[process.argv[1]]?.config?.key;process.exit(key===process.argv[2]?0:1)`;
+  execute(b, "node", "-e", verifyKey, instanceId);
   const issued = JSON.parse(execute(a, "curl", "-fsS", "-H", "content-type: application/json",
     "-d", JSON.stringify({ scopes: ["client"] }), "http://127.0.0.1:8799/api/auth/pairing"));
   assert.equal(typeof issued.code, "string");
@@ -42,7 +54,8 @@ try {
   execute(b, "sh", "-ec", "test ! -e /data/.codex/limix-isolation-test");
   compose(a, "up", "-d", "--no-build", "--force-recreate", "--wait", "--wait-timeout", "150");
   assert.equal(execute(a, "cat", "/data/.codex/limix-isolation-test"), "fixture");
-  console.log("PASS: two real servers and gateways healthy, both CLIs installed, independent HOME volumes, persistence after recreation");
+  execute(a, "node", "-e", verifyKey, instanceId, fakeKey);
+  console.log("PASS: API key isolated and retained, two real servers and gateways healthy, Codex and Claude installed, independent HOME volumes, persistence after recreation");
 } finally {
   for (const project of projects) compose(project, "down", "-v");
 }

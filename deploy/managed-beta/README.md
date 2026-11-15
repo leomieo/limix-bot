@@ -7,7 +7,8 @@ Mỗi tài khoản được duyệt có một Limix Server chạy nền, gateway
 1. Trên Xeon, dùng Docker Linux và Node 24.14 trở lên. Tại thư mục gốc của bản mã này, build image có CLI rồi chạy kiểm thử với hai tài khoản giả lập.
 
    ```powershell
-   docker build --target server --build-arg "ENGINES=@anthropic-ai/claude-code @openai/codex" -t limix-managed-home:beta .
+   docker build --target server --build-arg "ENGINES=@anthropic-ai/claude-code @openai/codex" -t limix-managed-base:beta .
+   docker build -f deploy/managed-beta/Dockerfile -t limix-managed-home:beta .
    $env:LIMIX_HOME_IMAGE = 'limix-managed-home:beta'
    node deploy/managed-beta/smoke.mjs
    ```
@@ -27,7 +28,7 @@ Mỗi tài khoản được duyệt có một Limix Server chạy nền, gateway
 
 4. Khởi chạy trên Xeon bằng `.\deploy\managed-beta\host.ps1 -Action Run`. Cho Docker Desktop khởi động khi đăng nhập Windows. Để tự chạy bộ điều phối, tạo tác vụ Task Scheduler lúc người vận hành đăng nhập, chạy PowerShell với `-NoProfile -File "<đường dẫn đầy đủ tới host.ps1>" -Action Run` dưới chính tài khoản Windows đã cấu hình. Docker tự khởi động lại container khi engine hoạt động trở lại. Khởi động lại khi Windows chưa đăng nhập cần được thử riêng trên máy triển khai.
 
-5. Trên bản desktop chứa thay đổi này, tài khoản được duyệt mở menu tài khoản → **Bot chạy trên Cloud (beta)** → **Yêu cầu khởi tạo**. Bấm mục đó lần nữa để đọc trạng thái. Mỗi môi trường giới hạn 2 CPU và 4 GiB cho tiến trình chính; mặc định chỉ cấp một môi trường đồng thời. CLI được cài trong image. Khách cần đăng nhập nhà cung cấp riêng bên trong môi trường của mình. Image trên chỉ cài sẵn Codex và Claude Code.
+5. Trên bản desktop chứa thay đổi này, tài khoản được duyệt mở menu tài khoản → **Bot chạy trên Cloud (beta)** → **Yêu cầu khởi tạo**. Bấm mục đó lần nữa để đọc trạng thái. Mỗi môi trường giới hạn 2 CPU và 4 GiB cho tiến trình chính; mặc định chỉ cấp một môi trường đồng thời. CLI được cài trong image. Khách cần đăng nhập nhà cung cấp riêng bên trong môi trường của mình. Image trên cài sẵn Codex, Claude Code và runtime Antigravity ACP chính thức. Trong môi trường Cloud đã ghép nối, mở Cài đặt → AI để đăng nhập hoặc thêm nhà cung cấp bằng khóa API. Khóa đã nhập và phiên còn hiệu lực được giữ trên volume riêng của tài khoản qua các lần tạo lại container. Phiên trên laptop chưa được tự động chuyển lên Cloud. Mất volume cần bản sao lưu riêng để khôi phục.
 
 ## Kiểm tra môi trường của một tài khoản trên máy chủ
 
