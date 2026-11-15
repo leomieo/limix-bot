@@ -128,7 +128,7 @@ import { vpsLeftBehindNotice } from "./cloud-backend.ts";
 import * as composio from "./composio.ts";
 import { appSandboxRule, connectorCallFromFrame, connectorRefusalText, connectorScopeRefusalText, connectorUnrecognizedText, evaluateConnectorTools } from "./connector-verdict.ts";
 import { signInCardText } from "./connector-card-text.ts";
-import { BOT_PAUSED_CODE } from "../shared/bot-limit.ts"; import { createStarterAwake } from "./host/starter-awake.ts"; import { createStarterCaps } from "./host/starter-caps.ts"; import { createStarterAwakeRoutes } from "./routes/starter-awake.ts"; import { chiefOfStaffSystemPrompt } from "./chief-of-staff.ts"; import { coordinateTooLong } from "./too-long.ts"; import { chiefAbsentFrom, createChiefRooms } from "./host/chief-rooms.ts"; import { chiefLevel, readTeamRolesWith } from "./chief-level.ts"; import { defaultBotRefusal, ensureDefaultBot } from "./default-bot.ts"; import { renameLegacyDefaultBots } from "./limix-assistant-name.ts"; import { withBotDesktopResources } from "./limix-desktop-resources.ts"; import type { DesktopResources } from "./container-limits.ts";
+import { BOT_PAUSED_CODE } from "../shared/bot-limit.ts"; import { createStarterAwake } from "./host/starter-awake.ts"; import { createStarterCaps } from "./host/starter-caps.ts"; import { createStarterAwakeRoutes } from "./routes/starter-awake.ts"; import { chiefOfStaffSystemPrompt } from "./chief-of-staff.ts"; import { coordinateTooLong } from "./too-long.ts"; import { chiefAbsentFrom, createChiefRooms } from "./host/chief-rooms.ts"; import { chiefLevel, readTeamRolesWith } from "./chief-level.ts"; import { defaultBotRefusal, ensureDefaultBot } from "./default-bot.ts"; import { renameLegacyDefaultBots } from "./limix-assistant-name.ts"; import { withBotDesktopResources } from "./limix-desktop-resources.ts"; import { teamDesktopKey, teamDesktopMembers, teamDesktopResources } from "./limix-team-desktop.ts"; import type { DesktopResources } from "./container-limits.ts";
 import { buildRecall, recallRooms, recallThreadIds, withRecalled } from "./recall.ts";
 import { hostTimeZone, takesTurnClock, turnClockLine, withTurnClock } from "./turn-clock.ts";
 import { createMemoryUpkeep, dreamConversations, upkeepEnabled } from "./memory-upkeep.ts";
@@ -147,6 +147,7 @@ import {
   containerRuntimeStatus,
   localVmWakeAction,
   perBotLocalVmTarget,
+  teamLocalVmTarget,
   poolLocalVmTarget,
   SHARED_LOCAL_VM_TARGET,
   setupCommands,
@@ -3118,6 +3119,12 @@ function fullAccessForSource(botId: string, threadId: string): boolean {
 
 /** Limix: a bot's own desktop takes that bot's size when it set one; the shared and pooled desktops keep the workspace's. */
 function localVmResourcesFor(target: LocalVmTarget): DesktopResources {
+  if (target.key.startsWith("team:")) {
+    const team = [...new Set(store.bots.filter((candidate) => candidate.desktopTeam).map(teamDesktopKey))].find((key) => teamLocalVmTarget(key).key === target.key);
+    const capacity = limixVmCapacity(localVmResources(cfg));
+    const { chosen: _chosen, ...size } = teamDesktopResources(localVmResources(cfg), team === undefined ? [] : teamDesktopMembers(store.bots, team), capacity);
+    return size;
+  }
   const bot = target.key.startsWith("bot:") ? store.bots.find((candidate) => perBotLocalVmTarget(candidate.id).key === target.key) : undefined;
   return withBotDesktopResources(localVmResources(cfg), bot);
 }
@@ -6246,7 +6253,10 @@ function claimManagedVpsMutation(containerName: string): () => void {
 }
 
 function localVmTargetForBot(botId: string): LocalVmTarget {
-  return localVmMode(cfg) === "per-bot" ? perBotLocalVmTarget(botId) : SHARED_LOCAL_VM_TARGET;
+  if (localVmMode(cfg) !== "per-bot") return SHARED_LOCAL_VM_TARGET;
+  const bot = store.bot(botId);
+  // Limix: a bot that opted in shares its department's desktop with the others that did.
+  return bot?.desktopTeam ? teamLocalVmTarget(teamDesktopKey(bot)) : perBotLocalVmTarget(botId);
 }
 
 function localVmPoolSeatHolder(seat: number): LocalVmSeatHolder | null {

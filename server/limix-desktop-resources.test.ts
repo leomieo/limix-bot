@@ -35,6 +35,11 @@ describe("a bot's own Private desktop size", () => {
       expect((await api("PATCH", `/api/bots/${bot.id}`, { desktopResources: null })).status).toBe(200);
       expect((await read()).desktopResources).toBeUndefined();
       expect((await api("GET", "/api/config")).body.localVm.resources).toEqual({ memoryGb: 4, cpus: 2 });
+      expect((await api("PATCH", `/api/bots/${bot.id}`, { desktopTeam: true })).status).toBe(200);
+      expect((await read()).desktopTeam).toBe(true);
+      expect((await api("PATCH", `/api/bots/${bot.id}`, { desktopTeam: "yes" })).status).toBe(400);
+      expect((await api("PATCH", `/api/bots/${bot.id}`, { desktopTeam: false })).status).toBe(200);
+      expect((await read()).desktopTeam).toBeUndefined();
     } finally {
       await fixture.close();
     }

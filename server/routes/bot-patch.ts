@@ -357,6 +357,11 @@ export function createBotPatchRoutes(deps: BotPatchRouteDeps): RouteHandler {
         if ("error" in parsed) return json(res, 400, { error: parsed.error });
         patch.desktopResources = parsed.value;
       }
+      if (body.desktopTeam !== undefined) {
+        if (typeof body.desktopTeam !== "boolean") return json(res, 400, { error: "desktopTeam must be true or false" });
+        if (existingBot?.busy && body.desktopTeam !== Boolean(existingBot.desktopTeam)) return json(res, 409, { error: "Wait for this bot's work to finish before moving it to another desktop" });
+        patch.desktopTeam = body.desktopTeam || undefined;
+      }
       if (body.helperModel !== undefined) {
         if (typeof body.helperModel !== "boolean") return json(res, 400, { error: "helperModel must be true or false" });
         patch.helperModel = body.helperModel;

@@ -400,6 +400,8 @@ export interface WireBot extends DefaultBotFields, BotAccessFields {
   helperModel?: boolean;
   /** Limix: this bot's own Private desktop limits (GiB of memory, CPUs) when each bot has its own desktop; a field left out follows the workspace setting. */
   desktopResources?: { memoryGb?: number; cpus?: number };
+  /** Limix: true shares one Private desktop with the department's other bots that set it (they take turns on its one screen). */
+  desktopTeam?: boolean;
   /** Which of the app-wide MCP servers this bot mounts, by name. */
   mcpServers?: string[];
   /** Owner-selected original tool identities. An empty allowlist permits none. */

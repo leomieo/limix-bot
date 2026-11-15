@@ -621,9 +621,34 @@ export function DesktopResourcesField({ bot }: { bot: Bot }) {
       setSaving(false);
     }
   };
+  const team = (bot.section ?? "").trim().toLowerCase();
+  const teamName = bot.section?.trim() || lx("Chung", "General");
+  const shared = Boolean(bot.desktopTeam);
+  const members = (state.bots ?? []).filter((other) => other.desktopTeam && !other.hidden && (other.section ?? "").trim().toLowerCase() === team).length + (shared ? 0 : 1);
+  const suggestion = { memoryGb: workspace.memoryGb + Math.max(0, members - 1) * 2, cpus: workspace.cpus + Math.max(0, members - 1) };
+  const toggleShared = async () => {
+    setError(null); setSaved(false);
+    try {
+      await api(`/api/bots/${bot.id}`, { method: "PATCH", body: JSON.stringify({ desktopTeam: !shared }) });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
   return (
     <div className="mt-3 rounded-lg bg-inset p-3" data-testid="access-desktop-resources">
-      <div className="text-[13px] text-ink">{lx("Cấu hình Desktop riêng", "Private desktop size")}</div>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-[13px] text-ink">{lx(`Dùng chung Desktop với nhóm "${teamName}"`, `Share one desktop with "${teamName}"`)}</div>
+          <div className="mt-0.5 text-[12px] text-ink-secondary">
+            {shared
+              ? lx(`Đang dùng chung với ${members} bot. Một màn hình nên các bot lần lượt dùng. Đề xuất ${suggestion.memoryGb} GB RAM, ${suggestion.cpus} CPU (không vượt quá sức máy); nhập số bên dưới để tự đặt.`,
+                `Shared by ${members} bots. One screen, so they take turns. Suggested ${suggestion.memoryGb} GB RAM, ${suggestion.cpus} CPU (within what the machine has); enter a size below to set your own.`)
+              : lx("Tắt: bot này có Desktop riêng của nó. Bật để dùng chung 1 máy ảo với các bot cùng nhóm cũng bật.", "Off: this bot has its own desktop. Turn on to share one with the group's other bots that turn it on.")}
+          </div>
+        </div>
+        <Switch checked={shared} aria-label={lx("Dùng chung Desktop với nhóm", "Share one desktop with the group")} onClick={() => void toggleShared()} />
+      </div>
+      <div className="mt-3 text-[13px] text-ink">{lx("Cấu hình Desktop riêng", "Private desktop size")}</div>
       <div className="mt-0.5 text-[12px] text-ink-secondary">
         {lx(`Để trống để dùng cài đặt chung (${workspace.memoryGb} GB RAM, ${workspace.cpus} CPU). Áp dụng khi desktop của bot được tạo mới hoặc khởi động lại.`,
           `Leave empty to use the workspace setting (${workspace.memoryGb} GB RAM, ${workspace.cpus} CPU). Takes effect when this bot's desktop is next created or started.`)}

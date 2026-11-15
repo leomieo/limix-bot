@@ -111,6 +111,19 @@ export function perBotLocalVmTarget(botId: string): LocalVmTarget {
   };
 }
 
+/** Limix: one desktop a department's bots share when each opted in. Its own digest space, apart from bots and seats. */
+export function teamLocalVmTarget(team: string): LocalVmTarget {
+  const digest = createHash("sha256").update(`limix-team-desktop:${team}`).digest("hex");
+  const short = digest.slice(0, 16);
+  return {
+    key: `team:${digest}`,
+    containerName: `${CONTAINER}-t${short}`,
+    workspaceDir: join(DATA_DIR, "vm-homes", `team-${short}`),
+    viewerPort: null,
+    label: `team-${short}`,
+  };
+}
+
 /** Seat identities stay disjoint from the shared singleton and per-bot digests, so the three modes never meet. */
 export function poolLocalVmTarget(seat: number): LocalVmTarget {
   return {
