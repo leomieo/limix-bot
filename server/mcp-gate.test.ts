@@ -22,6 +22,10 @@ const reply = JSON.parse(readFileSync(process.env.SCRIPT, "utf8"));
 createInterface({ input: process.stdin }).on("line", (line) => {
   if (!line.trim()) return;
   const msg = JSON.parse(line);
+  if (msg.method === "tools/list" && process.env.CATALOG) {
+    process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id: msg.id, result: JSON.parse(readFileSync(process.env.CATALOG, "utf8")) }) + "\\n");
+    return;
+  }
   if (msg.method === "tools/call") {
     process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id: msg.id, result: reply }) + "\\n");
     return;
@@ -125,6 +129,12 @@ describe("mcp-gate", () => {
     return JSON.parse(await nextLine());
   };
 
+  const listTools = async (tools: unknown[], cursor?: string) => {
+    writeFileSync(join(scratch, "catalog.json"), JSON.stringify({ tools }));
+    send({ jsonrpc: "2.0", id: 7, method: "tools/list", params: { cursor } });
+    await nextLine();
+  };
+
   beforeEach(() => {
     scratch = mkdtempSync(join(tmpdir(), "omb-gate-test-"));
     lines = [];
@@ -157,7 +167,7 @@ describe("mcp-gate", () => {
   });
 
   it("leaves a small tool result exactly as the server sent it", async () => {
-    const result = { content: [{ type: "text", text: JSON.stringify({ cart: { total: 131 } }) }] };
+    const result = { content: [{ type: "text", text: JSON.stringify({ cart: { total: 131 } }) }], structuredContent: { cart: { total: 131 } } };
     start(result);
     expect((await call("get_food_cart")).result).toEqual(result);
     expect(existsSync(join(scratch, "spill"))).toBe(false);
@@ -171,7 +181,7 @@ describe("mcp-gate", () => {
     const answer = await call("search_products");
     const text = answer.result.content[0].text;
     expect(text.length).toBeLessThan(full.length / 10);
-    expect(text.startsWith("⚠️ SHAPED by OpenMausBot:")).toBe(true);
+    expect(text.startsWith("⚠️ SHAPED by Limix Bot:")).toBe(true);
 
     const spillDir = join(scratch, "spill");
     const [file] = readdirSync(spillDir);
@@ -184,12 +194,13 @@ describe("mcp-gate", () => {
     expect(kept.nextOffset).toBe("1");
   });
 
-  it("trims structuredContent alongside the text it duplicates", async () => {
+  it("trims structuredContent alongside the text it duplicates when an outputSchema is declared", async () => {
     const products = Array.from({ length: 300 }, (_, i) => ({ id: `p${i}`, blurb: "x".repeat(300) }));
     start({
       content: [{ type: "text", text: JSON.stringify({ products }) }],
       structuredContent: { products },
-    });
+    }, { CATALOG: join(scratch, "catalog.json") });
+    await listTools([{ name: "search_products", outputSchema: { type: "object" } }]);
 
     const answer = await call("search_products");
     expect(answer.result.structuredContent.products.length).toBeLessThan(300);
@@ -200,12 +211,35 @@ describe("mcp-gate", () => {
     expect(answer.result.structuredContent).toEqual(kept);
   });
 
+  it("omits trimmed structuredContent for unknown tools and updates schemas across listing pages and refreshes", async () => {
+    const products = Array.from({ length: 300 }, (_, i) => ({ id: `p${i}`, blurb: "x".repeat(300) }));
+    start({
+      content: [{ type: "text", text: JSON.stringify({ products }) }],
+      structuredContent: { products },
+    }, { CATALOG: join(scratch, "catalog.json") });
+
+    const unknown = (await call("search_products")).result;
+    expect(unknown).not.toHaveProperty("structuredContent");
+    expect(unknown.content[0].text).toContain("SHAPED by Limix Bot");
+
+    await listTools([{ name: "search_products", outputSchema: { type: "object" } }]);
+    await listTools([{ name: "other_tool" }], "second");
+    expect((await call("search_products")).result.structuredContent.products.length).toBeLessThan(products.length);
+    expect((await call("other_tool")).result).not.toHaveProperty("structuredContent");
+
+    await listTools([{ name: "search_products" }]);
+    const refreshed = (await call("search_products")).result;
+    expect(refreshed).not.toHaveProperty("structuredContent");
+    expect(refreshed.content[0].text).toContain("SHAPED by Limix Bot");
+  });
+
   it("matches structuredContent to the text whatever its key order", async () => {
     const products = Array.from({ length: 300 }, (_, i) => ({ id: `p${i}`, blurb: "x".repeat(300) }));
     start({
       content: [{ type: "text", text: JSON.stringify({ products, meta: "x" }) }],
       structuredContent: { meta: "x", products },
-    });
+    }, { CATALOG: join(scratch, "catalog.json") });
+    await listTools([{ name: "search_products", outputSchema: { type: "object" } }]);
 
     const answer = await call("search_products");
     const text: string = answer.result.content[0].text;
@@ -386,6 +420,13 @@ createInterface({ input: process.stdin }).on("line", (line) => {
     expect(JSON.parse(await nextLine()).result).toEqual(catalog);
   });
 
+  it("keeps each listed tool's _meta through a tool selection, so a deferred tool stays deferred", async () => {
+    const read = { name: "read", inputSchema: { type: "object" }, _meta: { "anthropic/alwaysLoad": false } };
+    start({ tools: [read, { name: "write", inputSchema: { type: "object" } }] }, selected, LISTING_UPSTREAM);
+    send({ jsonrpc: "2.0", id: 1, method: "tools/list" });
+    expect(JSON.parse(await nextLine()).result).toEqual({ tools: [read] });
+  });
+
   describe("shaping an oversized result", () => {
     const products = Array.from({ length: 300 }, (_, i) => ({ id: `p${i}`, name: `Bar ${i}`, price: 100 + i, blurb: "x".repeat(300) }));
     const full = JSON.stringify({ nextOffset: "1", products });
@@ -414,7 +455,7 @@ createInterface({ input: process.stdin }).on("line", (line) => {
     it("holds the whole result and answers a query locally with just the selection", async () => {
       start({ text: full }, {}, SCOPED_UPSTREAM);
       const shaped: string = (await call("read")).result.content[0].text;
-      expect(shaped.startsWith("⚠️ SHAPED by OpenMausBot:")).toBe(true);
+      expect(shaped.startsWith("⚠️ SHAPED by Limix Bot:")).toBe(true);
       expect(shaped).toContain('query_result {"result":"r1","query":');
       expect(shaped).toContain("products: 300 items{id, name, price, blurb}");
       expect(shaped.length).toBeLessThan(8_200);

@@ -4,7 +4,7 @@
 import type { PresenceFrame } from "./team-presence.ts";
 import type { DataBroadcast } from "./data-surface.ts";
 import type { ApprovalMode } from "./approval-mode.ts";
-import type { ToolScope } from "./tool-scope.ts";
+import type { ToolScope } from "./tool-scope.ts"; import type { ToolGroup } from "./tool-groups.ts";
 import type { CommandAllowlistCandidate } from "./command-allowlist.ts";
 import type { TurnDigest } from "./digest.ts";
 import type { BotAvatarCrop, MascotFaceColor } from "./bot-avatar.ts";
@@ -21,6 +21,7 @@ import type { ServerTextLine, ServerTextParams } from "./server-text.ts";
 import type { WireTool } from "./wire-tool.ts";
 import type { ModelRequestCardData } from "./model-request.ts";
 import type { ConnectorCardData } from "./connector-card.ts"; import type { McpChangeRequest } from "./mcp-request.ts";
+import type { AppSettingRequest, WindowPrefFrame } from "./app-settings.ts";
 import type { SkillRequestCardData } from "./skill-request.ts"; import type { OutsideWriteCardField } from "./outside-write.ts";
 import type { QuestionRequestCardData } from "./ask-question.ts";
 import type { AutomationLine, RoutineRunCardData } from "./routine-run.ts";
@@ -411,6 +412,8 @@ export interface WireBot extends DefaultBotFields, BotAccessFields {
   mcpServers?: string[];
   /** Owner-selected original tool identities. An empty allowlist permits none. */
   toolScope?: ToolScope;
+  /** Built-in tool groups turned off for this bot (shared/tool-groups.ts). Absent or empty: all on. */
+  toolsOff?: ToolGroup[];
   /** Id of a named browser profile; absent = the bot's own private session. */
   browserProfile?: string;
   playbooks?: InstalledPlaybook[];
@@ -709,6 +712,8 @@ export interface OptionCardData extends WaitCardField, ComputerAskField, AccessR
   teamSetupRequest?: TeamSetupRequest;
   /** A bot's MCP server change waiting on the person (Ask, Edits or Auto). */
   mcpRequest?: McpChangeRequest;
+  /** A bot's change to one of the app's own settings: applied with Undo, or waiting on Change/Cancel. */
+  appSettingRequest?: AppSettingRequest;
   /** A durable learned-skill proposal. */
   skillRequest?: SkillRequestCardData;
   /** A provider's structured question set. */
@@ -997,6 +1002,7 @@ export type ServerFrame =
   | { kind: "bot.deleted"; botId: string }
   /** The whole fleet (PUT /api/bots/order) or every room (PUT /api/groups/order) in its new order; a member is sent only the ones they see. */
   | { kind: "bots.order"; botIds: string[] } | { kind: "groups.order"; groupIds: string[] }
+  | WindowPrefFrame | { kind: "theme"; skin?: string }
   | { kind: "live.call"; botId: string; threadId: string; call: LiveCallState | null }
   /** A job is waiting for the phone whose registry key this is; it polls now. */
   | { kind: "device.job"; phone: string; id: string }

@@ -49,6 +49,7 @@ import { UsageSection } from "./UsageSection";
 import { SkillsSection } from "./SkillsSection";
 import { LicenseExpiryBanner } from "./LicenseExpiryBanner";
 import { WorkspacesSection, workspacesAvailable } from "./WorkspacesSection";
+import { CustomThemesSettings } from "./CustomThemesSettings";
 import { SkinPicker } from "./SkinPicker";
 import { ThemeRow } from "./ThemeRow";
 import { ChatWidthRow, FontRow, SidebarToolsLayoutRow } from "./AppearanceSelectRows";
@@ -406,6 +407,7 @@ function SettingsDialog() {
             <Card title={t("settings.skin.title")} subtitle={t("settings.skin.subtitle")}>
               <SkinPicker />
             </Card>
+            <CustomThemesSettings />
             <PlaceLookCard />
             {remoteActive && <AdvancedModeRow />}
             {remoteActive && <LanguageRow />}

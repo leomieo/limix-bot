@@ -812,7 +812,7 @@ function ChatMarkdownComponent({ text, message, mentionPeers = NO_MENTION_PEERS,
   });
   return (
     <MessageScopeContext.Provider value={{ message, imageOffsets, threads, currentBotId, delivered, originals }}>
-      <div className="chat-md min-w-0 [&>*+*]:mt-2">{markdown}</div>
+      <div data-look="bot-text" className="chat-md min-w-0 [&>*+*]:mt-2">{markdown}</div>
     </MessageScopeContext.Provider>
   );
 }

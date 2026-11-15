@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Bot, Group, Message } from "@/state/store";
 
+const viewer = vi.hoisted(() => ({ reactor: "user" }));
 vi.mock("@/state/store", async (importOriginal) => {
   const original = await importOriginal<typeof import("@/state/store")>();
   return { ...original, useStore: () => ({ state: original.initialState, dispatch: vi.fn() }) };
@@ -12,6 +13,7 @@ vi.mock("./DesktopCapabilities", () => ({
   useCaptionChrome: () => ({}),
 }));
 vi.mock("@/lib/analytics", () => ({ track: vi.fn() }));
+vi.mock("@/lib/cloud-guest", async (importOriginal) => ({ ...await importOriginal<typeof import("@/lib/cloud-guest")>(), useReactor: () => viewer.reactor }));
 
 const { Transcript } = await import("./GroupView");
 
@@ -43,6 +45,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  viewer.reactor = "user";
   vi.unstubAllGlobals();
 });
 
@@ -79,5 +82,19 @@ describe("room speaker names", () => {
     ]);
     expect(html).toContain('data-bot-color="blue"');
     expect(html).toContain("the notes are in");
+  });
+
+
+  it("names another person's line on a shared server without a team, and never the viewer's own", () => {
+    const said = (sender: { name: string; id: string }, text: string): Message => ({ ...line(text, "user", text), sender });
+    const messages = [said({ name: "Olive", id: "p_olive" }, "can you check the draft"), said({ name: "Ada", id: "p_ada" }, "on my side too")];
+    viewer.reactor = "p_ada";
+    const shared = markup(messages);
+    expect(shared).toContain(">Olive<");
+    expect(shared).not.toContain(">Ada<");
+    viewer.reactor = "user";
+    const solo = markup(messages);
+    expect(solo).not.toContain(">Olive<");
+    expect(solo).not.toContain(">Ada<");
   });
 });
