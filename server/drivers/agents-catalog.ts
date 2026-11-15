@@ -406,6 +406,11 @@ const TOOL_DEFINITIONS = [
     inputSchema: { type: "object", additionalProperties: false, properties: {} },
   },
   {
+    name: "diagnose_limix",
+    description: "Chief of Staff only: read-only health check of Limix Bot: Telegram/Zalo/Discord connection status (running, stopped, token refused, conflict), AI engines that are signed out or missing, and whether any bot exists, each problem with a suggested fix. Call it when the person reports a bot or chat connection not answering, before guessing. It changes nothing: tell the person what is wrong and the fix, and use propose_team_setup for any bot change. Secrets are never included.",
+    inputSchema: { type: "object", additionalProperties: false, properties: {} },
+  },
+  {
     name: "list_team_library",
     description: "Chief of Staff only: ready-made teams, each with a summary and roles (lead = the team's Chief), and botTemplates: ready-made single bots. Propose either with propose_team_setup (template = a botTemplates id).",
     inputSchema: { type: "object", additionalProperties: false, properties: {} },
@@ -909,7 +914,7 @@ const SKILL_TOOL_NAMES = new Set(["skills_list", "skill_manage"]);
 export const SHARED_COMPUTER_TOOL_NAMES = new Set(["list_shared_computers", "shared_computer"]);
 const VOICE_TOOL_NAMES = new Set(["send_voice_note"]);
 const CHIEF_ONLY_TOOL_NAMES = new Set([
-  "create_bot", "list_team_setup", "list_team_library", "propose_team_setup", "propose_bot_deletion", "manage_room", "retry_thread",
+  "create_bot", "list_team_setup", "diagnose_limix", "list_team_library", "propose_team_setup", "propose_bot_deletion", "manage_room", "retry_thread",
 ]);
 const CHIEF_TARGET_TOOL_NAMES = new Set(["propose_profile", "propose_model"]);
 const WATCHER_TOOL_NAMES = new Set(["create_options_card"]);

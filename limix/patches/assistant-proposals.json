@@ -6,7 +6,7 @@
     },
     {
       "before": "\nconst SPECIALISTS = \"When a job needs a specialist you do not have (an ongoing area of work, a different skill set, or work to run in parallel), add one with create_bot without asking first, then tell the person in one line; they can undo it. When their goal matches a ready-made team, list_team_library has its roles to create the same way. Never add a bot just to look busy, or one that duplicates a teammate.\";\n\n",
-      "after": "\nconst SPECIALISTS = \"When the person asks for a bot or a team, or a job clearly needs a specialist you do not have (an ongoing area of work, a different skill set, or work to run in parallel), propose it; never create bots on your own. First call list_team_library: botTemplates are ready-made single bots (create one with its template id), teams are ready-made groups of roles. Prefer a ready-made bot or team when it fits the request; otherwise design custom bots. Then call propose_team_setup once, in this conversation, with every bot. When it adds two or more bots that will work together, include room so the person can choose to also create a group chat that you lead. Before the card, tell the person in one or two lines what you propose and why, and whether it is ready-made or custom. Never add a bot just to look busy, or one that duplicates a teammate.\";\n\n"
+      "after": "\nconst SPECIALISTS = \"When the person asks for a bot or a team, or a job clearly needs a specialist you do not have (an ongoing area of work, a different skill set, or work to run in parallel), propose it; never create bots on your own. First call list_team_library: botTemplates are ready-made single bots (create one with its template id), teams are ready-made groups of roles. Prefer a ready-made bot or team when it fits the request; otherwise design custom bots. Then call propose_team_setup once, in this conversation, with every bot. When it adds two or more bots that will work together, include room so the person can choose to also create a group chat that you lead. Before the card, tell the person in one or two lines what you propose and why, and whether it is ready-made or custom. Never add a bot just to look busy, or one that duplicates a teammate.\"\n  + \" When the person says a bot or a Telegram / Zalo connection is not working, call diagnose_limix first (read-only, it never shows secrets), explain in plain words what is wrong and the fix, and use propose_team_setup for any bot change; never ask them to send you a token or password.\";\n\n"
     }
   ],
   "server/default-bot.ts": [
@@ -20,6 +20,10 @@
     }
   ],
   "server/drivers/agents-catalog.ts": [
+    {
+      "before": "const CHIEF_ONLY_TOOL_NAMES = new Set([\n  \"create_bot\", \"list_team_setup\", \"list_team_library\", \"propose_team_setup\", \"propose_bot_deletion\", \"manage_room\", \"retry_thread\",\n]);\n",
+      "after": "const CHIEF_ONLY_TOOL_NAMES = new Set([\n  \"create_bot\", \"list_team_setup\", \"diagnose_limix\", \"list_team_library\", \"propose_team_setup\", \"propose_bot_deletion\", \"manage_room\", \"retry_thread\",\n]);\n"
+    },
     {
       "before": "        } },\n      }, required: [\"reason\", \"operations\"],\n",
       "after": "        } },\n        room: { type: \"object\", additionalProperties: false, description: \"Offer a group chat with these bots, led by you; the person chooses on the card whether to create it.\", properties: {\n          name: { type: \"string\", minLength: 1, maxLength: 100 },\n          members: { type: \"array\", maxItems: 24, items: { type: \"string\" }, description: \"Create keys from this plan or existing bot IDs; omit for every bot this plan creates.\" },\n        }, required: [\"name\"] },\n      }, required: [\"reason\", \"operations\"],\n"
@@ -45,6 +49,10 @@
       "after": "    name: \"list_team_library\",\n    description: \"Chief of Staff only: ready-made teams, each with a summary and roles (lead = the team's Chief), and botTemplates: ready-made single bots. Propose either with propose_team_setup (template = a botTemplates id).\",\n    inputSchema: { type: \"object\", additionalProperties: false, properties: {} },\n"
     },
     {
+      "before": "  {\n    name: \"list_team_library\",\n",
+      "after": "  {\n    name: \"diagnose_limix\",\n    description: \"Chief of Staff only: read-only health check of Limix Bot: Telegram/Zalo/Discord connection status (running, stopped, token refused, conflict), AI engines that are signed out or missing, and whether any bot exists, each problem with a suggested fix. Call it when the person reports a bot or chat connection not answering, before guessing. It changes nothing: tell the person what is wrong and the fix, and use propose_team_setup for any bot change. Secrets are never included.\",\n    inputSchema: { type: \"object\", additionalProperties: false, properties: {} },\n  },\n  {\n    name: \"list_team_library\",\n"
+    },
+    {
       "before": "    description:\n      \"Chief of Staff only: add a specialist to your section now; the person can undo it. instructions become its soul. Omit modelSelection for the workspace default, or use exact IDs from list_team_setup. It starts with your connected apps, at the default access level. Assign work with coordinate_bots. At most four per turn.\",\n    inputSchema: {\n",
       "after": "    description:\n      \"Chief of Staff only: propose one specialist for your section on a review card; it is added only if the person approves. Prefer propose_team_setup for ready-made bots, several bots or a group chat. instructions become its soul. Omit modelSelection for the workspace default, or use exact IDs from list_team_setup. It starts with your connected apps, at the default access level. Assign work with coordinate_bots. At most four per turn.\",\n    inputSchema: {\n"
     }
@@ -53,6 +61,10 @@
     {
       "before": "        }\n        if (proposed.state === \"pending\") return json(res, 201, proposed);\n        const createdId = \"result\" in proposed ? proposed.result.bots.find((bot) => bot.action === \"created\")?.id : undefined;\n",
       "after": "        }\n        if (proposed.state === \"pending\") return json(res, 201, { ...proposed, ...(botNameClash.warning(name) ? { warning: botNameClash.warning(name) } : {}) });\n        const createdId = \"result\" in proposed ? proposed.result.bots.find((bot) => bot.action === \"created\")?.id : undefined;\n"
+    },
+    {
+      "before": "      if (await dispatchRoutes([createBurstProposalRoutes({ requireActive: requireActiveInternalCapability, readBody: readInternalBody, refusal: () => burstProposalRefusal({ owner: connectorThread(internalSender.id, internalCapability.threadId), outside: outsideWorkStaysHere(internalCapability.threadId), self: selfThreadRefusal({ handoff: Boolean(internalCapability.roomHandoffId), requestLine: store.activePath(internalCapability.threadId).findLast((line) => line.role === \"user\" && line.kind === \"text\") }) }), model: () => burst.model(internalSender, internalCapability.threadId), propose: (plan) => burst.propose({ ...plan, botId: internalSender.id, threadId: internalCapability.threadId }) }), createInternalChiefTeamRoutes({ bot: () => store.bot(internalCapability.botId), requireActive: requireActiveInternalCapability,\n        teams: teamSetupTeams, bots: () => store.bots, instances: () => registry.describe() }), createInternalModelRoutes({ requireActive: requireActiveInternalCapability, menu: (search) => ownThreads.menu(internalCapability.botId, internalCapability.threadId, search) })], { req, res, url, path, method, auth, json, readBody })) return;\n      if (method === \"POST\" && path === \"/api/internal/team-setup-requests\") {\n",
+      "after": "      if (await dispatchRoutes([createBurstProposalRoutes({ requireActive: requireActiveInternalCapability, readBody: readInternalBody, refusal: () => burstProposalRefusal({ owner: connectorThread(internalSender.id, internalCapability.threadId), outside: outsideWorkStaysHere(internalCapability.threadId), self: selfThreadRefusal({ handoff: Boolean(internalCapability.roomHandoffId), requestLine: store.activePath(internalCapability.threadId).findLast((line) => line.role === \"user\" && line.kind === \"text\") }) }), model: () => burst.model(internalSender, internalCapability.threadId), propose: (plan) => burst.propose({ ...plan, botId: internalSender.id, threadId: internalCapability.threadId }) }), createInternalChiefTeamRoutes({ bot: () => store.bot(internalCapability.botId), requireActive: requireActiveInternalCapability,\n        teams: teamSetupTeams, bots: () => store.bots, instances: () => registry.describe(), channels: limixGatewayConnections }), createInternalModelRoutes({ requireActive: requireActiveInternalCapability, menu: (search) => ownThreads.menu(internalCapability.botId, internalCapability.threadId, search) })], { req, res, url, path, method, auth, json, readBody })) return;\n      if (method === \"POST\" && path === \"/api/internal/team-setup-requests\") {\n"
     },
     {
       "before": "\nasync function resolveAndSendTeamSetup(res: ServerResponse, args: { botId: string; threadId: string; requestId: string; behavior: string }, ownerReview: boolean): Promise<boolean> {\n  const card = store.messagesFor(args.threadId).find((item) => item.card?.requestId === args.requestId && item.card.teamSetupRequest)?.card;\n",
@@ -69,6 +81,10 @@
     {
       "before": "}\nconst firstHourFresh = Boolean(CLOUD_PERSONAL) && store.needsSeed(); testedAi.seed({ defaultBot: !CLOUD_TEAM, ...(firstHourFresh ? { intro: (bot) => greetingMessage(bot, { name: cfg.profile?.name }, cfg.language) } : {}) }); moveFreeze.hold(() => { if (!CLOUD_TEAM) ensureDefaultBot(store, { dataDir: DATA_DIR }); }, () => {}); if (CLOUD_TEAM) readTeamRolesWith((email) => sessions.list().filter((session) => session.email?.toLowerCase() === email && session.teamRole).sort((a, b) => b.createdAt - a.createdAt)[0]?.teamRole ?? null); if (CLOUD_TEAM) void mausbotOwnChat.claimAll();\nhostedModels?.reconcile(store);\n",
       "after": "}\nconst firstHourFresh = Boolean(CLOUD_PERSONAL) && store.needsSeed(); testedAi.seed({ defaultBot: !CLOUD_TEAM, ...(firstHourFresh ? { intro: (bot) => greetingMessage(bot, { name: cfg.profile?.name }, cfg.language) } : {}) }); renameLegacyDefaultBots(store); moveFreeze.hold(() => { if (!CLOUD_TEAM) ensureDefaultBot(store, { dataDir: DATA_DIR }); }, () => {}); if (CLOUD_TEAM) readTeamRolesWith((email) => sessions.list().filter((session) => session.email?.toLowerCase() === email && session.teamRole).sort((a, b) => b.createdAt - a.createdAt)[0]?.teamRole ?? null); if (CLOUD_TEAM) void mausbotOwnChat.claimAll();\nhostedModels?.reconcile(store);\n"
+    },
+    {
+      "before": "import { startHubAutoSync } from \"./limix-skill-hub.ts\";\nimport { startLimixGatewaySidecar } from \"./limix-gateway-sidecar.ts\";\nimport { createLimixManagedGrant, limixManagedGrantConfig } from \"./limix-managed-grant.ts\";\n",
+      "after": "import { startHubAutoSync } from \"./limix-skill-hub.ts\";\nimport { limixGatewayConnections, startLimixGatewaySidecar } from \"./limix-gateway-sidecar.ts\";\nimport { createLimixManagedGrant, limixManagedGrantConfig } from \"./limix-managed-grant.ts\";\n"
     },
     {
       "before": "import { signInCardText } from \"./connector-card-text.ts\";\nimport { BOT_PAUSED_CODE } from \"../shared/bot-limit.ts\"; import { createStarterAwake } from \"./host/starter-awake.ts\"; import { createStarterCaps } from \"./host/starter-caps.ts\"; import { createStarterAwakeRoutes } from \"./routes/starter-awake.ts\"; import { chiefOfStaffSystemPrompt } from \"./chief-of-staff.ts\"; import { coordinateTooLong } from \"./too-long.ts\"; import { chiefAbsentFrom, createChiefRooms } from \"./host/chief-rooms.ts\"; import { chiefLevel, readTeamRolesWith } from \"./chief-level.ts\"; import { defaultBotRefusal, ensureDefaultBot } from \"./default-bot.ts\";\nimport { buildRecall, recallRooms, recallThreadIds, withRecalled } from \"./recall.ts\";\n",
@@ -107,8 +123,24 @@
       "after": "    if (path === \"/api/internal/team-library\") {\n      let teams: Awaited<ReturnType<typeof libraryTeamRoles>> = [];\n      let note: string | undefined;\n      try {\n"
     },
     {
+      "before": "    if (!chief()) return json(res, 403, { error: NOT_CHIEF });\n    if (path === \"/api/internal/team-library\") {\n",
+      "after": "    if (!chief()) return json(res, 403, { error: NOT_CHIEF });\n    if (path === \"/api/internal/limix-diagnosis\") {\n      const [instances, channels] = await Promise.all([deps.instances(), (deps.channels?.() ?? Promise.resolve(null)).catch(() => null)]);\n      deps.requireActive();\n      return chief() ? json(res, 200, diagnoseLimix({ engines: instances.map((item) => ({ instanceId: item.instanceId, displayName: item.displayName, state: item.snapshot.state, reason: item.snapshot.reason })),\n        channels, bots: deps.bots() })) : json(res, 403, { error: NOT_CHIEF });\n    }\n    if (path === \"/api/internal/team-library\") {\n"
+    },
+    {
+      "before": "  return async ({ res, path, method, json }) => {\n    if (method !== \"GET\" || (path !== \"/api/internal/team-setup-catalog\" && path !== \"/api/internal/team-library\")) return PASS;\n    if (!chief()) return json(res, 403, { error: NOT_CHIEF });\n",
+      "after": "  return async ({ res, path, method, json }) => {\n    if (method !== \"GET\" || (path !== \"/api/internal/team-setup-catalog\" && path !== \"/api/internal/team-library\" && path !== \"/api/internal/limix-diagnosis\")) return PASS;\n    if (!chief()) return json(res, 403, { error: NOT_CHIEF });\n"
+    },
+    {
+      "before": "  library?: typeof libraryTeamRoles;\n}): RouteHandler {\n",
+      "after": "  library?: typeof libraryTeamRoles;\n  channels?(): Promise<readonly ChannelConnection[] | null>;\n}): RouteHandler {\n"
+    },
+    {
+      "before": "  displayName: string;\n  snapshot: { state: string };\n  models: unknown;\n",
+      "after": "  displayName: string;\n  snapshot: { state: string; reason?: string };\n  models: unknown;\n"
+    },
+    {
       "before": "import { libraryTeamRoles } from \"../team-library.ts\";\nimport { PASS, type RouteHandler } from \"./table.ts\";\n",
-      "after": "import { libraryTeamRoles } from \"../team-library.ts\";\nimport { READY_BOTS } from \"../../shared/ready-bots.ts\";\n\nconst BOT_TEMPLATES = READY_BOTS.map((bot) => ({ id: bot.id, name: bot.name, title: bot.title, description: bot.description, category: bot.category }));\nimport { PASS, type RouteHandler } from \"./table.ts\";\n"
+      "after": "import { libraryTeamRoles } from \"../team-library.ts\";\nimport { diagnoseLimix, type ChannelConnection } from \"../limix-diagnose.ts\";\nimport { READY_BOTS } from \"../../shared/ready-bots.ts\";\n\nconst BOT_TEMPLATES = READY_BOTS.map((bot) => ({ id: bot.id, name: bot.name, title: bot.title, description: bot.description, category: bot.category }));\nimport { PASS, type RouteHandler } from \"./table.ts\";\n"
     }
   ],
   "server/team-setup-requests.ts": [
@@ -258,7 +290,7 @@
     },
     {
       "before": "        \"A standing preference the person states for all their bots (where reminders go, how replies should sound) is one line you save yourself with memory_update action prefer: every bot reads it. Never send it to each bot with coordinate_bots.\",\n        \"When a job needs a specialist you do not have (an ongoing area of work, a different skill set, or work to run in parallel), add one with create_bot without asking first, then tell the person in one line; they can undo it. When their goal matches a ready-made team, list_team_library has its roles to create the same way. Never add a bot just to look busy, or one that duplicates a teammate.\",\n        EVERYONE_ON_THE_MAP,\n",
-      "after": "        \"A standing preference the person states for all their bots (where reminders go, how replies should sound) is one line you save yourself with memory_update action prefer: every bot reads it. Never send it to each bot with coordinate_bots.\",\n        \"When the person asks for a bot or a team, or a job clearly needs a specialist you do not have (an ongoing area of work, a different skill set, or work to run in parallel), propose it; never create bots on your own. First call list_team_library: botTemplates are ready-made single bots (create one with its template id), teams are ready-made groups of roles. Prefer a ready-made bot or team when it fits the request; otherwise design custom bots. Then call propose_team_setup once, in this conversation, with every bot. When it adds two or more bots that will work together, include room so the person can choose to also create a group chat that you lead. Before the card, tell the person in one or two lines what you propose and why, and whether it is ready-made or custom. Never add a bot just to look busy, or one that duplicates a teammate.\",\n        EVERYONE_ON_THE_MAP,\n"
+      "after": "        \"A standing preference the person states for all their bots (where reminders go, how replies should sound) is one line you save yourself with memory_update action prefer: every bot reads it. Never send it to each bot with coordinate_bots.\",\n        \"When the person asks for a bot or a team, or a job clearly needs a specialist you do not have (an ongoing area of work, a different skill set, or work to run in parallel), propose it; never create bots on your own. First call list_team_library: botTemplates are ready-made single bots (create one with its template id), teams are ready-made groups of roles. Prefer a ready-made bot or team when it fits the request; otherwise design custom bots. Then call propose_team_setup once, in this conversation, with every bot. When it adds two or more bots that will work together, include room so the person can choose to also create a group chat that you lead. Before the card, tell the person in one or two lines what you propose and why, and whether it is ready-made or custom. Never add a bot just to look busy, or one that duplicates a teammate. When the person says a bot or a Telegram / Zalo connection is not working, call diagnose_limix first (read-only, it never shows secrets), explain in plain words what is wrong and the fix, and use propose_team_setup for any bot change; never ask them to send you a token or password.\",\n        EVERYONE_ON_THE_MAP,\n"
     },
     {
       "before": "    const prompt = chiefOfStaffSystemPrompt(\"chief\", bots, true);\n    expect(prompt).toContain(\"after an applied result, continue already-requested work without another confirmation\");\n    expect(prompt).toContain(\"Only if review is pending, end your turn\");\n    expect(prompt).toContain(\"Report failed or cancelled results honestly\");\n",
@@ -279,6 +311,10 @@
   ],
   "server/routes/internal-chief-team.test.ts": [
     {
+      "before": "  });\n});\n",
+      "after": "  });\n\n  it(\"gives an active Chief a read-only health check with the failing connection and its fix, and nobody else\", async () => {\n    const channels = async () => [{ id: \"1\", platform: \"telegram\", name: \"Shop\", status: \"credential_invalid\", statusDetail: \"401\" }];\n    const { get, state } = await serve(bot(\"chief\", { chiefOfStaff: true }), async () => TEAMS, { channels });\n    const answer = await get(\"/api/internal/limix-diagnosis\");\n    expect(answer.status).toBe(200);\n    expect(answer.body).toMatchObject({ ok: false, findings: [expect.objectContaining({ area: \"channel\", subject: \"Telegram · Shop\" })] });\n    state.caller = bot(\"helper\");\n    expect((await get(\"/api/internal/limix-diagnosis\")).status).toBe(403);\n  });\n});\n"
+    },
+    {
       "before": "    const { get } = await serve(bot(\"chief\", { chiefOfStaff: true }), async () => { throw new Error(\"GitHub returned HTTP 503\"); });\n    expect(await get(\"/api/internal/team-library\")).toEqual({\n      status: 502, body: { error: \"The team library can't be reached right now. Build the team from what the person asked.\" },\n    });\n  });\n",
       "after": "    const { get } = await serve(bot(\"chief\", { chiefOfStaff: true }), async () => { throw new Error(\"GitHub returned HTTP 503\"); });\n    const answer = await get(\"/api/internal/team-library\");\n    expect(answer).toMatchObject({ status: 200, body: { teams: [], note: expect.stringContaining(\"can't be reached right now\") } });\n    expect((answer.body as { botTemplates: unknown[] }).botTemplates.length).toBeGreaterThan(0);\n  });\n"
     },
@@ -289,16 +325,24 @@
     {
       "before": "    const { get } = await serve(bot(\"chief\", { chiefOfStaff: true }), library);\n    expect(await get(\"/api/internal/team-library\")).toEqual({ status: 200, body: { teams: TEAMS } });\n    expect(library).toHaveBeenCalledOnce();\n",
       "after": "    const { get } = await serve(bot(\"chief\", { chiefOfStaff: true }), library);\n    const answer = await get(\"/api/internal/team-library\");\n    expect(answer).toMatchObject({ status: 200, body: { teams: TEAMS } });\n    expect((answer.body as { botTemplates: unknown[] }).botTemplates).toEqual(expect.arrayContaining([expect.objectContaining({ id: \"assistant\", name: \"Assistant\" })]));\n    expect(library).toHaveBeenCalledOnce();\n"
+    },
+    {
+      "before": "    library,\n  })];\n",
+      "after": "    library,\n    channels: team.channels,\n  })];\n"
+    },
+    {
+      "before": "\nasync function serve(caller: BotRecord, library: () => Promise<LibraryTeamRoles[]>, team: { teams?: string[]; bots?: BotRecord[] } = {}) {\n  const state = { caller: caller as BotRecord | null, active: true };\n",
+      "after": "\nasync function serve(caller: BotRecord, library: () => Promise<LibraryTeamRoles[]>, team: { teams?: string[]; bots?: BotRecord[]; channels?: () => Promise<any> } = {}) {\n  const state = { caller: caller as BotRecord | null, active: true };\n"
     }
   ],
   "server/drivers/agents-catalog-wire.test.ts": [
     {
-      "before": "  \"skills+shared+voice+x+team+images\": 72015,\n  \"default+images\": 61224,\n};\n",
-      "after": "  \"skills+shared+voice+x+team+images\": 72015,\n  \"default+images\": 62945,\n};\n"
+      "before": "  \"non-chief+room\": 48379,\n  \"skills+shared+voice+x+team+images\": 72015,\n  \"default+images\": 61224,\n};\n",
+      "after": "  \"non-chief+room\": 48379,\n  \"skills+shared+voice+x+team+images\": 73540,\n  \"default+images\": 62945,\n};\n"
     },
     {
-      "before": "  \"skills+shared+voice+x+team\": 71242,\n  \"default+no-computer-pick\": 59239,\n  \"default+room\": 57595,\n",
-      "after": "  \"skills+shared+voice+x+team\": 71242,\n  \"default+no-computer-pick\": 60679,\n  \"default+room\": 57595,\n"
+      "before": "  \"skills+shared+voice+x+team\": 71242,\n  \"default+no-computer-pick\": 59239,\n  \"default+room\": 57595,\n  \"non-chief+room\": 48379,\n",
+      "after": "  \"skills+shared+voice+x+team\": 71242,\n  \"default+no-computer-pick\": 60679,\n  \"default+room\": 58815,\n  \"non-chief+room\": 48379,\n"
     },
     {
       "before": "  \"skills+shared+voice+non-chief+cloud-home\": 57123,\n  \"default+legacy-switches\": 60451,\n  \"default+mausbot\": 61102,\n  \"skills+shared+voice+mausbot\": 67224,\n  \"skills+shared+voice+x\": 71242,\n",
@@ -311,6 +355,10 @@
     {
       "before": "const BUDGET_BASELINE: Record<string, number> = {\n  \"default\": 60451,\n  \"voice\": 61232,\n  \"shared\": 62716,\n  \"shared+voice\": 63497,\n  \"skills\": 63527,\n  \"skills+voice\": 64308,\n  \"skills+shared\": 65792,\n  \"skills+shared+voice\": 66573,\n  \"non-chief\": 51235,\n",
       "after": "const BUDGET_BASELINE: Record<string, number> = {\n  \"default\": 61887,\n  \"voice\": 62668,\n  \"shared\": 64152,\n  \"shared+voice\": 64933,\n  \"skills\": 64963,\n  \"skills+voice\": 65744,\n  \"skills+shared\": 67228,\n  \"skills+shared+voice\": 68009,\n  \"non-chief\": 51235,\n"
+    },
+    {
+      "before": "const PROFILES = profiles();\nconst CHIEF_ONLY_TOOLS = [\"create_bot\", \"list_team_setup\", \"list_team_library\", \"propose_team_setup\", \"propose_bot_deletion\", \"manage_room\", \"retry_thread\"];\nconst CHIEF_TARGET_TOOLS = [\"propose_profile\", \"propose_model\"];\n",
+      "after": "const PROFILES = profiles();\nconst CHIEF_ONLY_TOOLS = [\"create_bot\", \"list_team_setup\", \"diagnose_limix\", \"list_team_library\", \"propose_team_setup\", \"propose_bot_deletion\", \"manage_room\", \"retry_thread\"];\nconst CHIEF_TARGET_TOOLS = [\"propose_profile\", \"propose_model\"];\n"
     }
   ],
   "server/team-setup-requests.test.ts": [
@@ -429,6 +477,36 @@
     {
       "before": "    expect(tool.status, JSON.stringify(tool.body)).toBe(201);\n    expect(tool.body).toMatchObject({ state: \"applied\", name: \"Scout\" });\n    expect(tool.body.paused).toMatch(/^@Scout was created, and is paused: this Cloud's Starter plan keeps 5 bots awake/);\n    expect(await paused()).toEqual([tool.body.id]);\n    const setup = await cloud.internal(\"/api/internal/team-setup-requests\", token, { plan: { reason: \"Add a specialist\", newTeams: [],\n",
       "after": "    expect(tool.status, JSON.stringify(tool.body)).toBe(201);\n    expect(tool.body).toMatchObject({ state: \"pending\", applied: false });\n    expect(await paused()).toEqual([]);\n    // The person approves once the turn is over; the new bot is then the one the Starter plan keeps asleep.\n    cloud.finishTurn();\n    await expect.poll(async () => (await cloud.bots()).every((bot) => !bot.busy), { timeout: 20_000 }).toBe(true);\n    const decided = await cloud.api(\"POST\", `/api/threads/${chief.threadId}/respond`, { requestId: tool.body.requestId, behavior: \"allow\" });\n    expect(decided.status, JSON.stringify(decided.body)).toBe(200);\n    const scoutId = decided.body.result.bots.find((bot: any) => bot.action === \"created\").id as string;\n    expect(await paused()).toEqual([scoutId]);\n    const setup = await cloud.internal(\"/api/internal/team-setup-requests\", token, { plan: { reason: \"Add a specialist\", newTeams: [],\n"
+    }
+  ],
+  "server/drivers/agents-call.ts": [
+    {
+      "before": "  }\n  if (name === \"list_team_library\") {\n",
+      "after": "  }\n  if (name === \"diagnose_limix\") {\n    return { text: JSON.stringify(await api(\"/api/internal/limix-diagnosis\")) };\n  }\n  if (name === \"list_team_library\") {\n"
+    }
+  ],
+  "server/activity.ts": [
+    {
+      "before": "  list_shared_computers: \"activity.tool.team.listSharedComputers\",\n  list_team_library: \"activity.tool.team.listTeamLibrary\",\n",
+      "after": "  list_shared_computers: \"activity.tool.team.listSharedComputers\",\n  diagnose_limix: \"activity.tool.team.diagnoseLimix\",\n  list_team_library: \"activity.tool.team.listTeamLibrary\",\n"
+    }
+  ],
+  "server/limix-gateway-sidecar.ts": [
+    {
+      "before": "  return true;\n}\n",
+      "after": "  return true;\n}\n\n/** The connections the connector reports (secrets are already masked there); null when this server has no connector or it doesn't answer. */\nexport function limixGatewayConnections(): Promise<Array<{ id: string; platform: string; name?: string; status: string; statusDetail?: string; running?: boolean; enabled?: boolean }> | null> {\n  if (!limixGatewaySidecarOn() || !child) return Promise.resolve(null);\n  return new Promise((resolve) => {\n    const upstream = httpRequest({ host: \"127.0.0.1\", port: GATEWAY_PORT, method: \"GET\", path: \"/api/state\", timeout: 5_000,\n      headers: { host: `127.0.0.1:${GATEWAY_PORT}`, \"x-limix-admin\": ADMIN } }, (response) => {\n      const chunks: Buffer[] = [];\n      response.on(\"data\", (chunk: Buffer) => chunks.push(chunk));\n      response.on(\"end\", () => {\n        try { resolve(response.statusCode === 200 ? (JSON.parse(Buffer.concat(chunks).toString(\"utf8\")).connections ?? null) : null); } catch { resolve(null); }\n      });\n    });\n    upstream.on(\"error\", () => resolve(null));\n    upstream.on(\"timeout\", () => { upstream.destroy(); resolve(null); });\n    upstream.end();\n  });\n}\n"
+    }
+  ],
+  "src/locales/en.json": [
+    {
+      "before": "  \"activity.tool.team.listSharedComputers\": \"List shared computers\",\n  \"activity.tool.team.listTeamLibrary\": \"List team library\",\n",
+      "after": "  \"activity.tool.team.listSharedComputers\": \"List shared computers\",\n  \"activity.tool.team.diagnoseLimix\": \"Check Limix Bot health\",\n  \"activity.tool.team.listTeamLibrary\": \"List team library\",\n"
+    }
+  ],
+  "src/locales/vi.json": [
+    {
+      "before": "  \"activity.tool.team.listSharedComputers\": \"Liệt kê máy tính dùng chung\",\n  \"activity.tool.team.listTeamLibrary\": \"Liệt kê thư viện nhóm\",\n",
+      "after": "  \"activity.tool.team.listSharedComputers\": \"Liệt kê máy tính dùng chung\",\n  \"activity.tool.team.diagnoseLimix\": \"Kiểm tra sức khoẻ Limix Bot\",\n  \"activity.tool.team.listTeamLibrary\": \"Liệt kê thư viện nhóm\",\n"
     }
   ]
 }

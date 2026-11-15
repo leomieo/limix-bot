@@ -9119,6 +9119,7 @@
   "activity.tool.team.listRoomTargets": "List room targets",
   "activity.tool.team.listRooms": "List rooms",
   "activity.tool.team.listSharedComputers": "List shared computers",
+  "activity.tool.team.diagnoseLimix": "Check Limix Bot health",
   "activity.tool.team.listTeamLibrary": "List team library",
   "activity.tool.team.listModels": "List models",
   "activity.tool.team.listTeamSetup": "List team setup",

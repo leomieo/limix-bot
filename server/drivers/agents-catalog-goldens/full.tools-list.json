@@ -676,6 +676,15 @@
       }
     },
     {
+      "name": "diagnose_limix",
+      "description": "Chief of Staff only: read-only health check of Limix Bot: Telegram/Zalo/Discord connection status (running, stopped, token refused, conflict), AI engines that are signed out or missing, and whether any bot exists, each problem with a suggested fix. Call it when the person reports a bot or chat connection not answering, before guessing. It changes nothing: tell the person what is wrong and the fix, and use propose_team_setup for any bot change. Secrets are never included.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      }
+    },
+    {
       "name": "list_team_library",
       "description": "Chief of Staff only: ready-made teams, each with a summary and roles (lead = the team's Chief), and botTemplates: ready-made single bots. Propose either with propose_team_setup (template = a botTemplates id).",
       "inputSchema": {

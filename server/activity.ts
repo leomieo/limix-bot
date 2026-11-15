@@ -98,6 +98,7 @@ const TEAM_ACTION_KEYS: Record<string, string> = {
   list_room_targets: "activity.tool.team.listRoomTargets",
   list_rooms: "activity.tool.team.listRooms",
   list_shared_computers: "activity.tool.team.listSharedComputers",
+  diagnose_limix: "activity.tool.team.diagnoseLimix",
   list_team_library: "activity.tool.team.listTeamLibrary",
   list_models: "activity.tool.team.listModels",
   list_team_setup: "activity.tool.team.listTeamSetup",

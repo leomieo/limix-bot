@@ -21,7 +21,7 @@ const bot = (id: string, extra: Partial<BotRecord> = {}): BotRecord => ({
 
 const TEAMS: LibraryTeamRoles[] = [{ name: "Inbox Follow-up", summary: "Recover quiet sales threads.", roles: [{ name: "Scout", title: "Researcher" }] }];
 
-async function serve(caller: BotRecord, library: () => Promise<LibraryTeamRoles[]>, team: { teams?: string[]; bots?: BotRecord[] } = {}) {
+async function serve(caller: BotRecord, library: () => Promise<LibraryTeamRoles[]>, team: { teams?: string[]; bots?: BotRecord[]; channels?: () => Promise<any> } = {}) {
   const state = { caller: caller as BotRecord | null, active: true };
   const routes = [createInternalChiefTeamRoutes({
     bot: () => state.caller,
@@ -31,6 +31,7 @@ async function serve(caller: BotRecord, library: () => Promise<LibraryTeamRoles[
     instances: async () => [{ instanceId: "claude", driverKind: "claudeAgent", displayName: "Claude", snapshot: { state: "available" },
       models: { default: "sonnet", options: [] }, capabilities: { effortLevels: ["low", "high"] } }],
     library,
+    channels: team.channels,
   })];
   const server = createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost");
@@ -114,5 +115,15 @@ describe("what a Chief of Staff reads about its team", () => {
   it("leaves every other route to the next handler", async () => {
     const { get } = await serve(bot("chief", { chiefOfStaff: true }), async () => TEAMS);
     expect(await get("/api/internal/team-setup-requests")).toEqual({ status: 404, body: { from: "next routes" } });
+  });
+
+  it("gives an active Chief a read-only health check with the failing connection and its fix, and nobody else", async () => {
+    const channels = async () => [{ id: "1", platform: "telegram", name: "Shop", status: "credential_invalid", statusDetail: "401" }];
+    const { get, state } = await serve(bot("chief", { chiefOfStaff: true }), async () => TEAMS, { channels });
+    const answer = await get("/api/internal/limix-diagnosis");
+    expect(answer.status).toBe(200);
+    expect(answer.body).toMatchObject({ ok: false, findings: [expect.objectContaining({ area: "channel", subject: "Telegram · Shop" })] });
+    state.caller = bot("helper");
+    expect((await get("/api/internal/limix-diagnosis")).status).toBe(403);
   });
 });

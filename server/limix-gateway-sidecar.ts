@@ -92,3 +92,21 @@ export function proxyLimixGateway(req: IncomingMessage, res: ServerResponse, pat
   req.pipe(upstream);
   return true;
 }
+
+/** The connections the connector reports (secrets are already masked there); null when this server has no connector or it doesn't answer. */
+export function limixGatewayConnections(): Promise<Array<{ id: string; platform: string; name?: string; status: string; statusDetail?: string; running?: boolean; enabled?: boolean }> | null> {
+  if (!limixGatewaySidecarOn() || !child) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const upstream = httpRequest({ host: "127.0.0.1", port: GATEWAY_PORT, method: "GET", path: "/api/state", timeout: 5_000,
+      headers: { host: `127.0.0.1:${GATEWAY_PORT}`, "x-limix-admin": ADMIN } }, (response) => {
+      const chunks: Buffer[] = [];
+      response.on("data", (chunk: Buffer) => chunks.push(chunk));
+      response.on("end", () => {
+        try { resolve(response.statusCode === 200 ? (JSON.parse(Buffer.concat(chunks).toString("utf8")).connections ?? null) : null); } catch { resolve(null); }
+      });
+    });
+    upstream.on("error", () => resolve(null));
+    upstream.on("timeout", () => { upstream.destroy(); resolve(null); });
+    upstream.end();
+  });
+}

@@ -494,6 +494,9 @@ export async function callTool(called: string, input: Json, context: ToolCallCon
   if (name === "list_team_setup") {
     return { text: JSON.stringify(await api("/api/internal/team-setup-catalog")) };
   }
+  if (name === "diagnose_limix") {
+    return { text: JSON.stringify(await api("/api/internal/limix-diagnosis")) };
+  }
   if (name === "list_team_library") {
     return { text: JSON.stringify(await api("/api/internal/team-library")) };
   }

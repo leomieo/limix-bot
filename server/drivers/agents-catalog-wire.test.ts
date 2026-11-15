@@ -67,7 +67,7 @@ function profiles(): Record<string, Profile> {
 }
 
 const PROFILES = profiles();
-const CHIEF_ONLY_TOOLS = ["create_bot", "list_team_setup", "list_team_library", "propose_team_setup", "propose_bot_deletion", "manage_room", "retry_thread"];
+const CHIEF_ONLY_TOOLS = ["create_bot", "list_team_setup", "diagnose_limix", "list_team_library", "propose_team_setup", "propose_bot_deletion", "manage_room", "retry_thread"];
 const CHIEF_TARGET_TOOLS = ["propose_profile", "propose_model"];
 const CHIEF_PROFILE_TARGET = " A Chief of Staff may pass for_bot_id (from list_bots) for a requested change to another bot in its section.";
 const TEAMWORK_TOOLS = ["list_room_targets", "coordinate_bots", "assignment_status", "list_bots", "list_rooms", "list_threads", "close_thread", "start_thread", "post_to_room"];
@@ -106,9 +106,9 @@ const BUDGET_BASELINE: Record<string, number> = {
   "skills+shared+voice+x": 71242,
   "skills+shared+voice+x+team": 71242,
   "default+no-computer-pick": 60679,
-  "default+room": 57595,
+  "default+room": 58815,
   "non-chief+room": 48379,
-  "skills+shared+voice+x+team+images": 72015,
+  "skills+shared+voice+x+team+images": 73540,
   "default+images": 62945,
 };
 

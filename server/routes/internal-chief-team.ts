@@ -1,6 +1,7 @@
 import { hasTeamAuthority, peerAllowed } from "../peer-roster.ts"; import { chiefLevel } from "../chief-level.ts";
 import type { BotRecord } from "../store.ts";
 import { libraryTeamRoles } from "../team-library.ts";
+import { diagnoseLimix, type ChannelConnection } from "../limix-diagnose.ts";
 import { READY_BOTS } from "../../shared/ready-bots.ts";
 
 const BOT_TEMPLATES = READY_BOTS.map((bot) => ({ id: bot.id, name: bot.name, title: bot.title, description: bot.description, category: bot.category }));
@@ -10,7 +11,7 @@ interface CatalogInstance {
   instanceId: string;
   driverKind: string;
   displayName: string;
-  snapshot: { state: string };
+  snapshot: { state: string; reason?: string };
   models: unknown;
   capabilities?: { effortLevels?: readonly string[] };
 }
@@ -26,14 +27,21 @@ export function createInternalChiefTeamRoutes(deps: {
   bots(): readonly BotRecord[];
   instances(): Promise<readonly CatalogInstance[]>;
   library?: typeof libraryTeamRoles;
+  channels?(): Promise<readonly ChannelConnection[] | null>;
 }): RouteHandler {
   const chief = () => {
     const bot = deps.bot();
     return chiefLevel(bot) && !bot!.hidden ? bot : null;
   };
   return async ({ res, path, method, json }) => {
-    if (method !== "GET" || (path !== "/api/internal/team-setup-catalog" && path !== "/api/internal/team-library")) return PASS;
+    if (method !== "GET" || (path !== "/api/internal/team-setup-catalog" && path !== "/api/internal/team-library" && path !== "/api/internal/limix-diagnosis")) return PASS;
     if (!chief()) return json(res, 403, { error: NOT_CHIEF });
+    if (path === "/api/internal/limix-diagnosis") {
+      const [instances, channels] = await Promise.all([deps.instances(), (deps.channels?.() ?? Promise.resolve(null)).catch(() => null)]);
+      deps.requireActive();
+      return chief() ? json(res, 200, diagnoseLimix({ engines: instances.map((item) => ({ instanceId: item.instanceId, displayName: item.displayName, state: item.snapshot.state, reason: item.snapshot.reason })),
+        channels, bots: deps.bots() })) : json(res, 403, { error: NOT_CHIEF });
+    }
     if (path === "/api/internal/team-library") {
       let teams: Awaited<ReturnType<typeof libraryTeamRoles>> = [];
       let note: string | undefined;
