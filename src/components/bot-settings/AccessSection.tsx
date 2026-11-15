@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { lx } from "@/lib/limix-text";
 import { browserUnavailableReason } from "@/lib/feature-flags";
 import { ChevronDown, ChevronRight, FolderOpen, Plus } from "lucide-react";
 
@@ -595,6 +596,61 @@ export function VpsAliasField({ bot }: { bot: Bot }) {
   );
 }
 
+/** Limix: this bot's own Private desktop size, used when each bot has its own desktop. Empty follows the workspace. */
+export function DesktopResourcesField({ bot }: { bot: Bot }) {
+  const { request: api } = useBotEditor();
+  const { state } = useStore();
+  const workspace = state.config?.localVm?.resources ?? { memoryGb: 4, cpus: 2 };
+  const perBot = state.config?.localVm?.mode === "per-bot";
+  const [memory, setMemory] = useState<string | null>(null);
+  const [cpus, setCpus] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const memoryValue = memory ?? (bot.desktopResources?.memoryGb?.toString() ?? "");
+  const cpuValue = cpus ?? (bot.desktopResources?.cpus?.toString() ?? "");
+  const save = async () => {
+    setSaving(true); setError(null); setSaved(false);
+    const number = (text: string) => text.trim() === "" ? null : Number(text.trim());
+    try {
+      await api(`/api/bots/${bot.id}`, { method: "PATCH", body: JSON.stringify({ desktopResources: { memoryGb: number(memoryValue), cpus: number(cpuValue) } }) });
+      setMemory(null); setCpus(null); setSaved(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <div className="mt-3 rounded-lg bg-inset p-3" data-testid="access-desktop-resources">
+      <div className="text-[13px] text-ink">{lx("Cấu hình Desktop riêng", "Private desktop size")}</div>
+      <div className="mt-0.5 text-[12px] text-ink-secondary">
+        {lx(`Để trống để dùng cài đặt chung (${workspace.memoryGb} GB RAM, ${workspace.cpus} CPU). Áp dụng khi desktop của bot được tạo mới hoặc khởi động lại.`,
+          `Leave empty to use the workspace setting (${workspace.memoryGb} GB RAM, ${workspace.cpus} CPU). Takes effect when this bot's desktop is next created or started.`)}
+        {!perBot && <> {lx("Chỉ dùng khi mỗi bot có desktop riêng (Cài đặt > Máy ảo).", "Used only when each bot has its own desktop (Settings > Local VM).")}</>}
+      </div>
+      <form className="mt-2 flex flex-wrap items-center gap-2" onSubmit={(e) => { e.preventDefault(); void save(); }}>
+        <label className="flex items-center gap-1.5 text-[12px] text-ink-secondary">
+          RAM (GB)
+          <input className={cn(inputCls, "w-20 text-[13px]")} inputMode="numeric" placeholder={String(workspace.memoryGb)} value={memoryValue}
+            aria-label={lx("RAM (GB) của desktop", "Desktop RAM (GB)")} onChange={(e) => { setMemory(e.target.value); setSaved(false); }} />
+        </label>
+        <label className="flex items-center gap-1.5 text-[12px] text-ink-secondary">
+          CPU
+          <input className={cn(inputCls, "w-16 text-[13px]")} inputMode="numeric" placeholder={String(workspace.cpus)} value={cpuValue}
+            aria-label={lx("Số CPU của desktop", "Desktop CPUs")} onChange={(e) => { setCpus(e.target.value); setSaved(false); }} />
+        </label>
+        <button type="submit" disabled={saving || (memory === null && cpus === null)}
+          className="shrink-0 rounded-lg bg-control px-3 py-2 text-[13px] text-ink hover:bg-raised-hover disabled:opacity-50">
+          {lx("Lưu", "Save")}
+        </button>
+      </form>
+      {error && <div className="mt-2 text-[12px] text-danger">{error}</div>}
+      {saved && <div role="status" className="mt-2 text-[12px] text-ink-secondary">{lx("Đã lưu.", "Saved.")}</div>}
+    </div>
+  );
+}
+
 export function CloudPreference({ bot, patch }: { bot: Bot; patch: ReturnType<typeof useBotSettingsDerived>["patch"] }) {
   const { state } = useStore();
   const { draft } = useBotEditor();
@@ -723,6 +779,7 @@ export function AccessSection({
           </button>
         </>}
         <CloudPreference bot={bot} patch={patch} />
+        {!draft && <DesktopResourcesField bot={bot} />}
       </div>}
 
       {shows("folder") && <WorkingFolder bot={bot} />}

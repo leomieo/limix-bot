@@ -128,7 +128,7 @@ import { vpsLeftBehindNotice } from "./cloud-backend.ts";
 import * as composio from "./composio.ts";
 import { appSandboxRule, connectorCallFromFrame, connectorRefusalText, connectorScopeRefusalText, connectorUnrecognizedText, evaluateConnectorTools } from "./connector-verdict.ts";
 import { signInCardText } from "./connector-card-text.ts";
-import { BOT_PAUSED_CODE } from "../shared/bot-limit.ts"; import { createStarterAwake } from "./host/starter-awake.ts"; import { createStarterCaps } from "./host/starter-caps.ts"; import { createStarterAwakeRoutes } from "./routes/starter-awake.ts"; import { chiefOfStaffSystemPrompt } from "./chief-of-staff.ts"; import { coordinateTooLong } from "./too-long.ts"; import { chiefAbsentFrom, createChiefRooms } from "./host/chief-rooms.ts"; import { chiefLevel, readTeamRolesWith } from "./chief-level.ts"; import { defaultBotRefusal, ensureDefaultBot } from "./default-bot.ts"; import { renameLegacyDefaultBots } from "./limix-assistant-name.ts";
+import { BOT_PAUSED_CODE } from "../shared/bot-limit.ts"; import { createStarterAwake } from "./host/starter-awake.ts"; import { createStarterCaps } from "./host/starter-caps.ts"; import { createStarterAwakeRoutes } from "./routes/starter-awake.ts"; import { chiefOfStaffSystemPrompt } from "./chief-of-staff.ts"; import { coordinateTooLong } from "./too-long.ts"; import { chiefAbsentFrom, createChiefRooms } from "./host/chief-rooms.ts"; import { chiefLevel, readTeamRolesWith } from "./chief-level.ts"; import { defaultBotRefusal, ensureDefaultBot } from "./default-bot.ts"; import { renameLegacyDefaultBots } from "./limix-assistant-name.ts"; import { withBotDesktopResources } from "./limix-desktop-resources.ts"; import type { DesktopResources } from "./container-limits.ts";
 import { buildRecall, recallRooms, recallThreadIds, withRecalled } from "./recall.ts";
 import { hostTimeZone, takesTurnClock, turnClockLine, withTurnClock } from "./turn-clock.ts";
 import { createMemoryUpkeep, dreamConversations, upkeepEnabled } from "./memory-upkeep.ts";
@@ -3116,6 +3116,12 @@ function fullAccessForSource(botId: string, threadId: string): boolean {
   return sourceApprovalMode(botId, threadId) === "full";
 }
 
+/** Limix: a bot's own desktop takes that bot's size when it set one; the shared and pooled desktops keep the workspace's. */
+function localVmResourcesFor(target: LocalVmTarget): DesktopResources {
+  const bot = target.key.startsWith("bot:") ? store.bots.find((candidate) => perBotLocalVmTarget(candidate.id).key === target.key) : undefined;
+  return withBotDesktopResources(localVmResources(cfg), bot);
+}
+
 /** Limix: bot and team changes the assistant proposes always wait for the person's decision on a card. */
 function limixProposalsWaitForReview(): DirectApply | null { return null; }
 
@@ -5653,7 +5659,7 @@ let localVmProvisionBusy = false;
 let localVmModeChangeBusy = false;
 const localVmUpdates = createLocalVmUpdater({
   status: (target) => containerComputerStatus(undefined, undefined, target),
-  act: (action, target) => containerComputerAction(action, undefined, undefined, target, localVmResources(cfg), () => localVmMaxInstances(cfg)),
+  act: (action, target) => containerComputerAction(action, undefined, undefined, target, localVmResourcesFor(target), () => localVmMaxInstances(cfg)),
   imageBusy: { get: () => localVmImageBusy, set: (busy) => { localVmImageBusy = busy; } },
   provisionBusy: { get: () => localVmProvisionBusy, set: (busy) => { localVmProvisionBusy = busy; } },
   lifecycleBusy: localVmLifecycleBusy,
@@ -11735,7 +11741,7 @@ async function readyLocalVmForTurn(botId: string, target: LocalVmTarget, isCurre
 
     broadcast({ kind: "computer", botId, state: "provisioning" });
     try {
-      status = await containerComputerAction(action, undefined, undefined, target, localVmResources(cfg), () => localVmMaxInstances(cfg));
+      status = await containerComputerAction(action, undefined, undefined, target, localVmResourcesFor(target), () => localVmMaxInstances(cfg));
     } catch {
       // `run` can throw after the container exists, so arm the idle backstop anyway.
       localVmIdleFor(target).touch();
@@ -11829,6 +11835,7 @@ function configStatus() {
       automaticCapacity: localVmAutomaticCapacity(cfg),
       idleTimeoutMinutes: localVmIdleTimeoutMinutes(cfg),
       preserveInstalledApps: localVmPreservesInstalledApps(cfg),
+      resources: localVmResources(cfg),
     },
     features: {
       skillAuthoring: skillAuthoringEnabled(cfg),

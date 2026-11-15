@@ -67,6 +67,14 @@
       "after": "      if (await dispatchRoutes([createBurstProposalRoutes({ requireActive: requireActiveInternalCapability, readBody: readInternalBody, refusal: () => burstProposalRefusal({ owner: connectorThread(internalSender.id, internalCapability.threadId), outside: outsideWorkStaysHere(internalCapability.threadId), self: selfThreadRefusal({ handoff: Boolean(internalCapability.roomHandoffId), requestLine: store.activePath(internalCapability.threadId).findLast((line) => line.role === \"user\" && line.kind === \"text\") }) }), model: () => burst.model(internalSender, internalCapability.threadId), propose: (plan) => burst.propose({ ...plan, botId: internalSender.id, threadId: internalCapability.threadId }) }), createInternalChiefTeamRoutes({ bot: () => store.bot(internalCapability.botId), requireActive: requireActiveInternalCapability,\n        teams: teamSetupTeams, bots: () => store.bots, instances: () => registry.describe(), channels: limixGatewayConnections }), createInternalModelRoutes({ requireActive: requireActiveInternalCapability, menu: (search) => ownThreads.menu(internalCapability.botId, internalCapability.threadId, search) })], { req, res, url, path, method, auth, json, readBody })) return;\n      if (method === \"POST\" && path === \"/api/internal/team-setup-requests\") {\n"
     },
     {
+      "before": "      preserveInstalledApps: localVmPreservesInstalledApps(cfg),\n    },\n",
+      "after": "      preserveInstalledApps: localVmPreservesInstalledApps(cfg),\n      resources: localVmResources(cfg),\n    },\n"
+    },
+    {
+      "before": "    try {\n      status = await containerComputerAction(action, undefined, undefined, target, localVmResources(cfg), () => localVmMaxInstances(cfg));\n    } catch {\n",
+      "after": "    try {\n      status = await containerComputerAction(action, undefined, undefined, target, localVmResourcesFor(target), () => localVmMaxInstances(cfg));\n    } catch {\n"
+    },
+    {
       "before": "\nasync function resolveAndSendTeamSetup(res: ServerResponse, args: { botId: string; threadId: string; requestId: string; behavior: string }, ownerReview: boolean): Promise<boolean> {\n  const card = store.messagesFor(args.threadId).find((item) => item.card?.requestId === args.requestId && item.card.teamSetupRequest)?.card;\n",
       "after": "\nasync function resolveAndSendTeamSetup(res: ServerResponse, args: { botId: string; threadId: string; requestId: string; behavior: string; room?: boolean }, ownerReview: boolean): Promise<boolean> {\n  const card = store.messagesFor(args.threadId).find((item) => item.card?.requestId === args.requestId && item.card.teamSetupRequest)?.card;\n"
     },
@@ -75,8 +83,12 @@
       "after": "  store, teams: teamSetupTeams, hasTeamAuthority, canPersist: proposalPersistence, maxBots: MAX_WORKSPACE_BOTS,\n  autoApply: limixProposalsWaitForReview,\n  createRoom: (request, botIds) => {\n    const chief = store.bot(request.botId);\n    if (!chief || chief.hidden) throw new TeamSetupError(\"The assistant that proposed this group chat is no longer active\", 409);\n    const group = createChannel({ name: redactSecretsInText(request.room!.name), memberIds: [...new Set([chief.id, ...botIds])], section: chief.section,\n      setup: { bulletin: \"\", defaultResponder: deciderReady(cfg, \"roomRouting\") ? { kind: \"auto\", fallbackBotId: chief.id } : { kind: \"member\", botId: chief.id } } });\n    broadcast({ kind: \"group\", group: publicGroupState(group) });\n    return { id: group.id, name: group.name };\n  },\n  validateChange: (before, fields) => assertTeamComputerChangeIdle(before, { ...before, ...fields }),\n"
     },
     {
+      "before": "  status: (target) => containerComputerStatus(undefined, undefined, target),\n  act: (action, target) => containerComputerAction(action, undefined, undefined, target, localVmResources(cfg), () => localVmMaxInstances(cfg)),\n  imageBusy: { get: () => localVmImageBusy, set: (busy) => { localVmImageBusy = busy; } },\n",
+      "after": "  status: (target) => containerComputerStatus(undefined, undefined, target),\n  act: (action, target) => containerComputerAction(action, undefined, undefined, target, localVmResourcesFor(target), () => localVmMaxInstances(cfg)),\n  imageBusy: { get: () => localVmImageBusy, set: (busy) => { localVmImageBusy = busy; } },\n"
+    },
+    {
       "before": "  return sourceApprovalMode(botId, threadId) === \"full\";\n}\n\nfunction appliesDirectly(botId: string, threadId: string): DirectApply | null {\n",
-      "after": "  return sourceApprovalMode(botId, threadId) === \"full\";\n}\n\n/** Limix: bot and team changes the assistant proposes always wait for the person's decision on a card. */\nfunction limixProposalsWaitForReview(): DirectApply | null { return null; }\n\nfunction appliesDirectly(botId: string, threadId: string): DirectApply | null {\n"
+      "after": "  return sourceApprovalMode(botId, threadId) === \"full\";\n}\n\n/** Limix: a bot's own desktop takes that bot's size when it set one; the shared and pooled desktops keep the workspace's. */\nfunction localVmResourcesFor(target: LocalVmTarget): DesktopResources {\n  const bot = target.key.startsWith(\"bot:\") ? store.bots.find((candidate) => perBotLocalVmTarget(candidate.id).key === target.key) : undefined;\n  return withBotDesktopResources(localVmResources(cfg), bot);\n}\n\n/** Limix: bot and team changes the assistant proposes always wait for the person's decision on a card. */\nfunction limixProposalsWaitForReview(): DirectApply | null { return null; }\n\nfunction appliesDirectly(botId: string, threadId: string): DirectApply | null {\n"
     },
     {
       "before": "}\nconst firstHourFresh = Boolean(CLOUD_PERSONAL) && store.needsSeed(); testedAi.seed({ defaultBot: !CLOUD_TEAM, ...(firstHourFresh ? { intro: (bot) => greetingMessage(bot, { name: cfg.profile?.name }, cfg.language) } : {}) }); moveFreeze.hold(() => { if (!CLOUD_TEAM) ensureDefaultBot(store, { dataDir: DATA_DIR }); }, () => {}); if (CLOUD_TEAM) readTeamRolesWith((email) => sessions.list().filter((session) => session.email?.toLowerCase() === email && session.teamRole).sort((a, b) => b.createdAt - a.createdAt)[0]?.teamRole ?? null); if (CLOUD_TEAM) void mausbotOwnChat.claimAll();\nhostedModels?.reconcile(store);\n",
@@ -88,7 +100,7 @@
     },
     {
       "before": "import { signInCardText } from \"./connector-card-text.ts\";\nimport { BOT_PAUSED_CODE } from \"../shared/bot-limit.ts\"; import { createStarterAwake } from \"./host/starter-awake.ts\"; import { createStarterCaps } from \"./host/starter-caps.ts\"; import { createStarterAwakeRoutes } from \"./routes/starter-awake.ts\"; import { chiefOfStaffSystemPrompt } from \"./chief-of-staff.ts\"; import { coordinateTooLong } from \"./too-long.ts\"; import { chiefAbsentFrom, createChiefRooms } from \"./host/chief-rooms.ts\"; import { chiefLevel, readTeamRolesWith } from \"./chief-level.ts\"; import { defaultBotRefusal, ensureDefaultBot } from \"./default-bot.ts\";\nimport { buildRecall, recallRooms, recallThreadIds, withRecalled } from \"./recall.ts\";\n",
-      "after": "import { signInCardText } from \"./connector-card-text.ts\";\nimport { BOT_PAUSED_CODE } from \"../shared/bot-limit.ts\"; import { createStarterAwake } from \"./host/starter-awake.ts\"; import { createStarterCaps } from \"./host/starter-caps.ts\"; import { createStarterAwakeRoutes } from \"./routes/starter-awake.ts\"; import { chiefOfStaffSystemPrompt } from \"./chief-of-staff.ts\"; import { coordinateTooLong } from \"./too-long.ts\"; import { chiefAbsentFrom, createChiefRooms } from \"./host/chief-rooms.ts\"; import { chiefLevel, readTeamRolesWith } from \"./chief-level.ts\"; import { defaultBotRefusal, ensureDefaultBot } from \"./default-bot.ts\"; import { renameLegacyDefaultBots } from \"./limix-assistant-name.ts\";\nimport { buildRecall, recallRooms, recallThreadIds, withRecalled } from \"./recall.ts\";\n"
+      "after": "import { signInCardText } from \"./connector-card-text.ts\";\nimport { BOT_PAUSED_CODE } from \"../shared/bot-limit.ts\"; import { createStarterAwake } from \"./host/starter-awake.ts\"; import { createStarterCaps } from \"./host/starter-caps.ts\"; import { createStarterAwakeRoutes } from \"./routes/starter-awake.ts\"; import { chiefOfStaffSystemPrompt } from \"./chief-of-staff.ts\"; import { coordinateTooLong } from \"./too-long.ts\"; import { chiefAbsentFrom, createChiefRooms } from \"./host/chief-rooms.ts\"; import { chiefLevel, readTeamRolesWith } from \"./chief-level.ts\"; import { defaultBotRefusal, ensureDefaultBot } from \"./default-bot.ts\"; import { renameLegacyDefaultBots } from \"./limix-assistant-name.ts\"; import { withBotDesktopResources } from \"./limix-desktop-resources.ts\"; import type { DesktopResources } from \"./container-limits.ts\";\nimport { buildRecall, recallRooms, recallThreadIds, withRecalled } from \"./recall.ts\";\n"
     }
   ],
   "server/routes/bot-messages.ts": [
@@ -277,6 +289,10 @@
     {
       "before": "      rememberCommand?: boolean;\n      onError?: (message: string) => void;\n",
       "after": "      rememberCommand?: boolean;\n      /** A team setup card that offers a group chat: false approves the bots without it. */\n      room?: boolean;\n      onError?: (message: string) => void;\n"
+    },
+    {
+      "before": "  helperModel?: boolean;\n  mcpServers?: string[] | null;\n",
+      "after": "  helperModel?: boolean;\n  desktopResources?: { memoryGb?: number; cpus?: number };\n  mcpServers?: string[] | null;\n"
     }
   ],
   "server/chief-of-staff.test.ts": [
@@ -507,6 +523,42 @@
     {
       "before": "  \"activity.tool.team.listSharedComputers\": \"Liệt kê máy tính dùng chung\",\n  \"activity.tool.team.listTeamLibrary\": \"Liệt kê thư viện nhóm\",\n",
       "after": "  \"activity.tool.team.listSharedComputers\": \"Liệt kê máy tính dùng chung\",\n  \"activity.tool.team.diagnoseLimix\": \"Kiểm tra sức khoẻ Limix Bot\",\n  \"activity.tool.team.listTeamLibrary\": \"Liệt kê thư viện nhóm\",\n"
+    }
+  ],
+  "server/routes/bot-patch.ts": [
+    {
+      "before": "        patch.cacheKeepWarm = body.cacheKeepWarm ?? undefined;\n      }\n",
+      "after": "        patch.cacheKeepWarm = body.cacheKeepWarm ?? undefined;\n      }\n      if (body.desktopResources !== undefined) {\n        const parsed = limixDesktopResources(body.desktopResources);\n        if (\"error\" in parsed) return json(res, 400, { error: parsed.error });\n        patch.desktopResources = parsed.value;\n      }\n"
+    },
+    {
+      "before": "import { z } from \"zod\";\n\n",
+      "after": "import { z } from \"zod\";\nimport { limixDesktopResources } from \"../limix-desktop-resources.ts\";\n\n"
+    }
+  ],
+  "shared/wire.ts": [
+    {
+      "before": "  helperModel?: boolean;\n  /** Which of the app-wide MCP servers this bot mounts, by name. */\n",
+      "after": "  helperModel?: boolean;\n  /** Limix: this bot's own Private desktop limits (GiB of memory, CPUs) when each bot has its own desktop; a field left out follows the workspace setting. */\n  desktopResources?: { memoryGb?: number; cpus?: number };\n  /** Which of the app-wide MCP servers this bot mounts, by name. */\n"
+    }
+  ],
+  "src/state/config-status.ts": [
+    {
+      "before": "  cacheKeepWarm?: { enabled: boolean; windowMinutes: number };\n  localVm: { mode: \"shared\" | \"per-bot\" | \"pool\"; maxInstances: number; automaticCapacity?: boolean; idleTimeoutMinutes?: number; preserveInstalledApps?: boolean };\n  /** `providerKeys`: names of the keys saved for OpenCode's other\n",
+      "after": "  cacheKeepWarm?: { enabled: boolean; windowMinutes: number };\n  localVm: { mode: \"shared\" | \"per-bot\" | \"pool\"; maxInstances: number; automaticCapacity?: boolean; idleTimeoutMinutes?: number; preserveInstalledApps?: boolean; resources?: { memoryGb: number; cpus: number } };\n  /** `providerKeys`: names of the keys saved for OpenCode's other\n"
+    }
+  ],
+  "src/components/bot-settings/AccessSection.tsx": [
+    {
+      "before": "        <CloudPreference bot={bot} patch={patch} />\n      </div>}\n",
+      "after": "        <CloudPreference bot={bot} patch={patch} />\n        {!draft && <DesktopResourcesField bot={bot} />}\n      </div>}\n"
+    },
+    {
+      "before": "\nexport function CloudPreference({ bot, patch }: { bot: Bot; patch: ReturnType<typeof useBotSettingsDerived>[\"patch\"] }) {\n",
+      "after": "\n/** Limix: this bot's own Private desktop size, used when each bot has its own desktop. Empty follows the workspace. */\nexport function DesktopResourcesField({ bot }: { bot: Bot }) {\n  const { request: api } = useBotEditor();\n  const { state } = useStore();\n  const workspace = state.config?.localVm?.resources ?? { memoryGb: 4, cpus: 2 };\n  const perBot = state.config?.localVm?.mode === \"per-bot\";\n  const [memory, setMemory] = useState<string | null>(null);\n  const [cpus, setCpus] = useState<string | null>(null);\n  const [error, setError] = useState<string | null>(null);\n  const [saved, setSaved] = useState(false);\n  const [saving, setSaving] = useState(false);\n  const memoryValue = memory ?? (bot.desktopResources?.memoryGb?.toString() ?? \"\");\n  const cpuValue = cpus ?? (bot.desktopResources?.cpus?.toString() ?? \"\");\n  const save = async () => {\n    setSaving(true); setError(null); setSaved(false);\n    const number = (text: string) => text.trim() === \"\" ? null : Number(text.trim());\n    try {\n      await api(`/api/bots/${bot.id}`, { method: \"PATCH\", body: JSON.stringify({ desktopResources: { memoryGb: number(memoryValue), cpus: number(cpuValue) } }) });\n      setMemory(null); setCpus(null); setSaved(true);\n    } catch (e) {\n      setError(e instanceof Error ? e.message : String(e));\n    } finally {\n      setSaving(false);\n    }\n  };\n  return (\n    <div className=\"mt-3 rounded-lg bg-inset p-3\" data-testid=\"access-desktop-resources\">\n      <div className=\"text-[13px] text-ink\">{lx(\"Cấu hình Desktop riêng\", \"Private desktop size\")}</div>\n      <div className=\"mt-0.5 text-[12px] text-ink-secondary\">\n        {lx(`Để trống để dùng cài đặt chung (${workspace.memoryGb} GB RAM, ${workspace.cpus} CPU). Áp dụng khi desktop của bot được tạo mới hoặc khởi động lại.`,\n          `Leave empty to use the workspace setting (${workspace.memoryGb} GB RAM, ${workspace.cpus} CPU). Takes effect when this bot's desktop is next created or started.`)}\n        {!perBot && <> {lx(\"Chỉ dùng khi mỗi bot có desktop riêng (Cài đặt > Máy ảo).\", \"Used only when each bot has its own desktop (Settings > Local VM).\")}</>}\n      </div>\n      <form className=\"mt-2 flex flex-wrap items-center gap-2\" onSubmit={(e) => { e.preventDefault(); void save(); }}>\n        <label className=\"flex items-center gap-1.5 text-[12px] text-ink-secondary\">\n          RAM (GB)\n          <input className={cn(inputCls, \"w-20 text-[13px]\")} inputMode=\"numeric\" placeholder={String(workspace.memoryGb)} value={memoryValue}\n            aria-label={lx(\"RAM (GB) của desktop\", \"Desktop RAM (GB)\")} onChange={(e) => { setMemory(e.target.value); setSaved(false); }} />\n        </label>\n        <label className=\"flex items-center gap-1.5 text-[12px] text-ink-secondary\">\n          CPU\n          <input className={cn(inputCls, \"w-16 text-[13px]\")} inputMode=\"numeric\" placeholder={String(workspace.cpus)} value={cpuValue}\n            aria-label={lx(\"Số CPU của desktop\", \"Desktop CPUs\")} onChange={(e) => { setCpus(e.target.value); setSaved(false); }} />\n        </label>\n        <button type=\"submit\" disabled={saving || (memory === null && cpus === null)}\n          className=\"shrink-0 rounded-lg bg-control px-3 py-2 text-[13px] text-ink hover:bg-raised-hover disabled:opacity-50\">\n          {lx(\"Lưu\", \"Save\")}\n        </button>\n      </form>\n      {error && <div className=\"mt-2 text-[12px] text-danger\">{error}</div>}\n      {saved && <div role=\"status\" className=\"mt-2 text-[12px] text-ink-secondary\">{lx(\"Đã lưu.\", \"Saved.\")}</div>}\n    </div>\n  );\n}\n\nexport function CloudPreference({ bot, patch }: { bot: Bot; patch: ReturnType<typeof useBotSettingsDerived>[\"patch\"] }) {\n"
+    },
+    {
+      "before": "import { useEffect, useState } from \"react\";\nimport { browserUnavailableReason } from \"@/lib/feature-flags\";\n",
+      "after": "import { useEffect, useState } from \"react\";\nimport { lx } from \"@/lib/limix-text\";\nimport { browserUnavailableReason } from \"@/lib/feature-flags\";\n"
     }
   ]
 }

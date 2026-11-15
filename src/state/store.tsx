@@ -329,6 +329,7 @@ export interface Bot extends DefaultBotFields, Pick<WireBot, "mascotFaceColor" |
   memoryUpkeep?: boolean;
   cacheKeepWarm?: boolean | null;
   helperModel?: boolean;
+  desktopResources?: { memoryGb?: number; cpus?: number };
   mcpServers?: string[] | null;
   browserProfile?: string | null;
   visibility?: BotVisibility;

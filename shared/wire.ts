@@ -398,6 +398,8 @@ export interface WireBot extends DefaultBotFields, BotAccessFields {
   cacheKeepWarm?: boolean;
   /** false: the workspace's helper model never writes this bot's background texts. Absent or true: allowed. */
   helperModel?: boolean;
+  /** Limix: this bot's own Private desktop limits (GiB of memory, CPUs) when each bot has its own desktop; a field left out follows the workspace setting. */
+  desktopResources?: { memoryGb?: number; cpus?: number };
   /** Which of the app-wide MCP servers this bot mounts, by name. */
   mcpServers?: string[];
   /** Owner-selected original tool identities. An empty allowlist permits none. */

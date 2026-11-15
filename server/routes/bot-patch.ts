@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { limixDesktopResources } from "../limix-desktop-resources.ts";
 
 import { approvalModeFor, isApprovalMode, type ApprovalMode } from "../../shared/approval-mode.ts";
 import { normalizeConnectorScopes } from "../../shared/connector-scopes.ts";
@@ -350,6 +351,11 @@ export function createBotPatchRoutes(deps: BotPatchRouteDeps): RouteHandler {
       if (body.cacheKeepWarm !== undefined) {
         if (body.cacheKeepWarm !== null && typeof body.cacheKeepWarm !== "boolean") return json(res, 400, { error: "cacheKeepWarm must be true, false or null" });
         patch.cacheKeepWarm = body.cacheKeepWarm ?? undefined;
+      }
+      if (body.desktopResources !== undefined) {
+        const parsed = limixDesktopResources(body.desktopResources);
+        if ("error" in parsed) return json(res, 400, { error: parsed.error });
+        patch.desktopResources = parsed.value;
       }
       if (body.helperModel !== undefined) {
         if (typeof body.helperModel !== "boolean") return json(res, 400, { error: "helperModel must be true or false" });
