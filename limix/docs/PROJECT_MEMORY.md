@@ -7,6 +7,8 @@
 
 ## 1. Trạng thái hiện tại (luôn ghi đè cho đúng)
 
+- Cloud native beta on cloud-native-codex: per-account Cloud homes, signed pairing, owner trial decisions and opt-in sleep. See EVIDENCE_CLOUD_NATIVE_CODEX.md for verification and outstanding Xeon acceptance.
+
 - Managed beta image includes pinned Google Antigravity ACP alongside Codex and Claude Code. Customers can configure API providers inside their account runtime.
 
 - Managed Cloud beta can allocate a per-account server + gateway, with isolated persistent CLI HOME and a loopback pairing edge. Enrolled desktop users can request provisioning from their account menu.
@@ -60,6 +62,8 @@
 
 ## 2. Bản đồ thư mục dự án
 
+- Cloud native: deploy/managed-beta/{host,power-probe,wake-proxy,smoke}.mjs, control-plane migration 0022 and src/{cloud-owner,cloud-power-admin}.ts. Operational steps in deploy/managed-beta/README.md.
+
 | Đường dẫn | Là gì |
 |---|---|
 | `CLAUDE.md` | Luật làm việc, quyết định đã chốt, lộ trình |
@@ -91,6 +95,8 @@
 | F13 | Windows build chính thức chạy trên GitHub `windows-latest`: `pnpm install --frozen-lockfile` → `pnpm package:win` | `.github/workflows/package-win.yml` @6f226f1 | 2026-11-11 |
 
 ## 4. Vấn đề mở / rủi ro
+
+- Cloud native beta was exercised on local i9 Docker Desktop. Xeon, real tenant login, public tunnel and live messaging remain unverified. Enabled messaging gateway keeps the home awake. No production deployment.
 
 - Cloud volume persistence is separate from backups and local CLI sign-in migration. No real subscription sign-in or live provider request verified for this image.
 
@@ -142,6 +148,8 @@
 | R10 | Máy chủ Claude không đẩy được tag git (chỉ đẩy nhánh) | Build kích hoạt bằng push lên `main`; tag phát hành do workflow tự tạo | Đã xử lý |
 
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
+
+- 2026-11-16: implemented C1–C4 on cloud-native-codex. Two real home containers verified pairing, key/session isolation and persistence. Worker 180/180 and host/proxy 9/9 passed.
 
 - Built the managed Linux x64 image; verified real Antigravity ACP 1.4.3 initialization, synthetic OpenAI-compatible key persistence across recreation, and account isolation in two Docker fixtures.
 

@@ -1,45 +1,48 @@
-# Limix Cloud nội bộ trên Windows
+# Limix Cloud native beta trên Windows
 
-Mỗi tài khoản được duyệt có một Limix Server chạy nền, gateway nhắn tin, mạng Docker và volume riêng. Desktop ảo cho bot là tài nguyên riêng. Worker điều phối ở accounts.limixmedia.com dùng chung xác thực Limix hiện tại. Máy Xeon chủ động hỏi Worker mỗi 30 giây. Phiên bản này dành cho một máy chủ vận hành.
+Mỗi tài khoản được duyệt có một Cloud home, volume `cloud` và CLI HOME riêng. Home chạy root launcher của target `cloud-home`, Caddy :8080, server và gateway. Các home cùng nằm trên mạng ingress `limix-managed-edge`; đây không phải mạng riêng cho từng khách. API của mỗi home vẫn yêu cầu phiên riêng. Không gắn Docker socket hoặc thư mục máy chủ vào home.
 
-## Chuẩn bị một lần
+## Build và kiểm chứng
 
-1. Trên Xeon, dùng Docker Linux và Node 24.14 trở lên. Tại thư mục gốc của bản mã này, build image có CLI rồi chạy kiểm thử với hai tài khoản giả lập.
+Chạy tại gốc repository trên nhánh `cloud-native-codex`, không dùng image target `server` cũ:
 
-   ```powershell
-   docker build --target server --build-arg "ENGINES=@anthropic-ai/claude-code @openai/codex" -t limix-managed-base:beta .
-   docker build -f deploy/managed-beta/Dockerfile -t limix-managed-home:beta .
-   $env:LIMIX_HOME_IMAGE = 'limix-managed-home:beta'
-   node deploy/managed-beta/smoke.mjs
-   ```
+```powershell
+docker build --target cloud-home --build-arg "CLOUD_HOME_ENGINES=@anthropic-ai/claude-code @openai/codex" -t limix-cloud-home:beta .
+docker build -f deploy/managed-beta/Dockerfile -t limix-managed-home:beta .
+$env:LIMIX_HOME_IMAGE = 'limix-managed-home:beta'
+node deploy/managed-beta/smoke.mjs
+# Tùy chọn: thử ngủ/thức thật, thêm khoảng 130 giây chờ idle.
+$env:LIMIX_SMOKE_POWER = '1'
+node deploy/managed-beta/smoke.mjs
+Remove-Item Env:LIMIX_SMOKE_POWER
+```
 
-2. Trên Xeon, tạo khóa host. Lệnh dưới sinh 32 byte ngẫu nhiên, lưu bằng DPAPI của người dùng đang vận hành Docker Desktop và chép khóa vào clipboard; khóa không hiện trên màn hình.
+Smoke chỉ tạo UUID/volume thử nghiệm và xóa chính các volume đó khi xong. Không dùng tài khoản, API key hoặc dữ liệu khách thật. Codex, Claude Code và Antigravity ACP có sẵn trong image; cài CLI không đồng nghĩa đã đăng nhập hoặc gọi model thành công.
 
-   ```powershell
-   .\deploy\managed-beta\host.ps1 -Action Configure -Capacity 1 -Generate
-   ```
+## Triển khai phối hợp với Worker
 
-   Dán khóa vào secret GitHub `LIMIX_BETA_HOST_TOKEN` của repository, rồi chạy workflow **Limix Cloudflare**. Workflow áp dụng migration 0018 đến 0020 và đặt secret Worker cùng tên. Đã có khóa từ trước thì bỏ `-Generate` và nhập vào ô ẩn.
+1. Tạo/lưu host token bằng `host.ps1 -Action Configure -Capacity 1 -Generate` nếu chưa cấu hình. Giữ token cũ nếu đã có, vì bí mật home được suy ra từ token này. Không ghi token vào log hoặc Git.
+2. Build image mới trước. Áp dụng migration tới **0022**, triển khai Worker từ nhánh đã tích hợp, không chạy workflow từ `main` cũ. Phối hợp thời điểm đổi Worker/host: ingress mới cần `limix-managed-wake` trên mạng Docker.
+3. Chạy `host.ps1 -Action Run`. Host tạo tunnel connector và wake proxy, rồi đối soát mỗi 30 giây. Khi nâng image hoặc đổi host token/suffix, dừng host, tạo lại **chỉ container `limix-managed-wake`**, rồi chạy host lại; không xóa volume home.
+4. Admin desktop dùng `https://cloud.limixmedia.com`. Trỏ domain này tới cùng Worker và đưa vào allowed origins khi tích hợp/deploy. Giao diện desktop và bật Cloud là phần K1/K2 của Claude; không dùng menu beta cũ.
+5. Khách đăng nhập Limix, xin dùng thử; chủ dự án mở `/cloud-admin`, nhập **bearer Limix** theo định dạng desktop (không phải mật khẩu tài khoản hay token nhà cung cấp AI). Trang chỉ giữ token trong RAM, xóa ô nhập sau đăng nhập. API kiểm tra principal đúng `limix:tqtuan`; người khác không được xem/duyệt dữ liệu.
 
-3. Quản trị viên thêm tài khoản thử nghiệm vào D1 bằng câu lệnh bên dưới, thay tên mẫu bằng tên đăng nhập Limix đã xác minh, viết thường.
+Duyệt thêm enrollment và đánh dấu approved. Từ chối/thu hồi xóa enrollment, thu hồi token thiết bị Cloud; host dừng home trong lần đối soát kế tiếp, giữ volume. Khi control plane mất liên lạc, dịch vụ đang chạy giữ nguyên; thu hồi chưa có hiệu lực trên host cho tới lần đối soát thành công. Duyệt lại tạo workspace mới; volume cũ không tự gắn lại.
 
-   ```sql
-   INSERT INTO managed_cloud_beta(principal) VALUES ('limix:beta-user')
-     ON CONFLICT(principal) DO NOTHING;
-   ```
+## Ghép nối và định tuyến
 
-4. Khởi chạy trên Xeon bằng `.\deploy\managed-beta\host.ps1 -Action Run`. Cho Docker Desktop khởi động khi đăng nhập Windows. Để tự chạy bộ điều phối, tạo tác vụ Task Scheduler lúc người vận hành đăng nhập, chạy PowerShell với `-NoProfile -File "<đường dẫn đầy đủ tới host.ps1>" -Action Run` dưới chính tài khoản Windows đã cấu hình. Docker tự khởi động lại container khi engine hoạt động trở lại. Khởi động lại khi Windows chưa đăng nhập cần được thử riêng trên máy triển khai.
+Địa chỉ mỗi home: `https://lc-<UUID không dấu gạch>.limixmedia.com`. Tunnel đi qua `limix-managed-wake:8080`, proxy xác minh workspace còn được duyệt rồi chuyển tới `home-<UUID>:8080`, giữ Host header. Proxy không lưu body media và không gửi lại body sau khi đã chuyển cho home. Có giới hạn 256 kết nối; beta chưa kiểm chứng tải lớn.
 
-5. Trên bản desktop chứa thay đổi này, tài khoản được duyệt mở menu tài khoản → **Bot chạy trên Cloud (beta)** → **Yêu cầu khởi tạo**. Bấm mục đó lần nữa để đọc trạng thái. Khi trạng thái là **Đang chạy · bấm để mở**, bấm lần nữa: cửa sổ chuyển sang môi trường Cloud của đúng tài khoản đó và môi trường được thêm vào danh sách Máy chủ. Mỗi môi trường giới hạn 2 CPU và 4 GiB cho tiến trình chính; mặc định chỉ cấp một môi trường đồng thời. CLI được cài trong image. Khách cần đăng nhập nhà cung cấp riêng bên trong môi trường của mình. Image trên cài sẵn Codex, Claude Code và runtime Antigravity ACP chính thức. Trong môi trường Cloud đã ghép nối, mở Cài đặt → AI để đăng nhập hoặc thêm nhà cung cấp bằng khóa API. Khóa đã nhập và phiên còn hiệu lực được giữ trên volume riêng của tài khoản qua các lần tạo lại container. Phiên trên laptop chưa được tự động chuyển lên Cloud. Mất volume cần bản sao lưu riêng để khôi phục.
+Worker ký HMAC theo giao thức Cloud cho `/api/cloud/pairing`. Bí mật mỗi home được suy ra bằng HMAC từ host token và UUID. Mã ghép nối, phiên, khóa API và `~/.codex` của A không dùng ở B. Home không publish cổng máy chủ trong Compose vận hành; smoke mới thêm cổng loopback tạm. Không mở trực tiếp 8799.
 
-## Địa chỉ truy cập và đăng nhập
+## Ngủ và thức
 
-Worker tự tạo một Cloudflare Tunnel riêng tên `limix-cloud-beta-host` và cấp cho mỗi workspace một địa chỉ `https://lc-<UUID không dấu gạch>.limixmedia.com`. Bộ điều phối trên Xeon lấy token connector từ Worker, tạo mạng Docker `limix-managed-edge` và chạy container `limix-managed-tunnel` (cloudflared). Mỗi địa chỉ chỉ dẫn tới container edge của đúng workspace qua alias `edge-<UUID>`. Container chính của tài khoản không nằm trên mạng chung này. Tunnel quản trị hiện có và cổng 18799 không bị thay đổi.
+- **Mặc định không ngủ.** `sleep_enabled=0`; `LIMIX_HOME_GATEWAY=1` giữ home thức ngay cả khi có lệnh ngủ. Telegram/Zalo/Discord có polling hoặc kết nối nền, không thể nhận tin khi container chứa gateway đã dừng. Không hứa 24/7 nếu máy Xeon/Windows/Docker bị tắt hoặc ngủ.
+- Muốn thử tiết kiệm tài nguyên, dùng host thử nghiệm **không chạy các connector**: đặt `LIMIX_HOME_GATEWAY=0`, chạy host để báo `sleep_blocked=0`, rồi operator đặt `sleep_enabled=1` cho enrollment thử nghiệm trong D1. Không bật cho khách đang cần nhắn tin 24/7.
+- Admin đọc power có chữ ký và chỉ ký bắt tay ngủ khi idle. Home tự kiểm tra turn/routine/computer/maintenance và thời gian idle. Host kiểm tra lại trạng thái `sleeping` ngay trước khi dừng; nếu không xác minh được thì giữ thức. Volume được giữ.
+- Worker trả `power` trong assignments và `cloud.power` trong desktop session. `POST /api/cloud/desktop/wake` chỉ tác động home của người gọi. Wake proxy luôn chạy: request tới home gọi Worker, chờ Docker sẵn sàng tối đa 90 giây rồi mới chuyển request. Các probe power không đánh thức home. Worker đánh thức trước `nextDueAt` 3 phút; host cần hoạt động liên tục để thực hiện.
+- Home ngủ không chiếm slot đang chạy. Hết capacity thì request có thể hết thời gian chờ và nhận 503; proxy không tự tăng giới hạn máy chủ.
 
-Khi khách bấm mở, Worker kiểm tra phiên Limix, tài khoản đã được duyệt, workspace đang chạy và địa chỉ đã định tuyến, rồi ký một grant Ed25519 sống 90 giây ghi workspace, tài khoản và địa chỉ. Desktop gửi grant tới chính địa chỉ đó. Limix Server trong workspace chỉ giữ khóa công khai; nó kiểm tra chữ ký, workspace, địa chỉ nhận yêu cầu, thời hạn và việc dùng lại, rồi mở một lần ghép nối 120 giây. Grant của tài khoản A bị môi trường của B từ chối, và phiên đã ghép nối ở A không dùng được ở B.
+## Giới hạn kiểm chứng
 
-## Kiểm tra môi trường của một tài khoản trên máy chủ
-
-Lấy UUID workspace của tài khoản từ D1. Trên Xeon, dùng `docker compose -f deploy/managed-beta/compose.yaml -p limix-home-<UUID> port edge 8080` để xem cổng ghép nối trên loopback. Lệnh Compose cần biến LIMIX_HOME_IMAGE như ở trên. Cổng này chuyển yêu cầu qua Unix socket xác thực của Limix. Mỗi tài khoản có một cổng và kho phiên riêng. Không chuyển tiếp cổng API quản trị nội bộ 8799. Ghép nối qua mã dùng một lần theo quy trình server của Limix. Smoke test `node deploy/managed-beta/smoke.mjs` còn thử grant chéo giữa hai môi trường giả lập.
-
-Nếu thu hồi thử nghiệm, xóa hàng enrollment của tài khoản. Sau lần đối soát thành công kế tiếp, host dừng các dịch vụ của tài khoản và giữ volume. Dừng bộ điều phối hoặc mất kết nối control plane sẽ giữ nguyên các dịch vụ đang chạy. Trạng thái running kiểm tra HTTP của Limix Server và gateway; cần thử gửi/nhận tin và đăng nhập từng nhà cung cấp để xác nhận hoạt động thực tế.
+Xem `limix/docs/EVIDENCE_CLOUD_NATIVE_CODEX.md`. Kết quả Docker cục bộ không thay thế kiểm thử Xeon, DNS/Cloudflare thật, owner login thật, OAuth nhà cung cấp hay gửi/nhận Zalo/Telegram thật. Docker Desktop có thể báo `bot box: off (userns-refused)` và không remount được `/proc` với hidepid. Không tự thêm `privileged` hoặc `SYS_ADMIN` chỉ để xóa cảnh báo; cần đánh giá cách ly trước khi mở cho khách không tin cậy.

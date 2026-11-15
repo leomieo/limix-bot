@@ -1,3 +1,5 @@
+import { wakeHome } from "./cloud-power-admin";
+import { cloudOwnerRoute } from "./cloud-owner";
 // Limix Cloud Admin: the Admin half of docs/cloud-pro.md, written for Limix (MausBot's own Admin is closed source).
 // The desktop's built-in Cloud client talks to it at https://cloud.limixmedia.com with a personal device token (omc_…).
 // Each account's home runs on the operator's Xeon in Cloud home mode; this Worker signs pairing requests with that
@@ -57,7 +59,7 @@ export async function homeRequestHeaders(secret: string, method: string, target:
 }
 
 interface Device { id: string; principal: string; expires_at: number }
-interface BetaRow { workspace_id: string | null; runtime_state: string | null; runtime_seen: number | null }
+interface BetaRow { workspace_id: string | null; runtime_state: string | null; runtime_seen: number | null; power_desired?: string; power_since?: number; sleep_enabled?: number; sleep_blocked?: number; power_observed?: string }
 
 function account(principal: string) {
   const name = principal.startsWith("limix:") ? principal.slice(6) : principal;
@@ -75,7 +77,7 @@ async function device(request: Request, env: Env): Promise<Device> {
 }
 
 async function betaRow(env: Env, principal: string): Promise<BetaRow | null> {
-  return env.DB.prepare("SELECT workspace_id, runtime_state, runtime_seen FROM managed_cloud_beta WHERE principal = ?")
+  return env.DB.prepare("SELECT workspace_id, runtime_state, runtime_seen, power_desired, power_since, sleep_enabled, sleep_blocked, power_observed FROM managed_cloud_beta WHERE principal = ?")
     .bind(principal).first<BetaRow>();
 }
 
@@ -92,6 +94,10 @@ async function ensureWorkspace(env: Env, principal: string): Promise<BetaRow | n
 export function cloudSummary(row: BetaRow, origin: string, routed: boolean, nowSeconds = Date.now() / 1000): Record<string, JSONValue> {
   const stale = !row.runtime_seen || nowSeconds - row.runtime_seen >= STALE_SECONDS;
   const setting = (step: string, slow = false) => ({ state: "setting_up", origin, setup: { step, ...(slow ? { slow: true } : {}) } });
+  if (row.sleep_enabled && !row.sleep_blocked && (row.power_observed === "asleep" || row.power_desired === "asleep")) return {
+    state: "ready", origin, pairingAvailable: false, moves: true,
+    power: { state: row.power_desired === "asleep" ? "asleep" : "waking", since: row.power_since ?? 0, sleeps: true },
+  };
   if (!row.runtime_state) return setting("reserving");
   if (stale && row.runtime_state === "running") {
     return { state: "ready", origin, pairingAvailable: false, moves: true, unreachable: { cause: "no_answer", since: (row.runtime_seen ?? 0) * 1000 } };
@@ -100,7 +106,7 @@ export function cloudSummary(row: BetaRow, origin: string, routed: boolean, nowS
   if (row.runtime_state === "starting") return setting("starting", stale);
   if (row.runtime_state === "failed") return { state: "failed", origin, retryAt: Math.ceil(nowSeconds + 30) * 1000 };
   if (!routed) return setting("checking");
-  return { state: "ready", origin, pairingAvailable: true, moves: true };
+  return { state: "ready", origin, pairingAvailable: true, moves: true, ...(row.sleep_enabled && !row.sleep_blocked ? {power:{state:"awake",since:row.power_since ?? 0,sleeps:true}} : {}) };
 }
 
 async function trialState(env: Env, principal: string, enrolled: boolean): Promise<string> {
@@ -210,6 +216,7 @@ const DESKTOP = "/api/cloud/desktop/";
 
 /** Null for any path that is not the Admin's. */
 export function limixCloudAdminRoute(path: string, request: Request, env: Env, fetcher: typeof fetch = fetch): Promise<Response> | null {
+  if (path === "/cloud-admin" || path.startsWith("/api/cloud/owner/")) return cloudOwnerRoute(path, request, env);
   if (path === "/api/public/config") return Promise.resolve(json({ cloudContractVersion: CONTRACT }));
   if (!path.startsWith(DESKTOP)) return null;
   const route = path.slice(DESKTOP.length);
@@ -221,6 +228,12 @@ export function limixCloudAdminRoute(path: string, request: Request, env: Env, f
     if (route === "session" && request.method === "DELETE") {
       await env.DB.prepare("UPDATE limix_cloud_devices SET revoked_at = ? WHERE id = ?").bind(Date.now(), found.id).run();
       return json({ cloudContractVersion: CONTRACT });
+    }
+    if (route === "wake" && post) {
+      const row = await betaRow(env, found.principal);
+      if (!row?.workspace_id) throw new HTTPError(404, "not_found");
+      await wakeHome(env, row.workspace_id);
+      return session(env, found);
     }
     if (route === "trial" && post) return askForTrial(env, found);
     if (route === "pairing" && post) return pairing(env, found, fetcher);

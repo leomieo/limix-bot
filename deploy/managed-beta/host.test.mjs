@@ -32,7 +32,7 @@ test("gives each home only its own address and its own bootstrap secret", async 
     if (args[0] === "compose" && args.includes("up")) envs.set(args[args.indexOf("-p") + 1], env);
     return args[0] === "inspect" ? "healthy" : args.includes("-q") ? "fixture" : "";
   }, { origins, hostToken });
-  assert.deepEqual(envs.get("limix-home-" + a), { LIMIX_HOME_ID: a, LIMIX_HOME_ORIGIN: origins[a], LIMIX_HOME_SECRET: homeBootstrapSecret(hostToken, a) });
+  assert.deepEqual(envs.get("limix-home-" + a), { LIMIX_HOME_ID: a, LIMIX_HOME_ORIGIN: origins[a], LIMIX_HOME_SECRET: homeBootstrapSecret(hostToken, a), LIMIX_HOME_GATEWAY: "1" });
   assert(!envs.has("limix-home-" + b), "a home whose address names another workspace waits");
   assert.deepEqual(reports, [[a, "running"], [b, "starting"]]);
 });
@@ -62,4 +62,24 @@ test("derives each home's own 256-bit bootstrap secret from the host token", () 
   assert.match(homeBootstrapSecret(token, id), /^[A-Za-z0-9_-]{43}$/);
   assert.equal(homeBootstrapSecret(token, id), homeBootstrapSecret(token, id));
   assert.notEqual(homeBootstrapSecret(token, id), homeBootstrapSecret(token, randomUUID()));
+});
+
+test('sleep stops only assigned homes, leaves volumes, and does not consume an awake slot', async () => {
+  const [asleep,awake]=[randomUUID(),randomUUID()],calls=[],reports=[];
+  const origins=Object.fromEntries([asleep,awake].map(id=>[id,`https://lc-${id.replaceAll('-','')}.limixmedia.com`]));
+  await reconcile([asleep,awake],1,(...r)=>reports.push(r),async args=>{calls.push(args);if(args[0]==='exec')return 'prepared';if(args[0]==='ps')return 'limix-home-'+asleep;if(args.includes('-q'))return 'fixture';if(args[0]==='inspect')return 'healthy';return ''},{origins,hostToken:'fixture'.repeat(10),power:{[asleep]:'asleep'},gateway:'0'});
+  assert(calls.some(a=>a.includes('limix-home-'+asleep)&&a.includes('stop')));
+  assert(!calls.some(a=>a.includes('down')||a.includes('-v')));
+  assert.deepEqual(reports,[[asleep,'asleep'],[awake,'running']]);
+});
+test('an enabled messaging gateway refuses a sleep assignment',async()=>{
+  const id=randomUUID(),reports=[],calls=[];
+  await reconcile([id],1,(...r)=>reports.push(r),async args=>{calls.push(args);if(args[0]==='ps')return 'limix-home-'+id;if(args.includes('-q'))return 'fixture';if(args[0]==='inspect')return 'healthy';return ''},{origins:{[id]:`https://lc-${id.replaceAll('-','')}.limixmedia.com`},hostToken:'fixture'.repeat(10),power:{[id]:'asleep'}});
+  assert(!calls.some(a=>a.includes('stop')));assert.deepEqual(reports,[[id,'running']]);
+});
+
+test('activity after the Admin handshake prevents a stale sleep stop',async()=>{
+  const id=randomUUID(),reports=[],calls=[];
+  await reconcile([id],1,(...r)=>reports.push(r),async args=>{calls.push(args);if(args[0]==='ps')return 'limix-home-'+id;if(args.includes('-q'))return 'fixture';if(args[0]==='exec')return 'awake';return ''},{origins:{[id]:`https://lc-${id.replaceAll('-','')}.limixmedia.com`},hostToken:'fixture'.repeat(10),power:{[id]:'asleep'},gateway:'0'});
+  assert(!calls.some(a=>a.includes('stop')));assert.deepEqual(reports,[[id,'running']]);
 });
