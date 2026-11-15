@@ -44,6 +44,10 @@ export async function fixture(t, options = {}) {
       if (typeof answer.body === "string") { res.writeHead(answer.status, { "content-type": "text/html" }); return res.end(answer.body); }
       return send(answer.status, answer.body);
     }
+    if (req.url === "/api/cloud/desktop/limix-token" && req.method === "POST") {
+      return req.headers.authorization === "Bearer limix.cGM.fixture-token" ? send(200, { ...identity(), accessToken }) : send(401, { error: "unauthorized" });
+    }
+    if (req.url === "/api/cloud/desktop/trial" && req.method === "POST" && req.headers.authorization === `Bearer ${accessToken}`) { f.limixTrial = "pending"; return send(200, { cloudContractVersion: 1 }); }
     if (req.url === "/api/cloud/desktop/token") {
       if (f.tokenPage) { res.writeHead(f.tokenPage, { "content-type": "text/html" }); return res.end("<!doctype html>Just a moment"); }
       if (f.slowToken) await f.slowToken;
@@ -57,7 +61,8 @@ export async function fixture(t, options = {}) {
       if (f.sessionStatus !== 200) return send(f.sessionStatus, { error: "unavailable" });
       return send(200, { ...identity(), ...(f.invalidIdentity ? { account: { id: "someone-else", email: "other@example.test" } } : {}),
         entitlement: f.invalidEntitlement ? { plan: "pro", status: "active" } : f.entitlement, ...(f.cloud === undefined ? {} : { cloud: f.cloud }),
-        ...(f.offer === undefined ? {} : { offer: f.offer }), ...(f.teams === undefined ? {} : { teams: f.teams }), ...(f.clouds === undefined ? {} : { clouds: f.clouds }) });
+        ...(f.offer === undefined ? {} : { offer: f.offer }), ...(f.teams === undefined ? {} : { teams: f.teams }), ...(f.clouds === undefined ? {} : { clouds: f.clouds }),
+        ...(f.limixTrial === undefined ? {} : { limixTrial: f.limixTrial }) });
     }
     send(404, { error: "not_found" });
   });

@@ -1,71 +1,37 @@
+# One Limix Cloud home per approved account, in Cloud home mode (docs/cloud-pro.md): the image's root launcher binds the
+# volume to this machine, runs the server and its Caddy edge as `maus`, and hands the server its bootstrap secret over a
+# pipe. The Limix Cloud Admin (cloud.limixmedia.com) signs pairing requests with that secret. The host's tunnel reaches
+# the edge on :8080 by the alias home-<workspace id>; the edge answers only for the home's own address.
 services:
   home:
-    image: ${LIMIX_HOME_IMAGE:?Set the operator-built Limix server image}
+    image: ${LIMIX_HOME_IMAGE:?Set the operator-built Limix Cloud home image}
     pull_policy: never
-    user: maus
     init: true
     restart: unless-stopped
     cpus: 2
     mem_limit: 4g
-    pids_limit: 512
+    pids_limit: 1024
     shm_size: 512m
-    read_only: true
     security_opt:
       - no-new-privileges:true
-    cap_drop:
-      - ALL
-    tmpfs:
-      - /run:mode=1777,size=16m
     labels:
       com.limix.managed-home: "beta-xeon"
     environment:
-      HOME: /data
-      LIMIX_GATEWAY_SIDECAR: "1"
-      OMB_TUNNEL_SOCKET: /run/limix-edge/http.sock
-      OMB_DATA_DIR: /data/.limixbot
+      OMB_CLOUD_ROLE: home
+      OMB_CLOUD_MACHINE_ID: ${LIMIX_HOME_ID:-fixture}
+      OMB_CLOUD_ADMIN_URL: https://cloud.limixmedia.com
+      OMB_CLOUD_BOOTSTRAP_SECRET: ${LIMIX_HOME_SECRET:-}
       OMB_PUBLIC_URL: ${LIMIX_HOME_ORIGIN:-}
-      LIMIX_MANAGED_WORKSPACE: ${LIMIX_HOME_ID:-}
-      LIMIX_MANAGED_GRANT_KEY: ${LIMIX_GRANT_PUBLIC_KEY:-}
+      LIMIX_GATEWAY_SIDECAR: ${LIMIX_HOME_GATEWAY:-1}
     volumes:
-      - scratch:/tmp
-      - data:/data
-      - sockets:/run/limix-edge
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8799/api/health >/dev/null && curl -fsS http://127.0.0.1:8790/healthz >/dev/null"]
-      interval: 30s
-      timeout: 6s
-      retries: 3
-      start_period: 45s
-  edge:
-    image: ${LIMIX_HOME_IMAGE:?Set the operator-built Limix server image}
-    pull_policy: never
-    command: ["node", "/opt/limix-edge.mjs"]
-    user: maus
-    restart: unless-stopped
-    read_only: true
-    healthcheck:
-      disable: true
-    cap_drop: [ALL]
-    security_opt: ["no-new-privileges:true"]
-    mem_limit: 96m
-    pids_limit: 32
-    tmpfs: [/data]
-    volumes:
-      - sockets:/run/limix-edge:ro
-      - ./edge.mjs:/opt/limix-edge.mjs:ro
-    ports: ["127.0.0.1::8080"]
+      # Its own volume: an earlier beta home's `data` volume (another layout) is kept as it was, never reused.
+      - cloud:/data
     networks:
       edge:
-        aliases: ["edge-${LIMIX_HOME_ID:-fixture}"]
+        aliases: ["home-${LIMIX_HOME_ID:-fixture}"]
 networks:
   edge:
     external: true
     name: limix-managed-edge
 volumes:
-  data: {}
-  scratch: {}
-  sockets:
-    driver_opts:
-      type: tmpfs
-      device: tmpfs
-      o: mode=1777,size=1m
+  cloud: {}

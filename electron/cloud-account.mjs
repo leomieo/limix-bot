@@ -7,7 +7,8 @@ import nativeText from "./native-text.cjs";
 
 const { englishText } = nativeText;
 
-export const CLOUD_ORIGIN = "https://cloud.openmausbot.com";
+/** Limix Cloud's own Admin (cloudflare/control-plane/src/limix-cloud-admin.ts). */
+export const CLOUD_ORIGIN = "https://cloud.limixmedia.com";
 /** The staging Admin (Dodo test mode, real test Clouds): a fixed address, on only with OMB_CLOUD_STAGING=1. */
 export const STAGING_CLOUD_ORIGIN = "https://omb-cloud-staging.fly.dev";
 /** Which Admin this app signs in to, and the files that depend on it (the sign-in, saved servers with the Cloud's
@@ -18,6 +19,10 @@ export function cloudTarget(env = process.env) {
     : { origin: CLOUD_ORIGIN, staging: false, file: "cloud-account.bin", saved: "cloud-accounts.bin", places: "account-places.json", environments: "environments.json", sync: "cloud-sync", look: "cloud-home-look.json" };
 }
 const TOKEN = /^omc_[A-Za-z0-9_-]{43}$/;
+/** The Limix account's own bearer for this computer (electron/limix-account.mjs remoteCredential). */
+const LIMIX_BEARER = /^limix\.[A-Za-z0-9_-]{1,200}\.[\x21-\x7e]{1,2048}$/;
+/** Where this account's Limix Cloud trial request stands (the Admin's `limixTrial`). */
+export const LIMIX_TRIALS = Object.freeze(["none", "pending", "approved", "declined"]);
 const CODE = /^[A-HJ-NP-Z2-9]{5}-[A-HJ-NP-Z2-9]{5}$/;
 const PRIVATE_CODE = /^[A-Za-z0-9_-]{43}$/;
 /** What the Admin says of a Cloud of this account's a computer moved to (POST moved-to). */
@@ -296,7 +301,8 @@ export function createCloudAccountClient({ store, openBrowser, platform, deviceN
         access.status === "active" && access.expiresAt !== null ? access.expiresAt : Infinity);
       publish({ ...view("connected"), entitlement: access, ...(machine ? { machine } : {}), ...(teams.length ? { teams } : {}), ...(landing ? { landing } : {}), ...(purchase ? { purchase } : {}),
         ...(trial ? { trial } : {}), ...(credit ? { credit } : {}), ...(offer ? { offer } : {}), ...(usage ? { usage } : {}), ...(room ? { room } : {}), ...(renewingCloud ? { renewal } : {}),
-        ...(clouds ? { clouds, addCloud: more } : {}), ...(organizations ? { organizations } : {}), ...(latest ? { latestVersion: latest } : {}), verifiedAt: now(), verifiedUntil });
+        ...(clouds ? { clouds, addCloud: more } : {}), ...(organizations ? { organizations } : {}), ...(latest ? { latestVersion: latest } : {}),
+        ...(LIMIX_TRIALS.includes(result.limixTrial) ? { limixTrial: result.limixTrial } : {}), verifiedAt: now(), verifiedUntil });
       const planCloud = teamPlan(value) ? planTeam(value)?.machine ?? null : machine;
       const settingUp = planCloud?.status === "provisioning" || (access.status === "active" && !planCloud) || Boolean(purchase) || otherOwnClouds(clouds).some(cloud => cloud.status === "setting_up");
       const added = adding ? clouds?.find(cloud => cloud.id === adding.cloudId) ?? null : null;
@@ -378,6 +384,32 @@ export function createCloudAccountClient({ store, openBrowser, platform, deviceN
     return state();
   }
   const signInBlocked = () => closed || restoring || clearing || grant || issued || cleanupNeeded;
+  /**
+   * Limix: this computer is already signed in to its Limix account, so the Admin trades that sign-in (main's
+   * limixRemoteCredential bearer, never the renderer's) for a device token, with no email code or browser step.
+   */
+  async function signInWithLimix(bearer) {
+    if (typeof bearer !== "string" || !LIMIX_BEARER.test(bearer)) return state();
+    if (signInBlocked() || value.status === "connecting") return state();
+    const stamp = generation;
+    try {
+      const result = await request("limix-token", { method: "POST", token: bearer, body: { deviceName, platform, ...(text(appVersion, 40) ? { appVersion } : {}) } });
+      if (!current(stamp) || !(await adopt(result, stamp))) return state();
+    } catch (error) {
+      if (current(stamp) && !grant) publish({ status: "signed-out", message: "signin-failed" });
+      if (error?.status !== 401) warn("[cloud] Limix sign-in to Limix Cloud failed.");
+      return state();
+    }
+    return refresh();
+  }
+  /** Limix: asks the operator for a Cloud trial (no payment yet); the session then says `limixTrial: "pending"`. */
+  async function requestTrial() {
+    const signedIn = grant;
+    if (!signedIn || value.status !== "connected") return { outcome: "failed", state: state() };
+    try { await request("trial", { method: "POST", body: {}, token: signedIn.token }); }
+    catch { return { outcome: "failed", state: await refresh().catch(() => state()) }; }
+    return { outcome: "requested", state: await refresh().catch(() => state()) };
+  }
   /** Sends the 8-digit code to `email`. Nothing is signed in yet; the answer says what the sheet shows next. */
   async function emailStart(email) {
     if (signInBlocked() || value.status === "connecting") throw new Error("Sign out before starting another Cloud connection.");
@@ -488,6 +520,8 @@ export function createCloudAccountClient({ store, openBrowser, platform, deviceN
   return {
     state,
     start,
+    signInWithLimix,
+    requestTrial,
     begin: () => begin(),
     emailStart, emailVerify,
     emailCancel() { emailed = null; },

@@ -19,11 +19,12 @@ const LINES: Record<string, number> = {
   "electron/companion-account-service.mjs": 1021, // Limix Bot fork additions
   "shared/wire.ts": 1006, // Limix Bot fork additions
   "server/drivers/openai-chat.ts": 1001, // Limix Bot: upstream 0.1.160 empty tool arguments fix
+  "electron/cloud-account.mjs": 1006, // Limix Bot: Limix Cloud sign-in and trial request
   "src/components/TeamLibraryPanel.tsx": 1010, // Limix Bot fork additions
   "src/components/bot-settings/AccessSection.tsx": 1022, // Limix Bot fork additions
   "server/index.ts": 15634,
   "src/state/store.tsx": 3367,
-  "electron/main.mjs": 3267,
+  "electron/main.mjs": 3276,
   "server/store.ts": 2291,
   "src/components/Sidebar.tsx": 1704,
   "server/drivers/claude.ts": 2090,

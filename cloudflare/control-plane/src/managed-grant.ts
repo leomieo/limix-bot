@@ -31,9 +31,9 @@ export function managedHomeOrigin(workspaceId: string, suffix: string): string {
   return `https://${managedHomeHostname(workspaceId, suffix)}`;
 }
 
-/** The edge container's alias on the host's shared Docker network. */
+/** The home container's alias on the host's shared Docker network: its Cloud home edge listens on :8080. */
 export function managedHomeService(workspaceId: string): string {
-  return `http://edge-${workspaceId}:8080`;
+  return `http://home-${workspaceId}:8080`;
 }
 
 async function signingKey(hostToken: string): Promise<CryptoKey> {

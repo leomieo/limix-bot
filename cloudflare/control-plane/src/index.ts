@@ -1,6 +1,7 @@
 import { managedHostAssignments } from "./managed-host";
 import { managedWorkspace } from "./managed-workspace";
 import { managedCloudRoute } from "./managed-routes";
+import { limixCloudAdminRoute } from "./limix-cloud-admin";
 import { z } from "zod";
 
 import { accountSession, createAuth, deleteExpiredVerifications } from "./auth";
@@ -80,6 +81,8 @@ async function route(
   const url = new URL(request.url);
   if (request.method === "OPTIONS") return preflight(request, config);
 
+  const adminRoute = limixCloudAdminRoute(url.pathname, request, env);
+  if (adminRoute) return adminRoute;
   const managedRoute = managedCloudRoute(url.pathname, request, env);
   if (managedRoute) return managedRoute;
   if (url.pathname === "/v1/managed-cloud/host/assignments") return managedHostAssignments(request, env);

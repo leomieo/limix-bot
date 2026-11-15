@@ -7,6 +7,8 @@
 
 ## 1. Trạng thái hiện tại (luôn ghi đè cho đúng)
 
+- Cloud native beta on cloud-native-codex: per-account Cloud homes, signed pairing, owner trial decisions and opt-in sleep. See EVIDENCE_CLOUD_NATIVE_CODEX.md for verification and outstanding Xeon acceptance.
+
 - Managed beta image includes pinned Google Antigravity ACP alongside Codex and Claude Code. Customers can configure API providers inside their account runtime.
 
 - Managed Cloud beta can allocate a per-account server + gateway, with isolated persistent CLI HOME and a loopback pairing edge. Enrolled desktop users can request provisioning from their account menu.
@@ -60,6 +62,8 @@
 
 ## 2. Bản đồ thư mục dự án
 
+- Cloud native: deploy/managed-beta/{host,power-probe,wake-proxy,smoke}.mjs, control-plane migration 0022 and src/{cloud-owner,cloud-power-admin}.ts. Operational steps in deploy/managed-beta/README.md.
+
 | Đường dẫn | Là gì |
 |---|---|
 | `CLAUDE.md` | Luật làm việc, quyết định đã chốt, lộ trình |
@@ -91,6 +95,8 @@
 | F13 | Windows build chính thức chạy trên GitHub `windows-latest`: `pnpm install --frozen-lockfile` → `pnpm package:win` | `.github/workflows/package-win.yml` @6f226f1 | 2026-11-11 |
 
 ## 4. Vấn đề mở / rủi ro
+
+- Cloud native beta was exercised on local i9 Docker Desktop. Xeon, real tenant login, public tunnel and live messaging remain unverified. Enabled messaging gateway keeps the home awake. No production deployment.
 
 - Cloud volume persistence is separate from backups and local CLI sign-in migration. No real subscription sign-in or live provider request verified for this image.
 
@@ -142,6 +148,8 @@
 | R10 | Máy chủ Claude không đẩy được tag git (chỉ đẩy nhánh) | Build kích hoạt bằng push lên `main`; tag phát hành do workflow tự tạo | Đã xử lý |
 
 ## 5. Nhật ký thay đổi (mới nhất ở trên, mỗi lần sửa một dòng)
+
+- 2026-11-16: implemented C1–C4 on cloud-native-codex. Two real home containers verified pairing, key/session isolation and persistence. Worker 180/180 and host/proxy 9/9 passed.
 
 - Built the managed Linux x64 image; verified real Antigravity ACP 1.4.3 initialization, synthetic OpenAI-compatible key persistence across recreation, and account isolation in two Docker fixtures.
 
@@ -357,3 +365,5 @@
 - 2026-11-15 Limix Cloud beta: tài khoản mở đúng môi trường riêng qua grant Ed25519 90 giây do Worker ký (chỉ workspace của chính tài khoản, khi running và đã định tuyến); home chỉ giữ khóa công khai, kiểm tra workspace/origin/hạn/dùng lại rồi mở một lần ghép nối. Worker sở hữu tunnel limix-cloud-beta-host, cấp lc-<uuid>.limixmedia.com cho mỗi workspace, không đụng tunnel quản trị/cổng 18799. Kiểm thử cục bộ: Worker 174/174, server 4/4, host 5/5, desktop 2/2; Docker smoke và Xeon chưa chạy.
 - 2026-11-16 U160 đợt 1 (nhánh `upstream-0.1.160`, chưa phát hành): 53 bản sửa chọn lọc từ OpenMausBot 0.1.160 (khởi động engine, chuyển AI khi hết hạn mức, Antigravity dùng skill, automation "Cần xem", giới hạn đầu ra MCP, mở đúng tệp đã gửi, room, micro nhiều kênh...). Không thêm đồng tác giả. tsc UI/server qua; 50 file test liên quan: không có lỗi mới so với main (48 lỗi đều có sẵn trên main). Chưa chạy index.test/e2e/app thật. Chi tiết và các phần lớn để đợt sau: UPSTREAM_0.1.160.md. Codex C1–C4 đã gộp vào `cloud-native` (Worker 180/180, app+host 68/68).
 - 2026-11-16 U160 đợt 2 (cùng nhánh): tạm dừng bot/phòng ban, Claude chỉ nạp công cụ khi cần, đính kèm mọi loại tệp và tệp nén (dán từ Explorer, bot gửi tệp nén). Giao diện riêng/ảnh đại diện/tắt nhóm công cụ chưa làm vì cần công cụ app_settings của upstream (Limix chưa có). tsc qua; 17 file test liên quan không có lỗi mới so với main.
+- 2026-11-16 Limix Cloud lên Xeon: Worker cập nhật (migration 0018–0020, secret host), tài khoản limix:tqtuan được duyệt, host tạo tunnel và chạy home beta (healthy). Sửa Worker: `redirect: "error"` không được Cloudflare Workers hỗ trợ → `manual` (nhánh cloud-diag/cloud-open-fix, đã deploy từ nhánh). Lỗi app `serverConnect.open is not a function` sửa ở nhánh cloud-open-fix (chưa phát hành).
+- 2026-11-16 Chủ dự án chọn làm lại bước 2 kế hoạch đám mây theo Cloud gốc (cloud.limixmedia.com, duyệt tay, có ngủ/thức), bỏ mục beta. Nhánh `cloud-native`: Admin Limix (`cloudflare/control-plane/src/limix-cloud-admin.ts`, migration 0021, Worker 176/176 test qua), host chạy home ở chế độ Cloud (host.test 5/5), Dockerfile cloud-home có gateway. Chưa build image, chưa chạy Docker/Xeon, app chưa bật. Chia việc với Codex: `limix/docs/HANDOFF_CLOUD_NATIVE.md` (Codex C1–C4, Claude K1–K2).

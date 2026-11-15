@@ -77,7 +77,7 @@ it("routes each workspace through the host tunnel and grants only the caller's o
   const assignments = await (await host("/v1/managed-cloud/host/assignments")).json() as { homes: string[]; origins: Record<string, string>; routing: string };
   expect(assignments.routing).toBe("ready");
   expect(cloudflare.ingress()).toEqual([
-    ...[alice, bob].map(id => ({ hostname: new URL(assignments.origins[id]).hostname, service: `http://edge-${id}:8080` }))
+    ...[alice, bob].map(id => ({ hostname: new URL(assignments.origins[id]).hostname, service: "http://limix-managed-wake:8080" }))
       .sort((a, b) => a.hostname.localeCompare(b.hostname)),
     { service: "http_status:404" },
   ]);
@@ -104,7 +104,7 @@ it("routes each workspace through the host tunnel and grants only the caller's o
 
   await env.DB.prepare("DELETE FROM managed_cloud_beta WHERE principal = 'limix:bob'").run();
   await host("/v1/managed-cloud/host/assignments");
-  expect(cloudflare.ingress()).toEqual([{ hostname: new URL(assignments.origins[alice]).hostname, service: `http://edge-${alice}:8080` }, { service: "http_status:404" }]);
+  expect(cloudflare.ingress()).toEqual([{ hostname: new URL(assignments.origins[alice]).hostname, service: "http://limix-managed-wake:8080" }, { service: "http_status:404" }]);
   expect([...cloudflare.records.values()].map(record => record.name)).toEqual([new URL(assignments.origins[alice]).hostname]);
 });
 
@@ -115,7 +115,7 @@ it("never takes over or deletes a DNS record that points elsewhere", async () =>
   const id = crypto.randomUUID();
   const hostname = `lc-${id.replace(/-/g, "")}.openmausbot.com`;
   cloudflare.records.set("foreign", { id: "foreign", name: hostname, content: "someone-else.example.com" });
-  await env.DB.prepare("INSERT INTO managed_cloud_beta VALUES ('limix:carol', ?, '2026-11-15', 'running', unixepoch())").bind(id).run();
+  await env.DB.prepare("INSERT INTO managed_cloud_beta(principal,workspace_id,requested_at,runtime_state,runtime_seen) VALUES ('limix:carol', ?, '2026-11-15', 'running', unixepoch())").bind(id).run();
   const bindings = { ...env, LIMIX_ACCOUNT_URL: "https://accounts.test", LIMIX_BETA_HOST_TOKEN: HOST_TOKEN };
   const response = await worker.fetch(new Request("https://auth.openmausbot.test/v1/managed-cloud/host/assignments", { headers: { authorization: "Bearer " + HOST_TOKEN } }), bindings, createExecutionContext());
   expect(await response.json()).toMatchObject({ routing: "pending" });

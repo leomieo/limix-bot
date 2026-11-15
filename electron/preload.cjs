@@ -412,7 +412,7 @@ const bridge = {
   },
   pickFolder: (current) => ipcRenderer.invoke("desktop:pick-folder", current),
   limixGateway: { open: () => ipcRenderer.invoke("limix-gateway:open") },
-  limixAccount: { managedBeta: provision => ipcRenderer.invoke("limix-account:managed-beta", provision === true), managedBetaOpen: () => ipcRenderer.invoke("limix-account:managed-beta-open"), review: password => ipcRenderer.invoke("limix-account:review", password), info: () => ipcRenderer.invoke("limix-account:info"), signOut: username => ipcRenderer.invoke("limix-account:sign-out", String(username)) },
+  limixAccount: { review: password => ipcRenderer.invoke("limix-account:review", password), info: () => ipcRenderer.invoke("limix-account:info"), signOut: username => ipcRenderer.invoke("limix-account:sign-out", String(username)) },
   limixTools: { state: () => ipcRenderer.invoke("limix-tools:state"), scan: () => ipcRenderer.invoke("limix-tools:scan"), install: (ids) => ipcRenderer.invoke("limix-tools:install", ids), installRequirement: (id, project) => ipcRenderer.invoke("limix-tools:install-requirement", id, project), installRequirements: (ids, project) => ipcRenderer.invoke("limix-tools:install-requirements", ids, project), shouldAsk: () => ipcRenderer.invoke("limix-tools:should-ask"), markAsked: () => ipcRenderer.invoke("limix-tools:asked") },
   limixPhone: { state: () => ipcRenderer.invoke("limix-phone:state"), set: (on) => ipcRenderer.invoke("limix-phone:set", on === true) },
   exportDiagnostics: () => ipcRenderer.invoke("desktop:export-diagnostics"),
@@ -481,6 +481,8 @@ const bridge = {
     signOut: () => ipcRenderer.invoke("cloud-account:signOut"),
     openDashboard: () => ipcRenderer.invoke("cloud-account:openDashboard"),
     offer: () => ipcRenderer.invoke("cloud-account:offer"),
+    // Limix: asks the operator for a Limix Cloud trial; nothing is sold yet.
+    requestTrial: () => ipcRenderer.invoke("cloud-account:requestTrial"),
     checkout: (plan, source) => ipcRenderer.invoke("cloud-account:checkout", String(plan), String(source)),
     // The buying sheet: plain text in, outcomes out; the attempt, the token and the checkout page stay in main.
     signInStart: email => ipcRenderer.invoke("cloud-account:signInStart", String(email)),

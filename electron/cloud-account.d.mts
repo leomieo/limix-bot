@@ -6,6 +6,8 @@ export interface CloudAccountState {
   message?: string;
   enrollment?: { userCode: string; expiresAt: number };
   account?: { id: string; email: string };
+  /** Limix: where this account's Limix Cloud trial request stands (the Admin's `limixTrial`). */
+  limixTrial?: "none" | "pending" | "approved" | "declined";
   deviceId?: string;
   expiresAt?: number;
   /** Only a current server-verified session can include an entitlement
@@ -141,6 +143,8 @@ export interface CloudAccountBridge {
   openDashboard(): Promise<CloudAccountState>;
   /** What this person may buy now (cloud-account.mjs offer), or null. */
   offer?(): Promise<import("./cloud-home.mjs").CloudOffer | null>;
+  /** Limix: asks the operator for a Limix Cloud trial. */
+  requestTrial?(): Promise<{ outcome: "requested" | "failed"; state: CloudAccountState }>;
   /** Opens a checkout for a plan of the offer in the browser; `source` is one of CHECKOUT_SOURCES. */
   checkout?(plan: string, source: string): Promise<CloudCheckoutResult>;
   /** The email-code sign-in; the attempt and the token never reach the page. Absent on an older app. */
@@ -247,6 +251,7 @@ export interface CloudPlanBridge {
 }
 
 export declare const CLOUD_ORIGIN: string;
+export declare const LIMIX_TRIALS: readonly ["none", "pending", "approved", "declined"];
 export declare const STAGING_CLOUD_ORIGIN: string;
 export declare function cloudTarget(env?: Record<string, string | undefined>): {
   origin: string; staging: boolean;
@@ -285,6 +290,10 @@ export interface CloudAccountClient {
   signOut(): Promise<CloudAccountState>;
   openDashboard(): Promise<CloudAccountState>;
   offer(): Promise<import("./cloud-home.mjs").CloudOffer | null>;
+  /** Limix: trades this computer's Limix sign-in (main's bearer) for a Limix Cloud sign-in. */
+  signInWithLimix(bearer: string): Promise<CloudAccountState>;
+  /** Limix: asks the operator for a Limix Cloud trial. */
+  requestTrial(): Promise<{ outcome: "requested" | "failed"; state: CloudAccountState }>;
   checkout(plan: string, source: string): Promise<CloudCheckoutResult>;
   emailStart(email: string): Promise<CloudSignInStart>;
   emailVerify(code: string): Promise<CloudSignInVerify>;

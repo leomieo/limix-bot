@@ -18,8 +18,25 @@ import { useCloudSendNotice } from "./CloudSendStrip";
 import { OpenFilesButton } from "./OpenFilesButton";
 import { useDesktopCapabilities } from "./DesktopCapabilities";
 import { PausedBotsButton } from "./AwakeBotsPicker";
+import { lx } from "@/lib/limix-text";
+import { LIMIX_CLOUD_SALES } from "../../shared/limix-features";
 
 export { cloudPlanLabel };
+
+/** Limix: nothing is sold yet; a person asks for a trial and the operator approves it (limix-cloud-admin.ts). */
+export function LimixTrialBlock({ trial, busy, onAsk }: { trial: CloudAccountState["limixTrial"]; busy: boolean; onAsk: () => void }) {
+  if (trial === "pending") {
+    return <p role="status" data-limix-trial="pending" className="text-[13px] text-ink-secondary">
+      {lx("Đã gửi yêu cầu dùng thử. Khi được duyệt, máy Cloud của bạn tự được dựng; mục này sẽ báo khi xong.",
+        "Trial requested. Once it is approved the Cloud is set up by itself; this page says when it's ready.")}</p>;
+  }
+  return <div data-limix-trial={trial ?? "none"} className="flex flex-col items-start gap-2">
+    <p className="text-[13px] text-ink-secondary">{trial === "declined"
+      ? lx("Yêu cầu trước chưa được duyệt. Bạn có thể gửi lại.", "Your earlier request wasn't approved. You can ask again.")
+      : lx("Bot chạy 24/7 trên máy chủ Limix, kể cả khi máy tính này tắt.", "Bots run 24/7 on a Limix server, even while this computer is off.")}</p>
+    <button type="button" disabled={busy} className="ui-button ui-button-primary" onClick={onAsk}>{lx("Đăng ký dùng thử", "Request a trial")}</button>
+  </div>;
+}
 
 const MACHINE_TEXT = {
   provisioning: "cloudHome.provisioning",
@@ -280,7 +297,7 @@ export function CloudAccountSettings({ linkRequest = 0, cloudHome = false, teamH
       {(view.kind === "signed-out" || view.kind === "removed") && <div className="flex flex-col items-start gap-3">
         {addCloudButton}
         <button type="button" disabled={busy} className={addCloudButton ? "text-[13px] font-medium text-accent-text underline underline-offset-2 hover:text-ink" : "ui-button"}
-          onClick={() => onSignIn ? onSignIn() : void perform(() => bridge.begin())}>{t("cloudAccount.signIn")}</button>
+          onClick={() => onSignIn && LIMIX_CLOUD_SALES ? onSignIn() : void perform(() => bridge.begin())}>{t("cloudAccount.signIn")}</button>
       </div>}
       {account?.status === "connecting" && <div className="flex flex-col items-start gap-3">
         <p role="status" className="text-[13px] text-ink-secondary">{t("cloudAccount.browser")}</p>
@@ -298,17 +315,19 @@ export function CloudAccountSettings({ linkRequest = 0, cloudHome = false, teamH
           {view.kind === "paid" && view.checking && <span className="ms-2 text-[12px] font-normal text-ink-secondary">{t("cloudAccount.checking")}</span>}</p>}
         {account.status === "connected" && trialLines(account.trial, account.credit)}
         {view.kind === "free" && addCloudButton}
+        {view.kind === "free" && !LIMIX_CLOUD_SALES && account.status === "connected" && bridge.requestTrial
+          && <LimixTrialBlock trial={account.limixTrial} busy={busy} onAsk={() => void perform(async () => (await bridge.requestTrial!()).state)} />}
         <div className="flex flex-wrap gap-2">
           {view.kind === "reauth"
             ? <button type="button" disabled={busy} className="ui-button" onClick={() => void perform(() => bridge.signInAgain())}>{t("cloudAccount.signInAgain")}</button>
             : <>
-              {!(view.kind === "free" && addCloudButton) && <button type="button" disabled={busy} className="ui-button" onClick={() => void perform(() => bridge.openDashboard())}>{view.kind === "free" ? t("cloudAccount.dashboard") : dashboardLabel(account, view)}</button>}
+              {LIMIX_CLOUD_SALES && !(view.kind === "free" && addCloudButton) && <button type="button" disabled={busy} className="ui-button" onClick={() => void perform(() => bridge.openDashboard())}>{view.kind === "free" ? t("cloudAccount.dashboard") : dashboardLabel(account, view)}</button>}
               <button type="button" disabled={busy} className="ui-button" onClick={() => void perform(() => bridge.refresh())}>{t("organization.refresh")}</button>
             </>}
           {!confirm && <button type="button" disabled={busy} className="ui-button" onClick={() => setConfirm(true)}>{t("cloudAccount.signOut")}</button>}
         </div>
         {account.status === "connected" && account.renewal && <CloudCancelPlan renewal={account.renewal} actions={renewal} />}
-        {view.kind === "free" && !confirm && <p className="text-[12px] text-ink-secondary">{t(window.ogb?.accounts ? "cloudAccount.otherEmailOrTeam" : "cloudAccount.otherEmail")}{" "}
+        {LIMIX_CLOUD_SALES && view.kind === "free" && !confirm && <p className="text-[12px] text-ink-secondary">{t(window.ogb?.accounts ? "cloudAccount.otherEmailOrTeam" : "cloudAccount.otherEmail")}{" "}
           <button type="button" data-cloud-other-email disabled={busy} className="underline hover:text-ink" onClick={() => (window.ogb?.accounts ? setAddingEmail(true) : setConfirm(true))}>{t(window.ogb?.accounts ? "cloudAccount.addOtherEmail" : "cloudAccount.useOtherEmail")}</button></p>}
         {addingEmail && <AccountsSheet adding="" onClose={() => setAddingEmail(false)} />}
         {confirm && <div role="group" aria-label={t("cloudAccount.signoutTitle")} className="rounded-lg border border-hairline/40 p-3">

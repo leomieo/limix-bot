@@ -1,7 +1,6 @@
 import { createLimixSignOutHandler } from "./limix-sign-out.mjs";
 import { app, autoUpdater as nativeAutoUpdater, BrowserWindow, Tray, WebContentsView, clipboard, desktopCapturer, dialog, globalShortcut, ipcMain, Menu, nativeImage, Notification, net, powerMonitor, powerSaveBlocker, safeStorage, screen, session, shell, systemPreferences, utilityProcess, nativeTheme } from "electron";
-import { LIMIX_ACCOUNT_URL, LIMIX_CLOUD_ENABLED, LIMIX_ORGANIZATION_ENABLED } from "./limix-features.mjs";
-import { managedBetaState, openManagedHome } from "./limix-managed-beta.mjs";
+import { LIMIX_ACCOUNT_URL, LIMIX_CLOUD_ENABLED, LIMIX_CLOUD_SALES, LIMIX_ORGANIZATION_ENABLED } from "./limix-features.mjs";
 import { limixAccountGate, limixVerifyPassword, limixAccountInfo, limixRemoteCredential, limixSignOut } from "./limix-account.mjs";
 import { limixRuntimeEnv } from "./limix-runtime.mjs";
 import { lxm, setLimixLanguageSource } from "./limix-lang.mjs";
@@ -830,6 +829,20 @@ function ensureCloudAccount() {
   return cloudAccount;
 }
 
+/**
+ * Limix: Limix Cloud follows the Limix account this computer is signed in with (electron/limix-account.mjs). A Cloud
+ * sign-in for another account, or one that ended, is replaced. `asked`: the person pressed Sign in (or Sign in again).
+ */
+async function limixCloudSignIn(asked = false) {
+  if (!LIMIX_CLOUD_ENABLED || !app.isPackaged || desktopRemoteAccess) return cloudAccount?.state() ?? null;
+  const client = ensureCloudAccount(), credential = limixRemoteCredential();
+  if (!credential) return client.state();
+  const current = client.state();
+  const wrongAccount = current.account && current.account.id !== credential.userId;
+  if (wrongAccount || current.status === "reauth-required" || (asked && current.status === "unavailable" && current.message !== "unreachable")) await client.signOut().catch(() => {});
+  return client.state().status === "signed-out" ? client.signInWithLimix(credential.bearer) : client.state();
+}
+
 /** The free trial's popup, at most once a day per notice across this computer's page and the Cloud's. */
 let trialNotices = null;
 function cloudTrialNotices() {
@@ -846,7 +859,7 @@ async function readCloudOfferBrand() {
   refreshApplicationMenu();
 }
 function cloudOffersAllowed() {
-  return LIMIX_CLOUD_ENABLED && app.isPackaged && !desktopRemoteAccess;
+  return LIMIX_CLOUD_SALES && app.isPackaged && !desktopRemoteAccess;
 }
 async function cloudOffersReady() {
   if (brandedBuild === null && serverReady) await readCloudOfferBrand();
@@ -2514,8 +2527,11 @@ const workspaceOnly = (handler) => (event, ...args) => {
 const localWorkspaceOnly = (channel, handler) => localOnly(channel, workspaceOnly(handler));
 // No renderer-supplied address, token, paid flag or callback can choose an account or activate Pro.
 for (const method of ["state", "begin", "signInAgain", "reopen", "cancel", "refresh", "signOut", "openDashboard", "offer"]) {
-  ipcMain.handle(`cloud-account:${method}`, localWorkspaceOnly(`cloud-account:${method}`, () => (method === "signOut" ? accounts.signOutActive() : ensureCloudAccount()[method]())));
+  // Limix: signing in to Limix Cloud is the Limix account this computer is signed in with, never an email or a browser step.
+  ipcMain.handle(`cloud-account:${method}`, localWorkspaceOnly(`cloud-account:${method}`, () => (method === "signOut" ? accounts.signOutActive()
+    : method === "begin" || method === "signInAgain" ? limixCloudSignIn(true) : ensureCloudAccount()[method]())));
 }
+ipcMain.handle("cloud-account:requestTrial", localWorkspaceOnly("cloud-account:requestTrial", () => ensureCloudAccount().requestTrial()));
 ipcMain.handle("cloud-account:checkout", localWorkspaceOnly("cloud-account:checkout", async (_event, plan, source) => {
   if (!(await cloudOffersReady())) throw new Error("Limix Bot Cloud isn't offered in this app.");
   const client = ensureCloudAccount();
@@ -3083,7 +3099,7 @@ app.whenReady().then(async () => {
   // Fresh local use never makes a Cloud request; start only restores an existing grant.
   if (app.isPackaged && !desktopRemoteAccess) {
     cloudAccountRestoring = true;
-    cloudAccountStarted = ensureCloudAccount().start().catch(() => {}).then(() => accountRing()?.start()).finally(() => { cloudAccountRestoring = false; });
+    cloudAccountStarted = ensureCloudAccount().start().catch(() => {}).then(() => limixCloudSignIn().catch(() => {})).then(() => accountRing()?.start()).finally(() => { cloudAccountRestoring = false; });
   }
   void cloudAccountStarted.then(() => { cloudSignInRestored = true; void oneHome.kick(); void homeWindow.refresh(); }); void ownHome?.kick();
   if (companionStartsAtLaunch({ remoteClient: Boolean(desktopRemoteAccess), serverReady })) {
@@ -3219,13 +3235,6 @@ ipcMain.handle("limix-account:review", localOnly("limix-account:review", async (
   if (!response.ok) throw new Error("Không mở được lịch sử chat.");
   return response.json();
 }));
-ipcMain.handle("limix-account:managed-beta-open", localOnly("limix-account:managed-beta-open", async () => {
-  const opened = await openManagedHome(limixRemoteCredential(), (...args) => session.defaultSession.fetch(...args));
-  if (!opened.ok) return opened.state;
-  serverConnect.open({ origin: opened.origin, label: "Limix Cloud", credential: opened.credential }, "Limix Cloud");
-  return "opened";
-}));
-ipcMain.handle("limix-account:managed-beta", localOnly("limix-account:managed-beta", (_event, provision) => managedBetaState(limixRemoteCredential(), provision === true)));
 ipcMain.handle("limix-account:info", localOnly("limix-account:info", () => limixAccountInfo()));
 const confirmLimixSignOut = createLimixSignOutHandler({ info: limixAccountInfo, signOut: limixSignOut, relaunch: () => { app.relaunch(); app.quit(); } });
 ipcMain.handle("limix-account:sign-out", localOnly("limix-account:sign-out", (_event, username) => confirmLimixSignOut(username)));

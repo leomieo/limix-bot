@@ -605,7 +605,6 @@ import { createBotLifecycleRoutes } from "./routes/bot-lifecycle.ts";
 import { createBotSkillsRoutes } from "./routes/bot-skills.ts";
 import { startHubAutoSync } from "./limix-skill-hub.ts";
 import { limixGatewayConnections, startLimixGatewaySidecar } from "./limix-gateway-sidecar.ts";
-import { createLimixManagedGrant, limixManagedGrantConfig } from "./limix-managed-grant.ts";
 import { limixBundledFor, limixSelectBundled, limixSkillDefaultsMigration } from "./limix-skill-store.ts";
 import { createSkillShareRoutes } from "./routes/skill-share.ts";
 import { createTeamContextRoutes } from "./routes/team-context.ts";
@@ -718,7 +717,6 @@ const CLOUD_TEAM = CLOUD_HOME?.team ?? null, CLOUD_PERSONAL = CLOUD_HOME !== nul
 /** The language set on this server, else (on a Team Cloud) the team's default from the Admin. threadLanguage: the one a line in a conversation is written in, its one person's, else the place's (server/server-lines.ts). */
 const appLanguage = (): string | undefined => cfg.language ?? CLOUD_TEAM?.language ?? (process.env.OMB_UI_LANGUAGE?.trim() || undefined); const personLanguages = createPersonLanguages({ dataDir: DATA_DIR, configured: appLanguage, privateTo: (threadId) => teamHost.privateTo(threadId) }); const threadLanguage = personLanguages.forThread; setConversationLanguage(threadLanguage);
 if (CLOUD_HOME) { repairMovedWorkspacePaths(DATA_DIR); acceptLegacyOrigins(CLOUD_HOME.legacyOrigins); }
-const LIMIX_MANAGED_GRANT = limixManagedGrantConfig(); const limixManagedGrant = LIMIX_MANAGED_GRANT ? createLimixManagedGrant(LIMIX_MANAGED_GRANT, sessions) : null; if (LIMIX_MANAGED_GRANT && !CLOUD_HOME) acceptLegacyOrigins([LIMIX_MANAGED_GRANT.origin]);
 if (CLOUD_PERSONAL) sessions.requireAdmin(userError("serverError.cloud.personal"));
 const lendingEnabled = () => sharedComputersEnabled(cfg) || CLOUD_HOME !== null || ownHome.here(); const ownerLends = () => ownerLendingEnabled(cfg) && ownHome.takesMove(); const botLending = () => lendingEnabled() || (ownerLends() && sharedComputers.anyLent()); // ownerLends: a server only its one owner signs in to (own-home.ts) takes that owner's computer by default, never anyone else's (routes/shared-computers.ts); the desktop asks its person first, and the public description stays as it was.
 const CLOUD_HOME_LENDER = "cloud-home";
@@ -12684,7 +12682,6 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
     }
     if (await emailSignInRoute({ cloudHome: Boolean(CLOUD_HOME), emailSignIn, sessions, cookieName: SESSION_COOKIE, target: (r) => signInMailTarget(publicUrl(), requestOrigin(r)),
       environment: () => environmentDescriptor({ environmentId: ENVIRONMENT_ID, ...TEAM_LABEL, desktopManaged: DESKTOP_MANAGED, emailSignIn: true, sharedComputers: lendingEnabled() }) }, req, res, path, method)) return;
-    if (limixManagedGrant && await limixManagedGrant.handle(req, res, path, method)) return;
     if ((cloudSigned && await cloudSigned({ req, res, url, path, method })) || chatApps.serveFile(req, res, path, method)) return;
     if (method === "POST" && path === "/api/auth/pair") {
       // JSON only: a cross-site HTML form cannot send this content type without a preflight, so no unused code is planted as a session.

@@ -36,6 +36,8 @@ test("production personal Cloud IPC guards exact local main frame and forwards n
     ensureCloudAccount: () => Object.fromEntries(methods.map(method => [method, (...args) => { calls.push([method, ...args]); return { status: "signed-out" }; }])),
     connectCloudHome: (...args) => { calls.push(["connectHome", ...args]); return { status: "connected" }; },
     accounts: { signOutActive: (...args) => { calls.push(["signOut", ...args]); return { status: "signed-out" }; } },
+    // Limix: Sign in (and Sign in again) is this computer's Limix account, asked for by the person.
+    limixCloudSignIn: (...args) => { calls.push(["limixCloudSignIn", ...args]); return { status: "signed-out" }; },
   });
   vm.runInContext(source.slice(start, end), context);
   for (const method of bridgeMethods) {
@@ -44,7 +46,8 @@ test("production personal Cloud IPC guards exact local main frame and forwards n
     for (const sender of [{ sender: contents, senderFrame: { url: `${origin}/subframe` } }, { sender: {}, senderFrame: frame },
       { sender: contents, senderFrame: { url: "https://remote.example.test" } }, { sender: contents }]) assert.throws(() => handle(sender), /only available/);
   }
-  assert.deepEqual(calls, bridgeMethods.map(method => method === "connectHomeForPhone" ? ["connectHome", "phone"] : [method]));
+  assert.deepEqual(calls, bridgeMethods.map(method => method === "connectHomeForPhone" ? ["connectHome", "phone"]
+    : ["begin", "signInAgain"].includes(method) ? ["limixCloudSignIn", true] : [method]));
 });
 test("a team's Cloud opens from the page by its id alone: the team comes from the verified session, and opens as the switcher opens it", async () => {
   const f = preload();
