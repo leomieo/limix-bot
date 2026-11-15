@@ -22,6 +22,15 @@ Trợ Lý Limix (đổi tên từ Limix Bot) đề xuất tạo Bot / nhóm Bot,
 5. Xác minh trong fixture cô lập theo `docs/verification/README.md` (không đụng dữ liệu thật); chạy thử trên giao diện: nói "cần bot viết bài + researcher" -> thẻ -> duyệt.
 6. Commit trên `assistant-proposals`, chờ người dùng bảo mới push.
 
+## Kết quả chạy test cuối (so với baseline `main` sạch, 5 file trên)
+Baseline lỗi sẵn 154 test (phần lớn index.test.ts, môi trường sandbox). Sau thay đổi: 159 lỗi, trong đó **10 test lỗi MỚI** (5 test baseline được sửa nhờ thay đổi). Cả 10 đều do cùng một nguyên nhân: các test này khẳng định hành vi gốc "bot ở Full/Auto tạo bot/đội **ngay, không thẻ, có Undo**", còn thay đổi mới bắt buộc luôn hiện thẻ chờ duyệt (`autoApply = null`):
+- server/create-bot-model.e2e.test.ts: "Chief creation uses the workspace default or a validated explicit model..."
+- server/index.test.ts: "adds a specialist the Chief chose itself at once...", "lands a created operator in a requested working folder...", "takes a created operator's role description up to 4000 characters...", "tells the Chief ... when a bot it adds takes the person's own name"
+- server/no-omb-cards.e2e.test.ts (4 test: Full/Auto, tạo đội + lưu team fact với Undo)
+- server/starter-bots.e2e.test.ts: "a Chief's create_bot and team setup make bots past five..."
+
+Việc cần quyết (hỏi người dùng nếu chưa rõ): (a) giữ "luôn hỏi duyệt" -> sửa 10 test sang kỳ vọng thẻ pending rồi duyệt qua `/api/threads/:id/respond`; hoặc (b) chỉ bắt duyệt cho `propose_team_setup`, để `create_bot` tạo ngay như gốc (ít test phải sửa nhưng lệch yêu cầu "hỏi người duyệt"). Lưu ý "team fact" (no-omb-cards) có thể bị ảnh hưởng ngoài ý muốn: kiểm tra `autoApply` có đang chặn cả phần lưu team fact không, nếu có thì đó là lỗi cần sửa vì yêu cầu chỉ nói về đề xuất bot/nhóm.
+
 ## Mẹo môi trường
 Không có Docker; npm cần `npm_config_noproxy=localhost NO_PROXY=localhost`; vitest chạy full rất chậm (chạy nền, dùng `--reporter=json --outputFile`).
 
