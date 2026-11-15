@@ -17,11 +17,11 @@ const LISTED_FROM = 1000;
 
 const LINES: Record<string, number> = {
   "electron/companion-account-service.mjs": 1021, // Limix Bot fork additions
-  "shared/wire.ts": 1006, // Limix Bot fork additions
+  "shared/wire.ts": 1012, // Limix Bot fork additions
   "server/drivers/openai-chat.ts": 1001, // Limix Bot: upstream 0.1.160 empty tool arguments fix
   "electron/cloud-account.mjs": 1006, // Limix Bot: Limix Cloud sign-in and trial request
   "src/components/TeamLibraryPanel.tsx": 1010, // Limix Bot fork additions
-  "src/components/bot-settings/AccessSection.tsx": 1022, // Limix Bot fork additions
+  "src/components/bot-settings/AccessSection.tsx": 1024, // Limix Bot fork additions
   "server/index.ts": 15634,
   "src/state/store.tsx": 3367,
   "electron/main.mjs": 3276,
@@ -40,7 +40,7 @@ const LINES: Record<string, number> = {
   "src/components/LocalComputerSection.tsx": 1503,
   "src/components/CursorAvatar.tsx": 1337,
   "server/skills.ts": 1379,
-  "shared/wire.ts": 1004,
+  "shared/wire.ts": 1012,
   "server/composio.ts": 1038,
   "server/vps-computer.ts": 1287,
   "scripts/mcp-server.ts": 1411,
