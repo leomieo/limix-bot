@@ -99,7 +99,7 @@ export interface BotMessageRouteDeps {
   drainQueuedSends(): void;
   answeringCardAs(auth: RequestAuth, threadId: string, requestId: string, work: () => Promise<unknown>): Promise<void>;
   resolveAndSendTrust(res: ServerResponse, threadId: string, requestId: string, behavior: Behavior): boolean;
-  resolveAndSendTeamSetup(res: ServerResponse, args: { botId: string; threadId: string; requestId: string; behavior: string }, ownerReview: boolean): Promise<boolean>;
+  resolveAndSendTeamSetup(res: ServerResponse, args: { botId: string; threadId: string; requestId: string; behavior: string; room?: boolean }, ownerReview: boolean): Promise<boolean>;
   resolveAndSendMcp(res: ServerResponse, args: { botId: string; threadId: string; requestId: string; behavior: string }, ownerReview: boolean): Promise<boolean>;
   resolveAndSendRoutine(res: ServerResponse, args: CardAnswer): boolean;
   resolveAndSendProfile(res: ServerResponse, args: CardAnswer): boolean;
@@ -588,7 +588,7 @@ export function createBotMessageRoutes(deps: BotMessageRouteDeps): RouteHandler 
         if (access) return json(res, access.status, access.body);
         if (resolveAndSendTrust(res, bot.threadId, String(body.requestId), behavior)) return;
         const answer = { botId: bot.id, threadId: bot.threadId, requestId: String(body.requestId), behavior };
-        if (await resolveAndSendTeamSetup(res, answer, ownerReview(auth, req))) return;
+        if (await resolveAndSendTeamSetup(res, { ...answer, ...(body.room === false ? { room: false } : {}) }, ownerReview(auth, req))) return;
         if (await resolveAndSendMcp(res, answer, ownerReview(auth, req))) return;
         if (resolveAndSendRoutine(res, {
           botId: bot.id,
@@ -694,7 +694,7 @@ export function createBotMessageRoutes(deps: BotMessageRouteDeps): RouteHandler 
         if (setupCard) {
           const setupBotId = setupCard.from?.botId ?? store.botByThread(threadId)?.id;
           if (!setupBotId) return json(res, 400, { error: "This team setup has no valid owner" });
-          if (await resolveAndSendTeamSetup(res, { botId: setupBotId, threadId, requestId, behavior }, ownerReview(auth, req))) return;
+          if (await resolveAndSendTeamSetup(res, { botId: setupBotId, threadId, requestId, behavior, ...(body.room === false ? { room: false } : {}) }, ownerReview(auth, req))) return;
         }
         const mcpCard = store.messagesFor(threadId).find((message) => message.card?.requestId === requestId && message.card.mcpRequest);
         if (mcpCard) {

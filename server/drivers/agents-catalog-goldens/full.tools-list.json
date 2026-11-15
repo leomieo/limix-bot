@@ -113,7 +113,7 @@
     },
     {
       "name": "list_room_targets",
-      "description": "Discover actual OpenMausBot teammates you can reach, in every department, and rooms. Works in a normal bot conversation too; no room is required. Returns bot and room IDs, roles and working folders, never other conversations' history. Use these bots, not native coding helpers with similar names, when the user asks their team to work together.",
+      "description": "Discover actual Limix Bot teammates you can reach, in every department, and rooms. Works in a normal bot conversation too; no room is required. Returns bot and room IDs, roles and working folders, never other conversations' history. Use these bots, not native coding helpers with similar names, when the user asks their team to work together.",
       "inputSchema": {
         "type": "object",
         "properties": {},
@@ -122,7 +122,7 @@
     },
     {
       "name": "coordinate_bots",
-      "description": "The one way to hand work on: ask existing OpenMausBot teammates a question or assign them concrete work. In a room it defaults to this room; use group_id from list_room_targets for a specific room. Outside a room, what you send a teammate from this conversation goes to one standing work thread with them; thread \"new\" opens a fresh one, a thread id picks one you opened. Where work you gave is still open, it goes into that work: it answers the question that work waits on, or reaches the turn running it. Give 1-4 bot_ids — teammate ids as list_bots or your roster prints them; a unique teammate name also resolves: they see only what you send them and use their own model, tools and permissions. They can consult their own specialists; every result returns here and resumes you automatically, so after sending all assignments END your turn: do not poll or wait, and never call assignment_status in the same turn. consult true asks a question the teammate answers from what it knows, acting on nothing; reply \"none\" is a one-way notice nothing comes back from. Include exact file paths, constraints and what must be verified (done_when). On return, resolve tradeoffs, verify the requested outcome and request concrete corrections with rework true if necessary before giving one final answer. Never target whoever assigned you this work or anyone above it: to ask or report back, end your turn and your reply resumes them. Never thank or approve a finished teammate; its result already returned. Never repeat a refused call unchanged.",
+      "description": "The one way to hand work on: ask existing Limix Bot teammates a question or assign them concrete work. In a room it defaults to this room; use group_id from list_room_targets for a specific room. Outside a room, what you send a teammate from this conversation goes to one standing work thread with them; thread \"new\" opens a fresh one, a thread id picks one you opened. Where work you gave is still open, it goes into that work: it answers the question that work waits on, or reaches the turn running it. Give 1-4 bot_ids — teammate ids as list_bots or your roster prints them; a unique teammate name also resolves: they see only what you send them and use their own model, tools and permissions. They can consult their own specialists; every result returns here and resumes you automatically, so after sending all assignments END your turn: do not poll or wait, and never call assignment_status in the same turn. consult true asks a question the teammate answers from what it knows, acting on nothing; reply \"none\" is a one-way notice nothing comes back from. Include exact file paths, constraints and what must be verified (done_when). On return, resolve tradeoffs, verify the requested outcome and request concrete corrections with rework true if necessary before giving one final answer. Never target whoever assigned you this work or anyone above it: to ask or report back, end your turn and your reply resumes them. Never thank or approve a finished teammate; its result already returned. Never repeat a refused call unchanged.",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
@@ -260,7 +260,7 @@
     },
     {
       "name": "select_computer",
-      "description": "Choose where this conversation does computer work. Call with no arguments to inspect actual available choices and the current place. For a task needing computer interaction, select the requested place, or auto to choose a suitable configured computer without asking the user to use menus. OpenMausBot reuses an existing computer first; with a configured provider it can start or provision one when needed. Do not provision for ordinary chat or just to inspect availability. A pending result means end this turn immediately: OpenMausBot updates the conversation selector and resumes the original request with that computer's real tools. Do not use the old tools after requesting a switch, repeat the task, or claim the action is done. This cannot change permissions, override Off, or switch a teammate/routine/channel.",
+      "description": "Choose where this conversation does computer work. Call with no arguments to inspect actual available choices and the current place. For a task needing computer interaction, select the requested place, or auto to choose a suitable configured computer without asking the user to use menus. Limix Bot reuses an existing computer first; with a configured provider it can start or provision one when needed. Do not provision for ordinary chat or just to inspect availability. A pending result means end this turn immediately: Limix Bot updates the conversation selector and resumes the original request with that computer's real tools. Do not use the old tools after requesting a switch, repeat the task, or claim the action is done. This cannot change permissions, override Off, or switch a teammate/routine/channel.",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
@@ -610,7 +610,7 @@
     },
     {
       "name": "create_bot",
-      "description": "Chief of Staff only: add a specialist to your section now; the person can undo it. instructions become its soul. Omit modelSelection for the workspace default, or use exact IDs from list_team_setup. It starts with your connected apps, at the default access level. Assign work with coordinate_bots. At most four per turn.",
+      "description": "Chief of Staff only: propose one specialist for your section on a review card; it is added only if the person approves. Prefer propose_team_setup for ready-made bots, several bots or a group chat. instructions become its soul. Omit modelSelection for the workspace default, or use exact IDs from list_team_setup. It starts with your connected apps, at the default access level. Assign work with coordinate_bots. At most four per turn.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -677,7 +677,7 @@
     },
     {
       "name": "list_team_library",
-      "description": "Chief of Staff only: ready-made teams, each with a summary and roles (lead = the team's Chief). Create roles with create_bot.",
+      "description": "Chief of Staff only: ready-made teams, each with a summary and roles (lead = the team's Chief), and botTemplates: ready-made single bots. Propose either with propose_team_setup (template = a botTemplates id).",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
@@ -686,7 +686,7 @@
     },
     {
       "name": "propose_team_setup",
-      "description": "Chief of Staff only: submit all requested specialist creation, profile/model configuration, Chief assignments, and authorized team moves in ONE combined plan. Use exact catalog engine/model IDs from list_team_setup. Combine all fields for each bot; use the same create key or botId to coalesce repeated entries. New teams must be named explicitly in newTeams and have a specialist in this plan; access is granted only to those new teams. Existing unauthorized teams cannot be included. Models change bot defaults for groups/new threads; existing threads and execution permissions stay unchanged. If review is pending, the decision and structured result automatically resume you once; do not ask again, poll, or repeat the proposal. Read the result: it applies immediately at every access level, and the person sees it with an Undo where possible. If applied, continue the work without another confirmation. Only a pending result (a Cloud conversation its owner did not drive) means ending the turn to wait for the owner. Never claim success without an applied result; report failures honestly. This does not elevate another bot's execution permissions.",
+      "description": "Chief of Staff only: submit all requested specialist creation, profile/model configuration, Chief assignments, and authorized team moves in ONE combined plan. Use exact catalog engine/model IDs from list_team_setup. Combine all fields for each bot; use the same create key or botId to coalesce repeated entries. New teams must be named explicitly in newTeams and have a specialist in this plan; access is granted only to those new teams. Existing unauthorized teams cannot be included. Models change bot defaults for groups/new threads; existing threads and execution permissions stay unchanged. Every setup waits for the person's decision on a card: end your turn; the decision and structured result automatically resume you once. Do not ask again, poll, or repeat the proposal. Never claim success without an applied result.",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
@@ -720,6 +720,10 @@
                   "type": "string",
                   "description": "For create: your stable short name for this new bot in this plan."
                 },
+                "template": {
+                  "type": "string",
+                  "description": "For create: a botTemplates id from list_team_library. Fills name, title, description and soul; fields you give override them."
+                },
                 "botId": {
                   "type": "string",
                   "description": "For update: exact existing bot ID from list_team_setup."
@@ -744,7 +748,7 @@
                     },
                     "soul": {
                       "type": "string",
-                      "description": "Standing instructions; required with name/title/modelSelection for every new bot."
+                      "description": "Standing instructions; every new bot needs name, title and soul (a template fills them). modelSelection defaults to yours."
                     },
                     "cwd": {
                       "type": "string",
@@ -781,10 +785,31 @@
                 }
               },
               "required": [
-                "action",
-                "fields"
+                "action"
               ]
             }
+          },
+          "room": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Offer a group chat with these bots, led by you; the person chooses on the card whether to create it.",
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "members": {
+                "type": "array",
+                "maxItems": 24,
+                "items": {
+                  "type": "string"
+                },
+                "description": "Create keys from this plan or existing bot IDs; omit for every bot this plan creates."
+              }
+            },
+            "required": [
+              "name"
+            ]
           }
         },
         "required": [
@@ -861,7 +886,7 @@
     },
     {
       "name": "request_credential",
-      "description": "Ask the person for a secret on a secure card in the app or a QR-paired phone, never in chat. credential_id: a key OpenMausBot keeps (onePasswordToken: a 1Password service account token; email: a mailbox on any mail host, one card for its address and password, or for its outgoing server when it is connected but can't send). Other secrets: label, reason, delivery (a saved one returns at once). You never see the value; end the turn, and you resume when they save or decline.",
+      "description": "Ask the person for a secret on a secure card in the app or a QR-paired phone, never in chat. credential_id: a key Limix Bot keeps (onePasswordToken: a 1Password service account token; email: a mailbox on any mail host, one card for its address and password, or for its outgoing server when it is connected but can't send). Other secrets: label, reason, delivery (a saved one returns at once). You never see the value; end the turn, and you resume when they save or decline.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -922,7 +947,7 @@
     },
     {
       "name": "request_sign_in",
-      "description": "Ask the person to sign in to a website themselves, in the browser or on the computer you are using now. Use it when a page needs a login you do not have, or a CAPTCHA, passkey or other step only they can do, or a one-time code you cannot read. A code the site sends to the person's own email or messages for a sign-in they asked for is not one: read it there and type it in yourself. They get a card and a notification, sign in where you work, and press Done. Never ask for a password or code in chat. After calling it, end your turn; OpenMausBot resumes you when they finish or decline, and then check you are signed in.",
+      "description": "Ask the person to sign in to a website themselves, in the browser or on the computer you are using now. Use it when a page needs a login you do not have, or a CAPTCHA, passkey or other step only they can do, or a one-time code you cannot read. A code the site sends to the person's own email or messages for a sign-in they asked for is not one: read it there and type it in yourself. They get a card and a notification, sign in where you work, and press Done. Never ask for a password or code in chat. After calling it, end your turn; Limix Bot resumes you when they finish or decline, and then check you are signed in.",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
@@ -943,7 +968,7 @@
     },
     {
       "name": "fill_login",
-      "description": "Sign in with a login the person saved in OpenMausBot or in their connected 1Password. Call it on the login page open in your browser: OpenMausBot types the username, password and any one-time code itself (also one emailed to a connected mailbox), submits each step, and says where the page went; you never see them. A login fills on its own site, such as any page of example.com. With no saved login for the site, sign in another way the person allowed, or call request_sign_in.",
+      "description": "Sign in with a login the person saved in Limix Bot or in their connected 1Password. Call it on the login page open in your browser: Limix Bot types the username, password and any one-time code itself (also one emailed to a connected mailbox), submits each step, and says where the page went; you never see them. A login fills on its own site, such as any page of example.com. With no saved login for the site, sign in another way the person allowed, or call request_sign_in.",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
@@ -1155,7 +1180,7 @@
     },
     {
       "name": "generate_image",
-      "description": "Create one image from a text description with the person's image provider; it is attached to your reply when the turn ends, so do not describe or link it again. Write the prompt in English, concrete and visual. Name a provider only when the person asked for that one.",
+      "description": "Create one image from a text description with the person's image provider; it is attached to your reply when the turn ends, so do not describe or link it again. Prefer this configured image tool over discovering a different image provider through Composio. If it fails, report the failure instead of switching to an unconfigured provider. The chat model and image provider can be different; do not claim an image exists until this tool succeeds. Write the prompt in English, concrete and visual. Name a provider only when the person asked for that one.",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
@@ -1213,7 +1238,7 @@
     },
     {
       "name": "report_bug",
-      "description": "Send the person's bug report to the MausBot team (OpenMausBot's developers) with the app's diagnostics. Only for a message that tags @devs, once. No passwords, keys, tokens or file contents.",
+      "description": "Send the person's bug report to the Limix Bot team (Limix Bot's developers) with the app's diagnostics. Only for a message that tags @devs, once. No passwords, keys, tokens or file contents.",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
@@ -1599,7 +1624,7 @@
           },
           "run_on_startup": {
             "type": "boolean",
-            "description": "Repeating schedules only: also run once whenever OpenMausBot starts, for a computer often off when it is due."
+            "description": "Repeating schedules only: also run once whenever Limix Bot starts, for a computer often off when it is due."
           },
           "app": {
             "type": "string",

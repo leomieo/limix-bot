@@ -380,7 +380,7 @@ const TOOL_DEFINITIONS = [
   {
     name: "create_bot",
     description:
-      "Chief of Staff only: add a specialist to your section now; the person can undo it. instructions become its soul. Omit modelSelection for the workspace default, or use exact IDs from list_team_setup. It starts with your connected apps, at the default access level. Assign work with coordinate_bots. At most four per turn.",
+      "Chief of Staff only: propose one specialist for your section on a review card; it is added only if the person approves. Prefer propose_team_setup for ready-made bots, several bots or a group chat. instructions become its soul. Omit modelSelection for the workspace default, or use exact IDs from list_team_setup. It starts with your connected apps, at the default access level. Assign work with coordinate_bots. At most four per turn.",
     inputSchema: {
       type: "object",
       properties: {
@@ -407,12 +407,12 @@ const TOOL_DEFINITIONS = [
   },
   {
     name: "list_team_library",
-    description: "Chief of Staff only: ready-made teams, each with a summary and roles (lead = the team's Chief). Create roles with create_bot.",
+    description: "Chief of Staff only: ready-made teams, each with a summary and roles (lead = the team's Chief), and botTemplates: ready-made single bots. Propose either with propose_team_setup (template = a botTemplates id).",
     inputSchema: { type: "object", additionalProperties: false, properties: {} },
   },
   {
     name: "propose_team_setup",
-    description: "Chief of Staff only: submit all requested specialist creation, profile/model configuration, Chief assignments, and authorized team moves in ONE combined plan. Use exact catalog engine/model IDs from list_team_setup. Combine all fields for each bot; use the same create key or botId to coalesce repeated entries. New teams must be named explicitly in newTeams and have a specialist in this plan; access is granted only to those new teams. Existing unauthorized teams cannot be included. Models change bot defaults for groups/new threads; existing threads and execution permissions stay unchanged. If review is pending, the decision and structured result automatically resume you once; do not ask again, poll, or repeat the proposal." + APPLIES_OUTCOME,
+    description: "Chief of Staff only: submit all requested specialist creation, profile/model configuration, Chief assignments, and authorized team moves in ONE combined plan. Use exact catalog engine/model IDs from list_team_setup. Combine all fields for each bot; use the same create key or botId to coalesce repeated entries. New teams must be named explicitly in newTeams and have a specialist in this plan; access is granted only to those new teams. Existing unauthorized teams cannot be included. Models change bot defaults for groups/new threads; existing threads and execution permissions stay unchanged. Every setup waits for the person's decision on a card: end your turn; the decision and structured result automatically resume you once. Do not ask again, poll, or repeat the proposal. Never claim success without an applied result.",
     inputSchema: {
       type: "object", additionalProperties: false,
       properties: {
@@ -423,19 +423,24 @@ const TOOL_DEFINITIONS = [
           properties: {
             action: { type: "string", enum: ["create", "update"] },
             key: { type: "string", description: "For create: your stable short name for this new bot in this plan." },
+            template: { type: "string", description: "For create: a botTemplates id from list_team_library. Fills name, title, description and soul; fields you give override them." },
             botId: { type: "string", description: "For update: exact existing bot ID from list_team_setup." },
             fields: { type: "object", additionalProperties: false, properties: {
               name: { type: "string", maxLength: 100 }, title: { type: "string", maxLength: 200 },
               chiefOfStaff: { type: "boolean", description: "Appoint or remove this team's Chief. At most one Chief per team: explicitly demote the current Chief in the same plan when replacing them. Does not grant access to other teams or change execution permissions." },
-              description: { type: "string", maxLength: 4000 }, soul: { type: "string", description: "Standing instructions; required with name/title/modelSelection for every new bot." },
+              description: { type: "string", maxLength: 4000 }, soul: { type: "string", description: "Standing instructions; every new bot needs name, title and soul (a template fills them). modelSelection defaults to yours." },
               cwd: { type: "string", maxLength: 1024, description: "Create only: absolute path of the folder the new bot's tools read and write in. It must already exist. Leave it out for a private workspace." },
               section: { type: "string", maxLength: 60, description: "Exact authorized existing team, or a team explicitly named in newTeams. Empty string means General." },
               modelSelection: { type: "object", additionalProperties: false, properties: {
                 instanceId: { type: "string" }, model: { type: "string" }, effort: { type: "string" }, variant: { type: "string" },
               }, required: ["instanceId", "model"] },
             } },
-          }, required: ["action", "fields"],
+          }, required: ["action"],
         } },
+        room: { type: "object", additionalProperties: false, description: "Offer a group chat with these bots, led by you; the person chooses on the card whether to create it.", properties: {
+          name: { type: "string", minLength: 1, maxLength: 100 },
+          members: { type: "array", maxItems: 24, items: { type: "string" }, description: "Create keys from this plan or existing bot IDs; omit for every bot this plan creates." },
+        }, required: ["name"] },
       }, required: ["reason", "operations"],
     },
   },

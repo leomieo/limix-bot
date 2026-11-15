@@ -12,6 +12,7 @@ import { harnessCapabilityLines, type DriverCapabilities } from "./harness-capab
 import { redactSecretsInText } from "./redact.ts"; import { chiefLevel } from "./chief-level.ts"; import { defaultBotRefusal } from "./default-bot.ts";
 import type { BotRecord, OptionCardData } from "./store.ts";
 import type { TeamSetupFields, TeamSetupOperation, TeamSetupRequest, TeamSetupResult, TeamSetupUndo } from "../shared/team-setup.ts";
+import { READY_BOTS, readyBot } from "../shared/ready-bots.ts";
 
 const section = (value?: string) => value?.trim() || "";
 const teamName = z.string().trim().min(1).max(60).refine(fitsOnOneLine).refine((value) => redactSecretsInText(value) === value, "Team names cannot contain credentials");
@@ -29,9 +30,13 @@ const planSchema = z.object({
   reason: z.string().trim().min(1).max(500),
   newTeams: z.array(teamName).max(8).default([]),
   operations: z.array(z.discriminatedUnion("action", [
-    z.object({ action: z.literal("create"), key: z.string().trim().min(1).max(80), fields: fieldsSchema }).strict(),
+    z.object({ action: z.literal("create"), key: z.string().trim().min(1).max(80), template: z.string().trim().min(1).max(80).optional(), fields: fieldsSchema.default({}) }).strict(),
     z.object({ action: z.literal("update"), botId: z.string().min(1).max(128), fields: fieldsSchema }).strict(),
   ])).min(1).max(24),
+  room: z.object({
+    name: z.string().trim().min(1).max(100).refine(fitsOnOneLine).refine((value) => redactSecretsInText(value) === value, "Room names cannot contain credentials"),
+    members: z.array(z.string().trim().min(1).max(128)).max(24).optional(),
+  }).strict().optional(),
 }).strict();
 
 export class TeamSetupError extends Error {
@@ -88,6 +93,8 @@ interface Options {
   ownsThread(botId: string, threadId: string): boolean;
   /** `request` only for a reviewed deletion; Undo of a creation deletes without one. */
   deleteBot(botId: string, revalidate: () => void, request?: TeamSetupRequest): Promise<void>;
+  /** Creates the group chat a reviewer chose with an applied setup; absent where setups never offer one. */
+  createRoom?(request: TeamSetupRequest, botIds: string[]): { id: string; name: string };
 }
 
 type RequestFrom = { botId: string; name: string; color: string };
@@ -197,7 +204,16 @@ export class TeamSetupRequestService {
     for (const operation of parsed.data.operations) {
       const key = operation.action === "create" ? `create:${operation.key}` : `update:${operation.botId}`;
       const previous = combined.get(key);
-      combined.set(key, { ...operation, fields: { ...previous?.fields, ...operation.fields } });
+      let fields = { ...previous?.fields, ...operation.fields };
+      if (operation.action === "create") {
+        if (operation.template) {
+          const template = readyBot(operation.template);
+          if (!template) throw new TeamSetupError(`Unknown ready-made bot ${JSON.stringify(operation.template)}. Use an id from list_team_library botTemplates: ${READY_BOTS.map((bot) => bot.id).join(", ")}`);
+          fields = { name: template.name, title: template.title, description: template.description, soul: template.soul, ...fields };
+        }
+        fields.modelSelection ??= chief.modelSelection;
+      }
+      combined.set(key, { ...operation, fields });
     }
     if (combined.size > 8) throw new TeamSetupError("Review at most eight bots in one setup");
     const operations: TeamSetupOperation[] = [...combined.values()].map((operation) => {
@@ -211,11 +227,30 @@ export class TeamSetupRequestService {
     });
     const requesterScope: TeamSetupFields = {};
     for (const operation of operations) if (operation.botId === chief.id) Object.assign(requesterScope, operation.fields);
+    const room = parsed.data.room ? this.room(parsed.data.room, [...combined.values()], operations, chief) : undefined;
     const request: TeamSetupRequest = { version: 1, requestId: newId(), botId: args.botId, threadId: args.threadId,
       reason: redactSecretsInText(parsed.data.reason), createdAt: Date.now(), requesterRevision: teamSetupRevision(chief, requesterScope),
-      newTeams: [...new Set(parsed.data.newTeams)], operations };
+      newTeams: [...new Set(parsed.data.newTeams)], operations, ...(room ? { room } : {}) };
     this.validate(request, false);
     return request;
+  }
+
+  /** Members are the plan's create keys or existing bot ids; without any, every bot the plan creates. The Chief always joins. */
+  private room(input: { name: string; members?: string[] }, planned: Array<{ action: string; key?: string; botId?: string }>, operations: TeamSetupOperation[], chief: BotRecord): { name: string; botIds: string[] } {
+    if (!this.options.createRoom) throw new TeamSetupError("Group chats can't be created with a setup here; propose the bots alone");
+    const keyed = new Map(planned.map((operation, index) => [operation.action === "create" ? operation.key! : operation.botId!, operations[index]!.botId]));
+    const requested = input.members?.length ? input.members : planned.filter((operation) => operation.action === "create").map((operation) => operation.key!);
+    const botIds: string[] = [];
+    for (const member of requested) {
+      const id = keyed.get(member) ?? member;
+      const existing = this.options.store.bot(id);
+      if (!keyed.has(member) && (!existing || existing.hidden || !this.options.hasTeamAuthority(chief, existing.section))) {
+        throw new TeamSetupError(`Group chat member ${JSON.stringify(member)} is neither a bot in this plan nor a teammate from list_team_setup`);
+      }
+      if (id !== chief.id && !botIds.includes(id)) botIds.push(id);
+    }
+    if (!botIds.length) throw new TeamSetupError("A group chat needs at least one bot besides you");
+    return { name: input.name, botIds };
   }
 
   private prepareDeletion(args: DeletionArgs) {
@@ -289,6 +324,10 @@ export class TeamSetupRequestService {
         lines.push(`New bots stay owner-owned after creation: the same connected apps as @${chief.name}, the workspace's default access level, a private workspace by default, avatar untouched.`);
       }
       lines.push("Existing execution permissions are unchanged.");
+      if (request.room) {
+        const names = request.room.botIds.map((id) => `@${this.options.store.bot(id)?.name ?? request.operations.find((operation) => operation.botId === id)?.fields.name ?? id}`);
+        lines.push(`\nGroup chat (the reviewer chooses): "${request.room.name}" with @${chief.name}, ${names.join(", ")}. @${chief.name} leads it.`);
+      }
     }
     if (!immediate) lines.push("After this decision the Chief continues once with the result.");
     const title = request.deletion ? `Delete @${request.deletion.name}?`
@@ -345,7 +384,7 @@ export class TeamSetupRequestService {
   private async applyImmediately(request: TeamSetupRequest, from?: RequestFrom, canCommit?: () => boolean) {
     const card = this.cardData(request, true);
     const before = request.deletion ? undefined : this.undoBefore(request);
-    let result = await this.apply(request, true, canCommit);
+    let result = this.withRoom(request, await this.apply(request, true, canCommit), true);
     const undo = before && result.state === "applied" && !result.error ? this.undoRecord(result, before) : undefined;
     const title = result.state === "applied" ? (request.deletion ? `Deleted @${request.deletion.name}` : "Team setup applied") : "Team setup not applied";
     let messageId: string | undefined;
@@ -425,7 +464,20 @@ export class TeamSetupRequestService {
     return { claimed: true, state: "undone" };
   }
 
-  async resolve(args: { botId: string; threadId: string; requestId: string; behavior: string }) {
+  /** Creates the chosen group chat once the setup applied; a failure here leaves the bots in place and says so. */
+  private withRoom(request: TeamSetupRequest, result: TeamSetupResult, wanted: boolean): TeamSetupResult {
+    if (!request.room || result.state !== "applied") return result;
+    if (!wanted || !this.options.createRoom) return { ...result, room: null };
+    const botIds = request.room.botIds.filter((id) => { const bot = this.options.store.bot(id); return bot && !bot.hidden; });
+    try {
+      return { ...result, room: this.options.createRoom(request, botIds) };
+    } catch (error) {
+      const detail = redactSecretsInText(error instanceof Error ? error.message : String(error));
+      return { ...result, room: null, error: [result.error, `The bots were set up, but the group chat could not be created: ${detail}`].filter(Boolean).join(" ") };
+    }
+  }
+
+  async resolve(args: { botId: string; threadId: string; requestId: string; behavior: string; room?: boolean }) {
     const message = this.options.store.messagesFor(args.threadId).find((item) => item.card?.requestId === args.requestId && item.card.teamSetupRequest);
     const card = message?.card, request = card?.teamSetupRequest;
     if (!message || !card || !request) return null;
@@ -443,7 +495,7 @@ export class TeamSetupRequestService {
       let result: TeamSetupResult;
       if (receipt?.requestId === request.requestId) result = receipt.result;
       else if (args.behavior === "deny") result = { state: "denied", bots: [], newTeams: [] };
-      else result = await this.apply(request);
+      else result = this.withRoom(request, await this.apply(request), args.room !== false);
       const dead = result.state !== "applied" && result.state !== "denied";
       this.options.store.patchMessage(args.threadId, message.id, { card: { ...card, ...(dead ? { expired: true, options: [] } : { answered: result.state === "applied" ? "allow" : "deny" }), held: result.error, teamSetupRequest: { ...request, result } } });
       return { result, request: { ...request, result }, messageId: message.id, duplicate: false };

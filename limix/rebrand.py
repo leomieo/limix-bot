@@ -2193,3 +2193,11 @@ for rel, edits in json.loads((ROOT / "limix/patches/managed-beta.json").read_tex
                 s = must(s, patch["before"], patch["after"])
         return s
     edit(rel, managed_beta_patch)
+
+for rel, edits in json.loads((ROOT / "limix/patches/assistant-proposals.json").read_text(encoding="utf-8")).items():
+    def assistant_proposals_patch(s, edits=edits):
+        for patch in edits:
+            if patch["after"] not in s:
+                s = must(s, patch["before"], patch["after"])
+        return s
+    edit(rel, assistant_proposals_patch)

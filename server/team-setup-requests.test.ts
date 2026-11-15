@@ -11,7 +11,7 @@ import type { BotRecord, OptionCardData } from "./store.ts";
 import type { TeamSetupRequest, TeamSetupResult } from "../shared/team-setup.ts";
 import type { DirectApply } from "./direct-apply.ts";
 
-function harness(caps?: Record<string, { driverKind: string; agentsMcp: boolean }>) {
+function harness(caps?: Record<string, { driverKind: string; agentsMcp: boolean }>, createRoom?: (request: TeamSetupRequest, botIds: string[]) => { id: string; name: string }) {
   const bots: BotRecord[] = [];
   const messages: Array<{ id: string; role?: string; card?: OptionCardData }> = [];
   const teams = ["", "Work", "Engineering", "Private"];
@@ -56,6 +56,7 @@ function harness(caps?: Record<string, { driverKind: string; agentsMcp: boolean 
       return current?.approvalMode === "full" && selection.instanceId !== current.modelSelection.instanceId ? "Existing permissions are incompatible" : null;
     },
     ...(caps ? { driverCapabilities: (instanceId: string) => caps[instanceId] } : {}),
+    ...(createRoom ? { createRoom } : {}),
   });
   const propose = (operations: unknown[], newTeams: string[] = []) => service.propose({ botId: chief.id, threadId: chief.threadId, plan: { reason: "Requested specialist setup", operations, newTeams } });
   const submit = (operations: unknown[], newTeams: string[] = []) => service.submit({ botId: chief.id, threadId: chief.threadId, plan: { reason: "Requested specialist setup", operations, newTeams } });
@@ -642,5 +643,51 @@ describe("a Chief making bots, whatever the plan", () => {
   it("still holds the workspace's own ceiling", () => {
     const app = full(97);
     expect(() => app.propose([specialist("Scout"), specialist("Writer")])).toThrow(expect.objectContaining({ status: 409, message: "This setup exceeds the workspace bot limit" }));
+  });
+});
+
+describe("assistant proposals with ready-made bots and a group chat", () => {
+  const plan = (operations: unknown[], room?: unknown) => ({ reason: "The person asked for help", operations, ...(room ? { room } : {}) });
+
+  it("fills a ready-made bot's profile, keeps fields the assistant gave, and defaults the model to the assistant's", () => {
+    const h = harness();
+    const proposed = h.service.propose({ botId: h.chief.id, threadId: h.chief.threadId, plan: plan([{ action: "create", key: "Scout", template: "research", fields: { name: "Tìm Tin" } }]) });
+    const request = h.messages.at(-1)!.card!.teamSetupRequest!;
+    expect(request.operations[0]!.fields).toMatchObject({ name: "Tìm Tin", title: "Researcher", modelSelection: h.chief.modelSelection });
+    expect(request.operations[0]!.fields.soul).toBeTruthy();
+    expect(proposed.detail).toContain("Create @Tìm Tin");
+    expect(() => h.service.propose({ botId: h.chief.id, threadId: h.chief.threadId, plan: plan([{ action: "create", key: "X", template: "no-such" }]) })).toThrow(/Unknown ready-made bot/);
+  });
+
+  it("offers a group chat only where one can be made, with members from the plan or the team", () => {
+    expect(() => harness().service.propose({ botId: "Clive", threadId: "Clive-thread", plan: plan([specialist("Quill", "Work")], { name: "Content" }) })).toThrow(/Group chats can't be created/);
+    const h = harness(undefined, () => ({ id: "room-1", name: "Content" }));
+    const propose = (room: unknown) => h.service.propose({ botId: h.chief.id, threadId: h.chief.threadId, plan: plan([specialist("Quill", "Work")], room) });
+    expect(() => propose({ name: "Content", members: ["Nobody"] })).toThrow(/neither a bot in this plan nor a teammate/);
+    expect(() => propose({ name: "Content", members: ["Clive"] })).toThrow(/at least one bot besides you/);
+    const proposed = propose({ name: "Content", members: ["Quill", "Ada"] });
+    const request = h.messages.at(-1)!.card!.teamSetupRequest!;
+    expect(request.room).toEqual({ name: "Content", botIds: [request.operations[0]!.botId, "Ada"] });
+    expect(proposed.detail).toContain('Group chat (the reviewer chooses): "Content" with @Clive, @Quill, @Ada');
+  });
+
+  it("creates the group chat only when the reviewer chooses it, and keeps the bots when it fails", async () => {
+    const made: string[][] = [];
+    let fail = false;
+    const h = harness(undefined, (_request, botIds) => { if (fail) throw new Error("room limit reached"); made.push(botIds); return { id: "room-1", name: "Content" }; });
+    const ask = () => h.service.propose({ botId: h.chief.id, threadId: h.chief.threadId, plan: plan([specialist(`Quill${made.length}${fail}`, "Work")], { name: "Content" }) });
+    const first = ask();
+    expect((await h.service.resolve({ botId: h.chief.id, threadId: h.chief.threadId, requestId: first.requestId, behavior: "allow" }))?.result)
+      .toMatchObject({ state: "applied", room: { id: "room-1", name: "Content" } });
+    expect(made).toHaveLength(1);
+    const second = ask();
+    expect((await h.service.resolve({ botId: h.chief.id, threadId: h.chief.threadId, requestId: second.requestId, behavior: "allow", room: false }))?.result)
+      .toMatchObject({ state: "applied", room: null });
+    expect(made).toHaveLength(1);
+    fail = true;
+    const third = ask();
+    const result = (await h.service.resolve({ botId: h.chief.id, threadId: h.chief.threadId, requestId: third.requestId, behavior: "allow" }))!.result;
+    expect(result).toMatchObject({ state: "applied", room: null, error: expect.stringContaining("the group chat could not be created: room limit reached") });
+    expect(result.bots).toHaveLength(1);
   });
 });

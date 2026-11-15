@@ -25,6 +25,8 @@ export interface TeamSetupResult {
   bots: Array<{ id: string; name: string; action: "created" | "updated" | "deleted"; section?: string; modelSelection?: ModelSelection; chiefOfStaff?: boolean }>;
   newTeams: string[];
   error?: string;
+  /** The group chat the reviewer chose to create with this setup; null when they chose bots only or it failed. */
+  room?: { id: string; name: string } | null;
 }
 
 /** The complete, reviewed operation. It never accepts executable permissions. */
@@ -39,6 +41,8 @@ export interface TeamSetupRequest {
   operations: TeamSetupOperation[];
   newTeams: string[];
   deletion?: { botId: string; name: string; expectedRevision: string };
+  /** A group chat the reviewer may create with the setup: the Chief plus these bots (new bots by their planned ids). */
+  room?: { name: string; botIds: string[] };
   result?: TeamSetupResult;
   resumed?: boolean;
   /** Set when the setup applied on its own (direct-apply.ts) and Undo can reverse it. */

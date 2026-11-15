@@ -1,6 +1,9 @@
 import { hasTeamAuthority, peerAllowed } from "../peer-roster.ts"; import { chiefLevel } from "../chief-level.ts";
 import type { BotRecord } from "../store.ts";
 import { libraryTeamRoles } from "../team-library.ts";
+import { READY_BOTS } from "../../shared/ready-bots.ts";
+
+const BOT_TEMPLATES = READY_BOTS.map((bot) => ({ id: bot.id, name: bot.name, title: bot.title, description: bot.description, category: bot.category }));
 import { PASS, type RouteHandler } from "./table.ts";
 
 interface CatalogInstance {
@@ -32,14 +35,15 @@ export function createInternalChiefTeamRoutes(deps: {
     if (method !== "GET" || (path !== "/api/internal/team-setup-catalog" && path !== "/api/internal/team-library")) return PASS;
     if (!chief()) return json(res, 403, { error: NOT_CHIEF });
     if (path === "/api/internal/team-library") {
-      let teams: Awaited<ReturnType<typeof libraryTeamRoles>>;
+      let teams: Awaited<ReturnType<typeof libraryTeamRoles>> = [];
+      let note: string | undefined;
       try {
         teams = await (deps.library ?? libraryTeamRoles)();
       } catch {
-        return json(res, 502, { error: "The team library can't be reached right now. Build the team from what the person asked." });
+        note = "The ready-made team library can't be reached right now; use botTemplates or build the team from what the person asked.";
       }
       deps.requireActive();
-      return chief() ? json(res, 200, { teams }) : json(res, 403, { error: NOT_CHIEF });
+      return chief() ? json(res, 200, { teams, botTemplates: BOT_TEMPLATES, ...(note ? { note } : {}) }) : json(res, 403, { error: NOT_CHIEF });
     }
     const instances = await deps.instances();
     deps.requireActive();
@@ -51,7 +55,7 @@ export function createInternalChiefTeamRoutes(deps: {
         .map((bot) => ({ id: bot.id, name: bot.name, title: bot.title, section: bot.section ?? "", modelSelection: bot.modelSelection, chiefOfStaff: Boolean(bot.chiefOfStaff) })),
       instances: instances.map((instance) => ({ instanceId: instance.instanceId, driverKind: instance.driverKind, displayName: instance.displayName,
         state: instance.snapshot.state, models: instance.models, effortLevels: instance.capabilities?.effortLevels ?? [] })),
-      scope: "Bot model defaults apply to groups and new threads; existing threads retain their models. Requested team setup applies immediately, and the person can undo it. Existing unauthorized teams remain outside this Chief's scope.",
+      scope: "Bot model defaults apply to groups and new threads; existing threads retain their models. Requested team setup waits for the person's decision on a card. Existing unauthorized teams remain outside this Chief's scope.",
     });
   };
 }

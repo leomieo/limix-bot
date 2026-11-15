@@ -1,3 +1,4 @@
+import { lx } from "@/lib/limix-text";
 import { useContext, useState, type ReactNode } from "react";
 import { Check, Clock3, ShieldCheck, Sparkles, Undo2, X } from "lucide-react";
 import { api, ApiError, StoreContext, type Bot, type Message, type OptionCardData } from "@/state/store";
@@ -213,7 +214,8 @@ export function appliedChange(card: OptionCardData, name: string): { line: strin
   if (setup?.result) {
     const names = (action: "created" | "updated") => setup.result!.bots.filter((bot) => bot.action === action).map((bot) => `@${bot.name}`).join(", ");
     const title = [names("created") && t("approval.applied.teamAdded", { names: names("created") }),
-      names("updated") && t("approval.applied.teamUpdated", { names: names("updated") })].filter(Boolean).join("; ");
+      names("updated") && t("approval.applied.teamUpdated", { names: names("updated") }),
+      setup.result.room && lx(`tạo nhóm chat "${setup.result.room.name}"`, `created the group chat "${setup.result.room.name}"`)].filter(Boolean).join("; ");
     return { line: t("approval.applied.teamSetup", { name, title }), canUndo: Boolean(setup.undo) };
   }
   if (card.teamMemoryRequest) {

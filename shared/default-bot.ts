@@ -3,7 +3,9 @@ import type { MausColor } from "./wire.ts";
 
 /** MausBot: every person's built-in helper. A new install's first bot (its Chief of Staff too); an existing place or
  * person without one is given one once. It can be renamed and recoloured, hidden from the sidebar, never deleted. */
-export const DEFAULT_BOT_NAME = "Limix Bot";
+export const DEFAULT_BOT_NAME = "Trợ Lý Limix";
+/** Names the built-in helper had before; one still unchanged is renamed to DEFAULT_BOT_NAME. */
+export const LEGACY_DEFAULT_BOT_NAMES: readonly string[] = ["Limix Bot", "MausBot"];
 export const DEFAULT_BOT_COLOR: MausColor = "chrome";
 
 export interface DefaultBotMark {

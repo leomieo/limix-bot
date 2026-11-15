@@ -743,6 +743,8 @@ export type Action =
       alwaysAllow?: { botId: string; key: string };
       always?: boolean;
       rememberCommand?: boolean;
+      /** A team setup card that offers a group chat: false approves the bots without it. */
+      room?: boolean;
       onError?: (message: string) => void;
     }
   | { type: "newTask"; botId: string; projectId?: string; cwd?: string; onCreated?: () => void; onError?: (message: string) => void }
@@ -2520,6 +2522,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 reviewedSha256: action.reviewedSha256,
                 always: action.always,
                 rememberCommand: action.rememberCommand,
+                ...(action.room === false ? { room: false } : {}),
               }),
             });
           void waitForExecutionSettings(executionBotsBeforeAction, action.threadId)

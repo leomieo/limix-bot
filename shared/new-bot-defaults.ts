@@ -1,6 +1,6 @@
-import type { WireBot } from "./wire";
-import type { RoutineInput } from "./routines";
-import type { ToolScope } from "./tool-scope";
+import type { WireBot } from "./wire.ts";
+import type { RoutineInput } from "./routines.ts";
+import type { ToolScope } from "./tool-scope.ts";
 
 /** Data shared by the default template and an individual creation draft. */
 export type BotDefaultsProfile = Partial<Pick<WireBot,

@@ -14,6 +14,7 @@ import { useInboxOrigin } from "./InboxLine";
 import { yourComputerAsk } from "@/lib/your-computer";
 import { computerAskWords } from "@/lib/computer-ask";
 import { DESKTOP_DOWNLOAD_URL } from "../../shared/computer-ask";
+import { lx } from "@/lib/limix-text";
 
 interface ApprovalLabels {
   [tool: string]: LocaleKey;
@@ -272,8 +273,10 @@ export function PendingApprovalActions({
   const reviewedSha256 = pending.message.card?.skillRequest
     ? reviewedSkillSha256(pending.message.card.skillRequest)
     : undefined;
-  const decide = (behavior: "allow" | "deny", always = false, rememberCommand = false) =>
+  const offersRoom = Boolean(pending.message.card?.teamSetupRequest?.room);
+  const decide = (behavior: "allow" | "deny", always = false, rememberCommand = false, room?: boolean) =>
     dispatch({
+      ...(room === false ? { room: false } : {}),
       type: "decideRequest",
       threadId,
       requestId: pending.requestId,
@@ -342,6 +345,11 @@ export function PendingApprovalActions({
     >
       {pending.message.card?.lendingLift ? pending.message.card.options[1] : isRoutineRequest || isProfileRequest || titled ? t("approval.action.cancel") : t("approval.action.deny")}
     </button>,
+    offersRoom && (
+      <button key="bots-only" {...marked("bots-only")} type="button" onClick={() => decide("allow", false, false, false)} className={ASK_SECONDARY_BUTTON}>
+        {lx("Chỉ tạo bot", "Bots only")}
+      </button>
+    ),
     <button
       key="allow"
       {...marked("allow")}
@@ -351,7 +359,7 @@ export function PendingApprovalActions({
       className={allow.className}
       style={allow.style}
     >
-      {titled && pending.message.card ? titledCardAction(pending.message.card) : isSkillRequest
+      {offersRoom ? lx("Tạo bot + nhóm chat", "Bots + group chat") : titled && pending.message.card ? titledCardAction(pending.message.card) : isSkillRequest
         ? pending.message.card?.skillRequest?.action === "update"
           ? t("approval.action.update")
           : t("approval.action.enable")

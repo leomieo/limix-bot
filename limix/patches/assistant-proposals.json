@@ -1,0 +1,330 @@
+{
+  "server/chief-of-staff.ts": [
+    {
+      "before": "    canDelegate ? \"Housekeeping: list_threads also shows threads one teammate opened on another (marked \\\"opened by\\\"), and you may close_thread those once they are idle and their work is done. Threads the person started are theirs: never close them.\" : \"\",\n    canDelegate ? \"When the user asks you to assemble or configure a team, use list_team_setup for the exact authorized teams, bot IDs and model catalog, then propose_team_setup once with all named specialists and their profile/model changes. Include new teams explicitly; the plan covers their creation and your access. Existing thread models and other bots' execution permissions stay unchanged. Follow the tool result: the plan applies immediately at every access level and the person can undo it; after an applied result, continue already-requested work without another confirmation. Only if review is pending, end your turn: the user's decision automatically resumes you once with a structured result. Report failed or cancelled results honestly. Do not ask for another yes, poll, or repeat the proposal. After successful setup, use the available coordination tools for already requested work. For explicitly requested bot deletion, use propose_bot_deletion separately and follow its applied or pending result too.\" : \"\",\n    person ? `Bots that report to ${person} (your team):` : chief?.managedSections?.length ? \"Your team, in the departments you are responsible for:\" : `Current ${sectionName} department (your team):`,\n",
+      "after": "    canDelegate ? \"Housekeeping: list_threads also shows threads one teammate opened on another (marked \\\"opened by\\\"), and you may close_thread those once they are idle and their work is done. Threads the person started are theirs: never close them.\" : \"\",\n    canDelegate ? \"When the user asks you to assemble or configure a team, use list_team_setup for the exact authorized teams, bot IDs and model catalog, then propose_team_setup once with all named specialists and their profile/model changes. Include new teams explicitly; the plan covers their creation and your access. Existing thread models and other bots' execution permissions stay unchanged. Every plan waits for the person's decision on a card: end your turn after proposing; the decision automatically resumes you once with a structured result, including the group chat if they chose one. Report failed or cancelled results honestly. Do not ask for another yes, poll, or repeat the proposal. After successful setup, use the available coordination tools for already requested work. For explicitly requested bot deletion, use propose_bot_deletion separately and follow its applied or pending result too.\" : \"\",\n    person ? `Bots that report to ${person} (your team):` : chief?.managedSections?.length ? \"Your team, in the departments you are responsible for:\" : `Current ${sectionName} department (your team):`,\n"
+    },
+    {
+      "before": "\nconst SPECIALISTS = \"When a job needs a specialist you do not have (an ongoing area of work, a different skill set, or work to run in parallel), add one with create_bot without asking first, then tell the person in one line; they can undo it. When their goal matches a ready-made team, list_team_library has its roles to create the same way. Never add a bot just to look busy, or one that duplicates a teammate.\";\n\n",
+      "after": "\nconst SPECIALISTS = \"When the person asks for a bot or a team, or a job clearly needs a specialist you do not have (an ongoing area of work, a different skill set, or work to run in parallel), propose it; never create bots on your own. First call list_team_library: botTemplates are ready-made single bots (create one with its template id), teams are ready-made groups of roles. Prefer a ready-made bot or team when it fits the request; otherwise design custom bots. Then call propose_team_setup once, in this conversation, with every bot. When it adds two or more bots that will work together, include room so the person can choose to also create a group chat that you lead. Before the card, tell the person in one or two lines what you propose and why, and whether it is ready-made or custom. Never add a bot just to look busy, or one that duplicates a teammate.\";\n\n"
+    }
+  ],
+  "server/default-bot.ts": [
+    {
+      "before": "  if (!oldest || oldest.hidden || oldest.movedTo || oldest.section?.trim() || oldest.installedPackage) return undefined;\n  return oldest.name === DEFAULT_BOT_NAME || oldest.color === STARTER_COLOR ? oldest : undefined;\n}\n",
+      "after": "  if (!oldest || oldest.hidden || oldest.movedTo || oldest.section?.trim() || oldest.installedPackage) return undefined;\n  return [DEFAULT_BOT_NAME, ...LEGACY_DEFAULT_BOT_NAMES].includes(oldest.name) || oldest.color === STARTER_COLOR ? oldest : undefined;\n}\n"
+    },
+    {
+      "before": "import { writeFileAtomic } from \"./atomic.ts\";\nimport { DEFAULT_BOT_COLOR, DEFAULT_BOT_NAME, defaultBotPerson } from \"../shared/default-bot.ts\";\nimport { takeImportName } from \"../shared/import-name.ts\";\n",
+      "after": "import { writeFileAtomic } from \"./atomic.ts\";\nimport { DEFAULT_BOT_COLOR, DEFAULT_BOT_NAME, LEGACY_DEFAULT_BOT_NAMES, defaultBotPerson } from \"../shared/default-bot.ts\";\nimport { takeImportName } from \"../shared/import-name.ts\";\n"
+    }
+  ],
+  "server/drivers/agents-catalog.ts": [
+    {
+      "before": "        } },\n      }, required: [\"reason\", \"operations\"],\n",
+      "after": "        } },\n        room: { type: \"object\", additionalProperties: false, description: \"Offer a group chat with these bots, led by you; the person chooses on the card whether to create it.\", properties: {\n          name: { type: \"string\", minLength: 1, maxLength: 100 },\n          members: { type: \"array\", maxItems: 24, items: { type: \"string\" }, description: \"Create keys from this plan or existing bot IDs; omit for every bot this plan creates.\" },\n        }, required: [\"name\"] },\n      }, required: [\"reason\", \"operations\"],\n"
+    },
+    {
+      "before": "            } },\n          }, required: [\"action\", \"fields\"],\n        } },\n",
+      "after": "            } },\n          }, required: [\"action\"],\n        } },\n"
+    },
+    {
+      "before": "              chiefOfStaff: { type: \"boolean\", description: \"Appoint or remove this team's Chief. At most one Chief per team: explicitly demote the current Chief in the same plan when replacing them. Does not grant access to other teams or change execution permissions.\" },\n              description: { type: \"string\", maxLength: 4000 }, soul: { type: \"string\", description: \"Standing instructions; required with name/title/modelSelection for every new bot.\" },\n              cwd: { type: \"string\", maxLength: 1024, description: \"Create only: absolute path of the folder the new bot's tools read and write in. It must already exist. Leave it out for a private workspace.\" },\n",
+      "after": "              chiefOfStaff: { type: \"boolean\", description: \"Appoint or remove this team's Chief. At most one Chief per team: explicitly demote the current Chief in the same plan when replacing them. Does not grant access to other teams or change execution permissions.\" },\n              description: { type: \"string\", maxLength: 4000 }, soul: { type: \"string\", description: \"Standing instructions; every new bot needs name, title and soul (a template fills them). modelSelection defaults to yours.\" },\n              cwd: { type: \"string\", maxLength: 1024, description: \"Create only: absolute path of the folder the new bot's tools read and write in. It must already exist. Leave it out for a private workspace.\" },\n"
+    },
+    {
+      "before": "            key: { type: \"string\", description: \"For create: your stable short name for this new bot in this plan.\" },\n            botId: { type: \"string\", description: \"For update: exact existing bot ID from list_team_setup.\" },\n",
+      "after": "            key: { type: \"string\", description: \"For create: your stable short name for this new bot in this plan.\" },\n            template: { type: \"string\", description: \"For create: a botTemplates id from list_team_library. Fills name, title, description and soul; fields you give override them.\" },\n            botId: { type: \"string\", description: \"For update: exact existing bot ID from list_team_setup.\" },\n"
+    },
+    {
+      "before": "    name: \"propose_team_setup\",\n    description: \"Chief of Staff only: submit all requested specialist creation, profile/model configuration, Chief assignments, and authorized team moves in ONE combined plan. Use exact catalog engine/model IDs from list_team_setup. Combine all fields for each bot; use the same create key or botId to coalesce repeated entries. New teams must be named explicitly in newTeams and have a specialist in this plan; access is granted only to those new teams. Existing unauthorized teams cannot be included. Models change bot defaults for groups/new threads; existing threads and execution permissions stay unchanged. If review is pending, the decision and structured result automatically resume you once; do not ask again, poll, or repeat the proposal.\" + APPLIES_OUTCOME,\n    inputSchema: {\n",
+      "after": "    name: \"propose_team_setup\",\n    description: \"Chief of Staff only: submit all requested specialist creation, profile/model configuration, Chief assignments, and authorized team moves in ONE combined plan. Use exact catalog engine/model IDs from list_team_setup. Combine all fields for each bot; use the same create key or botId to coalesce repeated entries. New teams must be named explicitly in newTeams and have a specialist in this plan; access is granted only to those new teams. Existing unauthorized teams cannot be included. Models change bot defaults for groups/new threads; existing threads and execution permissions stay unchanged. Every setup waits for the person's decision on a card: end your turn; the decision and structured result automatically resume you once. Do not ask again, poll, or repeat the proposal. Never claim success without an applied result.\",\n    inputSchema: {\n"
+    },
+    {
+      "before": "    name: \"list_team_library\",\n    description: \"Chief of Staff only: ready-made teams, each with a summary and roles (lead = the team's Chief). Create roles with create_bot.\",\n    inputSchema: { type: \"object\", additionalProperties: false, properties: {} },\n",
+      "after": "    name: \"list_team_library\",\n    description: \"Chief of Staff only: ready-made teams, each with a summary and roles (lead = the team's Chief), and botTemplates: ready-made single bots. Propose either with propose_team_setup (template = a botTemplates id).\",\n    inputSchema: { type: \"object\", additionalProperties: false, properties: {} },\n"
+    },
+    {
+      "before": "    description:\n      \"Chief of Staff only: add a specialist to your section now; the person can undo it. instructions become its soul. Omit modelSelection for the workspace default, or use exact IDs from list_team_setup. It starts with your connected apps, at the default access level. Assign work with coordinate_bots. At most four per turn.\",\n    inputSchema: {\n",
+      "after": "    description:\n      \"Chief of Staff only, and not used in Limix Bot: bots are added only through propose_team_setup. Add a specialist to your section now; the person can undo it. instructions become its soul. Omit modelSelection for the workspace default, or use exact IDs from list_team_setup. It starts with your connected apps, at the default access level. Assign work with coordinate_bots. At most four per turn.\",\n    inputSchema: {\n"
+    }
+  ],
+  "server/index.ts": [
+    {
+      "before": "          return json(res, 403, { error: \"only a section's Chief of Staff can create operator bots\" });\n        }\n        if (internalCapability.createdBots >= MAX_CREATED_BOTS_PER_TURN) {\n          return json(res, 429, { error: `You can create at most ${MAX_CREATED_BOTS_PER_TURN} bots in one turn. Use the team you have before adding more.` });\n",
+      "after": "          return json(res, 403, { error: \"only a section's Chief of Staff can create operator bots\" });\n        }\n        if (LIMIX_REVIEWED_BOT_CREATION) {\n          return json(res, 409, { error: LIMIX_REVIEWED_BOT_CREATION });\n        }\n        if (internalCapability.createdBots >= MAX_CREATED_BOTS_PER_TURN) {\n          return json(res, 429, { error: `You can create at most ${MAX_CREATED_BOTS_PER_TURN} bots in one turn. Use the team you have before adding more.` });\n"
+    },
+    {
+      "before": "\nasync function resolveAndSendTeamSetup(res: ServerResponse, args: { botId: string; threadId: string; requestId: string; behavior: string }, ownerReview: boolean): Promise<boolean> {\n  const card = store.messagesFor(args.threadId).find((item) => item.card?.requestId === args.requestId && item.card.teamSetupRequest)?.card;\n",
+      "after": "\nasync function resolveAndSendTeamSetup(res: ServerResponse, args: { botId: string; threadId: string; requestId: string; behavior: string; room?: boolean }, ownerReview: boolean): Promise<boolean> {\n  const card = store.messagesFor(args.threadId).find((item) => item.card?.requestId === args.requestId && item.card.teamSetupRequest)?.card;\n"
+    },
+    {
+      "before": "  store, teams: teamSetupTeams, hasTeamAuthority, canPersist: proposalPersistence, maxBots: MAX_WORKSPACE_BOTS,\n  autoApply: appliesDirectly,\n  validateChange: (before, fields) => assertTeamComputerChangeIdle(before, { ...before, ...fields }),\n",
+      "after": "  store, teams: teamSetupTeams, hasTeamAuthority, canPersist: proposalPersistence, maxBots: MAX_WORKSPACE_BOTS,\n  autoApply: limixProposalsWaitForReview,\n  createRoom: (request, botIds) => {\n    const chief = store.bot(request.botId);\n    if (!chief || chief.hidden) throw new TeamSetupError(\"The assistant that proposed this group chat is no longer active\", 409);\n    const group = createChannel({ name: redactSecretsInText(request.room!.name), memberIds: [...new Set([chief.id, ...botIds])], section: chief.section,\n      setup: { bulletin: \"\", defaultResponder: deciderReady(cfg, \"roomRouting\") ? { kind: \"auto\", fallbackBotId: chief.id } : { kind: \"member\", botId: chief.id } } });\n    broadcast({ kind: \"group\", group: publicGroupState(group) });\n    return { id: group.id, name: group.name };\n  },\n  validateChange: (before, fields) => assertTeamComputerChangeIdle(before, { ...before, ...fields }),\n"
+    },
+    {
+      "before": "  return sourceApprovalMode(botId, threadId) === \"full\";\n}\n\nfunction appliesDirectly(botId: string, threadId: string): DirectApply | null {\n",
+      "after": "  return sourceApprovalMode(botId, threadId) === \"full\";\n}\n\n/** Limix: bot and team changes the assistant proposes always wait for the person's decision on a card. */\nfunction limixProposalsWaitForReview(): DirectApply | null { return null; }\nconst LIMIX_REVIEWED_BOT_CREATION = \"Bots are added here only through a reviewed proposal. Call propose_team_setup with this bot (template for a ready-made one), say in one line what you proposed, and end your turn; the person decides on the card.\";\n\nfunction appliesDirectly(botId: string, threadId: string): DirectApply | null {\n"
+    },
+    {
+      "before": "}\nconst firstHourFresh = Boolean(CLOUD_PERSONAL) && store.needsSeed(); testedAi.seed({ defaultBot: !CLOUD_TEAM, ...(firstHourFresh ? { intro: (bot) => greetingMessage(bot, { name: cfg.profile?.name }, cfg.language) } : {}) }); moveFreeze.hold(() => { if (!CLOUD_TEAM) ensureDefaultBot(store, { dataDir: DATA_DIR }); }, () => {}); if (CLOUD_TEAM) readTeamRolesWith((email) => sessions.list().filter((session) => session.email?.toLowerCase() === email && session.teamRole).sort((a, b) => b.createdAt - a.createdAt)[0]?.teamRole ?? null); if (CLOUD_TEAM) void mausbotOwnChat.claimAll();\nhostedModels?.reconcile(store);\n",
+      "after": "}\nconst firstHourFresh = Boolean(CLOUD_PERSONAL) && store.needsSeed(); testedAi.seed({ defaultBot: !CLOUD_TEAM, ...(firstHourFresh ? { intro: (bot) => greetingMessage(bot, { name: cfg.profile?.name }, cfg.language) } : {}) }); renameLegacyDefaultBots(store); moveFreeze.hold(() => { if (!CLOUD_TEAM) ensureDefaultBot(store, { dataDir: DATA_DIR }); }, () => {}); if (CLOUD_TEAM) readTeamRolesWith((email) => sessions.list().filter((session) => session.email?.toLowerCase() === email && session.teamRole).sort((a, b) => b.createdAt - a.createdAt)[0]?.teamRole ?? null); if (CLOUD_TEAM) void mausbotOwnChat.claimAll();\nhostedModels?.reconcile(store);\n"
+    },
+    {
+      "before": "import { signInCardText } from \"./connector-card-text.ts\";\nimport { BOT_PAUSED_CODE } from \"../shared/bot-limit.ts\"; import { createStarterAwake } from \"./host/starter-awake.ts\"; import { createStarterCaps } from \"./host/starter-caps.ts\"; import { createStarterAwakeRoutes } from \"./routes/starter-awake.ts\"; import { chiefOfStaffSystemPrompt } from \"./chief-of-staff.ts\"; import { coordinateTooLong } from \"./too-long.ts\"; import { chiefAbsentFrom, createChiefRooms } from \"./host/chief-rooms.ts\"; import { chiefLevel, readTeamRolesWith } from \"./chief-level.ts\"; import { defaultBotRefusal, ensureDefaultBot } from \"./default-bot.ts\";\nimport { buildRecall, recallRooms, recallThreadIds, withRecalled } from \"./recall.ts\";\n",
+      "after": "import { signInCardText } from \"./connector-card-text.ts\";\nimport { BOT_PAUSED_CODE } from \"../shared/bot-limit.ts\"; import { createStarterAwake } from \"./host/starter-awake.ts\"; import { createStarterCaps } from \"./host/starter-caps.ts\"; import { createStarterAwakeRoutes } from \"./routes/starter-awake.ts\"; import { chiefOfStaffSystemPrompt } from \"./chief-of-staff.ts\"; import { coordinateTooLong } from \"./too-long.ts\"; import { chiefAbsentFrom, createChiefRooms } from \"./host/chief-rooms.ts\"; import { chiefLevel, readTeamRolesWith } from \"./chief-level.ts\"; import { defaultBotRefusal, ensureDefaultBot } from \"./default-bot.ts\"; import { renameLegacyDefaultBots } from \"./limix-assistant-name.ts\";\nimport { buildRecall, recallRooms, recallThreadIds, withRecalled } from \"./recall.ts\";\n"
+    }
+  ],
+  "server/routes/bot-messages.ts": [
+    {
+      "before": "          if (!setupBotId) return json(res, 400, { error: \"This team setup has no valid owner\" });\n          if (await resolveAndSendTeamSetup(res, { botId: setupBotId, threadId, requestId, behavior }, ownerReview(auth, req))) return;\n        }\n",
+      "after": "          if (!setupBotId) return json(res, 400, { error: \"This team setup has no valid owner\" });\n          if (await resolveAndSendTeamSetup(res, { botId: setupBotId, threadId, requestId, behavior, ...(body.room === false ? { room: false } : {}) }, ownerReview(auth, req))) return;\n        }\n"
+    },
+    {
+      "before": "        const answer = { botId: bot.id, threadId: bot.threadId, requestId: String(body.requestId), behavior };\n        if (await resolveAndSendTeamSetup(res, answer, ownerReview(auth, req))) return;\n        if (await resolveAndSendMcp(res, answer, ownerReview(auth, req))) return;\n",
+      "after": "        const answer = { botId: bot.id, threadId: bot.threadId, requestId: String(body.requestId), behavior };\n        if (await resolveAndSendTeamSetup(res, { ...answer, ...(body.room === false ? { room: false } : {}) }, ownerReview(auth, req))) return;\n        if (await resolveAndSendMcp(res, answer, ownerReview(auth, req))) return;\n"
+    },
+    {
+      "before": "  resolveAndSendTrust(res: ServerResponse, threadId: string, requestId: string, behavior: Behavior): boolean;\n  resolveAndSendTeamSetup(res: ServerResponse, args: { botId: string; threadId: string; requestId: string; behavior: string }, ownerReview: boolean): Promise<boolean>;\n  resolveAndSendMcp(res: ServerResponse, args: { botId: string; threadId: string; requestId: string; behavior: string }, ownerReview: boolean): Promise<boolean>;\n",
+      "after": "  resolveAndSendTrust(res: ServerResponse, threadId: string, requestId: string, behavior: Behavior): boolean;\n  resolveAndSendTeamSetup(res: ServerResponse, args: { botId: string; threadId: string; requestId: string; behavior: string; room?: boolean }, ownerReview: boolean): Promise<boolean>;\n  resolveAndSendMcp(res: ServerResponse, args: { botId: string; threadId: string; requestId: string; behavior: string }, ownerReview: boolean): Promise<boolean>;\n"
+    }
+  ],
+  "server/routes/internal-chief-team.ts": [
+    {
+      "before": "        state: instance.snapshot.state, models: instance.models, effortLevels: instance.capabilities?.effortLevels ?? [] })),\n      scope: \"Bot model defaults apply to groups and new threads; existing threads retain their models. Requested team setup applies immediately, and the person can undo it. Existing unauthorized teams remain outside this Chief's scope.\",\n    });\n",
+      "after": "        state: instance.snapshot.state, models: instance.models, effortLevels: instance.capabilities?.effortLevels ?? [] })),\n      scope: \"Bot model defaults apply to groups and new threads; existing threads retain their models. Requested team setup waits for the person's decision on a card. Existing unauthorized teams remain outside this Chief's scope.\",\n    });\n"
+    },
+    {
+      "before": "      deps.requireActive();\n      return chief() ? json(res, 200, { teams }) : json(res, 403, { error: NOT_CHIEF });\n    }\n",
+      "after": "      deps.requireActive();\n      return chief() ? json(res, 200, { teams, botTemplates: BOT_TEMPLATES, ...(note ? { note } : {}) }) : json(res, 403, { error: NOT_CHIEF });\n    }\n"
+    },
+    {
+      "before": "      } catch {\n        return json(res, 502, { error: \"The team library can't be reached right now. Build the team from what the person asked.\" });\n      }\n",
+      "after": "      } catch {\n        note = \"The ready-made team library can't be reached right now; use botTemplates or build the team from what the person asked.\";\n      }\n"
+    },
+    {
+      "before": "    if (path === \"/api/internal/team-library\") {\n      let teams: Awaited<ReturnType<typeof libraryTeamRoles>>;\n      try {\n",
+      "after": "    if (path === \"/api/internal/team-library\") {\n      let teams: Awaited<ReturnType<typeof libraryTeamRoles>> = [];\n      let note: string | undefined;\n      try {\n"
+    },
+    {
+      "before": "import { libraryTeamRoles } from \"../team-library.ts\";\nimport { PASS, type RouteHandler } from \"./table.ts\";\n",
+      "after": "import { libraryTeamRoles } from \"../team-library.ts\";\nimport { READY_BOTS } from \"../../shared/ready-bots.ts\";\n\nconst BOT_TEMPLATES = READY_BOTS.map((bot) => ({ id: bot.id, name: bot.name, title: bot.title, description: bot.description, category: bot.category }));\nimport { PASS, type RouteHandler } from \"./table.ts\";\n"
+    }
+  ],
+  "server/team-setup-requests.ts": [
+    {
+      "before": "      else if (args.behavior === \"deny\") result = { state: \"denied\", bots: [], newTeams: [] };\n      else result = await this.apply(request);\n      const dead = result.state !== \"applied\" && result.state !== \"denied\";\n",
+      "after": "      else if (args.behavior === \"deny\") result = { state: \"denied\", bots: [], newTeams: [] };\n      else result = this.withRoom(request, await this.apply(request), args.room !== false);\n      const dead = result.state !== \"applied\" && result.state !== \"denied\";\n"
+    },
+    {
+      "before": "\n  async resolve(args: { botId: string; threadId: string; requestId: string; behavior: string }) {\n    const message = this.options.store.messagesFor(args.threadId).find((item) => item.card?.requestId === args.requestId && item.card.teamSetupRequest);\n",
+      "after": "\n  /** Creates the chosen group chat once the setup applied; a failure here leaves the bots in place and says so. */\n  private withRoom(request: TeamSetupRequest, result: TeamSetupResult, wanted: boolean): TeamSetupResult {\n    if (!request.room || result.state !== \"applied\") return result;\n    if (!wanted || !this.options.createRoom) return { ...result, room: null };\n    const botIds = request.room.botIds.filter((id) => { const bot = this.options.store.bot(id); return bot && !bot.hidden; });\n    try {\n      return { ...result, room: this.options.createRoom(request, botIds) };\n    } catch (error) {\n      const detail = redactSecretsInText(error instanceof Error ? error.message : String(error));\n      return { ...result, room: null, error: [result.error, `The bots were set up, but the group chat could not be created: ${detail}`].filter(Boolean).join(\" \") };\n    }\n  }\n\n  async resolve(args: { botId: string; threadId: string; requestId: string; behavior: string; room?: boolean }) {\n    const message = this.options.store.messagesFor(args.threadId).find((item) => item.card?.requestId === args.requestId && item.card.teamSetupRequest);\n"
+    },
+    {
+      "before": "    const before = request.deletion ? undefined : this.undoBefore(request);\n    let result = await this.apply(request, true, canCommit);\n    const undo = before && result.state === \"applied\" && !result.error ? this.undoRecord(result, before) : undefined;\n",
+      "after": "    const before = request.deletion ? undefined : this.undoBefore(request);\n    let result = this.withRoom(request, await this.apply(request, true, canCommit), true);\n    const undo = before && result.state === \"applied\" && !result.error ? this.undoRecord(result, before) : undefined;\n"
+    },
+    {
+      "before": "      lines.push(\"Existing execution permissions are unchanged.\");\n    }\n",
+      "after": "      lines.push(\"Existing execution permissions are unchanged.\");\n      if (request.room) {\n        const names = request.room.botIds.map((id) => `@${this.options.store.bot(id)?.name ?? request.operations.find((operation) => operation.botId === id)?.fields.name ?? id}`);\n        lines.push(`\\nGroup chat (the reviewer chooses): \"${request.room.name}\" with @${chief.name}, ${names.join(\", \")}. @${chief.name} leads it.`);\n      }\n    }\n"
+    },
+    {
+      "before": "    this.validate(request, false);\n    return request;\n  }\n\n  private prepareDeletion(args: DeletionArgs) {\n",
+      "after": "    this.validate(request, false);\n    return request;\n  }\n\n  /** Members are the plan's create keys or existing bot ids; without any, every bot the plan creates. The Chief always joins. */\n  private room(input: { name: string; members?: string[] }, planned: Array<{ action: string; key?: string; botId?: string }>, operations: TeamSetupOperation[], chief: BotRecord): { name: string; botIds: string[] } {\n    if (!this.options.createRoom) throw new TeamSetupError(\"Group chats can't be created with a setup here; propose the bots alone\");\n    const keyed = new Map(planned.map((operation, index) => [operation.action === \"create\" ? operation.key! : operation.botId!, operations[index]!.botId]));\n    const requested = input.members?.length ? input.members : planned.filter((operation) => operation.action === \"create\").map((operation) => operation.key!);\n    const botIds: string[] = [];\n    for (const member of requested) {\n      const id = keyed.get(member) ?? member;\n      const existing = this.options.store.bot(id);\n      if (!keyed.has(member) && (!existing || existing.hidden || !this.options.hasTeamAuthority(chief, existing.section))) {\n        throw new TeamSetupError(`Group chat member ${JSON.stringify(member)} is neither a bot in this plan nor a teammate from list_team_setup`);\n      }\n      if (id !== chief.id && !botIds.includes(id)) botIds.push(id);\n    }\n    if (!botIds.length) throw new TeamSetupError(\"A group chat needs at least one bot besides you\");\n    return { name: input.name, botIds };\n  }\n\n  private prepareDeletion(args: DeletionArgs) {\n"
+    },
+    {
+      "before": "      reason: redactSecretsInText(parsed.data.reason), createdAt: Date.now(), requesterRevision: teamSetupRevision(chief, requesterScope),\n      newTeams: [...new Set(parsed.data.newTeams)], operations };\n    this.validate(request, false);\n",
+      "after": "      reason: redactSecretsInText(parsed.data.reason), createdAt: Date.now(), requesterRevision: teamSetupRevision(chief, requesterScope),\n      newTeams: [...new Set(parsed.data.newTeams)], operations, ...(room ? { room } : {}) };\n    this.validate(request, false);\n"
+    },
+    {
+      "before": "    for (const operation of operations) if (operation.botId === chief.id) Object.assign(requesterScope, operation.fields);\n    const request: TeamSetupRequest = { version: 1, requestId: newId(), botId: args.botId, threadId: args.threadId,\n",
+      "after": "    for (const operation of operations) if (operation.botId === chief.id) Object.assign(requesterScope, operation.fields);\n    const room = parsed.data.room ? this.room(parsed.data.room, [...combined.values()], operations, chief) : undefined;\n    const request: TeamSetupRequest = { version: 1, requestId: newId(), botId: args.botId, threadId: args.threadId,\n"
+    },
+    {
+      "before": "      const previous = combined.get(key);\n      combined.set(key, { ...operation, fields: { ...previous?.fields, ...operation.fields } });\n    }\n",
+      "after": "      const previous = combined.get(key);\n      let fields = { ...previous?.fields, ...operation.fields };\n      if (operation.action === \"create\") {\n        if (operation.template) {\n          const template = readyBot(operation.template);\n          if (!template) throw new TeamSetupError(`Unknown ready-made bot ${JSON.stringify(operation.template)}. Use an id from list_team_library botTemplates: ${READY_BOTS.map((bot) => bot.id).join(\", \")}`);\n          fields = { name: template.name, title: template.title, description: template.description, soul: template.soul, ...fields };\n        }\n        fields.modelSelection ??= chief.modelSelection;\n      }\n      combined.set(key, { ...operation, fields });\n    }\n"
+    },
+    {
+      "before": "  deleteBot(botId: string, revalidate: () => void, request?: TeamSetupRequest): Promise<void>;\n}\n",
+      "after": "  deleteBot(botId: string, revalidate: () => void, request?: TeamSetupRequest): Promise<void>;\n  /** Creates the group chat a reviewer chose with an applied setup; absent where setups never offer one. */\n  createRoom?(request: TeamSetupRequest, botIds: string[]): { id: string; name: string };\n}\n"
+    },
+    {
+      "before": "  ])).min(1).max(24),\n}).strict();\n",
+      "after": "  ])).min(1).max(24),\n  room: z.object({\n    name: z.string().trim().min(1).max(100).refine(fitsOnOneLine).refine((value) => redactSecretsInText(value) === value, \"Room names cannot contain credentials\"),\n    members: z.array(z.string().trim().min(1).max(128)).max(24).optional(),\n  }).strict().optional(),\n}).strict();\n"
+    },
+    {
+      "before": "  operations: z.array(z.discriminatedUnion(\"action\", [\n    z.object({ action: z.literal(\"create\"), key: z.string().trim().min(1).max(80), fields: fieldsSchema }).strict(),\n    z.object({ action: z.literal(\"update\"), botId: z.string().min(1).max(128), fields: fieldsSchema }).strict(),\n",
+      "after": "  operations: z.array(z.discriminatedUnion(\"action\", [\n    z.object({ action: z.literal(\"create\"), key: z.string().trim().min(1).max(80), template: z.string().trim().min(1).max(80).optional(), fields: fieldsSchema.default({}) }).strict(),\n    z.object({ action: z.literal(\"update\"), botId: z.string().min(1).max(128), fields: fieldsSchema }).strict(),\n"
+    },
+    {
+      "before": "import type { TeamSetupFields, TeamSetupOperation, TeamSetupRequest, TeamSetupResult, TeamSetupUndo } from \"../shared/team-setup.ts\";\n\n",
+      "after": "import type { TeamSetupFields, TeamSetupOperation, TeamSetupRequest, TeamSetupResult, TeamSetupUndo } from \"../shared/team-setup.ts\";\nimport { READY_BOTS, readyBot } from \"../shared/ready-bots.ts\";\n\n"
+    }
+  ],
+  "shared/default-bot.ts": [
+    {
+      "before": " * person without one is given one once. It can be renamed and recoloured, hidden from the sidebar, never deleted. */\nexport const DEFAULT_BOT_NAME = \"Limix Bot\";\nexport const DEFAULT_BOT_COLOR: MausColor = \"chrome\";\n",
+      "after": " * person without one is given one once. It can be renamed and recoloured, hidden from the sidebar, never deleted. */\nexport const DEFAULT_BOT_NAME = \"Trợ Lý Limix\";\n/** Names the built-in helper had before; one still unchanged is renamed to DEFAULT_BOT_NAME. */\nexport const LEGACY_DEFAULT_BOT_NAMES: readonly string[] = [\"Limix Bot\", \"MausBot\"];\nexport const DEFAULT_BOT_COLOR: MausColor = \"chrome\";\n"
+    }
+  ],
+  "shared/new-bot-defaults.ts": [
+    {
+      "before": "import type { WireBot } from \"./wire\";\nimport type { RoutineInput } from \"./routines\";\nimport type { ToolScope } from \"./tool-scope\";\n\n",
+      "after": "import type { WireBot } from \"./wire.ts\";\nimport type { RoutineInput } from \"./routines.ts\";\nimport type { ToolScope } from \"./tool-scope.ts\";\n\n"
+    }
+  ],
+  "shared/team-setup.ts": [
+    {
+      "before": "  deletion?: { botId: string; name: string; expectedRevision: string };\n  result?: TeamSetupResult;\n",
+      "after": "  deletion?: { botId: string; name: string; expectedRevision: string };\n  /** A group chat the reviewer may create with the setup: the Chief plus these bots (new bots by their planned ids). */\n  room?: { name: string; botIds: string[] };\n  result?: TeamSetupResult;\n"
+    },
+    {
+      "before": "  error?: string;\n}\n",
+      "after": "  error?: string;\n  /** The group chat the reviewer chose to create with this setup; null when they chose bots only or it failed. */\n  room?: { id: string; name: string } | null;\n}\n"
+    }
+  ],
+  "src/components/ApprovalCard.tsx": [
+    {
+      "before": "    const title = [names(\"created\") && t(\"approval.applied.teamAdded\", { names: names(\"created\") }),\n      names(\"updated\") && t(\"approval.applied.teamUpdated\", { names: names(\"updated\") })].filter(Boolean).join(\"; \");\n    return { line: t(\"approval.applied.teamSetup\", { name, title }), canUndo: Boolean(setup.undo) };\n",
+      "after": "    const title = [names(\"created\") && t(\"approval.applied.teamAdded\", { names: names(\"created\") }),\n      names(\"updated\") && t(\"approval.applied.teamUpdated\", { names: names(\"updated\") }),\n      setup.result.room && lx(`tạo nhóm chat \"${setup.result.room.name}\"`, `created the group chat \"${setup.result.room.name}\"`)].filter(Boolean).join(\"; \");\n    return { line: t(\"approval.applied.teamSetup\", { name, title }), canUndo: Boolean(setup.undo) };\n"
+    },
+    {
+      "before": "import { useContext, useState, type ReactNode } from \"react\";\n",
+      "after": "import { lx } from \"@/lib/limix-text\";\nimport { useContext, useState, type ReactNode } from \"react\";\n"
+    }
+  ],
+  "src/components/HelperIntro.tsx": [
+    {
+      "before": "  const bot = state.bots.find((candidate) => candidate.id === botId);\n  const name = bot?.name ?? \"Limix Bot\";\n  const team = bot?.defaultBot?.person ? state.config?.team?.name : undefined;\n",
+      "after": "  const bot = state.bots.find((candidate) => candidate.id === botId);\n  const name = bot?.name ?? \"Trợ Lý Limix\";\n  const team = bot?.defaultBot?.person ? state.config?.team?.name : undefined;\n"
+    }
+  ],
+  "src/components/MausBotCustomize.tsx": [
+    {
+      "before": "          <div className=\"mt-2\">\n            <AvatarImageGenerator botLabel={name || \"Limix Bot\"} disabled={image.uploading} generating={image.generating} onGenerate={image.generate} />\n          </div>\n",
+      "after": "          <div className=\"mt-2\">\n            <AvatarImageGenerator botLabel={name || \"Trợ Lý Limix\"} disabled={image.uploading} generating={image.generating} onGenerate={image.generate} />\n          </div>\n"
+    },
+    {
+      "before": "          maxLength={BOT_PROFILE_LIMITS.name}\n          placeholder=\"Limix Bot\"\n          data-mausbot-welcome-name=\"\"\n",
+      "after": "          maxLength={BOT_PROFILE_LIMITS.name}\n          placeholder=\"Trợ Lý Limix\"\n          data-mausbot-welcome-name=\"\"\n"
+    }
+  ],
+  "src/components/PendingApproval.tsx": [
+    {
+      "before": "    >\n      {titled && pending.message.card ? titledCardAction(pending.message.card) : isSkillRequest\n        ? pending.message.card?.skillRequest?.action === \"update\"\n",
+      "after": "    >\n      {offersRoom ? lx(\"Tạo bot + nhóm chat\", \"Bots + group chat\") : titled && pending.message.card ? titledCardAction(pending.message.card) : isSkillRequest\n        ? pending.message.card?.skillRequest?.action === \"update\"\n"
+    },
+    {
+      "before": "    </button>,\n    <button\n",
+      "after": "    </button>,\n    offersRoom && (\n      <button key=\"bots-only\" {...marked(\"bots-only\")} type=\"button\" onClick={() => decide(\"allow\", false, false, false)} className={ASK_SECONDARY_BUTTON}>\n        {lx(\"Chỉ tạo bot\", \"Bots only\")}\n      </button>\n    ),\n    <button\n"
+    },
+    {
+      "before": "    dispatch({\n      type: \"decideRequest\",\n",
+      "after": "    dispatch({\n      ...(room === false ? { room: false } : {}),\n      type: \"decideRequest\",\n"
+    },
+    {
+      "before": "    : undefined;\n  const decide = (behavior: \"allow\" | \"deny\", always = false, rememberCommand = false) =>\n    dispatch({\n",
+      "after": "    : undefined;\n  const offersRoom = Boolean(pending.message.card?.teamSetupRequest?.room);\n  const decide = (behavior: \"allow\" | \"deny\", always = false, rememberCommand = false, room?: boolean) =>\n    dispatch({\n"
+    },
+    {
+      "before": "import { DESKTOP_DOWNLOAD_URL } from \"../../shared/computer-ask\";\n\n",
+      "after": "import { DESKTOP_DOWNLOAD_URL } from \"../../shared/computer-ask\";\nimport { lx } from \"@/lib/limix-text\";\n\n"
+    }
+  ],
+  "src/components/SimpleHelperIntro.tsx": [
+    {
+      "before": "  const person = greetingName(state.config?.profile?.name) || undefined;\n  const lines = introLines({ name: bot?.name ?? \"Limix Bot\", chief: Boolean(bot?.chiefOfStaff), person, team });\n  const look = useLookAround(!answered);\n",
+      "after": "  const person = greetingName(state.config?.profile?.name) || undefined;\n  const lines = introLines({ name: bot?.name ?? \"Trợ Lý Limix\", chief: Boolean(bot?.chiefOfStaff), person, team });\n  const look = useLookAround(!answered);\n"
+    }
+  ],
+  "src/state/store.tsx": [
+    {
+      "before": "                rememberCommand: action.rememberCommand,\n              }),\n",
+      "after": "                rememberCommand: action.rememberCommand,\n                ...(action.room === false ? { room: false } : {}),\n              }),\n"
+    },
+    {
+      "before": "      rememberCommand?: boolean;\n      onError?: (message: string) => void;\n",
+      "after": "      rememberCommand?: boolean;\n      /** A team setup card that offers a group chat: false approves the bots without it. */\n      room?: boolean;\n      onError?: (message: string) => void;\n"
+    }
+  ],
+  "server/chief-of-staff.test.ts": [
+    {
+      "before": "        \"Housekeeping: list_threads also shows threads one teammate opened on another (marked \\\"opened by\\\"), and you may close_thread those once they are idle and their work is done. Threads the person started are theirs: never close them.\",\n        \"When the user asks you to assemble or configure a team, use list_team_setup for the exact authorized teams, bot IDs and model catalog, then propose_team_setup once with all named specialists and their profile/model changes. Include new teams explicitly; the plan covers their creation and your access. Existing thread models and other bots' execution permissions stay unchanged. Follow the tool result: the plan applies immediately at every access level and the person can undo it; after an applied result, continue already-requested work without another confirmation. Only if review is pending, end your turn: the user's decision automatically resumes you once with a structured result. Report failed or cancelled results honestly. Do not ask for another yes, poll, or repeat the proposal. After successful setup, use the available coordination tools for already requested work. For explicitly requested bot deletion, use propose_bot_deletion separately and follow its applied or pending result too.\",\n        \"Current Work department (your team):\",\n",
+      "after": "        \"Housekeeping: list_threads also shows threads one teammate opened on another (marked \\\"opened by\\\"), and you may close_thread those once they are idle and their work is done. Threads the person started are theirs: never close them.\",\n        \"When the user asks you to assemble or configure a team, use list_team_setup for the exact authorized teams, bot IDs and model catalog, then propose_team_setup once with all named specialists and their profile/model changes. Include new teams explicitly; the plan covers their creation and your access. Existing thread models and other bots' execution permissions stay unchanged. Every plan waits for the person's decision on a card: end your turn after proposing; the decision automatically resumes you once with a structured result, including the group chat if they chose one. Report failed or cancelled results honestly. Do not ask for another yes, poll, or repeat the proposal. After successful setup, use the available coordination tools for already requested work. For explicitly requested bot deletion, use propose_bot_deletion separately and follow its applied or pending result too.\",\n        \"Current Work department (your team):\",\n"
+    },
+    {
+      "before": "        EVERYONE_ON_THE_MAP,\n        \"Incidents: when a teammate's run fails, stalls or cannot start, OpenMausBot reports it to you in your \\\"Problems to look at\\\" thread with a link to the thread. Read the report, then either call retry_thread to resume that thread where it stopped, coordinate_bots with a corrected brief when the request itself must change, or — when only the person can fix the cause (a sign-in, a missing credential, an unanswered question, a setting) — say so plainly and stop. Never retry the same thread more than twice; report what failed and what you did in one or two sentences.\",\n        \"Use list_bots or list_room_targets for the live reachable roster. Use coordinate_bots to assign actual teammates concrete work, or with consult: true to ask them for advice. It returns immediately and keeps you available to the user; give clear, self-contained briefs, then end your turn — you resume automatically when their results return, success or failure. Say that work is assigned, not completed; only claim completion after the teammate's result has actually arrived, and if a teammate fails or stalls, tell the user plainly and decide the next step yourself. Leads can coordinate their own specialists. Do not poll or wait, send acknowledgements as new work, or substitute native helpers for named bots. On return, verify the requested outcome, resolve decisions within the user's scope, request concrete corrections with rework=true when necessary, and return one consolidated answer. Consultations are advice, not proof that work or tests ran. A refusal from coordinate_bots means nothing was sent: fix what it names (usually the id — copy it from list_bots or your roster; a unique teammate name also works) and retry, and never describe a handoff the tool did not accept.\",\n",
+      "after": "        EVERYONE_ON_THE_MAP,\n        \"Incidents: when a teammate's run fails, stalls or cannot start, Limix Bot reports it to you in your \\\"Problems to look at\\\" thread with a link to the thread. Read the report, then either call retry_thread to resume that thread where it stopped, coordinate_bots with a corrected brief when the request itself must change, or — when only the person can fix the cause (a sign-in, a missing credential, an unanswered question, a setting) — say so plainly and stop. Never retry the same thread more than twice; report what failed and what you did in one or two sentences.\",\n        \"Use list_bots or list_room_targets for the live reachable roster. Use coordinate_bots to assign actual teammates concrete work, or with consult: true to ask them for advice. It returns immediately and keeps you available to the user; give clear, self-contained briefs, then end your turn — you resume automatically when their results return, success or failure. Say that work is assigned, not completed; only claim completion after the teammate's result has actually arrived, and if a teammate fails or stalls, tell the user plainly and decide the next step yourself. Leads can coordinate their own specialists. Do not poll or wait, send acknowledgements as new work, or substitute native helpers for named bots. On return, verify the requested outcome, resolve decisions within the user's scope, request concrete corrections with rework=true when necessary, and return one consolidated answer. Consultations are advice, not proof that work or tests ran. A refusal from coordinate_bots means nothing was sent: fix what it names (usually the id — copy it from list_bots or your roster; a unique teammate name also works) and retry, and never describe a handoff the tool did not accept.\",\n"
+    },
+    {
+      "before": "        \"A standing preference the person states for all their bots (where reminders go, how replies should sound) is one line you save yourself with memory_update action prefer: every bot reads it. Never send it to each bot with coordinate_bots.\",\n        \"When a job needs a specialist you do not have (an ongoing area of work, a different skill set, or work to run in parallel), add one with create_bot without asking first, then tell the person in one line; they can undo it. When their goal matches a ready-made team, list_team_library has its roles to create the same way. Never add a bot just to look busy, or one that duplicates a teammate.\",\n        EVERYONE_ON_THE_MAP,\n",
+      "after": "        \"A standing preference the person states for all their bots (where reminders go, how replies should sound) is one line you save yourself with memory_update action prefer: every bot reads it. Never send it to each bot with coordinate_bots.\",\n        \"When the person asks for a bot or a team, or a job clearly needs a specialist you do not have (an ongoing area of work, a different skill set, or work to run in parallel), propose it; never create bots on your own. First call list_team_library: botTemplates are ready-made single bots (create one with its template id), teams are ready-made groups of roles. Prefer a ready-made bot or team when it fits the request; otherwise design custom bots. Then call propose_team_setup once, in this conversation, with every bot. When it adds two or more bots that will work together, include room so the person can choose to also create a group chat that you lead. Before the card, tell the person in one or two lines what you propose and why, and whether it is ready-made or custom. Never add a bot just to look busy, or one that duplicates a teammate.\",\n        EVERYONE_ON_THE_MAP,\n"
+    },
+    {
+      "before": "    const prompt = chiefOfStaffSystemPrompt(\"chief\", bots, true);\n    expect(prompt).toContain(\"after an applied result, continue already-requested work without another confirmation\");\n    expect(prompt).toContain(\"Only if review is pending, end your turn\");\n    expect(prompt).toContain(\"Report failed or cancelled results honestly\");\n",
+      "after": "    const prompt = chiefOfStaffSystemPrompt(\"chief\", bots, true);\n    expect(prompt).toContain(\"Every plan waits for the person's decision on a card: end your turn after proposing\");\n    expect(prompt).toContain(\"Report failed or cancelled results honestly\");\n"
+    },
+    {
+      "before": "    expect(prompt).toContain(\"an ongoing area of work, a different skill set, or work to run in parallel\");\n    expect(prompt).toContain(\"When their goal matches a ready-made team, list_team_library has its roles\");\n    expect(prompt, \"a suggestion no longer waits on a card\").not.toMatch(/suggestion|Not now/);\n",
+      "after": "    expect(prompt).toContain(\"an ongoing area of work, a different skill set, or work to run in parallel\");\n    expect(prompt).toContain(\"botTemplates are ready-made single bots\");\n    expect(prompt).toContain(\"include room so the person can choose to also create a group chat\");\n    expect(prompt, \"a suggestion no longer waits on a card\").not.toMatch(/suggestion|Not now/);\n"
+    },
+    {
+      "before": "    expect(prompt).toContain(\"Do the work yourself\");\n    expect(prompt).toContain(\"add one with create_bot without asking first, then tell the person in one line\");\n    expect(prompt).toContain(\"an ongoing area of work, a different skill set, or work to run in parallel\");\n",
+      "after": "    expect(prompt).toContain(\"Do the work yourself\");\n    expect(prompt).toContain(\"propose it; never create bots on your own\");\n    expect(prompt).toContain(\"an ongoing area of work, a different skill set, or work to run in parallel\");\n"
+    },
+    {
+      "before": "\n  it(\"is the person's assistant, does the work itself and adds a specialist without asking\", () => {\n    const prompt = chiefOfStaffSystemPrompt(\"chief\", [{ id: \"chief\", name: \"Atlas\" }], true);\n",
+      "after": "\n  it(\"is the person's assistant, does the work itself and proposes new bots for the person to approve\", () => {\n    const prompt = chiefOfStaffSystemPrompt(\"chief\", [{ id: \"chief\", name: \"Atlas\" }], true);\n"
+    }
+  ],
+  "server/routes/internal-chief-team.test.ts": [
+    {
+      "before": "    const { get } = await serve(bot(\"chief\", { chiefOfStaff: true }), async () => { throw new Error(\"GitHub returned HTTP 503\"); });\n    expect(await get(\"/api/internal/team-library\")).toEqual({\n      status: 502, body: { error: \"The team library can't be reached right now. Build the team from what the person asked.\" },\n    });\n  });\n",
+      "after": "    const { get } = await serve(bot(\"chief\", { chiefOfStaff: true }), async () => { throw new Error(\"GitHub returned HTTP 503\"); });\n    const answer = await get(\"/api/internal/team-library\");\n    expect(answer).toMatchObject({ status: 200, body: { teams: [], note: expect.stringContaining(\"can't be reached right now\") } });\n    expect((answer.body as { botTemplates: unknown[] }).botTemplates.length).toBeGreaterThan(0);\n  });\n"
+    },
+    {
+      "before": "\n  it(\"says plainly when the library can't be reached\", async () => {\n    const { get } = await serve(bot(\"chief\", { chiefOfStaff: true }), async () => { throw new Error(\"GitHub returned HTTP 503\"); });\n",
+      "after": "\n  it(\"still offers the ready-made bots when the team library can't be reached, and says so\", async () => {\n    const { get } = await serve(bot(\"chief\", { chiefOfStaff: true }), async () => { throw new Error(\"GitHub returned HTTP 503\"); });\n"
+    },
+    {
+      "before": "    const { get } = await serve(bot(\"chief\", { chiefOfStaff: true }), library);\n    expect(await get(\"/api/internal/team-library\")).toEqual({ status: 200, body: { teams: TEAMS } });\n    expect(library).toHaveBeenCalledOnce();\n",
+      "after": "    const { get } = await serve(bot(\"chief\", { chiefOfStaff: true }), library);\n    const answer = await get(\"/api/internal/team-library\");\n    expect(answer).toMatchObject({ status: 200, body: { teams: TEAMS } });\n    expect((answer.body as { botTemplates: unknown[] }).botTemplates).toEqual(expect.arrayContaining([expect.objectContaining({ id: \"assistant\", name: \"Assistant\" })]));\n    expect(library).toHaveBeenCalledOnce();\n"
+    }
+  ],
+  "server/drivers/agents-catalog-wire.test.ts": [
+    {
+      "before": "  \"skills+shared+voice+x+team+images\": 72015,\n  \"default+images\": 61224,\n};\n",
+      "after": "  \"skills+shared+voice+x+team+images\": 72015,\n  \"default+images\": 62945,\n};\n"
+    },
+    {
+      "before": "  \"skills+shared+voice+x+team\": 71242,\n  \"default+no-computer-pick\": 59239,\n  \"default+room\": 57595,\n",
+      "after": "  \"skills+shared+voice+x+team\": 71242,\n  \"default+no-computer-pick\": 60679,\n  \"default+room\": 57595,\n"
+    },
+    {
+      "before": "  \"skills+shared+voice+non-chief+cloud-home\": 57123,\n  \"default+legacy-switches\": 60451,\n  \"default+mausbot\": 61102,\n  \"skills+shared+voice+mausbot\": 67224,\n  \"skills+shared+voice+x\": 71242,\n",
+      "after": "  \"skills+shared+voice+non-chief+cloud-home\": 57123,\n  \"default+legacy-switches\": 61887,\n  \"default+mausbot\": 62538,\n  \"skills+shared+voice+mausbot\": 68660,\n  \"skills+shared+voice+x\": 71242,\n"
+    },
+    {
+      "before": "  \"skills+shared+voice+non-chief\": 57357,\n  \"skills+shared+voice+cloud-home\": 66339,\n  \"skills+shared+voice+non-chief+cloud-home\": 57123,\n",
+      "after": "  \"skills+shared+voice+non-chief\": 57357,\n  \"skills+shared+voice+cloud-home\": 67775,\n  \"skills+shared+voice+non-chief+cloud-home\": 57123,\n"
+    },
+    {
+      "before": "const BUDGET_BASELINE: Record<string, number> = {\n  \"default\": 60451,\n  \"voice\": 61232,\n  \"shared\": 62716,\n  \"shared+voice\": 63497,\n  \"skills\": 63527,\n  \"skills+voice\": 64308,\n  \"skills+shared\": 65792,\n  \"skills+shared+voice\": 66573,\n  \"non-chief\": 51235,\n",
+      "after": "const BUDGET_BASELINE: Record<string, number> = {\n  \"default\": 61887,\n  \"voice\": 62668,\n  \"shared\": 64152,\n  \"shared+voice\": 64933,\n  \"skills\": 64963,\n  \"skills+voice\": 65744,\n  \"skills+shared\": 67228,\n  \"skills+shared+voice\": 68009,\n  \"non-chief\": 51235,\n"
+    }
+  ],
+  "server/team-setup-requests.test.ts": [
+    {
+      "before": "    expect(() => app.propose([specialist(\"Scout\"), specialist(\"Writer\")])).toThrow(expect.objectContaining({ status: 409, message: \"This setup exceeds the workspace bot limit\" }));\n  });\n});\n",
+      "after": "    expect(() => app.propose([specialist(\"Scout\"), specialist(\"Writer\")])).toThrow(expect.objectContaining({ status: 409, message: \"This setup exceeds the workspace bot limit\" }));\n  });\n});\n\ndescribe(\"assistant proposals with ready-made bots and a group chat\", () => {\n  const plan = (operations: unknown[], room?: unknown) => ({ reason: \"The person asked for help\", operations, ...(room ? { room } : {}) });\n\n  it(\"fills a ready-made bot's profile, keeps fields the assistant gave, and defaults the model to the assistant's\", () => {\n    const h = harness();\n    const proposed = h.service.propose({ botId: h.chief.id, threadId: h.chief.threadId, plan: plan([{ action: \"create\", key: \"Scout\", template: \"research\", fields: { name: \"Tìm Tin\" } }]) });\n    const request = h.messages.at(-1)!.card!.teamSetupRequest!;\n    expect(request.operations[0]!.fields).toMatchObject({ name: \"Tìm Tin\", title: \"Researcher\", modelSelection: h.chief.modelSelection });\n    expect(request.operations[0]!.fields.soul).toBeTruthy();\n    expect(proposed.detail).toContain(\"Create @Tìm Tin\");\n    expect(() => h.service.propose({ botId: h.chief.id, threadId: h.chief.threadId, plan: plan([{ action: \"create\", key: \"X\", template: \"no-such\" }]) })).toThrow(/Unknown ready-made bot/);\n  });\n\n  it(\"offers a group chat only where one can be made, with members from the plan or the team\", () => {\n    expect(() => harness().service.propose({ botId: \"Clive\", threadId: \"Clive-thread\", plan: plan([specialist(\"Quill\", \"Work\")], { name: \"Content\" }) })).toThrow(/Group chats can't be created/);\n    const h = harness(undefined, () => ({ id: \"room-1\", name: \"Content\" }));\n    const propose = (room: unknown) => h.service.propose({ botId: h.chief.id, threadId: h.chief.threadId, plan: plan([specialist(\"Quill\", \"Work\")], room) });\n    expect(() => propose({ name: \"Content\", members: [\"Nobody\"] })).toThrow(/neither a bot in this plan nor a teammate/);\n    expect(() => propose({ name: \"Content\", members: [\"Clive\"] })).toThrow(/at least one bot besides you/);\n    const proposed = propose({ name: \"Content\", members: [\"Quill\", \"Ada\"] });\n    const request = h.messages.at(-1)!.card!.teamSetupRequest!;\n    expect(request.room).toEqual({ name: \"Content\", botIds: [request.operations[0]!.botId, \"Ada\"] });\n    expect(proposed.detail).toContain('Group chat (the reviewer chooses): \"Content\" with @Clive, @Quill, @Ada');\n  });\n\n  it(\"creates the group chat only when the reviewer chooses it, and keeps the bots when it fails\", async () => {\n    const made: string[][] = [];\n    let fail = false;\n    const h = harness(undefined, (_request, botIds) => { if (fail) throw new Error(\"room limit reached\"); made.push(botIds); return { id: \"room-1\", name: \"Content\" }; });\n    const ask = () => h.service.propose({ botId: h.chief.id, threadId: h.chief.threadId, plan: plan([specialist(`Quill${made.length}${fail}`, \"Work\")], { name: \"Content\" }) });\n    const first = ask();\n    expect((await h.service.resolve({ botId: h.chief.id, threadId: h.chief.threadId, requestId: first.requestId, behavior: \"allow\" }))?.result)\n      .toMatchObject({ state: \"applied\", room: { id: \"room-1\", name: \"Content\" } });\n    expect(made).toHaveLength(1);\n    const second = ask();\n    expect((await h.service.resolve({ botId: h.chief.id, threadId: h.chief.threadId, requestId: second.requestId, behavior: \"allow\", room: false }))?.result)\n      .toMatchObject({ state: \"applied\", room: null });\n    expect(made).toHaveLength(1);\n    fail = true;\n    const third = ask();\n    const result = (await h.service.resolve({ botId: h.chief.id, threadId: h.chief.threadId, requestId: third.requestId, behavior: \"allow\" }))!.result;\n    expect(result).toMatchObject({ state: \"applied\", room: null, error: expect.stringContaining(\"the group chat could not be created: room limit reached\") });\n    expect(result.bots).toHaveLength(1);\n  });\n});\n"
+    },
+    {
+      "before": "    ...(caps ? { driverCapabilities: (instanceId: string) => caps[instanceId] } : {}),\n  });\n",
+      "after": "    ...(caps ? { driverCapabilities: (instanceId: string) => caps[instanceId] } : {}),\n    ...(createRoom ? { createRoom } : {}),\n  });\n"
+    },
+    {
+      "before": "\nfunction harness(caps?: Record<string, { driverKind: string; agentsMcp: boolean }>) {\n  const bots: BotRecord[] = [];\n",
+      "after": "\nfunction harness(caps?: Record<string, { driverKind: string; agentsMcp: boolean }>, createRoom?: (request: TeamSetupRequest, botIds: string[]) => { id: string; name: string }) {\n  const bots: BotRecord[] = [];\n"
+    }
+  ]
+}
