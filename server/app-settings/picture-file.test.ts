@@ -67,8 +67,8 @@ describe("a picture file a bot names", () => {
   it("refuses a file outside the bot's folders, by path, by .. or through a link", async () => {
     const { pictures, workspace, elsewhere } = fixture();
     writeFileSync(join(elsewhere, "secret.png"), PNG);
-    symlinkSync(join(elsewhere, "secret.png"), join(workspace, "link.png"));
-    for (const path of [join(elsewhere, "secret.png"), join(workspace, "..", "elsewhere", "secret.png"), "../elsewhere/secret.png", join(workspace, "link.png")]) {
+    symlinkSync(elsewhere, join(workspace, "linked-folder"), process.platform === "win32" ? "junction" : "dir");
+    for (const path of [join(elsewhere, "secret.png"), join(workspace, "..", "elsewhere", "secret.png"), "../elsewhere/secret.png", join(workspace, "linked-folder", "secret.png")]) {
       expect(await pictures.take(turn, path), path).toEqual({ refusal: expect.stringContaining("is outside your workspace") });
     }
   });
