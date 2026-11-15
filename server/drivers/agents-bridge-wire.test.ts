@@ -82,13 +82,13 @@ const FULL = "skills+shared+voice+x+team+images";
  * either: lock a saving in by lowering the number. A Chief's list is longer
  * than another bot's only by the Chief-only names in find_tool's description. */
 const BUDGET_BASELINE: Record<string, number> = {
-  "default": 17486,
+  "default": 17849,
   "voice": 18361,
-  "shared": 17526,
+  "shared": 17889,
   "shared+voice": 18401,
-  "skills": 17513,
+  "skills": 17876,
   "skills+voice": 18388,
-  "skills+shared": 17553,
+  "skills+shared": 17916,
   "skills+shared+voice": 18428,
   "non-chief": 17369,
   "voice+non-chief": 18150,
@@ -102,14 +102,14 @@ const BUDGET_BASELINE: Record<string, number> = {
   "skills+shared+voice+non-chief+cloud-home": 18233,
   "skills+shared+voice+x": 18507,
   "skills+shared+voice+x+team": 18507,
-  "default+legacy-switches": 17486,
-  "default+mausbot": 17538,
+  "default+legacy-switches": 17849,
+  "default+mausbot": 17901,
   "skills+shared+voice+mausbot": 18480,
   "default+no-computer-pick": 16627,
   "default+room": 16544,
   "non-chief+room": 16427,
   "skills+shared+voice+x+team+images": 18429,
-  "default+images": 17502,
+  "default+images": 17865,
 };
 
 type RpcAnswer = { id: number; result?: { tools?: unknown[]; content?: Array<{ text: string }>; isError?: boolean }; error?: { code: number; message: string } };
