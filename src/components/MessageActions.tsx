@@ -39,6 +39,18 @@ function focusVisible(target: EventTarget | null): boolean {
   }
 }
 
+/** The nearest box that cuts off what overflows it (the chat column), else the window. */
+function clippingBounds(element: HTMLElement): { left: number; right: number } {
+  for (let node = element.parentElement; node && node !== document.body; node = node.parentElement) {
+    const style = getComputedStyle(node);
+    if (/(hidden|auto|scroll|clip)/.test(style.overflowX + style.overflow)) {
+      const box = node.getBoundingClientRect();
+      return { left: Math.max(0, box.left), right: Math.min(window.innerWidth, box.right) };
+    }
+  }
+  return { left: 0, right: window.innerWidth };
+}
+
 export function MessageActions({
   side,
   forceOpen = false,
@@ -142,8 +154,10 @@ export function MessageActions({
     const rowBox = rootRef.current?.getBoundingClientRect();
     if (menuBox && rowBox) {
       const rtl = getComputedStyle(rootRef.current!).direction === "rtl";
-      const fitsRight = rowBox.left + menuBox.width <= window.innerWidth - 8;
-      const fitsLeft = rowBox.right - menuBox.width >= 8;
+      // Limix: the chat column clips its overflow, so the menu must fit inside it, not just the window.
+      const bounds = clippingBounds(rootRef.current!);
+      const fitsRight = rowBox.left + menuBox.width <= bounds.right - 8;
+      const fitsLeft = rowBox.right - menuBox.width >= bounds.left + 8;
       const fitsStart = rtl ? fitsLeft : fitsRight;
       const fitsEnd = rtl ? fitsRight : fitsLeft;
       setMenuFlipped(mirrored ? !fitsEnd && fitsStart : !fitsStart && fitsEnd);

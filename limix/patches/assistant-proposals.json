@@ -694,5 +694,15 @@
       "before": "    expect(calls.find((call: { method: string }) => call.method === \"turn/start\").params.sandboxPolicy).toEqual(sandbox);\n  });\n",
       "after": "    expect(calls.find((call: { method: string }) => call.method === \"turn/start\").params.sandboxPolicy).toEqual(sandbox);\n  });\n\n  it.each([false, true])(\"runs in a narrower read-only sandbox when Codex gives one, as on Windows (resumed=%s)\", async (resumed) => {\n    await create({ mode: \"resume\" });\n    const dump = join(scratch, \"narrower-sandbox.json\");\n    process.env.FAKE_CODEX_DUMP = dump;\n    process.env.FAKE_CODEX_RESOLVED_SANDBOX = JSON.stringify({ type: \"readOnly\" });\n    await instance.adapter.sendTurn({ threadId: \"t-narrower\", text: \"continue\", approvalMode: \"ask\",\n      ...(resumed ? { resumeCursor: \"codex-thread-1\" } : {}) });\n    await recorder.until((event) => event.type === \"turn.completed\");\n    expect(recorder.events.at(-1)).toMatchObject({ ok: true });\n    const calls = JSON.parse(readFileSync(dump, \"utf8\")).calls;\n    expect(calls.find((call: { method: string }) => call.method === \"turn/start\").params.sandboxPolicy).toEqual({ type: \"readOnly\" });\n  });\n"
     }
+  ],
+  "src/components/MessageActions.tsx": [
+    {
+      "before": "      const rtl = getComputedStyle(rootRef.current!).direction === \"rtl\";\n      const fitsRight = rowBox.left + menuBox.width <= window.innerWidth - 8;\n      const fitsLeft = rowBox.right - menuBox.width >= 8;\n      const fitsStart = rtl ? fitsLeft : fitsRight;\n",
+      "after": "      const rtl = getComputedStyle(rootRef.current!).direction === \"rtl\";\n      // Limix: the chat column clips its overflow, so the menu must fit inside it, not just the window.\n      const bounds = clippingBounds(rootRef.current!);\n      const fitsRight = rowBox.left + menuBox.width <= bounds.right - 8;\n      const fitsLeft = rowBox.right - menuBox.width >= bounds.left + 8;\n      const fitsStart = rtl ? fitsLeft : fitsRight;\n"
+    },
+    {
+      "before": "  }\n}\n",
+      "after": "  }\n}\n\n/** The nearest box that cuts off what overflows it (the chat column), else the window. */\nfunction clippingBounds(element: HTMLElement): { left: number; right: number } {\n  for (let node = element.parentElement; node && node !== document.body; node = node.parentElement) {\n    const style = getComputedStyle(node);\n    if (/(hidden|auto|scroll|clip)/.test(style.overflowX + style.overflow)) {\n      const box = node.getBoundingClientRect();\n      return { left: Math.max(0, box.left), right: Math.min(window.innerWidth, box.right) };\n    }\n  }\n  return { left: 0, right: window.innerWidth };\n}\n"
+    }
   ]
 }
