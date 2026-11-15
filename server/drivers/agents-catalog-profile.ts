@@ -1,3 +1,5 @@
+import { toolsOffFromEnv, type ToolGroup } from "../../shared/tool-groups.ts";
+
 // The OMB_* switches the harness gives the agents proxy, read into the profile agents-catalog.ts lists tools for.
 
 /** Which tools a conversation is shown, the same on every one of its turns. Presentation only: the server still
@@ -30,6 +32,8 @@ export interface CatalogProfile {
   imageGeneration?: boolean;
   /** A cloud computer can be had here (Boat): the meeting tools are mounted. */
   meetings?: boolean;
+  /** The tool groups this bot's person turned off: none of their tools is mounted. */
+  toolsOff?: readonly ToolGroup[];
 }
 
 /** Everything is off unless the harness says "1". */
@@ -50,5 +54,6 @@ export function catalogProfileFromEnv(env: NodeJS.ProcessEnv): CatalogProfile {
     room: env.OMB_ROOM === "1",
     imageGeneration: env.OMB_IMAGE_GENERATION === "1",
     meetings: env.OMB_MEETINGS === "1",
+    toolsOff: toolsOffFromEnv(env.OMB_TOOLS_OFF),
   };
 }
