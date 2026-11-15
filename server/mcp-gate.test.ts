@@ -181,7 +181,7 @@ describe("mcp-gate", () => {
     const answer = await call("search_products");
     const text = answer.result.content[0].text;
     expect(text.length).toBeLessThan(full.length / 10);
-    expect(text.startsWith("⚠️ SHAPED by OpenMausBot:")).toBe(true);
+    expect(text.startsWith("⚠️ SHAPED by Limix Bot:")).toBe(true);
 
     const spillDir = join(scratch, "spill");
     const [file] = readdirSync(spillDir);
@@ -220,7 +220,7 @@ describe("mcp-gate", () => {
 
     const unknown = (await call("search_products")).result;
     expect(unknown).not.toHaveProperty("structuredContent");
-    expect(unknown.content[0].text).toContain("SHAPED by OpenMausBot");
+    expect(unknown.content[0].text).toContain("SHAPED by Limix Bot");
 
     await listTools([{ name: "search_products", outputSchema: { type: "object" } }]);
     await listTools([{ name: "other_tool" }], "second");
@@ -230,7 +230,7 @@ describe("mcp-gate", () => {
     await listTools([{ name: "search_products" }]);
     const refreshed = (await call("search_products")).result;
     expect(refreshed).not.toHaveProperty("structuredContent");
-    expect(refreshed.content[0].text).toContain("SHAPED by OpenMausBot");
+    expect(refreshed.content[0].text).toContain("SHAPED by Limix Bot");
   });
 
   it("matches structuredContent to the text whatever its key order", async () => {
@@ -448,7 +448,7 @@ createInterface({ input: process.stdin }).on("line", (line) => {
     it("holds the whole result and answers a query locally with just the selection", async () => {
       start({ text: full }, {}, SCOPED_UPSTREAM);
       const shaped: string = (await call("read")).result.content[0].text;
-      expect(shaped.startsWith("⚠️ SHAPED by OpenMausBot:")).toBe(true);
+      expect(shaped.startsWith("⚠️ SHAPED by Limix Bot:")).toBe(true);
       expect(shaped).toContain('query_result {"result":"r1","query":');
       expect(shaped).toContain("products: 300 items{id, name, price, blurb}");
       expect(shaped.length).toBeLessThan(8_200);

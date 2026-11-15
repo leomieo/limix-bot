@@ -10,7 +10,7 @@
 // skills", Codex with the person's own CODEX_HOME) leaves the copy out, so no engine sees a skill twice.
 import { createHash, randomUUID } from "node:crypto";
 import {
-  closeSync, constants, fstatSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, readlinkSync, realpathSync, renameSync, rmSync,
+  closeSync, constants, fstatSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, readlinkSync, renameSync, rmSync,
   readSync, statSync, symlinkSync, unlinkSync, writeFileSync,
 } from "node:fs";
 import { homedir } from "node:os";
