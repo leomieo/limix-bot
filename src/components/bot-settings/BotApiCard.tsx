@@ -52,7 +52,8 @@ export function callWords(call: Pick<BotApiCall, "outcome" | "statusCode" | "rep
             : call.statusCode === 409 ? t("botApi.call.busy")
               : call.statusCode === 413 ? t("automations.calls.tooLarge")
                 : call.statusCode === 400 || call.statusCode === 415 ? t("automations.calls.unreadable")
-                  : t("botApi.call.failed");
+                  : call.reason && call.statusCode >= 500 ? `${t("botApi.call.failed")}: ${call.reason}` // Limix: say why a turn could not run
+                    : t("botApi.call.failed");
   return call.repeats && call.repeats > 1 ? `${words} (${call.repeats})` : words;
 }
 

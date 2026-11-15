@@ -662,5 +662,11 @@
       "before": "  const { own: ownTasks, helpers } = bulk.active ? { own: tasks, helpers: [] } : partitionHelperThreads(tasks, bot.threadId, query, projects);\n  const visibleTasks = orderedThreadList(visibleSidebarThreads(ownTasks, bot.threadId, query, projects, showAll || bulk.active));\n  const visibleProjectIndex = (projectId: string) => visibleTasks.findIndex((task) => task.projectId === projectId);\n",
       "after": "  const { own: ownTasks, helpers } = bulk.active ? { own: tasks, helpers: [] } : partitionHelperThreads(tasks, bot.threadId, query, projects);\n  // Limix: a bot set to hide guest Telegram / Zalo chats leaves them out here too; the owner's chat and the open one stay.\n  const listedTasks = bot.hideChannelGuests ? ownTasks.filter((task) => !task.botApi || task.channelOwner || task.threadId === bot.threadId) : ownTasks;\n  const visibleTasks = orderedThreadList(visibleSidebarThreads(listedTasks, bot.threadId, query, projects, showAll || bulk.active));\n  const visibleProjectIndex = (projectId: string) => visibleTasks.findIndex((task) => task.projectId === projectId);\n"
     }
+  ],
+  "src/components/bot-settings/BotApiCard.tsx": [
+    {
+      "before": "                : call.statusCode === 400 || call.statusCode === 415 ? t(\"automations.calls.unreadable\")\n                  : t(\"botApi.call.failed\");\n  return call.repeats && call.repeats > 1 ? `${words} (${call.repeats})` : words;\n",
+      "after": "                : call.statusCode === 400 || call.statusCode === 415 ? t(\"automations.calls.unreadable\")\n                  : call.reason && call.statusCode >= 500 ? `${t(\"botApi.call.failed\")}: ${call.reason}` // Limix: say why a turn could not run\n                    : t(\"botApi.call.failed\");\n  return call.repeats && call.repeats > 1 ? `${words} (${call.repeats})` : words;\n"
+    }
   ]
 }
