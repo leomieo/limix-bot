@@ -678,5 +678,21 @@
       "before": "// transcript or a delegation would otherwise carry a restricted bot's words to people who cannot see it.\nimport { z } from \"zod\";\n",
       "after": "// transcript or a delegation would otherwise carry a restricted bot's words to people who cannot see it.\nimport { isLimixOwnerThread } from \"./limix-owner-lane.ts\";\nimport { z } from \"zod\";\n"
     }
+  ],
+  "server/drivers/codex.ts": [
+    {
+      "before": "  }\n  if (sandbox.type !== requested.type) {\n    throw new Error(`Codex did not apply the requested sandbox mode (requested: ${String(requested.type)}; resolved: ${sandbox.type}); cannot safely start the turn. Update Codex and retry, or use another AI provider for this bot.`);\n",
+      "after": "  }\n  // Limix: a narrower sandbox than asked is safe to run in (Codex on Windows often gives read-only for workspace-write);\n  // only a wider or unknown one stops the turn.\n  if (sandbox.type !== requested.type && !(sandbox.type === \"readOnly\" && SANDBOX_NARROWS_TO_READ_ONLY.has(String(requested.type)))) {\n    throw new Error(`Codex did not apply the requested sandbox mode (requested: ${String(requested.type)}; resolved: ${sandbox.type}); cannot safely start the turn. Update Codex and retry, or use another AI provider for this bot.`);\n"
+    },
+    {
+      "before": "\nfunction withResolvedSandbox(params: CodexApprovalParams, session: unknown): CodexApprovalParams {\n",
+      "after": "\nconst SANDBOX_NARROWS_TO_READ_ONLY = new Set([\"workspaceWrite\", \"dangerFullAccess\"]);\n\nfunction withResolvedSandbox(params: CodexApprovalParams, session: unknown): CodexApprovalParams {\n"
+    }
+  ],
+  "server/drivers/codex.test.ts": [
+    {
+      "before": "    expect(calls.find((call: { method: string }) => call.method === \"turn/start\").params.sandboxPolicy).toEqual(sandbox);\n  });\n",
+      "after": "    expect(calls.find((call: { method: string }) => call.method === \"turn/start\").params.sandboxPolicy).toEqual(sandbox);\n  });\n\n  it.each([false, true])(\"runs in a narrower read-only sandbox when Codex gives one, as on Windows (resumed=%s)\", async (resumed) => {\n    await create({ mode: \"resume\" });\n    const dump = join(scratch, \"narrower-sandbox.json\");\n    process.env.FAKE_CODEX_DUMP = dump;\n    process.env.FAKE_CODEX_RESOLVED_SANDBOX = JSON.stringify({ type: \"readOnly\" });\n    await instance.adapter.sendTurn({ threadId: \"t-narrower\", text: \"continue\", approvalMode: \"ask\",\n      ...(resumed ? { resumeCursor: \"codex-thread-1\" } : {}) });\n    await recorder.until((event) => event.type === \"turn.completed\");\n    expect(recorder.events.at(-1)).toMatchObject({ ok: true });\n    const calls = JSON.parse(readFileSync(dump, \"utf8\")).calls;\n    expect(calls.find((call: { method: string }) => call.method === \"turn/start\").params.sandboxPolicy).toEqual({ type: \"readOnly\" });\n  });\n"
+    }
   ]
 }

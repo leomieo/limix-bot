@@ -188,6 +188,8 @@ function namedApprovalParams(mode: Exclude<ApprovalMode, "custom">): CodexApprov
   };
 }
 
+const SANDBOX_NARROWS_TO_READ_ONLY = new Set(["workspaceWrite", "dangerFullAccess"]);
+
 function withResolvedSandbox(params: CodexApprovalParams, session: unknown): CodexApprovalParams {
   const requested = plainRecord(params.turn.sandboxPolicy);
   if (!requested) return params;
@@ -195,7 +197,9 @@ function withResolvedSandbox(params: CodexApprovalParams, session: unknown): Cod
   if (!sandbox || typeof sandbox.type !== "string") {
     throw new Error("Codex did not return its resolved sandbox policy. Update Codex, then retry; the turn was not started because its permissions could not be verified.");
   }
-  if (sandbox.type !== requested.type) {
+  // Limix: a narrower sandbox than asked is safe to run in (Codex on Windows often gives read-only for workspace-write);
+  // only a wider or unknown one stops the turn.
+  if (sandbox.type !== requested.type && !(sandbox.type === "readOnly" && SANDBOX_NARROWS_TO_READ_ONLY.has(String(requested.type)))) {
     throw new Error(`Codex did not apply the requested sandbox mode (requested: ${String(requested.type)}; resolved: ${sandbox.type}); cannot safely start the turn. Update Codex and retry, or use another AI provider for this bot.`);
   }
   return { ...params, turn: { ...params.turn, sandboxPolicy: sandbox } };
