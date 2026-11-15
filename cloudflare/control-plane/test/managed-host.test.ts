@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { createExecutionContext } from "cloudflare:test";
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import worker from "../src/index";
 
 it("limits assignment reads and runtime reports to the configured beta host", async () => {
@@ -13,10 +13,11 @@ it("limits assignment reads and runtime reports to the configured beta host", as
     }), bindings, createExecutionContext());
   const id = crypto.randomUUID();
   await env.DB.prepare("INSERT INTO managed_cloud_beta VALUES ('limix:test', ?, '2026-11-15', NULL, NULL)").bind(id).run();
+  vi.spyOn(console, "error").mockImplementation(() => undefined);
   try {
     expect((await call("wrong")).status).toBe(401);
     expect((await call("wrong", { id, state: "running" })).status).toBe(401);
-    expect(await (await call(token)).json()).toEqual({ homes: [id] });
+    expect(await (await call(token)).json()).toMatchObject({ homes: [id], origins: { [id]: expect.stringMatching(/^https:\/\/lc-[0-9a-f]{32}\./) } });
     expect((await call(token, { id, state: "invented" })).status).toBe(400);
     expect((await call(token, { id: crypto.randomUUID(), state: "running" })).status).toBe(404);
     expect((await call(token, { id, state: "running" })).status).toBe(200);

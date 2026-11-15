@@ -1,7 +1,7 @@
 import { createLimixSignOutHandler } from "./limix-sign-out.mjs";
 import { app, autoUpdater as nativeAutoUpdater, BrowserWindow, Tray, WebContentsView, clipboard, desktopCapturer, dialog, globalShortcut, ipcMain, Menu, nativeImage, Notification, net, powerMonitor, powerSaveBlocker, safeStorage, screen, session, shell, systemPreferences, utilityProcess, nativeTheme } from "electron";
 import { LIMIX_ACCOUNT_URL, LIMIX_CLOUD_ENABLED, LIMIX_ORGANIZATION_ENABLED } from "./limix-features.mjs";
-import { managedBetaState } from "./limix-managed-beta.mjs";
+import { managedBetaState, openManagedHome } from "./limix-managed-beta.mjs";
 import { limixAccountGate, limixVerifyPassword, limixAccountInfo, limixRemoteCredential, limixSignOut } from "./limix-account.mjs";
 import { limixRuntimeEnv } from "./limix-runtime.mjs";
 import { lxm, setLimixLanguageSource } from "./limix-lang.mjs";
@@ -3218,6 +3218,12 @@ ipcMain.handle("limix-account:review", localOnly("limix-account:review", async (
   const response = await localServerRequest("/api/limix/channel-review/grant", { method: "POST", headers: { "X-Limix-Owner": limixOwnerLaneToken } });
   if (!response.ok) throw new Error("Không mở được lịch sử chat.");
   return response.json();
+}));
+ipcMain.handle("limix-account:managed-beta-open", localOnly("limix-account:managed-beta-open", async () => {
+  const opened = await openManagedHome(limixRemoteCredential(), (...args) => session.defaultSession.fetch(...args));
+  if (!opened.ok) return opened.state;
+  serverConnect.open({ origin: opened.origin, label: "Limix Cloud", credential: opened.credential }, "Limix Cloud");
+  return "opened";
 }));
 ipcMain.handle("limix-account:managed-beta", localOnly("limix-account:managed-beta", (_event, provision) => managedBetaState(limixRemoteCredential(), provision === true)));
 ipcMain.handle("limix-account:info", localOnly("limix-account:info", () => limixAccountInfo()));

@@ -50,6 +50,14 @@ jobs:
           SECRET=$(printf 'limix-better-auth' | openssl dgst -sha256 -hmac "$CLOUDFLARE_API_TOKEN" -hex | awk '{print $NF}')
           printf '%s' "$SECRET$SECRET" | npx wrangler secret put BETTER_AUTH_SECRET --config wrangler.limix.jsonc
           printf '%s' "$CLOUDFLARE_API_TOKEN" | npx wrangler secret put CLOUDFLARE_API_TOKEN --config wrangler.limix.jsonc
+      - name: Limix Cloud beta host secret (only when the repository secret LIMIX_BETA_HOST_TOKEN is set)
+        working-directory: /tmp/cp
+        env:
+          LIMIX_BETA_HOST_TOKEN: ${{ secrets.LIMIX_BETA_HOST_TOKEN }}
+        run: |
+          if [ -z "$LIMIX_BETA_HOST_TOKEN" ]; then echo "LIMIX_BETA_HOST_TOKEN is not set; the Cloud beta host stays off."; exit 0; fi
+          test ${#LIMIX_BETA_HOST_TOKEN} -ge 43 || { echo "::error::LIMIX_BETA_HOST_TOKEN must have at least 43 characters."; exit 1; }
+          printf '%s' "$LIMIX_BETA_HOST_TOKEN" | npx wrangler secret put LIMIX_BETA_HOST_TOKEN --config wrangler.limix.jsonc
       - name: health
         working-directory: /tmp/cp
         run: |

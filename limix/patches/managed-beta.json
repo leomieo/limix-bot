@@ -2,23 +2,23 @@
   "electron/main.mjs": [
     {
       "before": "import { limixAccountGate,",
-      "after": "import { managedBetaState } from \"./limix-managed-beta.mjs\";\nimport { limixAccountGate,"
+      "after": "import { managedBetaState, openManagedHome } from \"./limix-managed-beta.mjs\";\nimport { limixAccountGate,"
     },
     {
       "before": "ipcMain.handle(\"limix-account:info\",",
-      "after": "ipcMain.handle(\"limix-account:managed-beta\", localOnly(\"limix-account:managed-beta\", (_event, provision) => managedBetaState(limixRemoteCredential(), provision === true)));\nipcMain.handle(\"limix-account:info\","
+      "after": "ipcMain.handle(\"limix-account:managed-beta-open\", localOnly(\"limix-account:managed-beta-open\", async () => {\n  const opened = await openManagedHome(limixRemoteCredential(), (...args) => session.defaultSession.fetch(...args));\n  if (!opened.ok) return opened.state;\n  serverConnect.open({ origin: opened.origin, label: \"Limix Cloud\", credential: opened.credential }, \"Limix Cloud\");\n  return \"opened\";\n}));\nipcMain.handle(\"limix-account:managed-beta\", localOnly(\"limix-account:managed-beta\", (_event, provision) => managedBetaState(limixRemoteCredential(), provision === true)));\nipcMain.handle(\"limix-account:info\","
     }
   ],
   "electron/preload.cjs": [
     {
       "before": "limixAccount: { review:",
-      "after": "limixAccount: { managedBeta: provision => ipcRenderer.invoke(\"limix-account:managed-beta\", provision === true), review:"
+      "after": "limixAccount: { managedBeta: provision => ipcRenderer.invoke(\"limix-account:managed-beta\", provision === true), managedBetaOpen: () => ipcRenderer.invoke(\"limix-account:managed-beta-open\"), review:"
     }
   ],
   "src/types/ogb.d.ts": [
     {
       "before": "limixAccount?: { review(",
-      "after": "limixAccount?: { managedBeta?(provision: boolean): Promise<string>; review("
+      "after": "limixAccount?: { managedBeta?(provision: boolean): Promise<string>; managedBetaOpen?(): Promise<string>; review("
     }
   ],
   "src/components/SidebarProfileMenu.tsx": [
@@ -43,6 +43,34 @@
     {
       "before": "  if (url.pathname === \"/v1/managed-cloud/workspace\")",
       "after": "  if (url.pathname === \"/v1/managed-cloud/host/assignments\") return managedHostAssignments(request, env);\n  if (url.pathname === \"/v1/managed-cloud/workspace\")"
+    },
+    {
+      "before": "import { managedWorkspace } from \"./managed-workspace\";",
+      "after": "import { managedWorkspace } from \"./managed-workspace\";\nimport { managedCloudRoute } from \"./managed-routes\";"
+    },
+    {
+      "before": "  if (url.pathname === \"/v1/managed-cloud/host/assignments\") return managedHostAssignments(request, env);",
+      "after": "  const managedRoute = managedCloudRoute(url.pathname, request, env);\n  if (managedRoute) return managedRoute;\n  if (url.pathname === \"/v1/managed-cloud/host/assignments\") return managedHostAssignments(request, env);"
+    }
+  ],
+  "cloudflare/control-plane/src/cloudflare-api.ts": [
+    {
+      "before": "  async listDNSRecords(hostname: string): Promise<CloudflareDNSRecord[]> {",
+      "after": "  /** Replaces the whole ingress of a tunnel this Worker owns; a 404 catch-all is always appended. */\n  async configureTunnelIngress(tunnelId: string, rules: Array<{ hostname: string; service: string }>): Promise<void> {\n    const ingress = [...rules, { service: \"http_status:404\" }];\n    const result = await this.request(\n      `accounts/${encodeURIComponent(this.config.accountId)}/cfd_tunnel/${encodeURIComponent(tunnelId)}/configurations`,\n      configurationSchema,\n      { body: { config: { ingress } }, method: \"PUT\" },\n    );\n    const saved = result.config.ingress;\n    if (saved.length !== ingress.length || ingress.some((rule, index) => saved[index]?.service !== rule.service || saved[index]?.hostname !== (\"hostname\" in rule ? rule.hostname : undefined))) {\n      throw new CloudflareAPIError(\"cf_invalid_response\");\n    }\n  }\n\n  async listDNSRecords(hostname: string): Promise<CloudflareDNSRecord[]> {"
+    }
+  ],
+  "server/index.ts": [
+    {
+      "before": "import { startLimixGatewaySidecar } from \"./limix-gateway-sidecar.ts\";",
+      "after": "import { startLimixGatewaySidecar } from \"./limix-gateway-sidecar.ts\";\nimport { createLimixManagedGrant, limixManagedGrantConfig } from \"./limix-managed-grant.ts\";"
+    },
+    {
+      "before": "if (CLOUD_HOME) { repairMovedWorkspacePaths(DATA_DIR); acceptLegacyOrigins(CLOUD_HOME.legacyOrigins); }",
+      "after": "if (CLOUD_HOME) { repairMovedWorkspacePaths(DATA_DIR); acceptLegacyOrigins(CLOUD_HOME.legacyOrigins); }\nconst LIMIX_MANAGED_GRANT = limixManagedGrantConfig(); const limixManagedGrant = LIMIX_MANAGED_GRANT ? createLimixManagedGrant(LIMIX_MANAGED_GRANT, sessions) : null; if (LIMIX_MANAGED_GRANT && !CLOUD_HOME) acceptLegacyOrigins([LIMIX_MANAGED_GRANT.origin]);"
+    },
+    {
+      "before": "    if ((cloudSigned && await cloudSigned({ req, res, url, path, method })) || chatApps.serveFile(req, res, path, method)) return;",
+      "after": "    if (limixManagedGrant && await limixManagedGrant.handle(req, res, path, method)) return;\n    if ((cloudSigned && await cloudSigned({ req, res, url, path, method })) || chatApps.serveFile(req, res, path, method)) return;"
     }
   ]
 }

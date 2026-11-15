@@ -23,6 +23,9 @@ services:
       LIMIX_GATEWAY_SIDECAR: "1"
       OMB_TUNNEL_SOCKET: /run/limix-edge/http.sock
       OMB_DATA_DIR: /data/.limixbot
+      OMB_PUBLIC_URL: ${LIMIX_HOME_ORIGIN:-}
+      LIMIX_MANAGED_WORKSPACE: ${LIMIX_HOME_ID:-}
+      LIMIX_MANAGED_GRANT_KEY: ${LIMIX_GRANT_PUBLIC_KEY:-}
     volumes:
       - scratch:/tmp
       - data:/data
@@ -51,6 +54,13 @@ services:
       - sockets:/run/limix-edge:ro
       - ./edge.mjs:/opt/limix-edge.mjs:ro
     ports: ["127.0.0.1::8080"]
+    networks:
+      edge:
+        aliases: ["edge-${LIMIX_HOME_ID:-fixture}"]
+networks:
+  edge:
+    external: true
+    name: limix-managed-edge
 volumes:
   data: {}
   scratch: {}

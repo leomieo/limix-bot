@@ -2,14 +2,25 @@
 param(
     [Parameter(Mandatory)][ValidateSet('Configure', 'Run', 'Once')][string]$Action,
     [ValidateRange(1, 64)][int]$Capacity = 1,
-    [string]$Image = 'limix-managed-home:beta'
+    [string]$Image = 'limix-managed-home:beta',
+    [switch]$Generate
 )
 $ErrorActionPreference = 'Stop'
 $settingsDir = Join-Path $env:LOCALAPPDATA 'LimixBot-Managed-Host'
 $settings = Join-Path $settingsDir 'host.xml'
 if ($Action -eq 'Configure') {
     New-Item -ItemType Directory -Force -Path $settingsDir | Out-Null
-    $token = Read-Host 'Limix beta host token (same secret configured on Worker)' -AsSecureString
+    if ($Generate) {
+        $bytes = [byte[]]::new(32)
+        [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+        $plain = [Convert]::ToBase64String($bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_')
+        $token = ConvertTo-SecureString $plain -AsPlainText -Force
+        Set-Clipboard -Value $plain
+        Remove-Variable plain
+        Write-Host 'A new host token is on the clipboard. Paste it into the GitHub repository secret LIMIX_BETA_HOST_TOKEN, then run the Limix Cloudflare workflow.'
+    } else {
+        $token = Read-Host 'Limix beta host token (same secret configured on Worker)' -AsSecureString
+    }
     if ($token.Length -lt 43) { throw 'The host token must contain at least 43 characters.' }
     [pscustomobject]@{ Token = $token; Capacity = $Capacity; Image = $Image } | Export-Clixml -LiteralPath $settings
     return

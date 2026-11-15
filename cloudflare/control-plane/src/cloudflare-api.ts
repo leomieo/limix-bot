@@ -394,6 +394,20 @@ export class CloudflareAPI {
     }
   }
 
+  /** Replaces the whole ingress of a tunnel this Worker owns; a 404 catch-all is always appended. */
+  async configureTunnelIngress(tunnelId: string, rules: Array<{ hostname: string; service: string }>): Promise<void> {
+    const ingress = [...rules, { service: "http_status:404" }];
+    const result = await this.request(
+      `accounts/${encodeURIComponent(this.config.accountId)}/cfd_tunnel/${encodeURIComponent(tunnelId)}/configurations`,
+      configurationSchema,
+      { body: { config: { ingress } }, method: "PUT" },
+    );
+    const saved = result.config.ingress;
+    if (saved.length !== ingress.length || ingress.some((rule, index) => saved[index]?.service !== rule.service || saved[index]?.hostname !== ("hostname" in rule ? rule.hostname : undefined))) {
+      throw new CloudflareAPIError("cf_invalid_response");
+    }
+  }
+
   async listDNSRecords(hostname: string): Promise<CloudflareDNSRecord[]> {
     const query = new URLSearchParams({
       "name.exact": hostname,
