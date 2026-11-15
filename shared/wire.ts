@@ -152,6 +152,7 @@ export interface WireTask extends InboxTask {
   /** Detached routine execution, reachable through its visible results card. */ routineRunId?: string;
   /** Work from outside (a webhook, an app's event) reached this conversation: what it starts or runs stays confined, for good. */ outside?: true;
   /** An outside caller opened this thread through the bot's API, so only it may continue it; such a thread is outside too. */ botApi?: true;
+  /** Limix: the bot owner's own Telegram / Zalo / Discord chat (linked with /link); always listed. */ channelOwner?: true;
   /** Set when a bot, not a person, opened this thread. */ openedBy?: TaskOpenedBy;
   /** On a team's server: one person's conversation, seen by them alone (never by another member or an admin). */
   private?: true;
@@ -402,6 +403,8 @@ export interface WireBot extends DefaultBotFields, BotAccessFields {
   desktopResources?: { memoryGb?: number; cpus?: number };
   /** Limix: true shares one Private desktop with the department's other bots that set it (they take turns on its one screen). */
   desktopTeam?: boolean;
+  /** Limix: true leaves other people's Telegram / Zalo / Discord / Facebook chats out of this bot's conversation list; the owner's own stays. */
+  hideChannelGuests?: boolean;
   /** Which of the app-wide MCP servers this bot mounts, by name. */
   mcpServers?: string[];
   /** Owner-selected original tool identities. An empty allowlist permits none. */

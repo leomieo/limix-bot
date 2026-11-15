@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, Search, SquarePen } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { llmThreadTitlesEnabled } from "@/lib/feature-flags";
 import { activeLocale, t } from "@/lib/i18n";
+import { lx } from "@/lib/limix-text";
 import { SIDEBAR_INLINE, useMediaQuery } from "@/lib/use-media-query";
 import { api, currentTaskBot, openBotThread, useStore, visibleMessages, type Bot, type Message } from "@/state/store";
 import { lastLine } from "../sidebar-preview";
@@ -80,7 +81,11 @@ export function BotConversations({ bot }: { bot: Bot }) {
         turnStartedAt: thread.turnStartedAt ?? undefined, queued: Boolean(state.pendingQueued[task.threadId]?.length),
       };
     });
-  const conversations = orderedThreadList(threads.filter((task) => !isArchived(task) || task.threadId === bot.threadId));
+  // Limix: other people's Telegram / Zalo chats can be left out; the owner's own chat and the open one always stay.
+  const guest = (task: { botApi?: true; channelOwner?: true }) => Boolean(task.botApi && !task.channelOwner);
+  const guestCount = threads.filter((task) => guest(task) && !isArchived(task)).length;
+  const hideGuests = Boolean(bot.hideChannelGuests);
+  const conversations = orderedThreadList(threads.filter((task) => (!isArchived(task) || task.threadId === bot.threadId) && !(hideGuests && guest(task) && task.threadId !== bot.threadId)));
   const archived = orderedThreadList(threads.filter((task) => isArchived(task) && task.threadId !== bot.threadId));
   const needle = query.trim();
   const collapsed = conversations.filter((task, index) => index < CONVERSATIONS_SHOWN || task.threadId === bot.threadId);
@@ -152,6 +157,19 @@ export function BotConversations({ bot }: { bot: Bot }) {
           </button>
         )}
       </div>
+      {guestCount > 0 && bot.yourAccess !== "view" && (
+        <button
+          type="button"
+          data-conversations-guests
+          aria-pressed={!hideGuests}
+          onClick={() => void api(`/api/bots/${bot.id}`, { method: "PATCH", body: JSON.stringify({ hideChannelGuests: !hideGuests }) }).catch(() => {})}
+          className="mb-2 w-full rounded-[6px] px-2 py-1 text-start text-[12px] text-ink-secondary hover:bg-ink/[0.06] hover:text-ink"
+        >
+          {hideGuests
+            ? lx(`Hiện chat khách Telegram/Zalo (${guestCount})`, `Show Telegram/Zalo guest chats (${guestCount})`)
+            : lx(`Ẩn chat khách Telegram/Zalo (${guestCount})`, `Hide Telegram/Zalo guest chats (${guestCount})`)}
+        </button>
+      )}
       {listed && searching && (
         <input
           autoFocus

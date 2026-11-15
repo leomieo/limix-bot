@@ -95,6 +95,10 @@
       "after": "  return sourceApprovalMode(botId, threadId) === \"full\";\n}\n\n/** Limix: a bot's own desktop takes that bot's size when it set one; the shared and pooled desktops keep the workspace's. */\nfunction localVmResourcesFor(target: LocalVmTarget): DesktopResources {\n  if (target.key.startsWith(\"team:\")) {\n    const team = [...new Set(store.bots.filter((candidate) => candidate.desktopTeam).map(teamDesktopKey))].find((key) => teamLocalVmTarget(key).key === target.key);\n    const capacity = limixVmCapacity(localVmResources(cfg));\n    const { chosen: _chosen, ...size } = teamDesktopResources(localVmResources(cfg), team === undefined ? [] : teamDesktopMembers(store.bots, team), capacity);\n    return size;\n  }\n  const bot = target.key.startsWith(\"bot:\") ? store.bots.find((candidate) => perBotLocalVmTarget(candidate.id).key === target.key) : undefined;\n  return withBotDesktopResources(localVmResources(cfg), bot);\n}\n\n/** Limix: bot and team changes the assistant proposes always wait for the person's decision on a card. */\nfunction limixProposalsWaitForReview(): DirectApply | null { return null; }\n\nfunction appliesDirectly(botId: string, threadId: string): DirectApply | null {\n"
     },
     {
+      "before": "  const keepWarm = cacheKeepWarmStatus(task.threadId);\n  const coordinated = { ...base, waitingForTeammates: awaiting.has(task.threadId) && !task.busy, ...(keepWarm ? { cacheKeepWarm: keepWarm } : {}), ...(teamHost.ownTurn(task.threadId) ? { private: true as const } : {}), ...teamMessages.inbox.wire(task.threadId), ...runOwners.askedBy(task) };\n  const asleep = snoozedUntil === 0 || (snoozedUntil !== undefined && snoozedUntil > Date.now());\n",
+      "after": "  const keepWarm = cacheKeepWarmStatus(task.threadId);\n  const coordinated = { ...base, ...(task.botApi && isLimixOwnerThread(task.threadId) ? { channelOwner: true as const } : {}), waitingForTeammates: awaiting.has(task.threadId) && !task.busy, ...(keepWarm ? { cacheKeepWarm: keepWarm } : {}), ...(teamHost.ownTurn(task.threadId) ? { private: true as const } : {}), ...teamMessages.inbox.wire(task.threadId), ...runOwners.askedBy(task) };\n  const asleep = snoozedUntil === 0 || (snoozedUntil !== undefined && snoozedUntil > Date.now());\n"
+    },
+    {
       "before": "}\nconst firstHourFresh = Boolean(CLOUD_PERSONAL) && store.needsSeed(); testedAi.seed({ defaultBot: !CLOUD_TEAM, ...(firstHourFresh ? { intro: (bot) => greetingMessage(bot, { name: cfg.profile?.name }, cfg.language) } : {}) }); moveFreeze.hold(() => { if (!CLOUD_TEAM) ensureDefaultBot(store, { dataDir: DATA_DIR }); }, () => {}); if (CLOUD_TEAM) readTeamRolesWith((email) => sessions.list().filter((session) => session.email?.toLowerCase() === email && session.teamRole).sort((a, b) => b.createdAt - a.createdAt)[0]?.teamRole ?? null); if (CLOUD_TEAM) void mausbotOwnChat.claimAll();\nhostedModels?.reconcile(store);\n",
       "after": "}\nconst firstHourFresh = Boolean(CLOUD_PERSONAL) && store.needsSeed(); testedAi.seed({ defaultBot: !CLOUD_TEAM, ...(firstHourFresh ? { intro: (bot) => greetingMessage(bot, { name: cfg.profile?.name }, cfg.language) } : {}) }); renameLegacyDefaultBots(store); moveFreeze.hold(() => { if (!CLOUD_TEAM) ensureDefaultBot(store, { dataDir: DATA_DIR }); }, () => {}); if (CLOUD_TEAM) readTeamRolesWith((email) => sessions.list().filter((session) => session.email?.toLowerCase() === email && session.teamRole).sort((a, b) => b.createdAt - a.createdAt)[0]?.teamRole ?? null); if (CLOUD_TEAM) void mausbotOwnChat.claimAll();\nhostedModels?.reconcile(store);\n"
     },
@@ -300,7 +304,11 @@
     },
     {
       "before": "  helperModel?: boolean;\n  mcpServers?: string[] | null;\n",
-      "after": "  helperModel?: boolean;\n  desktopResources?: { memoryGb?: number; cpus?: number };\n  desktopTeam?: boolean;\n  mcpServers?: string[] | null;\n"
+      "after": "  helperModel?: boolean;\n  desktopResources?: { memoryGb?: number; cpus?: number };\n  desktopTeam?: boolean;\n  hideChannelGuests?: boolean;\n  mcpServers?: string[] | null;\n"
+    },
+    {
+      "before": "\nexport interface Task extends Pick<WireTask, \"botApi\" | \"private\" | \"setupRequest\" | \"inbox\" | \"openAsks\" | \"askedBy\"> {\n  waitingForTeammates?: boolean; sharedChat?: true;\n",
+      "after": "\nexport interface Task extends Pick<WireTask, \"botApi\" | \"channelOwner\" | \"private\" | \"setupRequest\" | \"inbox\" | \"openAsks\" | \"askedBy\"> {\n  waitingForTeammates?: boolean; sharedChat?: true;\n"
     }
   ],
   "server/chief-of-staff.test.ts": [
@@ -536,7 +544,7 @@
   "server/routes/bot-patch.ts": [
     {
       "before": "        patch.cacheKeepWarm = body.cacheKeepWarm ?? undefined;\n      }\n",
-      "after": "        patch.cacheKeepWarm = body.cacheKeepWarm ?? undefined;\n      }\n      if (body.desktopResources !== undefined) {\n        const parsed = limixDesktopResources(body.desktopResources);\n        if (\"error\" in parsed) return json(res, 400, { error: parsed.error });\n        patch.desktopResources = parsed.value;\n      }\n      if (body.desktopTeam !== undefined) {\n        if (typeof body.desktopTeam !== \"boolean\") return json(res, 400, { error: \"desktopTeam must be true or false\" });\n        if (existingBot?.busy && body.desktopTeam !== Boolean(existingBot.desktopTeam)) return json(res, 409, { error: \"Wait for this bot's work to finish before moving it to another desktop\" });\n        patch.desktopTeam = body.desktopTeam || undefined;\n      }\n"
+      "after": "        patch.cacheKeepWarm = body.cacheKeepWarm ?? undefined;\n      }\n      if (body.desktopResources !== undefined) {\n        const parsed = limixDesktopResources(body.desktopResources);\n        if (\"error\" in parsed) return json(res, 400, { error: parsed.error });\n        patch.desktopResources = parsed.value;\n      }\n      if (body.hideChannelGuests !== undefined) {\n        if (typeof body.hideChannelGuests !== \"boolean\") return json(res, 400, { error: \"hideChannelGuests must be true or false\" });\n        patch.hideChannelGuests = body.hideChannelGuests || undefined;\n      }\n      if (body.desktopTeam !== undefined) {\n        if (typeof body.desktopTeam !== \"boolean\") return json(res, 400, { error: \"desktopTeam must be true or false\" });\n        if (existingBot?.busy && body.desktopTeam !== Boolean(existingBot.desktopTeam)) return json(res, 409, { error: \"Wait for this bot's work to finish before moving it to another desktop\" });\n        patch.desktopTeam = body.desktopTeam || undefined;\n      }\n"
     },
     {
       "before": "import { z } from \"zod\";\n\n",
@@ -546,7 +554,11 @@
   "shared/wire.ts": [
     {
       "before": "  helperModel?: boolean;\n  /** Which of the app-wide MCP servers this bot mounts, by name. */\n",
-      "after": "  helperModel?: boolean;\n  /** Limix: this bot's own Private desktop limits (GiB of memory, CPUs) when each bot has its own desktop; a field left out follows the workspace setting. */\n  desktopResources?: { memoryGb?: number; cpus?: number };\n  /** Limix: true shares one Private desktop with the department's other bots that set it (they take turns on its one screen). */\n  desktopTeam?: boolean;\n  /** Which of the app-wide MCP servers this bot mounts, by name. */\n"
+      "after": "  helperModel?: boolean;\n  /** Limix: this bot's own Private desktop limits (GiB of memory, CPUs) when each bot has its own desktop; a field left out follows the workspace setting. */\n  desktopResources?: { memoryGb?: number; cpus?: number };\n  /** Limix: true shares one Private desktop with the department's other bots that set it (they take turns on its one screen). */\n  desktopTeam?: boolean;\n  /** Limix: true leaves other people's Telegram / Zalo / Discord / Facebook chats out of this bot's conversation list; the owner's own stays. */\n  hideChannelGuests?: boolean;\n  /** Which of the app-wide MCP servers this bot mounts, by name. */\n"
+    },
+    {
+      "before": "  /** An outside caller opened this thread through the bot's API, so only it may continue it; such a thread is outside too. */ botApi?: true;\n  /** Set when a bot, not a person, opened this thread. */ openedBy?: TaskOpenedBy;\n",
+      "after": "  /** An outside caller opened this thread through the bot's API, so only it may continue it; such a thread is outside too. */ botApi?: true;\n  /** Limix: the bot owner's own Telegram / Zalo / Discord chat (linked with /link); always listed. */ channelOwner?: true;\n  /** Set when a bot, not a person, opened this thread. */ openedBy?: TaskOpenedBy;\n"
     }
   ],
   "src/state/config-status.ts": [
@@ -573,6 +585,26 @@
     {
       "before": "    label: digest,\n  };\n",
       "after": "    label: digest,\n  };\n}\n\n/** Limix: one desktop a department's bots share when each opted in. Its own digest space, apart from bots and seats. */\nexport function teamLocalVmTarget(team: string): LocalVmTarget {\n  const digest = createHash(\"sha256\").update(`limix-team-desktop:${team}`).digest(\"hex\");\n  const short = digest.slice(0, 16);\n  return {\n    key: `team:${digest}`,\n    containerName: `${CONTAINER}-t${short}`,\n    workspaceDir: join(DATA_DIR, \"vm-homes\", `team-${short}`),\n    viewerPort: null,\n    label: `team-${short}`,\n  };\n"
+    }
+  ],
+  "src/components/bot-panel/Conversations.tsx": [
+    {
+      "before": "      </div>\n      {listed && searching && (\n",
+      "after": "      </div>\n      {guestCount > 0 && bot.yourAccess !== \"view\" && (\n        <button\n          type=\"button\"\n          data-conversations-guests\n          aria-pressed={!hideGuests}\n          onClick={() => void api(`/api/bots/${bot.id}`, { method: \"PATCH\", body: JSON.stringify({ hideChannelGuests: !hideGuests }) }).catch(() => {})}\n          className=\"mb-2 w-full rounded-[6px] px-2 py-1 text-start text-[12px] text-ink-secondary hover:bg-ink/[0.06] hover:text-ink\"\n        >\n          {hideGuests\n            ? lx(`Hiện chat khách Telegram/Zalo (${guestCount})`, `Show Telegram/Zalo guest chats (${guestCount})`)\n            : lx(`Ẩn chat khách Telegram/Zalo (${guestCount})`, `Hide Telegram/Zalo guest chats (${guestCount})`)}\n        </button>\n      )}\n      {listed && searching && (\n"
+    },
+    {
+      "before": "    });\n  const conversations = orderedThreadList(threads.filter((task) => !isArchived(task) || task.threadId === bot.threadId));\n  const archived = orderedThreadList(threads.filter((task) => isArchived(task) && task.threadId !== bot.threadId));\n",
+      "after": "    });\n  // Limix: other people's Telegram / Zalo chats can be left out; the owner's own chat and the open one always stay.\n  const guest = (task: { botApi?: true; channelOwner?: true }) => Boolean(task.botApi && !task.channelOwner);\n  const guestCount = threads.filter((task) => guest(task) && !isArchived(task)).length;\n  const hideGuests = Boolean(bot.hideChannelGuests);\n  const conversations = orderedThreadList(threads.filter((task) => (!isArchived(task) || task.threadId === bot.threadId) && !(hideGuests && guest(task) && task.threadId !== bot.threadId)));\n  const archived = orderedThreadList(threads.filter((task) => isArchived(task) && task.threadId !== bot.threadId));\n"
+    },
+    {
+      "before": "import { activeLocale, t } from \"@/lib/i18n\";\nimport { SIDEBAR_INLINE, useMediaQuery } from \"@/lib/use-media-query\";\n",
+      "after": "import { activeLocale, t } from \"@/lib/i18n\";\nimport { lx } from \"@/lib/limix-text\";\nimport { SIDEBAR_INLINE, useMediaQuery } from \"@/lib/use-media-query\";\n"
+    }
+  ],
+  "src/components/Sidebar.tsx": [
+    {
+      "before": "  const { own: ownTasks, helpers } = bulk.active ? { own: tasks, helpers: [] } : partitionHelperThreads(tasks, bot.threadId, query, projects);\n  const visibleTasks = orderedThreadList(visibleSidebarThreads(ownTasks, bot.threadId, query, projects, showAll || bulk.active));\n  const visibleProjectIndex = (projectId: string) => visibleTasks.findIndex((task) => task.projectId === projectId);\n",
+      "after": "  const { own: ownTasks, helpers } = bulk.active ? { own: tasks, helpers: [] } : partitionHelperThreads(tasks, bot.threadId, query, projects);\n  // Limix: a bot set to hide guest Telegram / Zalo chats leaves them out here too; the owner's chat and the open one stay.\n  const listedTasks = bot.hideChannelGuests ? ownTasks.filter((task) => !task.botApi || task.channelOwner || task.threadId === bot.threadId) : ownTasks;\n  const visibleTasks = orderedThreadList(visibleSidebarThreads(listedTasks, bot.threadId, query, projects, showAll || bulk.active));\n  const visibleProjectIndex = (projectId: string) => visibleTasks.findIndex((task) => task.projectId === projectId);\n"
     }
   ]
 }

@@ -40,6 +40,10 @@ describe("a bot's own Private desktop size", () => {
       expect((await api("PATCH", `/api/bots/${bot.id}`, { desktopTeam: "yes" })).status).toBe(400);
       expect((await api("PATCH", `/api/bots/${bot.id}`, { desktopTeam: false })).status).toBe(200);
       expect((await read()).desktopTeam).toBeUndefined();
+      // The conversation list's guest-chat switch rides on the same settings route.
+      expect((await api("PATCH", `/api/bots/${bot.id}`, { hideChannelGuests: true })).status).toBe(200);
+      expect((await read()).hideChannelGuests).toBe(true);
+      expect((await api("PATCH", `/api/bots/${bot.id}`, { hideChannelGuests: 1 })).status).toBe(400);
     } finally {
       await fixture.close();
     }

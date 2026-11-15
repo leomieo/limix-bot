@@ -216,7 +216,7 @@ export interface ModelSelection {
   variant?: string;
 }
 
-export interface Task extends Pick<WireTask, "botApi" | "private" | "setupRequest" | "inbox" | "openAsks" | "askedBy"> {
+export interface Task extends Pick<WireTask, "botApi" | "channelOwner" | "private" | "setupRequest" | "inbox" | "openAsks" | "askedBy"> {
   waitingForTeammates?: boolean; sharedChat?: true;
   threadId: string;
   routineRunId?: string;
@@ -331,6 +331,7 @@ export interface Bot extends DefaultBotFields, Pick<WireBot, "mascotFaceColor" |
   helperModel?: boolean;
   desktopResources?: { memoryGb?: number; cpus?: number };
   desktopTeam?: boolean;
+  hideChannelGuests?: boolean;
   mcpServers?: string[] | null;
   browserProfile?: string | null;
   visibility?: BotVisibility;
