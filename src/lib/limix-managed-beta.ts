@@ -14,6 +14,12 @@ export function useManagedBetaItem(username?: string): SidebarMenuItem[] {
     void api(false).then(value => { if (active) setState(value); }).catch(() => {});
     return () => { active = false; };
   }, [username, api]);
+  // While the host is still setting the environment up, keep the status fresh so the user does not have to click again.
+  useEffect(() => {
+    if (!username || !api || !["queued", "starting", "routing", "waiting_capacity", "host_unreachable", "offline"].includes(state)) return;
+    const timer = setInterval(() => { void api(false).then(setState).catch(() => {}); }, 15_000);
+    return () => clearInterval(timer);
+  }, [username, api, state]);
   if (!username || !api || state === "hidden") return [];
   const status: Record<string, string> = {
     available: lx("Yêu cầu khởi tạo", "Request setup"),

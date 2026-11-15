@@ -3222,7 +3222,10 @@ ipcMain.handle("limix-account:review", localOnly("limix-account:review", async (
 ipcMain.handle("limix-account:managed-beta-open", localOnly("limix-account:managed-beta-open", async () => {
   const opened = await openManagedHome(limixRemoteCredential(), (...args) => session.defaultSession.fetch(...args));
   if (!opened.ok) return opened.state;
-  serverConnect.open({ origin: opened.origin, label: "Limix Cloud", credential: opened.credential }, "Limix Cloud");
+  // Same steps as the pairing sheet: remember the environment, make it active, open its one-time pairing page.
+  const next = withEnvironment(environmentsState, { origin: opened.origin, name: environmentsState.environments.find((e) => e.origin === opened.origin)?.name ?? "Limix Cloud" }, () => randomUUID());
+  persistEnvironments(withActive(next, next.environments.find((e) => e.origin === opened.origin).id));
+  navigateMainWindow(pairingPageUrl(opened.origin, opened.credential));
   return "opened";
 }));
 ipcMain.handle("limix-account:managed-beta", localOnly("limix-account:managed-beta", (_event, provision) => managedBetaState(limixRemoteCredential(), provision === true)));
