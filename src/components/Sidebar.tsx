@@ -17,7 +17,7 @@ import { searchMatchesThreads, useSearchDisclosure } from "@/lib/search-disclosu
 import { useHeldMenuMotion, useMenuMotion } from "./MenuMotion";
 import { lastNonReceipt } from "@/lib/receipts";
 import { botPreview, groupPreview } from "./sidebar-preview";
-import { activeLocale, t } from "@/lib/i18n";
+import { activeLocale, t } from "@/lib/i18n"; import { isBotHeld } from "@/lib/bot-pause";
 import { copyText } from "@/lib/copy-text";
 import type { LocaleKey } from "@/locales";
 import { ConfirmDialog } from "./ConfirmDialog";
@@ -657,7 +657,7 @@ export interface BotRowProps {
   instances: InstanceInfo[];
   liveCall: AppState["liveCall"];
   locale: string;
-  generatedTitles: boolean;
+  generatedTitles: boolean; /** Paused by the person, by itself or with its department: it takes no new work. */ held?: boolean;
   density: SidebarDensity;
   query: string;
   dispatch: Dispatch<Action>;
@@ -687,7 +687,7 @@ export function botRowProps(
     instances: state.instances,
     liveCall: state.liveCall,
     locale: activeLocale(),
-    generatedTitles: llmThreadTitlesEnabled(state.config),
+    generatedTitles: llmThreadTitlesEnabled(state.config), held: isBotHeld(state.config, bot.id),
     dispatch,
   };
 }
@@ -719,7 +719,7 @@ export const BotListItem = memo(function BotListItem(props: BotRowProps) {
   const visible = useVisibleMessages(bot);
   const last = lastNonReceipt(visible);
   const title = bot.title.trim();
-  const details = [title, bot.chiefOfStaff ? t("sidebar.bot.chiefOfStaff") : ""].filter(Boolean);
+  const details = [props.held ? t("pause.badge") : "", title, bot.chiefOfStaff ? t("sidebar.bot.chiefOfStaff") : ""].filter(Boolean);
   const rowClass = cn(
     "flex w-full items-center rounded-xl text-left transition-colors duration-150", SIMPLE_ROW_FOCUS,
     iconOnly
