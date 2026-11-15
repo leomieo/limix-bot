@@ -1,4 +1,4 @@
-// Pins the bytes of OpenMausBot's own prompt text a turn carries: the fixed sections of a bot's system prompt, what a
+// Pins the bytes of Limix Bot's own prompt text a turn carries: the fixed sections of a bot's system prompt, what a
 // Claude turn appends with --append-system-prompt-file, and what a Codex turn sets as developer instructions. Each may
 // move at most 2% either way (lower a number to lock in a win); a bigger change moves its baseline by hand.
 import { describe, expect, it } from "vitest";
@@ -33,7 +33,7 @@ async function measured(): Promise<Record<string, number>> {
   const bytes = (text: string) => Buffer.byteLength(text, "utf8");
   const chat = buildSystemPrompt(botPersona(BOT), "", directChatParts(false));
   const setup = buildSystemPrompt(botPersona(BOT), "", directChatParts(true));
-  const chief = chiefOfStaffSystemPrompt(BOT.id, [{ ...BOT, chiefOfStaff: true }] as never, true, undefined, [] as never);
+  const chief = chiefOfStaffSystemPrompt(BOT.id, [{ ...BOT, chiefOfStaff: true }] as never, true, undefined);
   let resumed = "";
   await syncCodexInstructions("budget", "native-budget", chat.stable, "", true, async (_method, params) => {
     resumed = (params as { items: Array<{ content: Array<{ text: string }> }> }).items[0]!.content[0]!.text;
@@ -59,30 +59,30 @@ async function measured(): Promise<Record<string, number>> {
 /** Bytes when the budget was last set. */
 const PROMPT_BUDGET_BASELINE: Record<string, number> = {
   "reply-habits": 2855,
-  "tool-bridge": 593,
-  "sign-in": 2552,
-  "chief-of-staff": 4975,
+  "tool-bridge": 591,
+  "sign-in": 2550,
+  "chief-of-staff": 5251,
   "setup": 2396,
-  "meetings": 300,
+  "meetings": 302,
   "credential": 1027,
   "routine": 3367,
-  "profile": 1016,
+  "profile": 1014,
   "team-memory": 286,
-  "computer:vm-private": 5783,
-  "computer:vm-shared": 5778,
-  "computer:box": 4382,
-  "computer:vps": 5026,
-  "computer:local": 5335,
-  "claude:direct-chat": 8895,
-  "claude:setup-chat": 11291,
+  "computer:vm-private": 5577,
+  "computer:vm-shared": 5572,
+  "computer:box": 4176,
+  "computer:vps": 4820,
+  "computer:local": 5125,
+  "claude:direct-chat": 8893,
+  "claude:setup-chat": 11289,
   "claude:volatile-note": 178,
-  "codex:direct-chat": 8895,
-  "codex:setup-chat": 11291,
-  "codex:resumed-instructions": 213,
-  "codex:volatile-note": 97,
+  "codex:direct-chat": 8893,
+  "codex:setup-chat": 11289,
+  "codex:resumed-instructions": 211,
+  "codex:volatile-note": 95,
 };
 
-describe("OpenMausBot's prompt text per turn", () => {
+describe("Limix Bot's prompt text per turn", () => {
   it("stays within its pinned budget", async () => {
     const now = await measured();
     expect(Object.keys(now).sort()).toEqual(Object.keys(PROMPT_BUDGET_BASELINE).sort());
