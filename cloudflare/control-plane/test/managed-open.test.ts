@@ -77,7 +77,7 @@ it("routes each workspace through the host tunnel and grants only the caller's o
   const assignments = await (await host("/v1/managed-cloud/host/assignments")).json() as { homes: string[]; origins: Record<string, string>; routing: string };
   expect(assignments.routing).toBe("ready");
   expect(cloudflare.ingress()).toEqual([
-    ...[alice, bob].map(id => ({ hostname: new URL(assignments.origins[id]).hostname, service: `http://edge-${id}:8080` }))
+    ...[alice, bob].map(id => ({ hostname: new URL(assignments.origins[id]).hostname, service: `http://home-${id}:8080` }))
       .sort((a, b) => a.hostname.localeCompare(b.hostname)),
     { service: "http_status:404" },
   ]);
@@ -104,7 +104,7 @@ it("routes each workspace through the host tunnel and grants only the caller's o
 
   await env.DB.prepare("DELETE FROM managed_cloud_beta WHERE principal = 'limix:bob'").run();
   await host("/v1/managed-cloud/host/assignments");
-  expect(cloudflare.ingress()).toEqual([{ hostname: new URL(assignments.origins[alice]).hostname, service: `http://edge-${alice}:8080` }, { service: "http_status:404" }]);
+  expect(cloudflare.ingress()).toEqual([{ hostname: new URL(assignments.origins[alice]).hostname, service: `http://home-${alice}:8080` }, { service: "http_status:404" }]);
   expect([...cloudflare.records.values()].map(record => record.name)).toEqual([new URL(assignments.origins[alice]).hostname]);
 });
 

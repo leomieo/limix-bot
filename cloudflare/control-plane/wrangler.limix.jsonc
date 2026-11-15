@@ -8,7 +8,7 @@
   "compatibility_date": "2026-08-25",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
-  "routes": [{ "pattern": "accounts.limixmedia.com", "custom_domain": true }],
+  "routes": [{ "pattern": "accounts.limixmedia.com", "custom_domain": true }, { "pattern": "cloud.limixmedia.com", "custom_domain": true }],
   "vars": {
     "BETTER_AUTH_URL": "https://accounts.limixmedia.com",
     "EMAIL_FROM": "noreply@limixmedia.com",
