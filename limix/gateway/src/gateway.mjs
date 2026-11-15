@@ -22,7 +22,7 @@ export const PLATFORMS = {
 export function defaultMakeChannel(conn, token, overrides = {}) {
   const make = PLATFORMS[conn.platform];
   if (!make) throw new Error(`Nền tảng chưa hỗ trợ: ${conn.platform}`);
-  return make({ token, pageId: conn.pageId, apiVersion: conn.apiVersion, publicMediaBase: conn.publicMediaBase, ...(overrides[conn.platform] ?? {}) });
+  return make({ token, pageId: conn.pageId, apiVersion: conn.apiVersion, publicMediaBase: conn.publicMediaBase, ...overrides[conn.platform] });
 }
 
 export function defaultMakeEngine(conn, secrets) {

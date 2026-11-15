@@ -66,7 +66,7 @@ export class PairingStore {
     this.prune();
     return this.state.pending
       .filter((p) => !connectionId || p.connectionId === connectionId)
-      .map(({ codeHash, ...rest }) => rest);
+      .map(({ codeHash: _codeHash, ...rest }) => rest);
   }
 
   lockedOut(connectionId) {
@@ -89,7 +89,7 @@ export class PairingStore {
     const [req] = this.state.pending.splice(idx, 1);
     delete this.state.failures[connectionId];
     this.save();
-    const { codeHash, ...rest } = req;
+    const { codeHash: _codeHash, ...rest } = req;
     return { approved: rest };
   }
 
@@ -100,7 +100,7 @@ export class PairingStore {
     if (idx < 0) return { error: "not_found" };
     const [req] = this.state.pending.splice(idx, 1);
     this.save();
-    const { codeHash, ...rest } = req;
+    const { codeHash: _codeHash, ...rest } = req;
     return { approved: rest };
   }
 

@@ -9,6 +9,7 @@ const PRIVATE = /(?:^|\/)(?:\.env(?:\..*)?|node_modules|\.git|\.venv|venv|__pyca
 /** Portable skill files are relative UTF-8 source files; binaries, environment secrets and installed dependencies stay local. */
 export function skillPath(value) {
   return typeof value === 'string' && value.length <= 500 && value === value.normalize('NFC')
+    // oxlint-disable-next-line no-control-regex -- control characters are exactly what this refuses
     && !/[\\:\x00-\x1f<>"|?*]/.test(value) && !PRIVATE.test(value) && EXTENSIONS.test(value)
     && value.split('/').every(part => part && part !== '.' && part !== '..' && !/[. ]$/.test(part)
       && !/^(?:con|prn|aux|nul|com[0-9]|lpt[0-9])(?:\.|$)/i.test(part));

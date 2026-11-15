@@ -151,7 +151,7 @@ function RemotePane() {
           requested = true;
           account = await host.companionAccount.prepare();
         }
-        if (account.status === "ready" && account.endpoint && /\.limixmedia\.com$/.test(new URL(account.endpoint).hostname)) { endpoint = account.endpoint; break; }
+        if (account.status === "ready" && account.endpoint && new URL(account.endpoint).hostname.endsWith(".limixmedia.com")) { endpoint = account.endpoint; break; }
         if (account.status === "signed-out" && i >= 3) throw new Error(lx("Máy này chưa đăng nhập tài khoản Limix. Đăng xuất rồi đăng nhập lại Limix Bot, sau đó thử lại.", "This computer is not signed in to a Limix account. Sign out, sign in to Limix Bot again, then retry."));
         if (account.status === "error") throw new Error(account.message || lx("Không thể bật kết nối từ xa. Hãy thử lại.", "Could not enable remote access. Please retry."));
         if (account.status === "ready" && account.endpoint) throw new Error(lx("Địa chỉ từ xa không thuộc Limix. Hãy đăng nhập lại tài khoản Limix.", "The remote address is outside the Limix domain. Sign in to your Limix account again."));

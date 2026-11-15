@@ -94,7 +94,7 @@ if (import.meta.main) {
   };
   const grantKey = grantPublicKey(token);
   let tunnelReady = false;
-  do {
+  for (;;) {
     try {
       if (!tunnelReady) {
         console.log("Tunnel connector:", await ensureTunnel((await call("tunnel")).token));
@@ -110,5 +110,5 @@ if (import.meta.main) {
     if (process.argv.includes("--once")) break;
     await delay(30000);
     if (tunnelReady && await docker(["ps", "--filter", "name=^" + TUNNEL_CONTAINER + "$", "--format", "{{.State}}"]).catch(() => "") !== "running") tunnelReady = false;
-  } while (true);
+  }
 }

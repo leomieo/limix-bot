@@ -6,6 +6,7 @@ import type { Message } from "./store.ts";
 
 export const CHANNEL_MEDIA_MAX_BYTES = 10 * 1024 * 1024;
 export const channelAttachmentSchema = z.object({
+  // oxlint-disable-next-line no-control-regex -- control characters are exactly what this refuses
   name: z.string().min(1).max(200).refine((s) => !/[\\/\x00-\x1f]/.test(s), "Use a filename, not a path"),
   mime: z.string().min(1).max(128),
   data: z.string().min(4).max(Math.ceil(CHANNEL_MEDIA_MAX_BYTES / 3) * 4).regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/),

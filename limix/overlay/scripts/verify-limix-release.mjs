@@ -17,6 +17,6 @@ for (const name of ['latest.yml', 'latest-mac.yml', 'latest-linux.yml']) {
     const bytes = readFileSync(join(root, filename));
     if (bytes.length !== file.size || createHash('sha512').update(bytes).digest('base64') !== file.sha512) throw new Error(`Invalid updater artifact: ${filename}`);
   }
-  if (name === 'latest-mac.yml' && (!feed.files.some(file => /arm64.*\.zip$/.test(file.url)) || !feed.files.some(file => !/arm64/.test(file.url) && /\.zip$/.test(file.url)))) throw new Error('macOS feed must include both Apple Silicon and Intel ZIPs');
+  if (name === 'latest-mac.yml' && (!feed.files.some(file => /arm64.*\.zip$/.test(file.url)) || !feed.files.some(file => !/arm64/.test(file.url) && file.url.endsWith(".zip")))) throw new Error('macOS feed must include both Apple Silicon and Intel ZIPs');
 }
 console.log(`PASS release ${version}: Windows, macOS arm64/x64 and Linux feeds/hashes`);

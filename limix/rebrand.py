@@ -327,6 +327,11 @@ def builders(s):
                   '{ id: "star", name: "Blend", d: LIMI_D, viewBox: [0, 0, 200, 200] },')
     s = s.replace("buildPolygon(196, 196, 6, 0.12)", "buildPolygon(196, 196, 6, 0.22)")
     s = s.replace("buildPolygon(196, 196, 4, 0.12)", "buildPolygon(196, 196, 4, 0.22)")
+    # The upstream cursor artwork and the star builder are no longer used once replaced: drop them (trademark, lint).
+    if "CURSOR_D" not in s.split("export const BODY_DEFS", 1)[1]:
+        s = re.sub(r"\n/\*\*\n \* The shipped maus artwork,.*?\nconst CURSOR_D = \"[^\"]*\"\n", "\n", s, flags=re.S)
+    if "buildStar(" not in s.split("function buildStar", 1)[-1].split("\n}\n", 1)[-1]:
+        s = re.sub(r"/\*\* Blob Studio's `star`\..*?\nfunction buildStar\(.*?\n}\n\n?", "", s, flags=re.S)
     return s
 edit("scripts/mascot-bodies/builders.ts", builders)
 # The visor face fills the star snugly at the upstream cap, so the catalog keeps CAP = 1 (an earlier Limix body

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { readFileSync, writeFileSync, renameSync, mkdirSync, existsSync } from "node:fs";
 import { dirname } from "node:path";
 
+// oxlint-disable-next-line no-control-regex -- control characters are exactly what this refuses
 const id = z.string().min(1).max(200).regex(/^[^\x00-\x1f]+$/);
 export const channelConversationSchema = z.object({
   connectionId: id, platform: z.enum(["telegram", "zalo", "discord", "facebook"]),

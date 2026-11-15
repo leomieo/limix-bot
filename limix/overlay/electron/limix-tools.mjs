@@ -38,7 +38,7 @@ export function limixToolPathDirs(userData) {
 
 /** The list the window shows. `recommended` ones are asked about once on a new computer. */
 const CATALOG = [
-  { id: "docker", name: "Docker Desktop", get why() { return lxm("Chạy máy tính ảo riêng cho từng bot. Cài qua winget: Windows sẽ hỏi quyền quản trị; bấm Cài là đồng ý điều khoản của Docker. Cài xong khởi động lại máy, mở Docker Desktop một lần.", "Runs a private virtual computer for each bot. Installed through winget: Windows will ask for administrator permission, and pressing Install accepts Docker\'s terms. Restart the computer afterwards and open Docker Desktop once."); }, size: "~600 MB", recommended: true },
+  { id: "docker", name: "Docker Desktop", get why() { return lxm("Chạy máy tính ảo riêng cho từng bot. Cài qua winget: Windows sẽ hỏi quyền quản trị; bấm Cài là đồng ý điều khoản của Docker. Cài xong khởi động lại máy, mở Docker Desktop một lần.", "Runs a private virtual computer for each bot. Installed through winget: Windows will ask for administrator permission, and pressing Install accepts Docker's terms. Restart the computer afterwards and open Docker Desktop once."); }, size: "~600 MB", recommended: true },
   { id: "node", name: "Node.js", get why() { return lxm("Chạy các máy chủ MCP (như rea) và công cụ viết bằng JavaScript.", "Runs MCP servers (like rea) and tools written in JavaScript."); }, size: "~30 MB", recommended: true },
   { id: "ffmpeg", name: "ffmpeg", get why() { return lxm("Xử lý video và âm thanh. Kỹ năng rea-video cần.", "Processes video and audio. The rea-video skill needs it."); }, size: "~80 MB", recommended: true },
   { id: "agent-reach", name: "Agent-Reach", get why() { return lxm("Đọc X/Twitter, Reddit, YouTube, GitHub… cho kỹ năng Agent-Reach.", "Reads X/Twitter, Reddit, YouTube, GitHub… for the Agent-Reach skill."); }, size: "~40 MB", recommended: true },
@@ -413,7 +413,7 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
   const installRequirements = async (ids, project) => {
     if (!Array.isArray(ids) || ids.length > 200) throw new Error("Invalid requirements list");
     const planned = new Set();
-    for (const id of [...new Set(ids)]) {
+    for (const id of new Set(ids)) {
       const req = skillScan?.requirements?.find((row) => skillRequirementId(row) === id);
       if (!req) throw new Error("Scan again before installing requirements");
       const key = JSON.stringify([req.kind, skillInstallPackages(req).sort()]);

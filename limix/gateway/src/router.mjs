@@ -3,7 +3,6 @@ import { mediaPolicy, receiveMedia, checkMedia } from "./media.mjs";
 // then one engine call per message, serialized per session so a thread never gets two turns at once.
 import { splitMessage } from "./chunk.mjs";
 import { hashCode } from "./pairing.mjs";
-import { Store } from "./store.mjs";
 
 const DECLINE_REPEAT_MS = 24 * 60 * 60_000;
 const TYPING_EVERY_MS = 4000;
