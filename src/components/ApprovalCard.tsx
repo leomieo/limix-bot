@@ -82,7 +82,7 @@ const staleRoutineCard = (card: OptionCardData) => Boolean(card.routineRequest &
 
 /** Cards whose server-written title and first option say what approving does. */
 export const titledCard = (card: OptionCardData | undefined) =>
-  Boolean(card?.teamSetupRequest || card?.mcpRequest || card?.lendingLift || isSkillSwitchAction(card?.skillRequest?.action));
+  Boolean(card?.teamSetupRequest || card?.mcpRequest || card?.appSettingRequest || card?.lendingLift || isSkillSwitchAction(card?.skillRequest?.action));
 
 export function titledCardAction(card: OptionCardData): string {
   if (card.mcpRequest) return mcpRequestActionLabel(card.mcpRequest.action);
@@ -160,6 +160,8 @@ function plainWhen(schedule: RoutineRequestSchedule): string {
 }
 
 export function appliedChange(card: OptionCardData, name: string): { line: string; canUndo: boolean; cancels?: boolean } | undefined {
+  const setting = card.appSettingRequest;
+  if (setting) return { line: t("approval.applied.appSetting", { name, title: `${setting.label}: ${approvalDetailText(card)}` }), canUndo: true };
   const routine = card.routineRequest;
   if (routine) {
     const operation = routine.operation;
