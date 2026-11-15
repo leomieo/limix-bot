@@ -280,7 +280,9 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       } catch (error) {
         manager.record(botId, { outcome: "rejected", statusCode: statusOf(error), reason: detailOf(error), preview: call.message });
         const busy = retryableBusySchema.safeParse(error);
-        json(res, statusOf(error), { error: callerWords(error), ...(busy.success ? { code: busy.data.code, retryable: true } : {}) });
+        // Limix: the bot's own owner (linked in a private chat) is told why a turn could not run; other callers are not.
+        const ownerDetail = limixOwner && statusOf(error) === 502 ? detailOf(error).slice(0, 300) : "";
+        json(res, statusOf(error), { error: callerWords(error), ...(busy.success ? { code: busy.data.code, retryable: true } : {}), ...(ownerDetail ? { detail: ownerDetail } : {}) });
       }
       return true;
     } finally {

@@ -105,7 +105,9 @@ export class OpenMausBotEngine {
     }
     if (res.status === 200 || res.status === 202) return data;
     const [code, message] = res.status === 403 ? forbidden(data?.error) : ERRORS[res.status] ?? ["engine_error", `Limix Bot trả lỗi ${res.status}`];
-    const error = new EngineError(code, message, res.status);
+    const detail = typeof data?.detail === "string" ? data.detail.slice(0, 300) : "";
+    const error = new EngineError(code, detail ? `${message}: ${detail}` : message, res.status);
+    if (detail) error.detail = detail;
     error.retryable = res.status === 409 && data?.retryable === true && ["capacity_busy", "thread_busy"].includes(data?.code);
     throw error;
   }

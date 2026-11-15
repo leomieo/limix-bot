@@ -87,6 +87,13 @@ test("saves the accepted thread before polling, without retrying POST after a po
   assert.deepEqual(methods, ["POST", "GET"]);
 });
 
+test("carries the reason the app gives the owner, and none when it gives none", async () => {
+  const withReason = engineFor(async () => response({ error: "could not answer", detail: "Codex: usage limit reached" }, 502));
+  await assert.rejects(withReason.send({ message: "hi" }), (error) => error.code === "engine_failed" && error.detail === "Codex: usage limit reached" && /usage limit/.test(error.message));
+  const without = engineFor(async () => response({ error: "could not answer" }, 502));
+  await assert.rejects(without.send({ message: "hi" }), (error) => error.code === "engine_failed" && error.detail === undefined);
+});
+
 test("rebuilds only a missing thread, keeping media and channel on the replacement", async () => {
   const bodies = [];
   const engine = engineFor(async (_url, init) => {

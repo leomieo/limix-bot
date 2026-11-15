@@ -282,7 +282,8 @@ export class Router {
       }
       this.store.log(conn.id, "engine", `${error.code ?? "error"}: ${error.message}`);
       this.store.updateConnection(conn.id, { statusDetail: `Lỗi AI: ${error.message}` });
-      await this.reply(channel, event.chatId, TEXT.engineDown).catch(() => {});
+      // The app sends the reason only to the bot's owner; anyone else gets the plain line.
+      await this.reply(channel, event.chatId, error.detail ? `${TEXT.engineDown}\nLý do: ${error.detail}` : TEXT.engineDown).catch(() => {});
       return "engine_error";
     } finally {
       clearInterval(typing);

@@ -10,6 +10,9 @@ import { BOT_API_DEFAULT_WAIT_MS, createBotApiHost, type BotApiHostDeps, type Bo
 import type { RequestAuth } from "./request-auth.ts";
 import type { Message } from "./store.ts";
 import { createWebhookIngressHandler } from "./webhook-ingress.ts";
+
+// Only the header value "trusted-owner" counts as the bot owner's own lane here.
+vi.mock("./limix-owner-lane.ts", async (importOriginal) => ({ ...await importOriginal<typeof import("./limix-owner-lane.ts")>(), limixOwnerCall: (value: unknown) => value === "trusted-owner" }));
 import type { WebhookManager } from "./webhooks.ts";
 
 const dirs: string[] = [];
@@ -129,10 +132,10 @@ async function harness(script: Script, options: { waitMs?: number; full?: boolea
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const port = (server.address() as { port: number }).port;
   const base = `http://127.0.0.1:${port}`;
-  const call = async (botId: string, key: string, body: unknown, init: { method?: string; query?: string; contentType?: string } = {}) => {
+  const call = async (botId: string, key: string, body: unknown, init: { method?: string; query?: string; contentType?: string; headers?: Record<string, string> } = {}) => {
     const response = await fetch(`${base}/hooks/api/bots/${botId}/messages${init.query ?? ""}`, {
       method: init.method ?? "POST",
-      headers: { authorization: `Bearer ${key}`, "content-type": init.contentType ?? "application/json" },
+      headers: { authorization: `Bearer ${key}`, "content-type": init.contentType ?? "application/json", ...init.headers },
       ...(init.method === "GET" ? {} : { body: typeof body === "string" ? body : JSON.stringify(body) }),
     });
     return { status: response.status, body: await response.json() as Record<string, unknown> };
@@ -281,6 +284,9 @@ describe("the Bot API door on the webhook receiver", () => {
     // The caller gets plain words; what went wrong stays with the call for the person.
     expect(failed).toEqual({ status: 502, body: { error: expect.stringMatching(/could not answer/) } });
     expect(h.manager.listAttempts("b1").at(-1)).toMatchObject({ statusCode: 502, reason: "the engine is gone" });
+    // Limix: the bot's own owner, on the owner lane, is told why.
+    expect(await h.call("b1", key, { message: "owner asks" }, { headers: { "x-limix-owner": "trusted-owner" } }))
+      .toEqual({ status: 502, body: { error: expect.stringMatching(/could not answer/), detail: "the engine is gone" } });
     // The host counts the turns it started; the rate limit is lifted so fifty can be in flight at once.
     const slow = await harness((fake, _botId, _prompt, opts) => { fake.bots.get("b1")!.tasks.find((task) => task.threadId === opts.threadId)!.busy = true; }, { waitMs: 10 });
     const slowKey = (await slow.app("POST", "/api/bots/b1/bot-api", { enabled: true })).body.key as string;
