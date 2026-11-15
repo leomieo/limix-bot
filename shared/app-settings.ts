@@ -1,8 +1,8 @@
-// The app_settings tool's wire shapes: a setting's tier (the whole policy), the card a change rides on, and the
+// The app_settings tool's wire shapes: a setting's tier (the whole policy), the applied card a change rides on, and the
 // preferences that live in the window's localStorage, which the server reaches through an SSE frame.
 import { z } from "zod";
 
-export type SettingTier = "safe" | "confirm" | "secret" | "owner-only";
+export type SettingTier = "safe" | "secret" | "owner-only";
 
 /** On a card: display values only, never a key. */
 export interface AppSettingRequest {
@@ -11,6 +11,10 @@ export interface AppSettingRequest {
   before?: string;
   after: string;
   tier: SettingTier;
+}
+export interface AppSettingCardField {
+  /** A bot's change to one of the app's own settings, applied with Undo. */
+  appSettingRequest?: AppSettingRequest;
 }
 
 export const SKIN_IDS = [
@@ -66,7 +70,6 @@ export const WINDOW_PREFS = {
   "remote.relay": z.boolean(),
   "remote.tailscale": z.boolean(),
   "remote.keepAwake": z.boolean(),
-  "remote.httpsAddress": z.boolean(),
 } as const;
 export type WindowPrefId = keyof typeof WINDOW_PREFS;
 export type WindowPrefValue<I extends WindowPrefId> = z.infer<(typeof WINDOW_PREFS)[I]>;
