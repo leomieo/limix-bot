@@ -124,7 +124,8 @@ test("media settings persist and invalid limits are rejected", async () => {
   const added = await call(port, { method: "POST", path: "/api/connections", admin, body: { platform: "telegram", token: tg.token } });
   const id = added.json.connection.id;
   const path = `/api/connections/${id}/media`;
-  assert.equal((await call(port, { method: "POST", path, admin, body: { maxCount: 99 } })).status, 400);
+  assert.equal((await call(port, { method: "POST", path, admin, body: { maxCount: 1001 } })).status, 400);
+  assert.equal((await call(port, { method: "POST", path, admin, body: { maxBytes: 60 * 1048576 } })).status, 400, "over Telegram's 50 MB");
   assert.equal((await call(port, { method: "POST", path, admin, body: { receive: false, kinds: ["image"], maxBytes: 1048576, maxCount: 1 } })).status, 200);
   assert.equal(store.getConnection(id).media.receive, false);
   assert.deepEqual(store.getConnection(id).media.kinds, ["image"]);

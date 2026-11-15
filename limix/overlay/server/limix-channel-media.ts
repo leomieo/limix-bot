@@ -1,15 +1,19 @@
 import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import { basename, dirname, resolve } from "node:path";
 import { z } from "zod";
-import { ATTACHMENTS_DIR, deleteAttachment, saveFile, saveImage } from "./attachments.ts";
+import { ATTACHMENTS_DIR, deleteAttachment, IMAGE_MAX_BYTES, saveFile, saveImage } from "./attachments.ts";
 import type { Message } from "./store.ts";
 
-export const CHANNEL_MEDIA_MAX_BYTES = 10 * 1024 * 1024;
+// Limix: up to what the platforms carry (Telegram sends 50 MB a file); files ride as base64 in one JSON body, so a
+// message holds at most this much in all, however many files.
+export const CHANNEL_MEDIA_MAX_BYTES = 200 * 1024 * 1024;
 export const channelAttachmentSchema = z.object({
   // oxlint-disable-next-line no-control-regex -- control characters are exactly what this refuses
   name: z.string().min(1).max(200).refine((s) => !/[\\/\x00-\x1f]/.test(s), "Use a filename, not a path"),
   mime: z.string().min(1).max(128),
-  data: z.string().min(4).max(Math.ceil(CHANNEL_MEDIA_MAX_BYTES / 3) * 4).regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/),
+  // A plain character-class test: a grouped repeat runs out of stack on a file this large.
+  data: z.string().min(4).max(Math.ceil(CHANNEL_MEDIA_MAX_BYTES / 3) * 4)
+    .refine((value) => value.length % 4 === 0 && /^[A-Za-z0-9+/]*={0,2}$/.test(value), "Send the file as base64"),
 });
 export type ChannelAttachment = z.infer<typeof channelAttachmentSchema>;
 
@@ -17,13 +21,14 @@ const attribute = (s: string) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;"
 
 export async function saveChannelAttachments(items: ChannelAttachment[]) {
   if (items.reduce((sum, item) => sum + Buffer.byteLength(item.data, "base64"), 0) > CHANNEL_MEDIA_MAX_BYTES) {
-    throw Object.assign(new Error("Attachments exceed 10 MB per message"), { status: 413, forCaller: true });
+    throw Object.assign(new Error("Attachments exceed 200 MB per message"), { status: 413, forCaller: true });
   }
   const saved: NonNullable<Message["attachments"]> = [];
   try {
     for (const item of items) {
       const bytes = Buffer.from(item.data, "base64");
-      if (item.mime.startsWith("image/")) {
+      // A photo larger than the chat preview takes is kept as a file.
+      if (item.mime.startsWith("image/") && bytes.byteLength <= IMAGE_MAX_BYTES) {
         saved.push({ ...saveImage(bytes, item.mime), kind: "image", name: item.name });
       } else {
         const stream = async function* () { yield bytes; };
@@ -50,7 +55,7 @@ export function channelReplyAttachments(lines: readonly Message[]) {
         const path = resolve(item.path);
         if (dirname(path) !== resolve(ATTACHMENTS_DIR) || lstatSync(path).isSymbolicLink() || dirname(realpathSync(path)) !== realpathSync(ATTACHMENTS_DIR)) throw new Error("not an attachment");
         const stat = lstatSync(path);
-        if (!stat.isFile() || attachments.length >= 4 || total + stat.size > CHANNEL_MEDIA_MAX_BYTES) throw new Error("too large");
+        if (!stat.isFile() || total + stat.size > CHANNEL_MEDIA_MAX_BYTES) throw new Error("too large");
         const data = readFileSync(path);
         total += data.length;
         const prefix = item.mime.split("/")[0];

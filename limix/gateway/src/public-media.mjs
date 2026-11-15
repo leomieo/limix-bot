@@ -18,7 +18,7 @@ export class PublicMedia {
     this.prune();
     const bytes = Buffer.from(attachment.data, "base64");
     const used = [...this.items.values()].reduce((sum, item) => sum + item.bytes.length, 0);
-    if (!bytes.length || bytes.length > MAX_MEDIA_BYTES || used + bytes.length > 40 * 1024 * 1024) throw new Error("Kho gửi media tạm thời đã đầy.");
+    if (!bytes.length || bytes.length > MAX_MEDIA_BYTES || used + bytes.length > MAX_MEDIA_BYTES) throw new Error("Kho gửi media tạm thời đã đầy.");
     const suffix = attachment.mime === "audio/aac" ? ".aac" : ".bin";
     const key = randomBytes(32).toString("hex") + suffix;
     const expires = this.now() + 5 * 60_000;

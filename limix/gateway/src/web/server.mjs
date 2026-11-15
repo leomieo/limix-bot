@@ -1,6 +1,6 @@
 import { facebookEvents, validFacebookSignature } from "../channels/facebook.mjs";
 import { publicBase, publicMedia } from "../public-media.mjs";
-import { mediaPolicy } from "../media.mjs";
+import { mediaPolicy, platformMediaLimits } from "../media.mjs";
 // Local management app. Listens on 127.0.0.1 only.
 // Security invariants: every /api call needs the per-run admin token that is only embedded in the page itself
 // (another website cannot read it), and the Host header must be this machine (blocks DNS rebinding).
@@ -60,8 +60,8 @@ export function publicConnection(conn, gateway) {
     createdAt: conn.createdAt,
     pageId: conn.pageId, apiVersion: conn.apiVersion, publicMediaBase: conn.publicMediaBase || "",
     webhookPath: conn.platform === "facebook" ? `/hooks/facebook/${conn.id}` : undefined,
-    media: mediaPolicy(conn.media),
-    mediaSupport: conn.platform === "zalo" ? { receive: ["image", "audio"], send: conn.publicMediaBase ? ["image", "audio"] : [], note: "Zalo Bot: nhận ảnh/thoại; gửi ảnh và thoại AAC (chỉ chat riêng) khi cấu hình HTTPS media. Video và tài liệu chưa có API được xác minh." } : { receive: ["image", "video", "audio", "file"], send: conn.platform === "facebook" && !conn.publicMediaBase ? [] : ["image", "video", "audio", "file"], note: conn.platform === "facebook" ? "Fanpage: cần webhook HTTPS, quyền pages_messaging, App Review và tuân thủ thời hạn phản hồi. Gửi media cần HTTPS media." : conn.platform === "discord" ? "Cần quyền Attach Files, Send Messages và Message Content Intent để nhận đủ nội dung." : "Theo giới hạn Telegram Bot API; tệp trong mỗi tin tối đa tổng 10 MB." },
+    media: mediaPolicy(conn.media, conn.platform), mediaLimits: platformMediaLimits(conn.platform),
+    mediaSupport: conn.platform === "zalo" ? { receive: ["image", "audio"], send: conn.publicMediaBase ? ["image", "audio"] : [], note: "Zalo Bot: nhận ảnh/thoại; gửi ảnh và thoại AAC (chỉ chat riêng) khi cấu hình HTTPS media. Video và tài liệu chưa có API được xác minh." } : { receive: ["image", "video", "audio", "file"], send: conn.platform === "facebook" && !conn.publicMediaBase ? [] : ["image", "video", "audio", "file"], note: conn.platform === "facebook" ? "Fanpage: cần webhook HTTPS, quyền pages_messaging, App Review và tuân thủ thời hạn phản hồi. Gửi media cần HTTPS media." : conn.platform === "discord" ? "Cần quyền Attach Files, Send Messages và Message Content Intent để nhận đủ nội dung." : "Theo giới hạn Telegram Bot API: bot nhận tệp tối đa 20 MB và gửi tối đa 50 MB mỗi tệp; không giới hạn số tệp, tổng mỗi tin tối đa 200 MB." },
   };
 }
 
@@ -102,7 +102,7 @@ export function createApp({ store, secrets, pairing, gateway, makeChannel = defa
       if (store.listConnections().some((c) => c.platform === platform && c.tokenFingerprint === hashCode(token))) {
         throw Object.assign(new Error("Bot này đã được kết nối rồi"), { status: 409 });
       }
-      const media = mediaPolicy(body.media);
+      const media = mediaPolicy(body.media, platform);
       const publicMediaBase = publicBase(body.publicMediaBase || "");
       if (platform === "facebook" && (!/^[A-Za-z0-9_-]{16,256}$/.test(body.verifyToken || "") || !/^[a-fA-F0-9]{32}$/.test(body.appSecret || ""))) throw Object.assign(new Error("Fanpage cần App Secret và Verify Token ít nhất 16 ký tự."), { status: 400 });
       const engine = buildEngine(body);
@@ -165,7 +165,7 @@ export function createApp({ store, secrets, pairing, gateway, makeChannel = defa
     },
 
     "POST /api/connections/:id/media": (body, id) => {
-      store.updateConnection(id, { media: mediaPolicy(body), ...(body.publicMediaBase !== undefined ? { publicMediaBase: publicBase(body.publicMediaBase) } : {}) });
+      store.updateConnection(id, { media: mediaPolicy(body, store.getConnection(id).platform), ...(body.publicMediaBase !== undefined ? { publicMediaBase: publicBase(body.publicMediaBase) } : {}) });
       const active = gateway.active?.get(id);
       if (active) active.channel.publicMediaBase = store.getConnection(id).publicMediaBase || "";
       return publicConnection(store.getConnection(id), gateway);

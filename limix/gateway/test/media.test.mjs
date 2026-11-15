@@ -64,7 +64,22 @@ test("media download rejects local URLs, userinfo, lookalikes, redirects and ove
 test("actual MIME and bytes cannot bypass kind or size settings", async () => {
   await assert.rejects(receiveMedia({ downloadAttachment: async () => item }, [{ kind: "file" }], mediaPolicy({ kinds: ["file"] })));
   assert.throws(() => checkMedia([{ ...item, size: 0, data: Buffer.alloc(2048).toString("base64") }], mediaPolicy({ maxBytes: 1024 }), "send"));
-  assert.throws(() => mediaPolicy({ maxCount: 100 }));
+  assert.throws(() => mediaPolicy({ maxCount: 1001 }));
+  assert.throws(() => mediaPolicy({ maxBytes: 51 * 1024 * 1024 }, "telegram"));
+});
+test("each platform's own file limits, and no limit on how many files unless one is set", () => {
+  const MB = 1024 * 1024;
+  const telegram = mediaPolicy({}, "telegram");
+  assert.equal(telegram.maxBytes, 50 * MB);
+  assert.equal(telegram.maxCount, 0);
+  const file = (mb) => ({ kind: "file", mime: "application/pdf", size: mb * MB });
+  checkMedia([file(45)], telegram, "send", "telegram");
+  assert.throws(() => checkMedia([file(25)], telegram, "receive", "telegram"), /20 MB/);
+  checkMedia(Array.from({ length: 12 }, () => file(1)), telegram, "receive", "telegram");
+  assert.throws(() => checkMedia(Array.from({ length: 12 }, () => file(1)), mediaPolicy({ maxCount: 4 }, "telegram"), "receive", "telegram"));
+  assert.throws(() => checkMedia(Array.from({ length: 5 }, () => file(45)), telegram, "send", "telegram"), /200 MB/);
+  assert.equal(mediaPolicy({ maxBytes: 10 * MB, maxCount: 4 }, "telegram").maxBytes, 10 * MB, "a saved older setting still loads");
+  assert.throws(() => mediaPolicy({ maxBytes: 20 * MB }, "zalo"));
 });
 test("Telegram picks largest photo, preserves voice and uploads binary multipart", async () => {
   assert.equal(telegramAttachments({ photo: [{ file_id: "small" }, { file_id: "large" }] })[0].fileId, "large");

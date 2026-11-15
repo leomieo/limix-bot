@@ -1,5 +1,5 @@
 import { channelConversationSchema, parseChannelHeader, type ChannelIdentityRegistry } from "./limix-channel-identity.ts";
-import { channelAttachmentSchema, channelReplyAttachments, saveChannelAttachments } from "./limix-channel-media.ts";
+import { CHANNEL_MEDIA_MAX_BYTES, channelAttachmentSchema, channelReplyAttachments, saveChannelAttachments } from "./limix-channel-media.ts";
 import { deleteAttachment } from "./attachments.ts";
 // The Bot API's two sides. Outside: `POST /hooks/api/bots/<id>/messages` on the webhook receiver, a bearer key, a
 // message in, the bot's reply out; the turn it starts is outside work (the "api" trigger), so it never acts for the
@@ -29,7 +29,7 @@ const APP_PATH = /^\/api\/bots\/([\w-]{1,128})\/bot-api(?:\/(new-key))?$/;
 
 const callSchema = z.object({
   message: z.string().min(1).max(BOT_API_MAX_MESSAGE_CHARS),
-  attachments: z.array(channelAttachmentSchema).max(4).optional(),
+  attachments: z.array(channelAttachmentSchema).max(1000).optional(),
   thread: z.string().regex(/^[\w-]{1,128}$/).optional(),
   conversation: channelConversationSchema.optional(),
   channel: z.enum(["telegram", "zalo", "discord", "facebook"]).optional(),
@@ -252,7 +252,8 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       }
       let call: z.output<typeof callSchema>;
       try {
-        const raw = await readRawBody(req, 15 * 1024 * 1024);
+        // Room for CHANNEL_MEDIA_MAX_BYTES of files as base64, plus the message.
+        const raw = await readRawBody(req, Math.ceil(CHANNEL_MEDIA_MAX_BYTES / 3) * 4 + 1024 * 1024);
         const contentType = header(req, "content-type")?.toLowerCase() ?? "";
         if (!contentType.includes("json")) fail(415, "Send JSON: Content-Type: application/json");
         const input = parseJson(raw);

@@ -229,10 +229,10 @@ export class Router {
     try {
       // Only the linked owner, in a private chat, gets the owner lane (any AI); everyone else stays confined.
       const owner = roleOf(conn, event.senderId) === "owner" && event.chatType === "private";
-      const policy = mediaPolicy(conn.media);
+      const policy = mediaPolicy(conn.media, conn.platform);
       let attachments;
       try {
-        attachments = await receiveMedia(channel, event.attachments, policy);
+        attachments = await receiveMedia(channel, event.attachments, policy, conn.platform);
       } catch {
         await this.reply(channel, event.chatId, "Không nhận được tệp: kiểm tra loại tệp, giới hạn dung lượng và quyền nhận media trong thiết lập kết nối.", event);
         return "media_rejected";
@@ -244,7 +244,7 @@ export class Router {
         const outgoing = answer.attachments ?? [];
         if (outgoing.length) {
           try {
-            checkMedia(outgoing, policy, "send");
+            checkMedia(outgoing, policy, "send", conn.platform);
             if (!channel.sendAttachment) throw new Error("unsupported");
             if (["zalo", "facebook"].includes(conn.platform) && !conn.publicMediaBase) throw new Error("public media is not configured");
             if (conn.platform === "zalo" && outgoing.some((a) => a.kind !== "image" && !(a.kind === "audio" && a.mime === "audio/aac" && event.chatType === "private"))) throw new Error("unsupported Zalo attachment");
