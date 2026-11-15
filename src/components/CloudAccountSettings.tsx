@@ -28,7 +28,7 @@ export function LimixTrialBlock({ trial, busy, onAsk }: { trial: CloudAccountSta
   if (trial === "pending") {
     return <p role="status" data-limix-trial="pending" className="text-[13px] text-ink-secondary">
       {lx("Đã gửi yêu cầu dùng thử. Khi được duyệt, máy Cloud của bạn tự được dựng; mục này sẽ báo khi xong.",
-        "Trial requested. Once it is approved your Cloud is set up by itself; this page says when it's ready.")}</p>;
+        "Trial requested. Once it is approved the Cloud is set up by itself; this page says when it's ready.")}</p>;
   }
   return <div data-limix-trial={trial ?? "none"} className="flex flex-col items-start gap-2">
     <p className="text-[13px] text-ink-secondary">{trial === "declined"
