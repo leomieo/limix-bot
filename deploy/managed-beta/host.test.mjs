@@ -1,18 +1,19 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { ensureTunnel, grantPublicKey, reconcile, TUNNEL_CONTAINER } from "./host.mjs";
+import { ensureTunnel, homeBootstrapSecret, reconcile, TUNNEL_CONTAINER } from "./host.mjs";
 
 test("caps active homes, stops a revoked home, and never removes a volume", async () => {
   const [a, b, revoked] = Array.from({ length: 3 }, () => randomUUID());
   const calls = [], reports = [];
+  const origins = { [a]: `https://lc-${a.replace(/-/g, "")}.limixmedia.com` };
   await reconcile([a, b], 1, (...args) => reports.push(args), async args => {
     calls.push(args);
     if (args[0] === "ps") return "limix-home-" + revoked;
     if (args.includes("-q")) return "fixture";
     if (args[0] === "inspect") return "healthy";
     return "";
-  });
+  }, { origins, hostToken: "fixture-host-token-".repeat(3) });
   assert.deepEqual(reports, [[a, "running"], [b, "waiting_capacity"]]);
   assert(calls.some(args => args.includes("limix-home-" + revoked) && args.includes("stop")));
   assert(!calls.some(args => args.includes("down") || args.includes("-v")));
@@ -22,16 +23,18 @@ test("invalid registry snapshots cannot modify Docker", async () => {
   await assert.rejects(reconcile(["../other"], 1, assert.fail, assert.fail), /Invalid host/);
 });
 
-test("gives each home only its own address and the public grant key", async () => {
+test("gives each home only its own address and its own bootstrap secret", async () => {
   const [a, b] = [randomUUID(), randomUUID()];
-  const envs = new Map();
+  const envs = new Map(), reports = [];
+  const hostToken = "fixture-host-token-".repeat(3);
   const origins = { [a]: `https://lc-${a.replace(/-/g, "")}.limixmedia.com`, [b]: `https://lc-${a.replace(/-/g, "")}.limixmedia.com` };
-  await reconcile([a, b], 2, () => {}, async (args, env) => {
+  await reconcile([a, b], 2, (...args) => reports.push(args), async (args, env) => {
     if (args[0] === "compose" && args.includes("up")) envs.set(args[args.indexOf("-p") + 1], env);
     return args[0] === "inspect" ? "healthy" : args.includes("-q") ? "fixture" : "";
-  }, { origins, grantKey: "k".repeat(43) });
-  assert.deepEqual(envs.get("limix-home-" + a), { LIMIX_HOME_ID: a, LIMIX_HOME_ORIGIN: origins[a], LIMIX_GRANT_PUBLIC_KEY: "k".repeat(43) });
-  assert.deepEqual(envs.get("limix-home-" + b), { LIMIX_HOME_ID: b }, "an address naming another workspace is ignored");
+  }, { origins, hostToken });
+  assert.deepEqual(envs.get("limix-home-" + a), { LIMIX_HOME_ID: a, LIMIX_HOME_ORIGIN: origins[a], LIMIX_HOME_SECRET: homeBootstrapSecret(hostToken, a) });
+  assert(!envs.has("limix-home-" + b), "a home whose address names another workspace waits");
+  assert.deepEqual(reports, [[a, "running"], [b, "starting"]]);
 });
 
 test("starts the tunnel connector once with the token only in its environment", async () => {
@@ -54,9 +57,9 @@ test("starts the tunnel connector once with the token only in its environment", 
   await assert.rejects(ensureTunnel("bad token", command), /Invalid tunnel token/);
 });
 
-test("derives a stable 32-byte public key from the host token", () => {
-  const key = grantPublicKey("fixture-host-token-".repeat(3));
-  assert.match(key, /^[A-Za-z0-9_-]{43}$/);
-  assert.equal(key, grantPublicKey("fixture-host-token-".repeat(3)));
-  assert.notEqual(key, grantPublicKey("other-host-token-".repeat(3)));
+test("derives each home's own 256-bit bootstrap secret from the host token", () => {
+  const token = "fixture-host-token-".repeat(3), id = randomUUID();
+  assert.match(homeBootstrapSecret(token, id), /^[A-Za-z0-9_-]{43}$/);
+  assert.equal(homeBootstrapSecret(token, id), homeBootstrapSecret(token, id));
+  assert.notEqual(homeBootstrapSecret(token, id), homeBootstrapSecret(token, randomUUID()));
 });

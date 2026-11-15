@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { createHmac, createPrivateKey, createPublicKey } from "node:crypto";
+import { createHmac } from "node:crypto";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
@@ -19,11 +19,10 @@ async function docker(args, extraEnv = {}) {
   return result.stdout.trim();
 }
 
-/** The public half of the key the account Worker signs grants with; both derive it from the shared host token. */
-export function grantPublicKey(hostToken) {
-  const seed = createHmac("sha256", hostToken).update("limix-managed-grant-ed25519-v1").digest();
-  const key = createPrivateKey({ key: Buffer.concat([Buffer.from("302e020100300506032b657004220420", "hex"), seed]), format: "der", type: "pkcs8" });
-  return createPublicKey(key).export({ format: "jwk" }).x;
+/** The home's OMB_CLOUD_BOOTSTRAP_SECRET, the key the Limix Cloud Admin signs its pairing requests with. The Worker
+ * derives the same from the shared host token (cloudflare/control-plane/src/limix-cloud-admin.ts homeBootstrapSecret). */
+export function homeBootstrapSecret(hostToken, workspaceId) {
+  return createHmac("sha256", hostToken).update("limix-cloud-bootstrap-v1:" + workspaceId).digest("base64url");
 }
 
 function originFor(id, origins) {
@@ -32,7 +31,7 @@ function originFor(id, origins) {
   return origin;
 }
 
-export async function reconcile(homes, capacity, report, command = docker, { origins = {}, grantKey = "" } = {}) {
+export async function reconcile(homes, capacity, report, command = docker, { origins = {}, hostToken = "" } = {}) {
   if (!Array.isArray(homes) || !homes.every(id => typeof id === "string" && uuid.test(id)) ||
       new Set(homes).size !== homes.length || !Number.isSafeInteger(capacity) || capacity < 1) {
     throw new Error("Invalid host assignments or capacity");
@@ -50,10 +49,13 @@ export async function reconcile(homes, capacity, report, command = docker, { ori
   for (const id of homes) {
     let state = "waiting_capacity";
     if (active.has(id)) {
-      try {
-        const origin = originFor(id, origins);
-        const env = origin && grantKey ? { LIMIX_HOME_ID: id, LIMIX_HOME_ORIGIN: origin, LIMIX_GRANT_PUBLIC_KEY: grantKey } : { LIMIX_HOME_ID: id };
-        await compose(id, ["up", "-d", "--no-build", "home", "edge"], env);
+      // A Cloud home cannot start without its own address: it waits, as setting up, for the Worker to route it.
+      const origin = originFor(id, origins);
+      if (!origin || !hostToken) state = "starting";
+      else try {
+        const env = { LIMIX_HOME_ID: id, LIMIX_HOME_ORIGIN: origin, LIMIX_HOME_SECRET: homeBootstrapSecret(hostToken, id) };
+        // --remove-orphans: a home from the earlier beta still has its separate edge container.
+        await compose(id, ["up", "-d", "--no-build", "--remove-orphans", "home"], env);
         const container = await compose(id, ["ps", "-q", "home"], env);
         const health = container && await command(["inspect", "--format", "{{.State.Health.Status}}", container]);
         state = health === "healthy" ? "running" : health === "starting" ? "starting" : "failed";
@@ -92,7 +94,6 @@ if (import.meta.main) {
     if (!response.ok) throw new Error("Control plane HTTP " + response.status);
     return response.json();
   };
-  const grantKey = grantPublicKey(token);
   let tunnelReady = false;
   for (;;) {
     try {
@@ -102,7 +103,7 @@ if (import.meta.main) {
       }
       const { homes, origins, routing } = await call("assignments");
       if (routing !== "ready") console.warn("Public addresses are still being set up; retrying next round.");
-      await reconcile(homes, capacity, (id, state) => call("assignments", { id, state }), docker, { origins, grantKey });
+      await reconcile(homes, capacity, (id, state) => call("assignments", { id, state }), docker, { origins, hostToken: token });
     } catch (error) {
       console.error("Host reconciliation failed:", error.message);
       if (process.argv.includes("--once")) process.exitCode = 1;
