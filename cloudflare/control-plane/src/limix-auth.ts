@@ -31,7 +31,7 @@ export async function limixSession(request: Request, env: Env): Promise<LimixSes
   try {
     const response = await fetch(`${base}/validate`, {
       method: "POST",
-      redirect: "error",
+      redirect: "manual", // Workers reject "error"; a redirect is never followed
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ token: match[2], machine_id: machineId }),
       signal: AbortSignal.timeout(8_000),
