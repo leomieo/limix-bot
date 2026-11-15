@@ -626,27 +626,39 @@ export function DesktopResourcesField({ bot }: { bot: Bot }) {
   const shared = Boolean(bot.desktopTeam);
   const members = (state.bots ?? []).filter((other) => other.desktopTeam && !other.hidden && (other.section ?? "").trim().toLowerCase() === team).length + (shared ? 0 : 1);
   const suggestion = { memoryGb: workspace.memoryGb + Math.max(0, members - 1) * 2, cpus: workspace.cpus + Math.max(0, members - 1) };
-  const toggleShared = async () => {
+  const folder = Boolean(bot.desktopTeamFolder) && !shared;
+  const choice: "own" | "folder" | "shared" = shared ? "shared" : folder ? "folder" : "own";
+  const choose = async (next: "own" | "folder" | "shared") => {
+    if (next === choice) return;
     setError(null); setSaved(false);
     try {
-      await api(`/api/bots/${bot.id}`, { method: "PATCH", body: JSON.stringify({ desktopTeam: !shared }) });
+      await api(`/api/bots/${bot.id}`, { method: "PATCH", body: JSON.stringify({ desktopTeam: next === "shared", desktopTeamFolder: next === "folder" }) });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
   };
+  const options: Array<{ id: "own" | "folder" | "shared"; label: string }> = [
+    { id: "own", label: lx("Desktop riêng", "Own desktop") },
+    { id: "folder", label: lx("Riêng + thư mục nhóm", "Own + team folder") },
+    { id: "shared", label: lx("Chung 1 desktop", "One shared desktop") },
+  ];
   return (
     <div className="mt-3 rounded-lg bg-inset p-3" data-testid="access-desktop-resources">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="text-[13px] text-ink">{lx(`Dùng chung Desktop với nhóm "${teamName}"`, `Share one desktop with "${teamName}"`)}</div>
-          <div className="mt-0.5 text-[12px] text-ink-secondary">
-            {shared
-              ? lx(`Đang dùng chung với ${members} bot. Một màn hình nên các bot lần lượt dùng. Đề xuất ${suggestion.memoryGb} GB RAM, ${suggestion.cpus} CPU (không vượt quá sức máy); nhập số bên dưới để tự đặt.`,
-                `Shared by ${members} bots. One screen, so they take turns. Suggested ${suggestion.memoryGb} GB RAM, ${suggestion.cpus} CPU (within what the machine has); enter a size below to set your own.`)
-              : lx("Tắt: bot này có Desktop riêng của nó. Bật để dùng chung 1 máy ảo với các bot cùng nhóm cũng bật.", "Off: this bot has its own desktop. Turn on to share one with the group's other bots that turn it on.")}
-          </div>
-        </div>
-        <Switch checked={shared} aria-label={lx("Dùng chung Desktop với nhóm", "Share one desktop with the group")} onClick={() => void toggleShared()} />
+      <div className="text-[13px] text-ink">{lx(`Desktop trong nhóm "${teamName}"`, `Desktop in "${teamName}"`)}</div>
+      <div role="radiogroup" aria-label={lx("Cách dùng desktop trong nhóm", "How this bot's desktop works with its group")} className="mt-2 flex flex-wrap gap-1.5">
+        {options.map((option) => (
+          <button key={option.id} type="button" role="radio" aria-checked={choice === option.id} onClick={() => void choose(option.id)}
+            className={cn("rounded-lg px-3 py-1.5 text-[12px]", choice === option.id ? "bg-raised-hover text-ink ring-1 ring-ink/20" : "bg-control text-ink-secondary hover:bg-raised-hover")}>
+            {option.label}
+          </button>
+        ))}
+      </div>
+      <div className="mt-1.5 text-[12px] text-ink-secondary">
+        {choice === "own" && lx("Bot có desktop của riêng nó.", "This bot has a desktop of its own.")}
+        {choice === "folder" && lx(`Bot vẫn có desktop riêng (làm song song, không giành chuột), và có thêm thư mục /home/cua/team dùng chung với các bot cùng nhóm chọn mục này. Áp dụng khi desktop được tạo lại.`,
+          `This bot keeps its own desktop (working in parallel) and also gets /home/cua/team, shared with the group's bots that pick this. Takes effect when the desktop is next created.`)}
+        {choice === "shared" && lx(`Dùng chung 1 desktop với ${members} bot. Một màn hình nên các bot lần lượt dùng. Đề xuất ${suggestion.memoryGb} GB RAM, ${suggestion.cpus} CPU (không vượt quá sức máy); nhập số bên dưới để tự đặt.`,
+          `One desktop shared by ${members} bots. One screen, so they take turns. Suggested ${suggestion.memoryGb} GB RAM, ${suggestion.cpus} CPU (within what the machine has); enter a size below to set your own.`)}
       </div>
       <div className="mt-3 text-[13px] text-ink">{lx("Cấu hình Desktop riêng", "Private desktop size")}</div>
       <div className="mt-0.5 text-[12px] text-ink-secondary">

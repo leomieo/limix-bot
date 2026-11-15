@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { teamLocalVmTarget, perBotLocalVmTarget } from "./container-computer.ts";
+import { containerRunArgs, perBotLocalVmTarget, TEAM_FOLDER_GUEST, teamFolderDir, teamLocalVmTarget } from "./container-computer.ts";
 import { suggestedTeamDesktop, teamDesktopKey, teamDesktopMembers, teamDesktopResources } from "./limix-team-desktop.ts";
 
 const workspace = { memoryGb: 4, cpus: 2 };
@@ -32,5 +32,15 @@ describe("a department's shared desktop", () => {
     expect(content.key).toMatch(/^team:/);
     expect(content.containerName).not.toBe(teamLocalVmTarget("ops").containerName);
     expect(content.key).not.toBe(perBotLocalVmTarget("content").key);
+  });
+
+  it("mounts the department folder as a second, fixed folder only on a desktop that joined it", () => {
+    const target = perBotLocalVmTarget("bot-1");
+    const desktop = { platform: "linux" as const, resources: workspace, hostUser: null };
+    const plain = containerRunArgs("docker", "pw", target, desktop);
+    expect(plain.join(" ")).not.toContain(TEAM_FOLDER_GUEST);
+    const joined = containerRunArgs("docker", "pw", target, { ...desktop, teamDir: teamFolderDir("content") });
+    expect(joined).toContain(`type=bind,source=${teamFolderDir("content")},target=${TEAM_FOLDER_GUEST}`);
+    expect(teamFolderDir("content")).not.toBe(teamFolderDir("ops"));
   });
 });

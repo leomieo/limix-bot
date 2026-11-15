@@ -148,6 +148,8 @@ import {
   localVmWakeAction,
   perBotLocalVmTarget,
   teamLocalVmTarget,
+  teamFolderDir,
+  TEAM_FOLDER_GUEST,
   poolLocalVmTarget,
   SHARED_LOCAL_VM_TARGET,
   setupCommands,
@@ -2971,7 +2973,7 @@ function previewSystemPrompt(bot: BotRecord) {
   const computerPromptKind = resolveComputerPromptKind({
     kind: previewComputer === "vm" ? "vm" : previewComputer === "cloud"
       ? bot.cloudBackend === "vps" ? "vps" : "box" : previewComputer === "local" ? "local" : null,
-    vmPrivate: localVmMode(cfg) === "per-bot",
+    vmPrivate: localVmMode(cfg) === "per-bot" && !bot.desktopTeam,
   });
   const peers = reachablePeers(store.bots, bot);
   const coordination = chiefLevel(bot)
@@ -2998,7 +3000,7 @@ function previewSystemPrompt(bot: BotRecord) {
       }),
     },
     { id: "shell", label: "Long-running commands", text: privateWorkspace ? longCommandsPrompt(computerPromptKind) : "" },
-    { id: "computer", label: "Computer", text: computerPrompt(computerPromptKind) },
+    { id: "computer", label: "Computer", text: computerPrompt(computerPromptKind) + (computerPromptKind === "vm-private" || computerPromptKind === "vm-shared" ? limixTeamDesktopNote(bot) : "") },
     { id: "team-computer", label: "Team computer", text: teamComputerPrompt(teamComputer) },
     { id: "plan", label: "Surface", text: previewPlan.computer === undefined ? "" : surfacePrompt({
       computer: previewPlan.computer && previewPlan.computer !== "off" && computerPromptKind ? previewPlan.computer : null,
@@ -3115,6 +3117,28 @@ function sourceApprovalMode(botId: string, threadId: string): ApprovalMode {
 
 function fullAccessForSource(botId: string, threadId: string): boolean {
   return sourceApprovalMode(botId, threadId) === "full";
+}
+
+/** Limix: tells a bot which teammates share its desktop or its department folder, so they can split work on the same files. */
+function limixTeamDesktopNote(bot: BotRecord): string {
+  if (localVmMode(cfg) !== "per-bot") return "";
+  const team = teamDesktopKey(bot);
+  const mates = (shared: boolean) => store.bots.filter((other) => other.id !== bot.id && !other.hidden && teamDesktopKey(other) === team
+    && (shared ? other.desktopTeam : other.desktopTeamFolder && !other.desktopTeam)).map((other) => `@${other.name}`);
+  if (bot.desktopTeam) {
+    const names = mates(true);
+    return ` This desktop is your department's: ${names.length ? names.join(", ") + " use" : "teammates who join use"} it too, one at a time, so leave files and windows tidy for them.`;
+  }
+  if (!bot.desktopTeamFolder) return "";
+  const names = mates(false);
+  return ` Your desktop also has ${TEAM_FOLDER_GUEST}, a folder shared with ${names.length ? names.join(", ") : "your department's bots that join it"}, each on their own desktop; work there on shared files and tell them with coordinate_bots what you changed.`;
+}
+
+/** Limix: a bot with its own desktop that joined its department's folder gets that folder mounted when the desktop is created. */
+function localVmTeamFolderFor(target: LocalVmTarget): string | undefined {
+  if (!target.key.startsWith("bot:")) return undefined;
+  const bot = store.bots.find((candidate) => perBotLocalVmTarget(candidate.id).key === target.key);
+  return bot?.desktopTeamFolder && !bot.desktopTeam ? teamFolderDir(teamDesktopKey(bot)) : undefined;
 }
 
 /** Limix: a bot's own desktop takes that bot's size when it set one; the shared and pooled desktops keep the workspace's. */
@@ -5666,7 +5690,7 @@ let localVmProvisionBusy = false;
 let localVmModeChangeBusy = false;
 const localVmUpdates = createLocalVmUpdater({
   status: (target) => containerComputerStatus(undefined, undefined, target),
-  act: (action, target) => containerComputerAction(action, undefined, undefined, target, localVmResourcesFor(target), () => localVmMaxInstances(cfg)),
+  act: (action, target) => containerComputerAction(action, undefined, undefined, target, localVmResourcesFor(target), () => localVmMaxInstances(cfg), localVmTeamFolderFor(target)),
   imageBusy: { get: () => localVmImageBusy, set: (busy) => { localVmImageBusy = busy; } },
   provisionBusy: { get: () => localVmProvisionBusy, set: (busy) => { localVmProvisionBusy = busy; } },
   lifecycleBusy: localVmLifecycleBusy,
@@ -8404,7 +8428,7 @@ async function beginTurn(
       }
       const computerPromptKind = resolveComputerPromptKind({
         kind: computerKind,
-        vmPrivate: localVmMode(cfg) === "per-bot",
+        vmPrivate: localVmMode(cfg) === "per-bot" && !bot.desktopTeam,
       });
       const coordinationNode = opts?.coordination ? coordinator.node(opts.coordination.id) : undefined;
       if (opts?.coordination && (!coordinationNode || coordinationNode.status !== "running" || roomHandoffProblem(coordinationNode,
@@ -8423,7 +8447,7 @@ async function beginTurn(
         }) },
         { id: "files", label: "File locations", text: worksInWorkspace ? workspaceLocationsPrompt(bot.id, cwd, liveBot?.cwd ?? bot.cwd, { attachFile: Boolean(integrations.agents) && !CLOUD_HOME && !HOSTED_WORKSPACE }) : "" },
         { id: "shell", label: "Long-running commands", text: worksInWorkspace ? longCommandsPrompt(computerPromptKind) : "" },
-        { id: "computer", label: "Computer", text: computerPrompt(computerPromptKind) },
+        { id: "computer", label: "Computer", text: computerPrompt(computerPromptKind) + (computerPromptKind === "vm-private" || computerPromptKind === "vm-shared" ? limixTeamDesktopNote(bot) : "") },
         { id: "team-computer", label: "Team computer", text: teamComputerPrompt(teamComputer) },
         { id: "plan", label: "Surface", text: surfacePrompt({ computer: mountedComputer, browser: Boolean(integrations.browser) }, { pinned: plan.pinned, note: plan.note + vpsUnavailableNote + vmUpdateNote + (computerSkipped && plan.computer !== "off" ? computerSkippedNote(redactSecretsInText(computerSkipped)) : "") + (computerSelectionTurns.get(threadId)?.handoff && !integrations.browser ? HANDOFF_BROWSER_NOTE : ""), canSelect: computerSelectionTurns.has(threadId) && !computerSelectionTurns.get(threadId)?.handoff, cloudHome: Boolean(CLOUD_HOME), botOpened: plan.botOpened, ownComputer: CLOUD_HOME && integrations.agents && lendingEnabled() ? sharedComputers.known(CLOUD_HOME_LENDER) : undefined }) },
         { id: "cloud-home", label: "My Cloud", text: CLOUD_HOME ? cloudHomePrompt(Boolean(integrations.agents) && lendingEnabled(), syncedFolders(DATA_DIR), sharedComputers.known(CLOUD_HOME_LENDER), CLOUD_PERSONAL) + firstHourHooks.prompt(bot.id, threadId) : "" }, phoneLinkPart(),
@@ -10224,7 +10248,7 @@ async function runClaimedGroupMemberTurn(
   recordTurnPlace(bot.id, threadId, (roomTeamComputer ? "cloud" : roomVmTarget ? "vm" : surfaceOfComputerKind(roomComputerKind)) ?? (integrations.browser ? "browser" : null));
   const roomComputerPromptKind = resolveComputerPromptKind({
     kind: roomTeamComputer || roomComputerKind === "box" ? "box" : roomVmTarget ? "vm" : roomComputerKind,
-    vmPrivate: localVmMode(cfg) === "per-bot",
+    vmPrivate: localVmMode(cfg) === "per-bot" && !bot.desktopTeam,
   });
   {
     const crossing = claimRecallCrossings(threadId, recentLines.filter((line) => line.private).map((line) => line.threadId));
@@ -10245,7 +10269,7 @@ async function runClaimedGroupMemberTurn(
     { id: "files", label: "File locations", text: workspace ? workspaceLocationsPrompt(bot.id, cwd, readyBot.cwd, { attachFile: Boolean(integrations.agents) && !CLOUD_HOME && !HOSTED_WORKSPACE }) : "" },
     { id: "shell", label: "Long-running commands", text: workspace ? longCommandsPrompt(roomComputerPromptKind) : "" },
     { id: "mcp", label: "MCP servers", text: customMcpPrompt(Object.keys(integrations.custom ?? {}), mcpServersHost.off(bot)) + teamConnections.prompt(threadId, internalGeneration, integrations) },
-    { id: "computer", label: "Computer", text: computerPrompt(roomComputerPromptKind) },
+    { id: "computer", label: "Computer", text: computerPrompt(roomComputerPromptKind) + (roomComputerPromptKind === "vm-private" || roomComputerPromptKind === "vm-shared" ? limixTeamDesktopNote(bot) : "") },
     { id: "team-computer", label: "Team computer", text: teamComputerPrompt(roomTeamComputer) },
     { id: "plan", label: "Surface", text: surfacePrompt({ computer: roomTeamComputer ? "cloud" : roomVmTarget ? "vm" : surfaceOfComputerKind(roomComputerKind), browser: Boolean(integrations.browser) }, { note: roomPlan.note, cloudHome: Boolean(CLOUD_HOME), ownComputer: CLOUD_HOME && integrations.agents && lendingEnabled() ? sharedComputers.known(CLOUD_HOME_LENDER) : undefined }) },
     { id: "cloud-home", label: "My Cloud", text: CLOUD_HOME ? cloudHomePrompt(Boolean(integrations.agents) && lendingEnabled(), syncedFolders(DATA_DIR), sharedComputers.known(CLOUD_HOME_LENDER), CLOUD_PERSONAL) : "" }, phoneLinkPart(),
@@ -11751,7 +11775,7 @@ async function readyLocalVmForTurn(botId: string, target: LocalVmTarget, isCurre
 
     broadcast({ kind: "computer", botId, state: "provisioning" });
     try {
-      status = await containerComputerAction(action, undefined, undefined, target, localVmResourcesFor(target), () => localVmMaxInstances(cfg));
+      status = await containerComputerAction(action, undefined, undefined, target, localVmResourcesFor(target), () => localVmMaxInstances(cfg), localVmTeamFolderFor(target));
     } catch {
       // `run` can throw after the container exists, so arm the idle backstop anyway.
       localVmIdleFor(target).touch();

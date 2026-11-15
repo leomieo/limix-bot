@@ -331,6 +331,7 @@ export interface Bot extends DefaultBotFields, Pick<WireBot, "mascotFaceColor" |
   helperModel?: boolean;
   desktopResources?: { memoryGb?: number; cpus?: number };
   desktopTeam?: boolean;
+  desktopTeamFolder?: boolean;
   hideChannelGuests?: boolean;
   mcpServers?: string[] | null;
   browserProfile?: string | null;

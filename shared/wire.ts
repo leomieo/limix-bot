@@ -403,6 +403,8 @@ export interface WireBot extends DefaultBotFields, BotAccessFields {
   desktopResources?: { memoryGb?: number; cpus?: number };
   /** Limix: true shares one Private desktop with the department's other bots that set it (they take turns on its one screen). */
   desktopTeam?: boolean;
+  /** Limix: true keeps this bot's own desktop and adds its department's shared folder (/home/cua/team), so teammates work side by side on the same files. */
+  desktopTeamFolder?: boolean;
   /** Limix: true leaves other people's Telegram / Zalo / Discord / Facebook chats out of this bot's conversation list; the owner's own stays. */
   hideChannelGuests?: boolean;
   /** Which of the app-wide MCP servers this bot mounts, by name. */

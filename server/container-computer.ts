@@ -4,7 +4,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { lstatSync } from "node:fs";
 import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { promisify } from "node:util";
 
 import { augmentedPath, resolveCliSpawn } from "./env-path.ts";
@@ -80,6 +80,16 @@ export interface DesktopRunOptions {
   resources: DesktopResources;
   /** The account that owns the workspace on the host. */
   hostUser: HostUser | null;
+  /** Limix: a department folder this desktop shares with its teammates' own desktops, at TEAM_FOLDER_GUEST. */
+  teamDir?: string;
+}
+
+/** Limix: where a shared department folder appears inside a bot's own desktop. */
+export const TEAM_FOLDER_GUEST = "/home/cua/team";
+/** Limix: every shared department folder lives here on the host; nothing else may be the second mount. */
+export const TEAM_FOLDERS_DIR = join(DATA_DIR, "vm-teams");
+export function teamFolderDir(team: string): string {
+  return join(TEAM_FOLDERS_DIR, createHash("sha256").update(`limix-team-folder:${team}`).digest("hex").slice(0, 16));
 }
 
 export interface LocalVmTarget {
@@ -793,8 +803,11 @@ function dockerWorkspaceMountIsSafe(
     (runtime === "podman" &&
       platform === "win32" &&
       samePodmanWindowsWorkspaceSource(mounts?.[0]?.Source, expectedWorkspace));
+  const team = mounts?.[1];
+  const teamOk = !team || (team.Type === "bind" && team.Destination === TEAM_FOLDER_GUEST && team.RW !== false &&
+    typeof team.Source === "string" && dirname(team.Source) === TEAM_FOLDERS_DIR && /^[0-9a-f]{16}$/.test(basename(team.Source)));
   return Boolean(
-    mounts?.length === 1 &&
+    (mounts?.length === 1 || (mounts?.length === 2 && teamOk)) &&
       mounts[0]?.Type === "bind" &&
       sourceMatches &&
       mounts[0]?.Destination === VM_WORKSPACE_GUEST &&
@@ -872,6 +885,9 @@ export function containerRunArgs(
     runtime === "podman"
       ? `type=bind,source=${target.workspaceDir},target=${VM_WORKSPACE_GUEST},relabel=private`
       : `type=bind,source=${target.workspaceDir},target=${VM_WORKSPACE_GUEST}`,
+    ...(desktop.teamDir && runtime !== "container" ? ["--mount", runtime === "podman"
+      ? `type=bind,source=${desktop.teamDir},target=${TEAM_FOLDER_GUEST},relabel=shared`
+      : `type=bind,source=${desktop.teamDir},target=${TEAM_FOLDER_GUEST}`] : []),
     "-e",
     `VNC_PW=${password}`,
     "-p",
@@ -919,6 +935,7 @@ export async function containerComputerAction(
   target: LocalVmTarget = SHARED_LOCAL_VM_TARGET,
   resources: DesktopResources = DEFAULT_DESKTOP_RESOURCES,
   runningLimit?: number | (() => number),
+  teamDir?: string,
 ): Promise<ContainerComputerStatus> {
   if (runner === sh && platform === process.platform) screenshotStatusCache.delete(target.key);
   const before = await containerComputerStatus(runner, platform, target);
@@ -956,6 +973,7 @@ export async function containerComputerAction(
     await prepareManagedImage(runtime, runner);
   } else {
     if (action === "run") await ensureVmWorkspace(platform, target, runtime);
+    if (action === "run" && teamDir) await ensureVmWorkspace(platform, { ...target, workspaceDir: teamDir }, runtime);
     if (action === "start" && runtime !== "container") {
       await applyResourcesBeforeStart(target.containerName, resources, (args, timeoutMs) => runner(runtime, args, timeoutMs));
     }
@@ -965,6 +983,7 @@ export async function containerComputerAction(
           platform,
           resources,
           hostUser: currentHostUser(platform),
+          ...(teamDir ? { teamDir } : {}),
         })
         : action === "remove"
           ? ["rm", runtime === "container" ? "--force" : "-f", target.containerName]
