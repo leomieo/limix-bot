@@ -64,6 +64,19 @@ Làm trên nhánh `cloud-native-codex` tách từ `cloud-native`; không đẩy 
   nút Duyệt (thêm vào `managed_cloud_beta`, đặt `decision='approved'`) và Từ chối/Thu hồi. Có thể là route trong Worker
   trả trang HTML đơn giản, đăng nhập bằng token Limix như desktop.
 
+### Claude (không cần Docker) — trạng thái 16/11
+
+- **K1 xong mã (chưa chạy app thật):** `LIMIX_CLOUD_ENABLED=true`, thêm `LIMIX_CLOUD_SALES=false` (ẩn mua, Add a Cloud,
+  nâng cấp, link đổi email, nút trang Cloud). `CLOUD_ORIGIN = https://cloud.limixmedia.com`. Khi app mở, `main.mjs`
+  `limixCloudSignIn()` tự đăng nhập Cloud bằng tài khoản Limix; nút Sign in / Sign in again cũng gọi nó. Settings →
+  Limix Bot Cloud có khối **Đăng ký dùng thử** (`LimixTrialBlock`). Đã bỏ mục beta, IPC `limix-account:managed-beta*`,
+  `server/limix-managed-grant.ts`. Test: client 53/53, IPC 6/6, LimixTrialBlock 1/1; 3 test cũ trong
+  CloudAccountSettings.test.ts đổi kết quả vì giả định có bán hàng (cùng nhóm với 16 test đã hỏng sẵn khi Cloud tắt).
+- **K2 còn nợ:** `limix/patches/managed-beta.json` và overlay chưa đồng bộ với các thay đổi trên file gốc
+  (main.mjs, preload.cjs, ogb.d.ts, SidebarProfileMenu.tsx, server/index.ts, cloud-account.mjs, Dockerfile,
+  cloud-home-start.ts, CloudAccountSettings.tsx, cloud-plan.ts...). Build CI dùng file trong repo nên không ảnh hưởng
+  bản phát hành, chỉ ảnh hưởng lần chạy lại `rebrand.py` khi cập nhật upstream.
+
 ### Claude (không cần Docker)
 
 - **K1. App**: bật `LIMIX_CLOUD_ENABLED`, `CLOUD_ORIGIN = https://cloud.limixmedia.com`, tự đăng nhập Cloud bằng tài
