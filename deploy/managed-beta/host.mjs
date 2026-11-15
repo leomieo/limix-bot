@@ -31,29 +31,48 @@ function originFor(id, origins) {
   return origin;
 }
 
-export async function reconcile(homes, capacity, report, command = docker, { origins = {}, hostToken = "" } = {}) {
+export async function reconcile(homes, capacity, report, command = docker, { origins = {}, hostToken = "", power = {}, gateway = "1" } = {}) {
   if (!Array.isArray(homes) || !homes.every(id => typeof id === "string" && uuid.test(id)) ||
       new Set(homes).size !== homes.length || !Number.isSafeInteger(capacity) || capacity < 1) {
     throw new Error("Invalid host assignments or capacity");
   }
-  const active = new Set(homes.slice(0, capacity));
+  const running = await command(["ps", "--filter", "label=com.limix.managed-home=beta-xeon",
+    "--format", '{{.Label "com.docker.compose.project"}}']);
+  const resident = new Set(running.split(/\r?\n/));
+  const eligible = homes.filter(id => power[id] !== "asleep" || gateway !== "0");
+  const active = new Set(eligible.filter(id => resident.has(prefix + id)));
+
   const listed = await command(["ps", "-a", "--filter", "label=com.limix.managed-home=beta-xeon",
     "--format", '{{.Label "com.docker.compose.project"}}']);
   const compose = (id, args, env = {}) => command(["compose", "-f", composeFile, "-p", prefix + id, ...args], env);
+  const refusedSleep = new Set();
   for (const project of new Set(listed.split(/\r?\n/))) {
     const id = project.slice(prefix.length);
-    if (project.startsWith(prefix) && uuid.test(id) && !active.has(id)) {
+    if (project.startsWith(prefix) && uuid.test(id) && (!homes.includes(id) || (power[id] === "asleep" && gateway === "0"))) {
+      if (power[id] === "asleep" && gateway === "0") {
+        const container = await compose(id, ["ps", "-q", "home"]);
+        if (container) {
+          const prepared = await command(["exec", "-e", "LIMIX_PROBE_SECRET", "-e", "LIMIX_PROBE_HOST", container, "node", "/opt/limix-power-probe.mjs"],
+            { LIMIX_PROBE_SECRET: homeBootstrapSecret(hostToken, id), LIMIX_PROBE_HOST: new URL(originFor(id, origins)).host }).catch(() => "unknown");
+          if (prepared !== "prepared") { refusedSleep.add(id); continue; }
+        }
+      }
       await compose(id, ["stop"]);
     }
   }
+  for (const id of eligible) {
+    if (active.size + refusedSleep.size >= capacity) break;
+    active.add(id);
+  }
   for (const id of homes) {
     let state = "waiting_capacity";
+    if (power[id] === "asleep" && gateway === "0") state = "asleep";
     if (active.has(id)) {
       // A Cloud home cannot start without its own address: it waits, as setting up, for the Worker to route it.
       const origin = originFor(id, origins);
       if (!origin || !hostToken) state = "starting";
       else try {
-        const env = { LIMIX_HOME_ID: id, LIMIX_HOME_ORIGIN: origin, LIMIX_HOME_SECRET: homeBootstrapSecret(hostToken, id) };
+        const env = { LIMIX_HOME_ID: id, LIMIX_HOME_ORIGIN: origin, LIMIX_HOME_SECRET: homeBootstrapSecret(hostToken, id), LIMIX_HOME_GATEWAY: gateway };
         // --remove-orphans: a home from the earlier beta still has its separate edge container.
         await compose(id, ["up", "-d", "--no-build", "--remove-orphans", "home"], env);
         const container = await compose(id, ["ps", "-q", "home"], env);
@@ -61,7 +80,7 @@ export async function reconcile(homes, capacity, report, command = docker, { ori
         state = health === "healthy" ? "running" : health === "starting" ? "starting" : "failed";
       } catch { state = "failed"; }
     }
-    await report(id, state);
+    await report(id, refusedSleep.has(id) ? "running" : state);
   }
 }
 
@@ -94,16 +113,24 @@ if (import.meta.main) {
     if (!response.ok) throw new Error("Control plane HTTP " + response.status);
     return response.json();
   };
-  let tunnelReady = false;
+  const wakeName = "limix-managed-wake";
+  await ensureTunnel((await call("tunnel")).token);
+  const wakeRunning = await docker(["ps", "-a", "--filter", "name=^"+wakeName+"$", "--format", "{{.State}}"]);
+  if (!wakeRunning) await docker(["run", "-d", "--name", wakeName, "--restart", "unless-stopped", "--network", EDGE_NETWORK,
+    "--cap-drop", "ALL", "--security-opt", "no-new-privileges:true", "--read-only", "--user", "1000:1000", "--memory", "128m", "--pids-limit", "64",
+    "--no-healthcheck", "-e", "LIMIX_WAKE_HOST_TOKEN", "-e", "LIMIX_WAKE_SUFFIX", "--entrypoint", "node", process.env.LIMIX_HOME_IMAGE, "/opt/limix-wake-proxy.mjs"],
+    { LIMIX_WAKE_HOST_TOKEN: createHmac("sha256", token).update("limix-wake-proxy-v1").digest("base64url"), LIMIX_WAKE_SUFFIX: process.env.LIMIX_WAKE_SUFFIX || "limixmedia.com" });
+  else if (wakeRunning !== "running") await docker(["start", wakeName]);
+  let tunnelReady = true;
   for (;;) {
     try {
       if (!tunnelReady) {
         console.log("Tunnel connector:", await ensureTunnel((await call("tunnel")).token));
         tunnelReady = true;
       }
-      const { homes, origins, routing } = await call("assignments");
+      const { homes, origins, routing, power } = await call("assignments");
       if (routing !== "ready") console.warn("Public addresses are still being set up; retrying next round.");
-      await reconcile(homes, capacity, (id, state) => call("assignments", { id, state }), docker, { origins, hostToken: token });
+      await reconcile(homes, capacity, (id, state) => call("assignments", { id, state, sleepBlocked: process.env.LIMIX_HOME_GATEWAY !== "0" }), docker, { origins, hostToken: token, power, gateway: process.env.LIMIX_HOME_GATEWAY ?? "1" });
     } catch (error) {
       console.error("Host reconciliation failed:", error.message);
       if (process.argv.includes("--once")) process.exitCode = 1;

@@ -3,7 +3,7 @@
 // created or deleted only when it is a CNAME to that tunnel, never someone else's record with the same name.
 import { CloudflareAPI, type CloudflareFetch } from "./cloudflare-api";
 import { readConfig } from "./config";
-import { managedHomeHostname, managedHomeService } from "./managed-grant";
+import { managedHomeHostname } from "./managed-grant";
 
 export const HOST_TUNNEL_NAME = "limix-cloud-beta-host";
 
@@ -30,7 +30,7 @@ export async function hostConnectorToken(env: Env, fetcher: CloudflareFetch = fe
 export async function routedHostnames(env: Env): Promise<Set<string>> {
   const routed = await env.DB.prepare("SELECT routed, configured FROM managed_cloud_host WHERE id = 1").first<{ routed: string; configured: string | null }>();
   if (!routed?.configured) return new Set();
-  const live = new Set(routed.configured.split(",").filter(Boolean));
+  const live = new Set(routed.configured.replace(/^wake-v1:/, "").split(",").filter(Boolean));
   return new Set(Object.keys(JSON.parse(routed.routed) as Record<string, string>).filter(name => live.has(name)));
 }
 
@@ -55,11 +55,12 @@ export async function syncHostRouting(env: Env, workspaceIds: string[], fetcher:
     await save();
   }
   const rules = [...desired].filter(([hostname]) => routed[hostname]).sort(([a], [b]) => a.localeCompare(b))
-    .map(([hostname, id]) => ({ hostname, service: managedHomeService(id) }));
+    .map(([hostname]) => ({ hostname, service: "http://limix-managed-wake:8080" }));
   const configured = rules.map(rule => rule.hostname).join(",");
-  if (configured !== row.configured) {
+  const wakeVersion = "wake-v1:";
+  if (wakeVersion + configured !== row.configured) {
     await client.configureTunnelIngress(tunnelId, rules);
-    await env.DB.prepare("UPDATE managed_cloud_host SET configured = ? WHERE id = 1").bind(configured).run();
+    await env.DB.prepare("UPDATE managed_cloud_host SET configured = ? WHERE id = 1").bind(wakeVersion + configured).run();
   }
   for (const [hostname, recordId] of Object.entries(routed)) {
     if (desired.has(hostname)) continue;
