@@ -22,7 +22,7 @@ const LINES: Record<string, number> = {
   "src/components/bot-settings/AccessSection.tsx": 1022, // Limix Bot fork additions
   "server/index.ts": 15634,
   "src/state/store.tsx": 3367,
-  "electron/main.mjs": 3267,
+  "electron/main.mjs": 3270,
   "server/store.ts": 2291,
   "src/components/Sidebar.tsx": 1704,
   "server/drivers/claude.ts": 2090,
