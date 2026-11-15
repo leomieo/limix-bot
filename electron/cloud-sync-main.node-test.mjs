@@ -75,7 +75,7 @@ test("Files starts when the Documents folder can't be found, and keeps bot outpu
     cloudAccount: () => ({ openDashboard: async () => {} }), localDataDir: join(dir, "home", ".openmausbot"),
   });
   t.after(() => { installed.close(); rmSync(dir, { recursive: true, force: true }); });
-  const outputs = join(dir, "home", "Documents", "MausBot");
+  const outputs = join(dir, "home", "Documents", "Limix Bot");
   assert.equal((await handlers.get("files:state")({})).outputs.dir, outputs);
   await handlers.get("files:open")({}, { outputs: true });
   assert.deepEqual(opened, [outputs]);
