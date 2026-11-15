@@ -3,6 +3,7 @@
 // admin still sees only their own private chats, never another person's: audience.ts). A member sees a room
 // only when they can see every bot in it, and bots reach each other only with the same audience (sameAudience): a room
 // transcript or a delegation would otherwise carry a restricted bot's words to people who cannot see it.
+import { isLimixOwnerThread } from "./limix-owner-lane.ts";
 import { z } from "zod";
 
 import { accessFromVisibility, entryMatches, higherLevel, sharedLevel, type BotAccess, type BotAccessLevel } from "../shared/bot-access.ts";
@@ -281,7 +282,8 @@ export class VisibleSet {
   private audienceShows(threadId: string): boolean {
     const holder = this.ownerOf(threadId);
     const task = holder?.bot ? this.bots.get(holder.bot)?.tasks?.find(task => task.threadId === threadId) : undefined;
-    if (task?.botApi && (this.viewer.channelReviewUntil ?? 0) <= Date.now()) return false;
+    // Limix: the bot owner's own Telegram / Zalo chat stays listed; other people's wait for the password unlock.
+    if (task?.botApi && !isLimixOwnerThread(threadId) && (this.viewer.channelReviewUntil ?? 0) <= Date.now()) return false;
     const audience = this.audiences?.of(threadId);
     return audience === undefined || audienceIncludes(audience, { admin: this.viewer.kind === "all", person: this.audiences!.person, seesRoom: (groupId) => this.group(groupId) });
   }

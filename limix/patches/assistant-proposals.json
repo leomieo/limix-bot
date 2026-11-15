@@ -646,7 +646,7 @@
   "src/components/bot-panel/Conversations.tsx": [
     {
       "before": "      </div>\n      {listed && searching && (\n",
-      "after": "      </div>\n      {guestCount > 0 && bot.yourAccess !== \"view\" && (\n        <button\n          type=\"button\"\n          data-conversations-guests\n          aria-pressed={!hideGuests}\n          onClick={() => void api(`/api/bots/${bot.id}`, { method: \"PATCH\", body: JSON.stringify({ hideChannelGuests: !hideGuests }) }).catch(() => {})}\n          className=\"mb-2 w-full rounded-[6px] px-2 py-1 text-start text-[12px] text-ink-secondary hover:bg-ink/[0.06] hover:text-ink\"\n        >\n          {hideGuests\n            ? lx(`Hiện chat khách Telegram/Zalo (${guestCount})`, `Show Telegram/Zalo guest chats (${guestCount})`)\n            : lx(`Ẩn chat khách Telegram/Zalo (${guestCount})`, `Hide Telegram/Zalo guest chats (${guestCount})`)}\n        </button>\n      )}\n      {listed && searching && (\n"
+      "after": "      </div>\n      {guestCount > 0 && bot.yourAccess !== \"view\" && (\n        <button\n          type=\"button\"\n          data-conversations-guests\n          aria-pressed={!hideGuests}\n          onClick={() => void api(`/api/bots/${bot.id}`, { method: \"PATCH\", body: JSON.stringify({ hideChannelGuests: !hideGuests }) }).catch(() => {})}\n          className=\"mb-2 w-full rounded-[6px] px-2 py-1 text-start text-[12px] text-ink-secondary hover:bg-ink/[0.06] hover:text-ink\"\n        >\n          {hideGuests\n            ? lx(`Hiện chat khách Telegram/Zalo (${guestCount})`, `Show Telegram/Zalo guest chats (${guestCount})`)\n            : lx(`Ẩn chat khách Telegram/Zalo (${guestCount})`, `Hide Telegram/Zalo guest chats (${guestCount})`)}\n        </button>\n      )}\n      {bot.yourAccess !== \"view\" && <ChannelReviewRow />}\n      {listed && searching && (\n"
     },
     {
       "before": "    });\n  const conversations = orderedThreadList(threads.filter((task) => !isArchived(task) || task.threadId === bot.threadId));\n  const archived = orderedThreadList(threads.filter((task) => isArchived(task) && task.threadId !== bot.threadId));\n",
@@ -654,7 +654,7 @@
     },
     {
       "before": "import { activeLocale, t } from \"@/lib/i18n\";\nimport { SIDEBAR_INLINE, useMediaQuery } from \"@/lib/use-media-query\";\n",
-      "after": "import { activeLocale, t } from \"@/lib/i18n\";\nimport { lx } from \"@/lib/limix-text\";\nimport { SIDEBAR_INLINE, useMediaQuery } from \"@/lib/use-media-query\";\n"
+      "after": "import { activeLocale, t } from \"@/lib/i18n\";\nimport { lx } from \"@/lib/limix-text\";\nimport { ChannelReviewRow } from \"../LimixChannelReview\";\nimport { SIDEBAR_INLINE, useMediaQuery } from \"@/lib/use-media-query\";\n"
     }
   ],
   "src/components/Sidebar.tsx": [
@@ -667,6 +667,16 @@
     {
       "before": "                : call.statusCode === 400 || call.statusCode === 415 ? t(\"automations.calls.unreadable\")\n                  : t(\"botApi.call.failed\");\n  return call.repeats && call.repeats > 1 ? `${words} (${call.repeats})` : words;\n",
       "after": "                : call.statusCode === 400 || call.statusCode === 415 ? t(\"automations.calls.unreadable\")\n                  : call.reason && call.statusCode >= 500 ? `${t(\"botApi.call.failed\")}: ${call.reason}` // Limix: say why a turn could not run\n                    : t(\"botApi.call.failed\");\n  return call.repeats && call.repeats > 1 ? `${words} (${call.repeats})` : words;\n"
+    }
+  ],
+  "server/bot-visibility.ts": [
+    {
+      "before": "    const task = holder?.bot ? this.bots.get(holder.bot)?.tasks?.find(task => task.threadId === threadId) : undefined;\n    if (task?.botApi && (this.viewer.channelReviewUntil ?? 0) <= Date.now()) return false;\n    const audience = this.audiences?.of(threadId);\n",
+      "after": "    const task = holder?.bot ? this.bots.get(holder.bot)?.tasks?.find(task => task.threadId === threadId) : undefined;\n    // Limix: the bot owner's own Telegram / Zalo chat stays listed; other people's wait for the password unlock.\n    if (task?.botApi && !isLimixOwnerThread(threadId) && (this.viewer.channelReviewUntil ?? 0) <= Date.now()) return false;\n    const audience = this.audiences?.of(threadId);\n"
+    },
+    {
+      "before": "// transcript or a delegation would otherwise carry a restricted bot's words to people who cannot see it.\nimport { z } from \"zod\";\n",
+      "after": "// transcript or a delegation would otherwise carry a restricted bot's words to people who cannot see it.\nimport { isLimixOwnerThread } from \"./limix-owner-lane.ts\";\nimport { z } from \"zod\";\n"
     }
   ]
 }

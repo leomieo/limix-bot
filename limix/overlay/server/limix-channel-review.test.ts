@@ -1,5 +1,6 @@
 import { expect, it, vi } from "vitest";
-vi.mock("./limix-owner-lane.ts", () => ({ limixOwnerCall: (value: unknown) => value === "trusted-main" }));
+vi.mock("./limix-owner-lane.ts", async (importOriginal) => ({ ...await importOriginal<typeof import("./limix-owner-lane.ts")>(), limixOwnerCall: (value: unknown) => value === "trusted-main" }));
+import { markLimixOwnerThread } from "./limix-owner-lane.ts";
 import { channelReviewRoute, channelReviewUntil, channelReviewActive } from "./limix-channel-review.ts";
 import { VisibleSet, memberBot } from "./bot-visibility.ts";
 import type { RouteContext } from "./routes/table.ts";
@@ -39,4 +40,13 @@ it("hides channel titles and selected transcript from locked admin, including le
   const until = Date.now() + 300000;
   const unlocked = new VisibleSet([bot], [], { kind: "all", channelReviewUntil: until });
   expect(unlocked.thread("external")).toBe(true);
+});
+it("keeps the bot owner's own channel chat listed while other people's stay locked", () => {
+  markLimixOwnerThread("owner-chat");
+  const bot = { id: "bot", threadId: "local", mainThreadId: "local", tasks: [{ threadId: "local", title: "Configuration" }, { threadId: "owner-chat", botApi: true as const, title: "Telegram · owner" }, { threadId: "guest-chat", botApi: true as const, title: "Telegram · guest" }] };
+  const locked = new VisibleSet([bot], [], { kind: "all" });
+  expect(locked.thread("owner-chat")).toBe(true);
+  expect(locked.thread("guest-chat")).toBe(false);
+  expect(JSON.stringify(memberBot(bot, locked))).toContain("Telegram · owner");
+  expect(JSON.stringify(memberBot(bot, locked))).not.toContain("Telegram · guest");
 });
