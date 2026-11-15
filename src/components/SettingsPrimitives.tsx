@@ -87,11 +87,13 @@ export function SettingRow({
   );
 }
 
-export function SettingsGroup({ label, block, actions, footnote, children }: {
+export function SettingsGroup({ label, block, actions, footnote, description, children }: {
   label?: string;
   block?: string;
   actions?: ReactNode;
   footnote?: ReactNode;
+  /** One line under the title (used by the themes page). */
+  description?: ReactNode;
   children: ReactNode;
 }) {
   const labelId = useId();
@@ -107,6 +109,7 @@ export function SettingsGroup({ label, block, actions, footnote, children }: {
           {actions}
         </div>
       )}
+      {description && <p className="-mt-1 pl-4 text-[13px] leading-[18px] text-ink-secondary">{description}</p>}
       {children}
       {footnote && <p className="-mt-0.5 pl-4 text-[12px] leading-4 text-ink-tertiary empty:hidden">{footnote}</p>}
     </section>
@@ -172,3 +175,33 @@ export function CommandLine({ command, copyLabel = "Copy command" }: { command: 
     </div>
   );
 }
+
+/** The last line of a card holding a small form: its status on the left, Save on the right. */
+export function SettingsFormFoot({ status, children }: { status?: ReactNode; children: ReactNode }) {
+  return (
+    <div data-settings-form-foot="" className="flex min-h-11 items-center justify-end gap-3 px-4 py-2">
+      {status && <div className="mr-auto min-w-0 text-[12px] leading-4 text-ink-secondary">{status}</div>}
+      {children}
+    </div>
+  );
+}
+
+/** One line of plain rows' text when a list has nothing in it yet. */
+export function SettingsEmptyRow({ children }: { children: ReactNode }) {
+  return <div data-settings-empty="" className="flex min-h-11 items-center px-4 py-3 text-[13px] leading-[18px] text-ink-secondary">{children}</div>;
+}
+
+/** A stacked field: a label above a 32 px field (the label holds the field, so it names it). */
+export function SettingsField({ label, children, hint }: { label: ReactNode; children: ReactNode; hint?: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1.5" data-settings-field="">
+      <label className="flex flex-col gap-1.5">
+        <span className="text-[13px] font-medium leading-[18px] text-ink">{label}</span>
+        {children}
+      </label>
+      {hint && <div className="text-[12px] leading-4 text-ink-secondary">{hint}</div>}
+    </div>
+  );
+}
+
+export const SETTINGS_INPUT = "h-8 w-full rounded-lg border-0 shadow-[inset_0_0_0_0.5px_var(--color-hairline)] bg-app px-2 text-[13px] leading-5 text-ink outline-none placeholder:text-ink-tertiary focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus disabled:opacity-40";

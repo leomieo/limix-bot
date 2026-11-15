@@ -1,7 +1,6 @@
 // Every built-in tool a bot can be shown, by the switch that leaves it out. agents-tool-groups.test.ts holds every
 // catalog tool to exactly one entry here, so a new tool is placed on purpose.
 import { isToolGroup, type ToolGroup } from "../../shared/tool-groups.ts";
-import { HOSTING_TOOL_NAMES } from "./agents-hosting-tools.ts";
 import { IMAGE_TOOL_NAMES } from "./agents-image-tools.ts";
 import { MEETING_TOOL_NAMES } from "./agents-meeting-tools.ts";
 import { PAGE_TOOL_NAMES } from "./agents-pages-tools.ts";
@@ -11,7 +10,7 @@ import { RESEARCH_TOOL_NAMES } from "./agents-research-tools.ts";
 export const TOOL_GROUP_MEMBERS: Readonly<Record<ToolGroup, { tools: ReadonlySet<string>; servers: readonly ("data" | "email")[] }>> = {
   meetings: { tools: MEETING_TOOL_NAMES, servers: [] },
   data: { tools: new Set(), servers: ["data"] },
-  pages: { tools: new Set(["show_html", ...PAGE_TOOL_NAMES, ...HOSTING_TOOL_NAMES]), servers: [] },
+  pages: { tools: new Set(["show_html", ...PAGE_TOOL_NAMES]), servers: [] },
   images: { tools: IMAGE_TOOL_NAMES, servers: [] },
   email: { tools: new Set(), servers: ["email"] },
 };
