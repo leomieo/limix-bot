@@ -36,12 +36,12 @@ export async function limixSession(request: Request, env: Env): Promise<LimixSes
       body: JSON.stringify({ token: match[2], machine_id: machineId }),
       signal: AbortSignal.timeout(8_000),
     });
-    if (!response.ok && response.status >= 500) throw new HTTPError(503, "limix_account_unavailable");
+    if (!response.ok && response.status >= 500) throw new HTTPError(503, "limix_account_unavailable:status_" + response.status);
     if (!response.ok) return null;
     answer = await response.json().catch(() => null);
   } catch (error) {
     if (error instanceof HTTPError) throw error;
-    throw new HTTPError(503, "limix_account_unavailable");
+    throw new HTTPError(503, "limix_account_unavailable:" + String((error as Error)?.message ?? error).slice(0, 120));
   }
   if (!answer || typeof answer !== "object" || !("valid" in answer) || answer.valid !== true || !("username" in answer) || typeof answer.username !== "string") return null;
   const key = limixUserKey(answer.username);
