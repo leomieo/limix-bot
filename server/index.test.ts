@@ -252,6 +252,17 @@ const api = async (method: string, path: string, body?: unknown): Promise<{ stat
   return { status: res.status, body: await res.json() };
 };
 
+/** Limix: a bot the Chief proposes waits on a card; the person's approval adds it. Returns the proposal with the new bot's id and the outcome. */
+async function approveProposal<T extends { requestId?: string }>(threadId: string, proposal: T): Promise<T & { id?: string; state?: string }> {
+  expect(proposal).toMatchObject({ state: "pending", applied: false });
+  const response = await fetch(`${BASE}/api/threads/${threadId}/respond`, { method: "POST", headers: { "content-type": "application/json", origin: BASE },
+    body: JSON.stringify({ requestId: proposal.requestId, behavior: "allow" }) });
+  const decided = { status: response.status, body: await response.json() as any };
+  expect(decided.status, JSON.stringify(decided.body)).toBe(200);
+  const created = (decided.body.result?.bots as Array<{ action: string; id: string }> | undefined)?.find((bot) => bot.action === "created");
+  return { ...proposal, id: created?.id, state: decided.body.result?.state };
+}
+
 const releaseTurn = async (botId: string) => {
   writeFileSync(fakeClaudeRelease, "release");
   try {
@@ -2577,8 +2588,10 @@ describe("harness HTTP API", () => {
           section: z.string().optional(),
           error: z.string().optional(),
         }).passthrough().parse(await response.json());
-        if (response.status === 201 && body.id) createdBotIds.push(body.id);
-        return { status: response.status, body };
+        if (response.status !== 201) return { status: response.status, body };
+        const approved = await approveProposal(fromThreadId, body as { requestId?: string });
+        if (approved.id) createdBotIds.push(approved.id);
+        return { status: response.status, body: { ...body, ...approved } };
       };
 
       const direct = await createOperator(chief.threadId, "Direct Task Operator");
@@ -2820,7 +2833,8 @@ describe("harness HTTP API", () => {
         return { status: response.status, body: await response.json() as { id?: string; error?: string } };
       };
       const folder = mkdtempSync(join(tmpdir(), "omb-create-cwd-"));
-      const landed = await create(`Folder operator ${chief.id}`, folder) as { status: number; body: { id?: string; state?: string; detail?: string } };
+      const proposal = await create(`Folder operator ${chief.id}`, folder) as { status: number; body: { id?: string; state?: string; detail?: string; requestId?: string } };
+      const landed = { ...proposal, body: { ...proposal.body, ...await approveProposal(chief.threadId, proposal.body) } };
       expect(landed.body).toMatchObject({ state: "applied" });
       expect(landed.body.detail).toContain(`Working folder: "${folder}"`);
       createdId = landed.body.id;
@@ -2852,9 +2866,9 @@ describe("harness HTTP API", () => {
         return { status: response.status, body: await response.json() as { id?: string; error?: string } };
       };
       const role = `You own the weekly numbers.\n${"Check every figure against its source and say where it came from. ".repeat(80)}`.slice(0, 3999) + ".";
-      const made = await create(`Analyst ${chief.id}`, role);
-      expect(made.status, JSON.stringify(made.body)).toBe(201);
-      createdId = made.body.id;
+      const proposed = await create(`Analyst ${chief.id}`, role);
+      expect(proposed.status, JSON.stringify(proposed.body)).toBe(201);
+      createdId = (await approveProposal(chief.threadId, proposed.body as { requestId?: string })).id;
       const state = (await api("GET", "/api/bots?messages=0")).body;
       expect(state.bots.find((bot: { id?: string }) => bot.id === createdId)?.soul).toBe(role);
       const longer = await create(`Longer analyst ${chief.id}`, `${role}x`);
@@ -2878,9 +2892,9 @@ describe("harness HTTP API", () => {
         headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
         body: JSON.stringify({ fromBotId: chief.id, fromThreadId: chief.threadId, name: "dana reyes", role: "Ops", instructions: "Work." }),
       });
-      const body = await response.json() as { id?: string; warning?: string };
+      const body = await response.json() as { id?: string; warning?: string; requestId?: string };
       expect(response.status, JSON.stringify(body)).toBe(201);
-      createdId = body.id;
+      createdId = (await approveProposal(chief.threadId, body as { requestId?: string })).id;
       expect(body.warning).toBe('Dana Reyes is also a person here, so "@dana reyes" reaches Dana Reyes, not this bot. Rename the bot to keep them apart.');
       const made = ((await api("GET", "/api/bots?messages=20")).body.bots as Array<{ id: string; messages: Array<{ tool?: { name?: string } }> }>)
         .find((bot) => bot.id === createdId)!;
@@ -2892,7 +2906,7 @@ describe("harness HTTP API", () => {
     }
   });
 
-  it("adds a specialist the Chief chose itself at once, at Ask too, with an Undo and no card, up to four a turn", async () => {
+  it("proposes a specialist the Chief chose itself on a card, at Ask too, and adds it only once the person approves, up to four a turn", async () => {
     const chief = (await api("POST", "/api/bots")).body.bot;
     const created: string[] = [];
     try {
@@ -2908,21 +2922,19 @@ describe("harness HTTP API", () => {
         return { status: response.status, body: await response.json() as { id?: string; state?: string; requestId?: string; error?: string } };
       };
       const first = await add(`Checker ${chief.id}`);
-      expect(first, "the Chief's own pick is created at once").toMatchObject({ status: 201, body: { state: "applied", id: expect.any(String) } });
-      created.push(first.body.id!);
+      expect(first, "the Chief's own pick waits for the person").toMatchObject({ status: 201, body: { state: "pending", applied: false } });
+      const waiting = () => api("GET", `/api/bots?messages=0`).then((state) => state.body.bots.filter((bot: { name: string }) => bot.name.startsWith("Checker")));
+      expect(await waiting()).toEqual([]);
       const messages = (await api("GET", `/api/threads/${chief.threadId}/messages?limit=20`)).body.messages as Array<{ kind?: string; card?: any }>;
-      expect(messages.find((message) => message.card?.requestId === first.body.requestId)?.card)
-        .toMatchObject({ autoApplied: true, answered: "allow", options: [], teamSetupRequest: { undo: { created: [first.body.id] } } });
-      expect(messages.filter((message) => message.kind === "options" && !message.card?.answered && !message.card?.dismissed && !message.card?.expired),
-        "nothing waits on the person").toEqual([]);
+      expect(messages.find((message) => message.card?.requestId === first.body.requestId)?.card).toMatchObject({ teamSetupRequest: { requestId: first.body.requestId } });
+      const approved = await approveProposal(chief.threadId, first.body);
+      created.push(approved.id!);
       for (const n of [2, 3, 4]) {
         const next = await add(`Checker ${n} ${chief.id}`);
-        expect(next.status).toBe(201);
-        created.push(next.body.id!);
+        expect(next).toMatchObject({ status: 201, body: { state: "pending" } });
       }
       expect(await add(`Checker 5 ${chief.id}`), "the per-turn cap still holds").toMatchObject({ status: 429 });
-      expect((await api("POST", `/api/threads/${chief.threadId}/undo`, { requestId: first.body.requestId })).body).toEqual({ ok: true, undone: true });
-      expect((await api("GET", "/api/bots?messages=0")).body.bots.some((bot: { id: string }) => bot.id === first.body.id)).toBe(false);
+      expect(await waiting(), "only the approved proposal became a bot").toHaveLength(1);
     } finally {
       for (const id of created) await api("DELETE", `/api/bots/${id}`);
       await api("DELETE", `/api/bots/${chief.id}`);

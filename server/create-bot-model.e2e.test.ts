@@ -26,7 +26,7 @@ it("Chief creation uses the workspace default or a validated explicit model with
     await api("PATCH", "/api/config", { defaultModelSelection: defaultModel });
     const chiefModel = { instanceId: "claude", model: claude.models.default };
     const chief = (await api("POST", "/api/bots", { name: "Chief", section: "Design", modelSelection: chiefModel }, 201)).bot;
-    // At Ask too, each creation applies at once: OpenMausBot adds no card of its own.
+    // Limix: each creation waits on a review card, and the person's approval adds the bot.
     await api("PATCH", `/api/bots/${chief.id}`, { chiefOfStaff: true, approvalMode: "ask", connectorScopes: { apps: { gmail: "read" } } });
     await api("POST", `/api/bots/${chief.id}/messages`, { text: "Prepare a specialist." }, 202);
     await expect.poll(() => existsSync(fixture.fixtureDumpPath), { timeout: 15_000 }).toBe(true);
@@ -38,33 +38,42 @@ it("Chief creation uses the workspace default or a validated explicit model with
       ...(modelSelection === undefined ? {} : { modelSelection }),
     }, expected, token);
     const idle = () => expect.poll(async () => (await api("GET", "/api/bots")).bots.every((bot: any) => !bot.busy), { timeout: 20_000 }).toBe(true);
-    const applied = (result: any) => {
-      expect(result).toMatchObject({ state: "applied", applied: true });
-      return { id: result.id as string, modelSelection: result.modelSelection };
+    const proposed = (pending: any) => {
+      expect(pending).toMatchObject({ state: "pending", applied: false });
+      return pending.requestId as string;
+    };
+    // A card can be approved once every bot is idle, so the person decides after the turn ends.
+    const approve = async (requestId: string) => {
+      const decided = await api("POST", `/api/threads/${chief.threadId}/respond`, { requestId, behavior: "allow" });
+      const id = decided.result.bots.find((bot: any) => bot.action === "created").id as string;
+      const bot = (await api("GET", "/api/bots")).bots.find((candidate: any) => candidate.id === id);
+      return { id, modelSelection: bot.modelSelection };
     };
     const before = (await api("GET", "/api/bots")).bots.length;
-    const first = applied(await create("Default specialist"));
+    const firstRequest = proposed(await create("Default specialist"));
+    expect((await api("GET", "/api/bots")).bots.length).toBe(before);
     // The installed CLI is too old for the newest model: a proposal may not name it, and the explicit pick is one it can run.
     const tooNew = claude.models.options.find((item: any) => item.needsCliUpdate);
     expect(tooNew).toBeTruthy();
     const explicit = { instanceId: "claude", model: claude.models.options.find((item: any) => item.id !== claude.models.default && !item.needsCliUpdate).id, effort: "low" };
-    const second = applied(await create("Chosen specialist", explicit));
-    expect((await api("GET", "/api/bots")).bots.length).toBe(before + 2);
+    const secondRequest = proposed(await create("Chosen specialist", explicit));
+    expect((await api("GET", "/api/bots")).bots.length).toBe(before);
     for (const invalid of [null, {}, { instanceId: "missing", model: "missing" },
       { ...explicit, model: "not-in-catalog" }, { ...explicit, effort: "invalid" },
       { ...explicit, variant: "a-variant" }, { instanceId: "claude", model: tooNew.id }]) {
       await create("Invalid specialist", invalid, 400);
     }
-    await create("Third specialist");
-    await create("Fourth specialist");
+    proposed(await create("Third specialist"));
+    proposed(await create("Fourth specialist"));
     await create("Fifth specialist", undefined, 429);
     writeFileSync(gate, "finish");
     await idle();
     await create("Expired authority", undefined, 401);
+    const first = await approve(firstRequest), second = await approve(secondRequest);
     expect(first.modelSelection).toEqual(defaultModel);
     expect(second.modelSelection).toEqual(explicit);
     const bots = (await api("GET", "/api/bots")).bots;
-    expect(bots.length).toBe(before + 4);
+    expect(bots.length).toBe(before + 2);
     expect(bots.find((bot: any) => bot.id === chief.id).modelSelection).toEqual(chiefModel);
     for (const [id, modelSelection] of [[first.id, defaultModel], [second.id, explicit]]) {
       expect(bots.find((bot: any) => bot.id === id)).toMatchObject({
@@ -78,9 +87,10 @@ it("Chief creation uses the workspace default or a validated explicit model with
     await api("POST", `/api/bots/${chief.id}/messages`, { text: "Prepare the next specialist." }, 202);
     await expect.poll(() => existsSync(fixture.fixtureDumpPath), { timeout: 15_000 }).toBe(true);
     token = JSON.parse(readFileSync(fixture.fixtureDumpPath, "utf8")).mcpConfig.mcpServers.agents.env.OMB_COMMS_TOKEN;
-    const updated = applied(await create("Updated default specialist"));
+    const updatedRequest = proposed(await create("Updated default specialist"));
     writeFileSync(gate, "finish");
     await idle();
+    const updated = await approve(updatedRequest);
     expect(updated.modelSelection).toEqual(explicit);
     expect((await api("GET", "/api/bots")).bots.find((bot: any) => bot.id === first.id).modelSelection).toEqual(defaultModel);
   } finally {

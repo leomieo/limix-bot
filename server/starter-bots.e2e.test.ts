@@ -196,9 +196,15 @@ describe("a Starter Cloud's bots, on a real server", () => {
     const { token, chief } = await cloud.chiefTurn();
     const tool = await cloud.internal("/api/internal/create-bot", token, { fromBotId: chief.id, fromThreadId: chief.threadId, name: "Scout", role: "Specialist", instructions: "Work." });
     expect(tool.status, JSON.stringify(tool.body)).toBe(201);
-    expect(tool.body).toMatchObject({ state: "applied", name: "Scout" });
-    expect(tool.body.paused).toMatch(/^@Scout was created, and is paused: this Cloud's Starter plan keeps 5 bots awake/);
-    expect(await paused()).toEqual([tool.body.id]);
+    expect(tool.body).toMatchObject({ state: "pending", applied: false });
+    expect(await paused()).toEqual([]);
+    // The person approves once the turn is over; the new bot is then the one the Starter plan keeps asleep.
+    cloud.finishTurn();
+    await expect.poll(async () => (await cloud.bots()).every((bot) => !bot.busy), { timeout: 20_000 }).toBe(true);
+    const decided = await cloud.api("POST", `/api/threads/${chief.threadId}/respond`, { requestId: tool.body.requestId, behavior: "allow" });
+    expect(decided.status, JSON.stringify(decided.body)).toBe(200);
+    const scoutId = decided.body.result.bots.find((bot: any) => bot.action === "created").id as string;
+    expect(await paused()).toEqual([scoutId]);
     const setup = await cloud.internal("/api/internal/team-setup-requests", token, { plan: { reason: "Add a specialist", newTeams: [],
       operations: [{ action: "create", key: "writer", fields: { name: "Writer", title: "Specialist", soul: "Work.", modelSelection: CLAUDE } }] } });
     expect(setup.status, JSON.stringify(setup.body)).not.toBe(409);

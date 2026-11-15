@@ -38,3 +38,6 @@ Không có Docker; npm cần `npm_config_noproxy=localhost NO_PROXY=localhost`; 
 - Push commit `0ad3d74` (Cloud beta managed) khi người dùng bảo; rồi triển khai trên Xeon theo `HANDOFF_MANAGED_CLOUD_BETA.md` (smoke.mjs, host.ps1 Configure -Generate, secret `LIMIX_BETA_HOST_TOKEN`, workflow "Limix Cloudflare", test Zalo/Telegram tắt laptop, rồi test cô lập khách A/B; giữ cổng 18799 cho quản trị nội bộ).
 - Đề xuất chờ trả lời: bộ test prompt-injection cho tin nhắn kênh, quyền theo người gửi, giới hạn chi phí theo khách.
 - Luật người dùng: trả lời tiếng Việt, ngắn, từng bước; không đổi/gõ mật khẩu; không bảo người dùng gửi khoá/token; không mua gì khi chưa hỏi; việc thương mại Limix Agent giữ ở repo private.
+
+## Cập nhật 15/11 (tối): đã làm xong cách A
+Đã sửa 10 test theo thẻ chờ duyệt: create-bot-model, no-omb-cards (team fact thực ra pass, chỉ lỗi dây chuyền), starter-bots, index.test.ts (4 test + 1 viết lại, undo sau duyệt không còn). Trả `warning` trùng tên người ngay trên phản hồi pending của `/api/internal/create-bot`. Hạn chế đã biết: gợi ý "bot mới bị tạm dừng (gói Starter)" chỉ trả khi tạo ngay, nay không còn đến tay trợ lý sau khi duyệt. tsc 4 cấu hình sạch. Patch `assistant-proposals.json` + overlay đã tái tạo. Test `lets a Chief create operators...` lỗi từ trước (fake-claude dump), không do thay đổi này.

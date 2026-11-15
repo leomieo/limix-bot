@@ -14303,7 +14303,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
             tool: "create_bot", summary: proposed.detail, decision: proposed.state === "applied" ? "auto-approved" : "card-shown",
             source: "appliedBy" in proposed ? proposed.appliedBy : "profile" });
         }
-        if (proposed.state === "pending") return json(res, 201, proposed);
+        if (proposed.state === "pending") return json(res, 201, { ...proposed, ...(botNameClash.warning(name) ? { warning: botNameClash.warning(name) } : {}) });
         const createdId = "result" in proposed ? proposed.result.bots.find((bot) => bot.action === "created")?.id : undefined;
         const created = createdId ? store.bot(createdId) : undefined;
         if (!created) return json(res, 201, proposed);

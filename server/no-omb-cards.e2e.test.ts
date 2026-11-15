@@ -128,21 +128,22 @@ describe.each([["Full", "full"], ["Auto", "auto"]] as const)("a bot at %s", (pre
     expect(await skills()).not.toContain(name);
   });
 
-  it("sets up the team with no card, and Undo deletes the unused bot it added", async () => {
+  it("waits for the person before adding a bot to the team, then adds it at the default level", async () => {
     const chief = await bot(`${prefix} Chief`);
     const token = await mint(chief.id, chief.threadId);
     const created = await api("POST", "/api/internal/create-bot", { name: `${prefix} Checker`, role: "Checks the work",
       instructions: "Check every result before it ships." }, token);
     expect(created.status, JSON.stringify(created.body)).toBe(201);
-    expect(created.body).toMatchObject({ state: "applied", applied: true, name: `${prefix} Checker` });
+    expect(created.body).toMatchObject({ state: "pending", applied: false });
+    expect(await bot(`${prefix} Checker`)).toBeUndefined();
+    const card = (await cards(chief.threadId)).find((message) => message.card.requestId === created.body.requestId)?.card;
+    expect(card).toMatchObject({ teamSetupRequest: { requestId: created.body.requestId } });
+    expect(card.answered).toBeUndefined();
+    const decided = await api("POST", `/api/threads/${chief.threadId}/respond`, { requestId: created.body.requestId, behavior: "allow" });
+    expect(decided.status, JSON.stringify(decided.body)).toBe(200);
+    expect(decided.body.result).toMatchObject({ state: "applied" });
     // A bot the Chief creates starts at the default level, Full access, whatever the Chief's own level.
     expect((await bot(`${prefix} Checker`)).approvalMode).toBe("full");
-    const card = await notice(chief.threadId, created.body.requestId);
-    expect(card.teamSetupRequest.undo.created).toEqual([created.body.id]);
-    await decided(created.body.requestId, level);
-    expect((await undo(chief.threadId, created.body.requestId)).body).toMatchObject({ ok: true, undone: true });
-    expect(await bot(`${prefix} Checker`)).toBeUndefined();
-    expect((await undo(chief.threadId, created.body.requestId)).body).toMatchObject({ alreadyUndone: true });
   });
 
   it("saves a team fact with no card, and Undo takes it back out", async () => {

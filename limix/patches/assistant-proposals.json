@@ -46,13 +46,13 @@
     },
     {
       "before": "    description:\n      \"Chief of Staff only: add a specialist to your section now; the person can undo it. instructions become its soul. Omit modelSelection for the workspace default, or use exact IDs from list_team_setup. It starts with your connected apps, at the default access level. Assign work with coordinate_bots. At most four per turn.\",\n    inputSchema: {\n",
-      "after": "    description:\n      \"Chief of Staff only, and not used in Limix Bot: bots are added only through propose_team_setup. Add a specialist to your section now; the person can undo it. instructions become its soul. Omit modelSelection for the workspace default, or use exact IDs from list_team_setup. It starts with your connected apps, at the default access level. Assign work with coordinate_bots. At most four per turn.\",\n    inputSchema: {\n"
+      "after": "    description:\n      \"Chief of Staff only: propose one specialist for your section on a review card; it is added only if the person approves. Prefer propose_team_setup for ready-made bots, several bots or a group chat. instructions become its soul. Omit modelSelection for the workspace default, or use exact IDs from list_team_setup. It starts with your connected apps, at the default access level. Assign work with coordinate_bots. At most four per turn.\",\n    inputSchema: {\n"
     }
   ],
   "server/index.ts": [
     {
-      "before": "          return json(res, 403, { error: \"only a section's Chief of Staff can create operator bots\" });\n        }\n        if (internalCapability.createdBots >= MAX_CREATED_BOTS_PER_TURN) {\n          return json(res, 429, { error: `You can create at most ${MAX_CREATED_BOTS_PER_TURN} bots in one turn. Use the team you have before adding more.` });\n",
-      "after": "          return json(res, 403, { error: \"only a section's Chief of Staff can create operator bots\" });\n        }\n        if (LIMIX_REVIEWED_BOT_CREATION) {\n          return json(res, 409, { error: LIMIX_REVIEWED_BOT_CREATION });\n        }\n        if (internalCapability.createdBots >= MAX_CREATED_BOTS_PER_TURN) {\n          return json(res, 429, { error: `You can create at most ${MAX_CREATED_BOTS_PER_TURN} bots in one turn. Use the team you have before adding more.` });\n"
+      "before": "        }\n        if (proposed.state === \"pending\") return json(res, 201, proposed);\n        const createdId = \"result\" in proposed ? proposed.result.bots.find((bot) => bot.action === \"created\")?.id : undefined;\n",
+      "after": "        }\n        if (proposed.state === \"pending\") return json(res, 201, { ...proposed, ...(botNameClash.warning(name) ? { warning: botNameClash.warning(name) } : {}) });\n        const createdId = \"result\" in proposed ? proposed.result.bots.find((bot) => bot.action === \"created\")?.id : undefined;\n"
     },
     {
       "before": "\nasync function resolveAndSendTeamSetup(res: ServerResponse, args: { botId: string; threadId: string; requestId: string; behavior: string }, ownerReview: boolean): Promise<boolean> {\n  const card = store.messagesFor(args.threadId).find((item) => item.card?.requestId === args.requestId && item.card.teamSetupRequest)?.card;\n",
@@ -64,7 +64,7 @@
     },
     {
       "before": "  return sourceApprovalMode(botId, threadId) === \"full\";\n}\n\nfunction appliesDirectly(botId: string, threadId: string): DirectApply | null {\n",
-      "after": "  return sourceApprovalMode(botId, threadId) === \"full\";\n}\n\n/** Limix: bot and team changes the assistant proposes always wait for the person's decision on a card. */\nfunction limixProposalsWaitForReview(): DirectApply | null { return null; }\nconst LIMIX_REVIEWED_BOT_CREATION = \"Bots are added here only through a reviewed proposal. Call propose_team_setup with this bot (template for a ready-made one), say in one line what you proposed, and end your turn; the person decides on the card.\";\n\nfunction appliesDirectly(botId: string, threadId: string): DirectApply | null {\n"
+      "after": "  return sourceApprovalMode(botId, threadId) === \"full\";\n}\n\n/** Limix: bot and team changes the assistant proposes always wait for the person's decision on a card. */\nfunction limixProposalsWaitForReview(): DirectApply | null { return null; }\n\nfunction appliesDirectly(botId: string, threadId: string): DirectApply | null {\n"
     },
     {
       "before": "}\nconst firstHourFresh = Boolean(CLOUD_PERSONAL) && store.needsSeed(); testedAi.seed({ defaultBot: !CLOUD_TEAM, ...(firstHourFresh ? { intro: (bot) => greetingMessage(bot, { name: cfg.profile?.name }, cfg.language) } : {}) }); moveFreeze.hold(() => { if (!CLOUD_TEAM) ensureDefaultBot(store, { dataDir: DATA_DIR }); }, () => {}); if (CLOUD_TEAM) readTeamRolesWith((email) => sessions.list().filter((session) => session.email?.toLowerCase() === email && session.teamRole).sort((a, b) => b.createdAt - a.createdAt)[0]?.teamRole ?? null); if (CLOUD_TEAM) void mausbotOwnChat.claimAll();\nhostedModels?.reconcile(store);\n",
@@ -325,6 +325,110 @@
     {
       "before": "\nfunction harness(caps?: Record<string, { driverKind: string; agentsMcp: boolean }>) {\n  const bots: BotRecord[] = [];\n",
       "after": "\nfunction harness(caps?: Record<string, { driverKind: string; agentsMcp: boolean }>, createRoom?: (request: TeamSetupRequest, botIds: string[]) => { id: string; name: string }) {\n  const bots: BotRecord[] = [];\n"
+    }
+  ],
+  "server/create-bot-model.e2e.test.ts": [
+    {
+      "before": "    await idle();\n    expect(updated.modelSelection).toEqual(explicit);\n",
+      "after": "    await idle();\n    const updated = await approve(updatedRequest);\n    expect(updated.modelSelection).toEqual(explicit);\n"
+    },
+    {
+      "before": "    token = JSON.parse(readFileSync(fixture.fixtureDumpPath, \"utf8\")).mcpConfig.mcpServers.agents.env.OMB_COMMS_TOKEN;\n    const updated = applied(await create(\"Updated default specialist\"));\n    writeFileSync(gate, \"finish\");\n",
+      "after": "    token = JSON.parse(readFileSync(fixture.fixtureDumpPath, \"utf8\")).mcpConfig.mcpServers.agents.env.OMB_COMMS_TOKEN;\n    const updatedRequest = proposed(await create(\"Updated default specialist\"));\n    writeFileSync(gate, \"finish\");\n"
+    },
+    {
+      "before": "    const bots = (await api(\"GET\", \"/api/bots\")).bots;\n    expect(bots.length).toBe(before + 4);\n    expect(bots.find((bot: any) => bot.id === chief.id).modelSelection).toEqual(chiefModel);\n",
+      "after": "    const bots = (await api(\"GET\", \"/api/bots\")).bots;\n    expect(bots.length).toBe(before + 2);\n    expect(bots.find((bot: any) => bot.id === chief.id).modelSelection).toEqual(chiefModel);\n"
+    },
+    {
+      "before": "    await create(\"Expired authority\", undefined, 401);\n    expect(first.modelSelection).toEqual(defaultModel);\n",
+      "after": "    await create(\"Expired authority\", undefined, 401);\n    const first = await approve(firstRequest), second = await approve(secondRequest);\n    expect(first.modelSelection).toEqual(defaultModel);\n"
+    },
+    {
+      "before": "    }\n    await create(\"Third specialist\");\n    await create(\"Fourth specialist\");\n    await create(\"Fifth specialist\", undefined, 429);\n",
+      "after": "    }\n    proposed(await create(\"Third specialist\"));\n    proposed(await create(\"Fourth specialist\"));\n    await create(\"Fifth specialist\", undefined, 429);\n"
+    },
+    {
+      "before": "    const explicit = { instanceId: \"claude\", model: claude.models.options.find((item: any) => item.id !== claude.models.default && !item.needsCliUpdate).id, effort: \"low\" };\n    const second = applied(await create(\"Chosen specialist\", explicit));\n    expect((await api(\"GET\", \"/api/bots\")).bots.length).toBe(before + 2);\n    for (const invalid of [null, {}, { instanceId: \"missing\", model: \"missing\" },\n",
+      "after": "    const explicit = { instanceId: \"claude\", model: claude.models.options.find((item: any) => item.id !== claude.models.default && !item.needsCliUpdate).id, effort: \"low\" };\n    const secondRequest = proposed(await create(\"Chosen specialist\", explicit));\n    expect((await api(\"GET\", \"/api/bots\")).bots.length).toBe(before);\n    for (const invalid of [null, {}, { instanceId: \"missing\", model: \"missing\" },\n"
+    },
+    {
+      "before": "    const before = (await api(\"GET\", \"/api/bots\")).bots.length;\n    const first = applied(await create(\"Default specialist\"));\n    // The installed CLI is too old for the newest model: a proposal may not name it, and the explicit pick is one it can run.\n",
+      "after": "    const before = (await api(\"GET\", \"/api/bots\")).bots.length;\n    const firstRequest = proposed(await create(\"Default specialist\"));\n    expect((await api(\"GET\", \"/api/bots\")).bots.length).toBe(before);\n    // The installed CLI is too old for the newest model: a proposal may not name it, and the explicit pick is one it can run.\n"
+    },
+    {
+      "before": "    const idle = () => expect.poll(async () => (await api(\"GET\", \"/api/bots\")).bots.every((bot: any) => !bot.busy), { timeout: 20_000 }).toBe(true);\n    const applied = (result: any) => {\n      expect(result).toMatchObject({ state: \"applied\", applied: true });\n      return { id: result.id as string, modelSelection: result.modelSelection };\n    };\n",
+      "after": "    const idle = () => expect.poll(async () => (await api(\"GET\", \"/api/bots\")).bots.every((bot: any) => !bot.busy), { timeout: 20_000 }).toBe(true);\n    const proposed = (pending: any) => {\n      expect(pending).toMatchObject({ state: \"pending\", applied: false });\n      return pending.requestId as string;\n    };\n    // A card can be approved once every bot is idle, so the person decides after the turn ends.\n    const approve = async (requestId: string) => {\n      const decided = await api(\"POST\", `/api/threads/${chief.threadId}/respond`, { requestId, behavior: \"allow\" });\n      const id = decided.result.bots.find((bot: any) => bot.action === \"created\").id as string;\n      const bot = (await api(\"GET\", \"/api/bots\")).bots.find((candidate: any) => candidate.id === id);\n      return { id, modelSelection: bot.modelSelection };\n    };\n"
+    },
+    {
+      "before": "    const chief = (await api(\"POST\", \"/api/bots\", { name: \"Chief\", section: \"Design\", modelSelection: chiefModel }, 201)).bot;\n    // At Ask too, each creation applies at once: OpenMausBot adds no card of its own.\n    await api(\"PATCH\", `/api/bots/${chief.id}`, { chiefOfStaff: true, approvalMode: \"ask\", connectorScopes: { apps: { gmail: \"read\" } } });\n",
+      "after": "    const chief = (await api(\"POST\", \"/api/bots\", { name: \"Chief\", section: \"Design\", modelSelection: chiefModel }, 201)).bot;\n    // Limix: each creation waits on a review card, and the person's approval adds the bot.\n    await api(\"PATCH\", `/api/bots/${chief.id}`, { chiefOfStaff: true, approvalMode: \"ask\", connectorScopes: { apps: { gmail: \"read\" } } });\n"
+    }
+  ],
+  "server/index.test.ts": [
+    {
+      "before": "      expect(await add(`Checker 5 ${chief.id}`), \"the per-turn cap still holds\").toMatchObject({ status: 429 });\n      expect((await api(\"POST\", `/api/threads/${chief.threadId}/undo`, { requestId: first.body.requestId })).body).toEqual({ ok: true, undone: true });\n      expect((await api(\"GET\", \"/api/bots?messages=0\")).body.bots.some((bot: { id: string }) => bot.id === first.body.id)).toBe(false);\n    } finally {\n",
+      "after": "      expect(await add(`Checker 5 ${chief.id}`), \"the per-turn cap still holds\").toMatchObject({ status: 429 });\n      expect(await waiting(), \"only the approved proposal became a bot\").toHaveLength(1);\n    } finally {\n"
+    },
+    {
+      "before": "        const next = await add(`Checker ${n} ${chief.id}`);\n        expect(next.status).toBe(201);\n        created.push(next.body.id!);\n      }\n",
+      "after": "        const next = await add(`Checker ${n} ${chief.id}`);\n        expect(next).toMatchObject({ status: 201, body: { state: \"pending\" } });\n      }\n"
+    },
+    {
+      "before": "      const messages = (await api(\"GET\", `/api/threads/${chief.threadId}/messages?limit=20`)).body.messages as Array<{ kind?: string; card?: any }>;\n      expect(messages.find((message) => message.card?.requestId === first.body.requestId)?.card)\n        .toMatchObject({ autoApplied: true, answered: \"allow\", options: [], teamSetupRequest: { undo: { created: [first.body.id] } } });\n      expect(messages.filter((message) => message.kind === \"options\" && !message.card?.answered && !message.card?.dismissed && !message.card?.expired),\n        \"nothing waits on the person\").toEqual([]);\n      for (const n of [2, 3, 4]) {\n",
+      "after": "      const messages = (await api(\"GET\", `/api/threads/${chief.threadId}/messages?limit=20`)).body.messages as Array<{ kind?: string; card?: any }>;\n      expect(messages.find((message) => message.card?.requestId === first.body.requestId)?.card).toMatchObject({ teamSetupRequest: { requestId: first.body.requestId } });\n      const approved = await approveProposal(chief.threadId, first.body);\n      created.push(approved.id!);\n      for (const n of [2, 3, 4]) {\n"
+    },
+    {
+      "before": "      const first = await add(`Checker ${chief.id}`);\n      expect(first, \"the Chief's own pick is created at once\").toMatchObject({ status: 201, body: { state: \"applied\", id: expect.any(String) } });\n      created.push(first.body.id!);\n      const messages = (await api(\"GET\", `/api/threads/${chief.threadId}/messages?limit=20`)).body.messages as Array<{ kind?: string; card?: any }>;\n",
+      "after": "      const first = await add(`Checker ${chief.id}`);\n      expect(first, \"the Chief's own pick waits for the person\").toMatchObject({ status: 201, body: { state: \"pending\", applied: false } });\n      const waiting = () => api(\"GET\", `/api/bots?messages=0`).then((state) => state.body.bots.filter((bot: { name: string }) => bot.name.startsWith(\"Checker\")));\n      expect(await waiting()).toEqual([]);\n      const messages = (await api(\"GET\", `/api/threads/${chief.threadId}/messages?limit=20`)).body.messages as Array<{ kind?: string; card?: any }>;\n"
+    },
+    {
+      "before": "\n  it(\"adds a specialist the Chief chose itself at once, at Ask too, with an Undo and no card, up to four a turn\", async () => {\n    const chief = (await api(\"POST\", \"/api/bots\")).body.bot;\n",
+      "after": "\n  it(\"proposes a specialist the Chief chose itself on a card, at Ask too, and adds it only once the person approves, up to four a turn\", async () => {\n    const chief = (await api(\"POST\", \"/api/bots\")).body.bot;\n"
+    },
+    {
+      "before": "      expect(response.status, JSON.stringify(body)).toBe(201);\n      createdId = body.id;\n      expect(body.warning).toBe('Dana Reyes is also a person here, so \"@dana reyes\" reaches Dana Reyes, not this bot. Rename the bot to keep them apart.');\n",
+      "after": "      expect(response.status, JSON.stringify(body)).toBe(201);\n      createdId = (await approveProposal(chief.threadId, body as { requestId?: string })).id;\n      expect(body.warning).toBe('Dana Reyes is also a person here, so \"@dana reyes\" reaches Dana Reyes, not this bot. Rename the bot to keep them apart.');\n"
+    },
+    {
+      "before": "      });\n      const body = await response.json() as { id?: string; warning?: string };\n      expect(response.status, JSON.stringify(body)).toBe(201);\n",
+      "after": "      });\n      const body = await response.json() as { id?: string; warning?: string; requestId?: string };\n      expect(response.status, JSON.stringify(body)).toBe(201);\n"
+    },
+    {
+      "before": "      const role = `You own the weekly numbers.\\n${\"Check every figure against its source and say where it came from. \".repeat(80)}`.slice(0, 3999) + \".\";\n      const made = await create(`Analyst ${chief.id}`, role);\n      expect(made.status, JSON.stringify(made.body)).toBe(201);\n      createdId = made.body.id;\n      const state = (await api(\"GET\", \"/api/bots?messages=0\")).body;\n",
+      "after": "      const role = `You own the weekly numbers.\\n${\"Check every figure against its source and say where it came from. \".repeat(80)}`.slice(0, 3999) + \".\";\n      const proposed = await create(`Analyst ${chief.id}`, role);\n      expect(proposed.status, JSON.stringify(proposed.body)).toBe(201);\n      createdId = (await approveProposal(chief.threadId, proposed.body as { requestId?: string })).id;\n      const state = (await api(\"GET\", \"/api/bots?messages=0\")).body;\n"
+    },
+    {
+      "before": "      const folder = mkdtempSync(join(tmpdir(), \"omb-create-cwd-\"));\n      const landed = await create(`Folder operator ${chief.id}`, folder) as { status: number; body: { id?: string; state?: string; detail?: string } };\n      expect(landed.body).toMatchObject({ state: \"applied\" });\n",
+      "after": "      const folder = mkdtempSync(join(tmpdir(), \"omb-create-cwd-\"));\n      const proposal = await create(`Folder operator ${chief.id}`, folder) as { status: number; body: { id?: string; state?: string; detail?: string; requestId?: string } };\n      const landed = { ...proposal, body: { ...proposal.body, ...await approveProposal(chief.threadId, proposal.body) } };\n      expect(landed.body).toMatchObject({ state: \"applied\" });\n"
+    },
+    {
+      "before": "        }).passthrough().parse(await response.json());\n        if (response.status === 201 && body.id) createdBotIds.push(body.id);\n        return { status: response.status, body };\n      };\n",
+      "after": "        }).passthrough().parse(await response.json());\n        if (response.status !== 201) return { status: response.status, body };\n        const approved = await approveProposal(fromThreadId, body as { requestId?: string });\n        if (approved.id) createdBotIds.push(approved.id);\n        return { status: response.status, body: { ...body, ...approved } };\n      };\n"
+    },
+    {
+      "before": "  return { status: res.status, body: await res.json() };\n};\n\nconst releaseTurn = async (botId: string) => {\n",
+      "after": "  return { status: res.status, body: await res.json() };\n};\n\n/** Limix: a bot the Chief proposes waits on a card; the person's approval adds it. Returns the proposal with the new bot's id and the outcome. */\nasync function approveProposal<T extends { requestId?: string }>(threadId: string, proposal: T): Promise<T & { id?: string; state?: string }> {\n  expect(proposal).toMatchObject({ state: \"pending\", applied: false });\n  const response = await fetch(`${BASE}/api/threads/${threadId}/respond`, { method: \"POST\", headers: { \"content-type\": \"application/json\", origin: BASE },\n    body: JSON.stringify({ requestId: proposal.requestId, behavior: \"allow\" }) });\n  const decided = { status: response.status, body: await response.json() as any };\n  expect(decided.status, JSON.stringify(decided.body)).toBe(200);\n  const created = (decided.body.result?.bots as Array<{ action: string; id: string }> | undefined)?.find((bot) => bot.action === \"created\");\n  return { ...proposal, id: created?.id, state: decided.body.result?.state };\n}\n\nconst releaseTurn = async (botId: string) => {\n"
+    }
+  ],
+  "server/no-omb-cards.e2e.test.ts": [
+    {
+      "before": "    expect((await bot(`${prefix} Checker`)).approvalMode).toBe(\"full\");\n    const card = await notice(chief.threadId, created.body.requestId);\n    expect(card.teamSetupRequest.undo.created).toEqual([created.body.id]);\n    await decided(created.body.requestId, level);\n    expect((await undo(chief.threadId, created.body.requestId)).body).toMatchObject({ ok: true, undone: true });\n    expect(await bot(`${prefix} Checker`)).toBeUndefined();\n    expect((await undo(chief.threadId, created.body.requestId)).body).toMatchObject({ alreadyUndone: true });\n  });\n",
+      "after": "    expect((await bot(`${prefix} Checker`)).approvalMode).toBe(\"full\");\n  });\n"
+    },
+    {
+      "before": "    expect(created.status, JSON.stringify(created.body)).toBe(201);\n    expect(created.body).toMatchObject({ state: \"applied\", applied: true, name: `${prefix} Checker` });\n    // A bot the Chief creates starts at the default level, Full access, whatever the Chief's own level.\n",
+      "after": "    expect(created.status, JSON.stringify(created.body)).toBe(201);\n    expect(created.body).toMatchObject({ state: \"pending\", applied: false });\n    expect(await bot(`${prefix} Checker`)).toBeUndefined();\n    const card = (await cards(chief.threadId)).find((message) => message.card.requestId === created.body.requestId)?.card;\n    expect(card).toMatchObject({ teamSetupRequest: { requestId: created.body.requestId } });\n    expect(card.answered).toBeUndefined();\n    const decided = await api(\"POST\", `/api/threads/${chief.threadId}/respond`, { requestId: created.body.requestId, behavior: \"allow\" });\n    expect(decided.status, JSON.stringify(decided.body)).toBe(200);\n    expect(decided.body.result).toMatchObject({ state: \"applied\" });\n    // A bot the Chief creates starts at the default level, Full access, whatever the Chief's own level.\n"
+    },
+    {
+      "before": "\n  it(\"sets up the team with no card, and Undo deletes the unused bot it added\", async () => {\n    const chief = await bot(`${prefix} Chief`);\n",
+      "after": "\n  it(\"waits for the person before adding a bot to the team, then adds it at the default level\", async () => {\n    const chief = await bot(`${prefix} Chief`);\n"
+    }
+  ],
+  "server/starter-bots.e2e.test.ts": [
+    {
+      "before": "    expect(tool.status, JSON.stringify(tool.body)).toBe(201);\n    expect(tool.body).toMatchObject({ state: \"applied\", name: \"Scout\" });\n    expect(tool.body.paused).toMatch(/^@Scout was created, and is paused: this Cloud's Starter plan keeps 5 bots awake/);\n    expect(await paused()).toEqual([tool.body.id]);\n    const setup = await cloud.internal(\"/api/internal/team-setup-requests\", token, { plan: { reason: \"Add a specialist\", newTeams: [],\n",
+      "after": "    expect(tool.status, JSON.stringify(tool.body)).toBe(201);\n    expect(tool.body).toMatchObject({ state: \"pending\", applied: false });\n    expect(await paused()).toEqual([]);\n    // The person approves once the turn is over; the new bot is then the one the Starter plan keeps asleep.\n    cloud.finishTurn();\n    await expect.poll(async () => (await cloud.bots()).every((bot) => !bot.busy), { timeout: 20_000 }).toBe(true);\n    const decided = await cloud.api(\"POST\", `/api/threads/${chief.threadId}/respond`, { requestId: tool.body.requestId, behavior: \"allow\" });\n    expect(decided.status, JSON.stringify(decided.body)).toBe(200);\n    const scoutId = decided.body.result.bots.find((bot: any) => bot.action === \"created\").id as string;\n    expect(await paused()).toEqual([scoutId]);\n    const setup = await cloud.internal(\"/api/internal/team-setup-requests\", token, { plan: { reason: \"Add a specialist\", newTeams: [],\n"
     }
   ]
 }

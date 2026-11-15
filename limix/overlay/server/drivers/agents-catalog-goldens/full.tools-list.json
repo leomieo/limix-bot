@@ -610,7 +610,7 @@
     },
     {
       "name": "create_bot",
-      "description": "Chief of Staff only, and not used in Limix Bot: bots are added only through propose_team_setup. Add a specialist to your section now; the person can undo it. instructions become its soul. Omit modelSelection for the workspace default, or use exact IDs from list_team_setup. It starts with your connected apps, at the default access level. Assign work with coordinate_bots. At most four per turn.",
+      "description": "Chief of Staff only: propose one specialist for your section on a review card; it is added only if the person approves. Prefer propose_team_setup for ready-made bots, several bots or a group chat. instructions become its soul. Omit modelSelection for the workspace default, or use exact IDs from list_team_setup. It starts with your connected apps, at the default access level. Assign work with coordinate_bots. At most four per turn.",
       "inputSchema": {
         "type": "object",
         "properties": {

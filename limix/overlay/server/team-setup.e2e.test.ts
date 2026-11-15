@@ -58,7 +58,7 @@ it("the assistant proposes custom and ready-made bots with an optional group cha
     let token = await start("Clive, I need help writing posts and a researcher. Use a ready-made bot where one fits.");
     const library = await api("GET", "/api/internal/team-library", undefined, 200, token);
     expect(library.botTemplates.map((bot: any) => bot.id)).toContain("research");
-    expect((await api("POST", "/api/internal/create-bot", { name: "Direct", role: "Direct", instructions: "Skip the card." }, 409, token)).error).toContain("propose_team_setup");
+    expect(await api("POST", "/api/internal/create-bot", { name: "Direct", role: "Direct", instructions: "Skip the card." }, 201, token)).toMatchObject({ state: "pending", applied: false });
     await api("POST", "/api/internal/team-setup-requests", { plan: { reason: "x", operations: [{ action: "create", key: "Ghost", template: "no-such-bot" }] } }, 400, token);
     const plan = { reason: "Writing and research help, as asked", operations: [
       { action: "create", key: "Scout", template: "research" },
