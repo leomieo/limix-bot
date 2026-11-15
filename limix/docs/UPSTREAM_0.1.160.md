@@ -1,4 +1,4 @@
-# OpenMausBot 0.1.160 integration (batch 1)
+# OpenMausBot 0.1.160 integration (batches 1 and 2)
 
 Source: https://github.com/milind-soni/OpenMausBot/releases/tag/v0.1.160 (`d3813518d520bd5be4392c0501d6ff3013415057`),
 compared with 0.1.155 (`8b17baf6f`). 424 upstream commits in between. Selective backport, as for 0.1.155. Branch
@@ -22,14 +22,31 @@ compared with 0.1.155 (`8b17baf6f`). 424 upstream commits in between. Selective 
 
 Skipped: `b2e8ad1` (`productName()` does not exist in Limix; Limix keeps its own product name).
 
-## Not in batch 1 (candidates for later batches)
+## Batch 2 (owner's choice 16/11: pause, lighter bots, archives, themes and pictures)
 
-- Pause a bot or department (`a72a3f1` and the #5947 follow-ups).
-- Turn off a bot's Meetings, Data, Pages, Images or Email tools (`a1a1b04`); defer most agents tools on Claude turns
-  (`c294c63`, `90fcbd8`). Both change pinned tool-catalog goldens (sha256 values from upstream CI) that must be
-  recomputed for Limix's catalog.
-- Files: paste archives, bots send archives, any file type as a download (`ccbe58b`, `a6cd67c`, `f42488d`).
-- Themes by bots and undo (`16fce7b`, `91b920c`), bot and person pictures (`a24ca8f`), rename_thread (`6de0983`),
+Included (cherry-picked, conflicts resolved):
+
+| Behavior | Upstream commits | Limix adaptation |
+| --- | --- | --- |
+| Pause a bot or a whole department until resumed; running work stops, its room is told, routines and webhook runs skip quietly, no backup-AI resend | `a72a3f1`, `4041e67`, `0d66db9`, `0d21b18`, `e4da259`, `0667e88`, `4efc19a` | sidebar department menu keeps Limix's owner and reports items; the routine option `personTurn` (from a feature Limix lacks) is left out; Vietnamese strings added |
+| Claude turns defer all but a few agents tools, loading them when a turn needs them; the switch reaches the bot box | `c294c63`, `90fcbd8` | Limix keeps its spawn-contract code in place; tool-catalog goldens regenerated for Limix's catalog and the budgets moved on purpose |
+| Any file type attaches as a plain download; archives pasted from Explorer/Finder; bots send archives (.zip, .tar.gz, .7z…) to the chat | `f42488d`, `ccbe58b`, `a6cd67c` | none |
+
+Not included in batch 2:
+
+- Themes by bots, undo a look change, bot and person pictures (`16fce7b`, `91b920c`, `a24ca8f`): each extends upstream's
+  `app_settings` tool (bots change app settings on Change/Cancel cards), which Limix never imported. They need that tool
+  first: a separate, larger integration.
+- Turning off a bot's Meetings/Data/Pages/Images/Email tools (`a1a1b04`): it also builds on `app_settings`, upstream's
+  browser-profile proposals and the phone-protocol package.
+
+Batch 2 checks: `tsc` (UI and server) pass; the 17 test files it touches have no new failure against `main` (14 failing
+on the branch, 17 on `main`, all pre-existing); new `agents-claude-defer` and `turn-prompt-budget` tests pinned to
+Limix's sizes; `PauseMenus.dom.test.ts` cannot load here (node:sqlite bundling, as other UI DOM tests on `main`).
+
+## Not in batches 1–2 (candidates for later batches)
+
+- app_settings tool and what builds on it (themes, pictures, tool groups), rename_thread (`6de0983`),
   propose_profile (`057b650`, `cbc0546`), built-in browser beside the cloud computer (`b16d1b9`, `b02061d`).
 - Engines: Devin (`5eb9d5f`), Mistral Vibe (`81386e5` and follow-ups), Gemini decider on OpenRouter (`5c5d6f3`),
   custom decider endpoint (#5150).
