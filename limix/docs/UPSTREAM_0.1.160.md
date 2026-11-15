@@ -1,4 +1,4 @@
-# OpenMausBot 0.1.160 integration (batches 1 and 2)
+# OpenMausBot 0.1.160 integration (batches 1–3)
 
 Source: https://github.com/milind-soni/OpenMausBot/releases/tag/v0.1.160 (`d3813518d520bd5be4392c0501d6ff3013415057`),
 compared with 0.1.155 (`8b17baf6f`). 424 upstream commits in between. Selective backport, as for 0.1.155. Branch
@@ -44,16 +44,34 @@ Batch 2 checks: `tsc` (UI and server) pass; the 17 test files it touches have no
 on the branch, 17 on `main`, all pre-existing); new `agents-claude-defer` and `turn-prompt-budget` tests pinned to
 Limix's sizes; `PauseMenus.dom.test.ts` cannot load here (node:sqlite bundling, as other UI DOM tests on `main`).
 
-## Not in batches 1–2 (candidates for later batches)
+## Batch 3 (owner's go-ahead 16/11): app_settings, themes, pictures, tool groups
 
-- app_settings tool and what builds on it (themes, pictures, tool groups), rename_thread (`6de0983`),
+- app_settings (bots change the app's own settings by chat, each with Undo or a Change/Cancel card; window preferences;
+  pin bots; add/remove AI engines): `053ef19`, `aab5a38`, `58c1ee2`, `a7571dd`, `2b93c7a`, `899a20d`, `334f977`,
+  `73414bf`, `c52f8cb`, `3e0d84a`, `1d5360d`, `5524cc2`, `2d5a539`, `8e1fb20`, `eb8fc38`, `c6f8709`, `b1638c3`,
+  `6637b26`. Left out: the browser SOCKS5 proxy setting (`5c339c1`, needs upstream's browser-proxy feature).
+- Bots set a bot's picture or the person's photo from a picture file: `a24ca8f`.
+- Bots restyle the app with custom themes; undo a look change or go back to an earlier theme: `16fce7b`, `91b920c`.
+  "Your themes" sits under Settings → Appearance (and the Simple looks page); the settings primitives the page uses were
+  added to Limix's SettingsPrimitives.
+- Turn off a bot's Meetings, Data, Pages, Images or Email tools: `a1a1b04`. The tool-group list matches Limix's catalog
+  (no app hosting tools; `diagnose_limix` is core); group sizes re-estimated; `shared/tool-groups.ts` holds the code
+  directly (Limix has no phone-protocol package).
+
+Batch 3 checks: `tsc` UI and server pass; tool-catalog goldens regenerated and budgets moved on purpose; of the 31 test
+files touched, the only failures not also on `main` are `theme-css.dom.test.ts` (cannot load here: node:sqlite
+bundling, as other DOM tests) and a temp-folder cleanup race in `server/email/host.test.ts`.
+
+## Not in batches 1–3 (candidates for later batches)
+
+- rename_thread (`6de0983`),
   propose_profile (`057b650`, `cbc0546`), built-in browser beside the cloud computer (`b16d1b9`, `b02061d`).
 - Engines: Devin (`5eb9d5f`), Mistral Vibe (`81386e5` and follow-ups), Gemini decider on OpenRouter (`5c5d6f3`),
   custom decider endpoint (#5150).
 - Live calls: Gemini Live, ElevenLabs Agents.
 - Phones: relay pairing repair, connection check, phone-protocol package. Limix runs its own phone/relay setup, so these
   need their own review.
-- app_settings tool, browser SOCKS5 proxy, settings search, skill limits (64 KB SKILL.md, 120 skills per package).
+- browser SOCKS5 proxy, settings search, skill limits (64 KB SKILL.md, 120 skills per package).
 - MausBot Cloud specific changes (Codex update card on My Cloud, Team Cloud).
 
 ## Verification
