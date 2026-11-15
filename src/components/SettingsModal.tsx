@@ -524,6 +524,7 @@ function SettingsDialog() {
         <div
           ref={dialogRef}
           role="dialog"
+          data-look="settings"
           aria-modal="true"
           aria-labelledby="app-settings-title"
           tabIndex={-1}

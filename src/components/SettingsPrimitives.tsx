@@ -21,6 +21,7 @@ export function Switch({
       {...props}
       type="button"
       role="switch"
+      data-look="switch"
       aria-checked={checked}
       className={cn(
         "relative cursor-pointer h-6 w-11 shrink-0 rounded-full transition-colors enabled:hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none",
