@@ -1787,9 +1787,10 @@ SKILL_LABELS = {
         '"botSettings.simple.skillsHint": "Kĩ năng {name} đang dùng: kĩ năng gốc của Limix Bot, kĩ năng {name} tự học và kĩ năng bạn thêm từ Kho. Tắt một kĩ năng để bỏ khỏi {name}. Gõ /tên-kĩ-năng trong chat để gọi."',
 }
 def skills_vi(s):
+    # A later copy review may already have reworded a label (vi-copy-review.json): keep that wording.
     for old, new in SKILL_LABELS.items():
-        if new not in s:
-            s = must(s, old, new)
+        if new not in s and old in s:
+            s = s.replace(old, new, 1)
     return s
 edit("src/locales/vi.json", skills_vi)
 
