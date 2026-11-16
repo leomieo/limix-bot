@@ -24,6 +24,11 @@ def install(root):
                     '            return\n')
             lines.insert(handler.lineno, hook)
             text = "".join(lines)
+    lines = text.splitlines(keepends=True)
+    for item in reversed(ast.parse(text).body):
+        if isinstance(item, ast.Assign) and any(isinstance(t, ast.Name) and t.id in ("ADMIN_USERNAME", "ADMIN_PASSWORD") for t in item.targets):
+            del lines[item.lineno - 1:item.end_lineno]
+    text = "".join(lines)
     ast.parse(text)
     marker = '<div class="content">'
     if 'id="tab-cloud"' not in html:

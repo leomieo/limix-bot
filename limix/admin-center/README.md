@@ -20,7 +20,7 @@ The installer backs up the two changed legacy files and can be rerun. Keep the e
 Validation: `python -m unittest discover -s limix/admin-center -p 'test_*.py'`.
 Live verification on 2026-11-16: owner login 200, Cloud request list 200 with the owner's running workspace, repeat approval of the already-approved owner 200, anonymous access 401 and foreign-origin mutation 403. Browser rendering has not been verified by automation.
 
-Custom Cloud CPU/RAM/storage quotas, a unified plan editor and Cloud resource billing are not implemented by this extension. The account server's existing plan controls do not yet configure Docker resource limits. The older Cloud owner page remains available for compatibility. The updated desktop management button opens this admin center; installed desktops receive that change with a subsequent application release.
+Custom Cloud CPU/RAM/storage quotas, a unified plan editor and Cloud resource billing are not implemented by this extension. The account server's existing plan controls do not yet configure Docker resource limits. The older Cloud owner page clears any desktop token fragment and redirects to the central admin login. The updated desktop management button opens this admin center; installed desktops receive that change with a subsequent application release.
 
 ## Tiếng Việt
 

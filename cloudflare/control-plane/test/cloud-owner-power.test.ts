@@ -63,6 +63,8 @@ it('owner page contains no account data and unauthenticated APIs are refused',as
   const html = await response.text();
   expect(html).not.toContain('id="token"');
   expect(html).toContain("history.replaceState");
+  expect(html).toContain("location.replace('https://admin.limixmedia.com/#cloud')");
+  expect(html).not.toContain("get('session')");
   expect(response.headers.get('referrer-policy')).toBe('no-referrer');
   await expect(cloudOwnerRoute('/api/cloud/owner/requests',new Request('https://cloud.test/api/cloud/owner/requests'),bindings)).rejects.toMatchObject({status:401});
 });

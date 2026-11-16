@@ -38,18 +38,10 @@ export async function cloudOwnerRoute(path: string, request: Request, env: Env):
 }
 function ownerPage(): Response {
     const nonce = crypto.randomUUID();
-    return new Response(`<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Limix Cloud — Duyệt dùng thử</title>
-  <style nonce="${nonce}">body{background:#111;color:#eee;font:16px system-ui;max-width:1000px;margin:40px auto;padding:20px}button,input{font:inherit;padding:10px;background:#222;color:#eee;border:1px solid #555;border-radius:8px;margin:4px}article{border-bottom:1px solid #444;padding:16px}#requests{overflow-wrap:anywhere}</style>
-  <h1>Limix Cloud · Duyệt dùng thử</h1><p>Chỉ tài khoản chủ dự án được quản lý yêu cầu. Đăng nhập Leox trong Limix Bot → Cài đặt → Limix Bot Cloud → Quản trị Limix Cloud. Đóng hoặc tải lại trang sẽ kết thúc phiên.</p>
-  <button id="logout" hidden>Đăng xuất</button><p id="status" role="status"></p><section id="requests"></section>
-  <script nonce="${nonce}">
-  let bearer='';const status=document.getElementById('status'),list=document.getElementById('requests');
-  async function api(path,body){const response=await fetch('/api/cloud/owner/'+path,{method:body?'POST':'GET',headers:{authorization:'Bearer '+bearer,...(body?{'content-type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});if(!response.ok){const failure=await response.json().catch(()=>({}));if(failure.error==='origin_not_allowed')throw new Error('Địa chỉ trang quản trị chưa được máy chủ cho phép. Vui lòng liên hệ quản trị hệ thống.');throw new Error(response.status===403?'Tài khoản không có quyền quản trị.':response.status===401?'Phiên đăng nhập không hợp lệ.':'Không thực hiện được yêu cầu ('+response.status+').')}return response.json()}
-  async function load(){list.replaceChildren();const data=await api('requests');for(const row of data.requests){const card=document.createElement('article'),label=document.createElement('p');label.textContent=row.principal+' · '+(row.decision||'Chờ duyệt');card.append(label);for(const [decision,text]of [['approve','Duyệt'],['decline','Từ chối'],['revoke','Thu hồi']]){const button=document.createElement('button');button.textContent=text;button.onclick=async()=>{if(!confirm(text+' quyền Cloud của '+row.principal+'?'))return;button.disabled=true;try{await api('decision',{principal:row.principal,decision});await load()}catch(e){status.textContent=e.message}finally{button.disabled=false}};card.append(button)}list.append(card)}status.textContent=data.requests.length+' yêu cầu';}
-  const handoff=new URLSearchParams(location.hash.slice(1)).get('session');
-  history.replaceState(null,'',location.pathname);
-  if(handoff){bearer=handoff;load().then(()=>{document.getElementById('logout').hidden=false}).catch(e=>{bearer='';status.textContent=e.message})}
-  document.getElementById('logout').onclick=()=>{bearer='';list.replaceChildren();status.textContent='Đã đăng xuất';document.getElementById('logout').hidden=true};
-  </script></html>`, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'referrer-policy': 'no-referrer',
-            'content-security-policy': `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'` } });
+    return new Response(`<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Quản trị Limix</title>
+    <h1>Trung tâm quản trị Limix</h1><p>Quản lý tài khoản và Cloud tại <a href="https://admin.limixmedia.com/#cloud">admin.limixmedia.com</a>. Đăng nhập bằng tài khoản Limix Leox.</p>
+    <script nonce="${nonce}">history.replaceState(null,'',location.pathname);location.replace('https://admin.limixmedia.com/#cloud');</script></html>`, {
+        headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'referrer-policy': 'no-referrer',
+            'content-security-policy': `default-src 'none'; script-src 'nonce-${nonce}'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'` },
+    });
 }

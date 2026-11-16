@@ -381,3 +381,5 @@
 - Existing account plan controls are not Docker resource quotas. Custom per-account Cloud CPU/RAM/storage and a shared Cloud plan editor remain future work. Browser rendering is not automatically verified.
 - Phone copy updated in English/Vietnamese to browser access; pairing instructions hidden until Cloud is reachable. 6 focused checks pass; full component suite still has the same 19 pre-existing baseline failures. Root TypeScript check passed before admin entry link update; final rerun recorded in task result.
 - Legacy web-admin sessions revoked after authentication migration; existing account/app/bot sessions preserved. Final root TypeScript check, Python/JavaScript syntax checks, rebrand patch consistency and git diff check passed.
+
+- Follow-up: old /cloud-admin page clears desktop bearer fragments then redirects to admin.limixmedia.com/#cloud; admin installer removes obsolete standalone credential assignments.
