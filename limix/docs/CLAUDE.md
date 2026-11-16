@@ -112,3 +112,6 @@ Prefer tools actually exposed by the active agent, including native image genera
 
 ## Public administrator identity
 Do not publish administrator login names or map product author names to privileged accounts in release notes, public help text or UI instructions. Use role descriptions such as authorized administrator. Keep authentication checks unchanged; public wording is not an access-control boundary.
+
+## Commercial public release content
+Public release notes and customer-facing materials must contain customer-relevant behavior only. Exclude internal administrator accounts, privilege exceptions, approval operations, internal deployment details and engineering test logs. Maintain matching English and Vietnamese copy. Record internal verification and limitations in engineering documents; preserve customer-relevant limitations without exposing internal identities.
