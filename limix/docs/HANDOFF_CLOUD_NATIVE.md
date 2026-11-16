@@ -94,3 +94,7 @@ Làm trên nhánh `cloud-native-codex` tách từ `cloud-native`; không đẩy 
 ## Cloud administration update — 0.3.53
 
 The owner account is Leox (normalized principal limix:leox), explicitly selected by the project owner. The previous tqtuan principal has no owner access. In the local desktop app, Cloud settings exposes Manage Limix Cloud only to Leox. Main-process authorization checks the active Limix credential, and the Worker independently checks the validated account. The trusted HTTPS admin page consumes the sign-in fragment, immediately removes it from the current history entry, and retains the bearer only in page memory. Closing or reloading ends the browser session. Manual token entry has been removed.
+
+### Super administrator and sign-out — 0.3.54
+
+Leox is the project owner's existing super administrator. A server-validated limix:leox session is automatically enrolled in managed_cloud_beta on session refresh, preserving any allocated workspace. There is no trial application or approval requirement for this account. Device authentication expiration and host resource capacity remain enforced. The profile menu uses the Limix desktop sign-out confirmation and suppresses its duplicate Cloud sign-out entry. Source and overlay are synchronized.

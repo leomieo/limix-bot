@@ -1,3 +1,13 @@
+# Limix Bot 0.3.54
+
+English
+
+The verified Leox super administrator gets Cloud access automatically, without a trial request or self-approval. The profile menu shows one Limix sign-out action.
+
+Tiếng Việt
+
+Tài khoản super admin Leox được xác thực sẽ có quyền dùng Cloud tự động, không cần đăng ký hay tự duyệt dùng thử. Menu tài khoản chỉ hiện một mục đăng xuất Limix.
+
 # Limix Bot 0.3.53
 
 English

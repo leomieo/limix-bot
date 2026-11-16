@@ -83,6 +83,11 @@ async function betaRow(env: Env, principal: string): Promise<BetaRow | null> {
 
 /** An approved account gets its workspace as soon as the desktop asks; the host picks it up on its next round. */
 async function ensureWorkspace(env: Env, principal: string): Promise<BetaRow | null> {
+  // The validated project owner has Cloud access without approving their own trial.
+  if (principal === "limix:leox") {
+    await env.DB.prepare("INSERT INTO managed_cloud_beta(principal) VALUES (?) ON CONFLICT(principal) DO NOTHING")
+      .bind(principal).run();
+  }
   const row = await betaRow(env, principal);
   if (!row || row.workspace_id) return row;
   await env.DB.prepare("UPDATE managed_cloud_beta SET workspace_id = ?, requested_at = ? WHERE principal = ? AND workspace_id IS NULL")

@@ -8,8 +8,8 @@ it("shows one desktop sign-out while retaining account switching", () => {
   vi.stubGlobal("window", { ogb: { limixAccount: {} } });
   const cloudSignOut = vi.fn(), desktopSignOut = vi.fn();
   const items: SidebarMenuItem[] = [
-    { key: "accounts-active", label: "leox" },
-    { key: "accounts-add", label: "Add account" },
+    { key: "accounts-active", label: "leox", onSelect: vi.fn() },
+    { key: "accounts-add", label: "Add account", onSelect: vi.fn() },
     { key: "accounts-sign-out", label: "Sign out", onSelect: cloudSignOut },
   ];
   const result = withLimixSignOut({ username: "leox", email: "" }, items, desktopSignOut);
@@ -23,6 +23,6 @@ it("shows one desktop sign-out while retaining account switching", () => {
 
 it("keeps Cloud sign-out when the desktop Limix account bridge is unavailable", () => {
   vi.stubGlobal("window", {});
-  const items: SidebarMenuItem[] = [{ key: "accounts-sign-out", label: "Sign out" }];
+  const items: SidebarMenuItem[] = [{ key: "accounts-sign-out", label: "Sign out", onSelect: vi.fn() }];
   expect(withLimixSignOut({ username: "leox", email: "" }, items, vi.fn())).toBe(items);
 });

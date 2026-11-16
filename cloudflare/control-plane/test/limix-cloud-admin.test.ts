@@ -118,6 +118,14 @@ it("signs a Limix account in, takes its trial request, and pairs only its own ho
 
   expect((await as(alice.accessToken, "session", "DELETE", {})).status).toBe(200);
   expect((await as(alice.accessToken, "session")).status).toBe(401);
+  const owner = await signIn("Leox");
+  const ownerSession = await (await as(owner.accessToken, "session")).json();
+  expect(ownerSession).toMatchObject({ account: { id: "limix:leox" }, entitlement: { status: "active" }, limixTrial: "approved" });
+  const ownerWorkspace = await env.DB.prepare("SELECT workspace_id FROM managed_cloud_beta WHERE principal='limix:leox'").first();
+  expect(ownerWorkspace).toMatchObject({ workspace_id: expect.any(String) });
+  await as(owner.accessToken, "session");
+  expect(await env.DB.prepare("SELECT workspace_id FROM managed_cloud_beta WHERE principal='limix:leox'").first()).toEqual(ownerWorkspace);
+
 });
 
 it("reads the host's report as the desktop's setup steps", () => {
