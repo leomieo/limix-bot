@@ -32,9 +32,10 @@ static class Program
             bitmap.Save(args[1], System.Drawing.Imaging.ImageFormat.Png);
             return;
         }
-        if (args.Length == 2 && args[0] == "--preview")
+        if (args.Length == 2 && (args[0] == "--preview" || args[0] == "--preview-disabled"))
         {
             using var preview = new SetupWindow();
+            if(args[0] == "--preview-disabled") preview.PreviewBusy();
             preview.Show(); Application.DoEvents();
             using var bitmap = new Bitmap(preview.Width, preview.Height);
             preview.DrawToBitmap(bitmap, new Rectangle(0,0,preview.Width,preview.Height));
@@ -67,13 +68,14 @@ sealed class SetupWindow : Form
     readonly NumericUpDown disk = new() { Minimum=80,Maximum=512,Value=120,Width=75 };
     readonly TextBox network = new() { Text="Default Switch",Width=170 };
     readonly TextBox output = new() { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, Dock = DockStyle.Fill, BackColor = Color.FromArgb(24, 24, 24), ForeColor = Color.White };
-    readonly Button install = new() { Text = "Cài đặt và chuyển Cloud", AutoSize = true };
+    readonly ServerButton install = new() { Text = "Cài đặt và chuyển Cloud", AutoSize = true };
     readonly FlowLayoutPanel buttons = new() { Dock = DockStyle.Top, AutoSize = true };
     readonly CheckBox consent = new() { AutoSize = true, Text = "Tôi đã dừng Cloud host cũ; cho phép sao lưu và chuyển các container Cloud." };
     bool busy;
+    internal void PreviewBusy() { buttons.Enabled=false; }
     public SetupWindow()
     {
-        Text = "Limix Cloud Server 0.2 beta · Hyper-V";
+        Text = "Limix Cloud Server 0.2.3 beta · Hyper-V";
         Size = new Size(1000, 760); MinimumSize = new Size(930, 700); StartPosition = FormStartPosition.CenterScreen;
         Font = new Font("Segoe UI", 10); BackColor = Color.FromArgb(18,18,18); ForeColor = Color.White;
         var top = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, FlowDirection = FlowDirection.TopDown, Padding = new Padding(18), WrapContents = false };
@@ -104,12 +106,13 @@ sealed class SetupWindow : Form
         });
         top.Controls.Add(buttons);
         Controls.Add(output); Controls.Add(top);
+        ServerTheme.Apply(this);
         install.Click += async (_,_) => await Install();
         FormClosing += (_,e) => { if(busy) { e.Cancel=true; MessageBox.Show("Đang chuyển dữ liệu. Chờ hoàn tất trước khi đóng bộ cài."); } };
     }
     void AddButton(string text, Func<Task> action)
     {
-        var button=new Button { Text=text,AutoSize=true };
+        var button=new ServerButton { Text=text,AutoSize=true };
         button.Click += async (_,_) => { try { await action(); } catch(Exception e) { Log(e.Message); } };
         buttons.Controls.Add(button);
     }

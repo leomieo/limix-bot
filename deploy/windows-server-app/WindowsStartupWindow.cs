@@ -41,13 +41,13 @@ sealed class WindowsStartupWindow : Form
         });
         AddText("Tài khoản cấu hình: "+WindowsIdentity.GetCurrent().Name);
         AddText("Tự đăng nhập cho phép người có mặt tại máy truy cập desktop. Không Sleep, khóa hoặc đăng xuất nếu bot cần thao tác giao diện. Sau khi cài, thử khởi động lại và kiểm tra từ máy khác.");
-        content.Controls.Add(status); RefreshStatus();
+        content.Controls.Add(status); ServerTheme.Apply(this); RefreshStatus();
     }
     internal static string StartupCommand(string path) => "\""+path+"\" --omb-hidden";
     void AddText(string value,int size=10) => content.Controls.Add(new Label { Text=value,AutoSize=true,MaximumSize=new Size(720,0),Font=new Font("Segoe UI",size),Margin=new Padding(0,8,0,8) });
     void AddButton(string text,Func<Task> action)
     {
-        var button=new Button { Text=text,AutoSize=true,Margin=new Padding(0,5,0,5) };
+        var button=new ServerButton { Text=text,AutoSize=true };
         button.Click+=async(_,_)=>{ button.Enabled=false;try { await action(); } catch { MessageBox.Show(this,"Chưa thực hiện được. Kiểm tra mạng, quyền quản trị và tệp ứng dụng đã chọn.","Limix Bot"); } finally { button.Enabled=true; } };
         content.Controls.Add(button);
     }
