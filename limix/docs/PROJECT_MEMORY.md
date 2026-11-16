@@ -427,3 +427,4 @@
 - 0.3.57 checks: 23 updater/host/backend mock tests PASS, 19 server installer fixture tests PASS, 61 image-routing and settings tests PASS; self-contained server 0.2.2 beta build PASS. Added real isolated Docker smoke for image update and snapshot rollback to managed image CI; not yet run locally (Docker daemon unavailable).
 - Updater follow-up: pin the current running image before deferring busy homes, so reconciliation cannot revert a manually installed newer runtime while waiting for idle.
 - Managed runtime real smoke first run exposed fixture version 0.0.1 being correctly rejected by downgrade protection against installed 0.3.57. Corrected fixture target versions to 99.0.x; production update logic unchanged. Existing two-home isolation/recreation smoke passed on CI.
+- Fixture unhealthy target also carries its distinct increasing version label, ensuring rollback smoke reaches the failed-health path rather than downgrade rejection.

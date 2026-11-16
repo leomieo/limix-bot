@@ -26,7 +26,7 @@ try {
  const target=(JSON.parse(await command(['image','inspect',good])))[0].Id;
  await updateHome({id,target,tag:'v99.0.1',command,compose,store,prepare:async()=>true});
  assert.equal(store.state.homes[id].image,target);
- writeFileSync(join(temp,'Dockerfile'),`FROM ${good}\nHEALTHCHECK --interval=1s --timeout=1s --start-period=1s --retries=1 CMD exit 1\n`);
+ writeFileSync(join(temp,'Dockerfile'),`FROM ${good}\nLABEL org.opencontainers.image.version="99.0.2"\nHEALTHCHECK --interval=1s --timeout=1s --start-period=1s --retries=1 CMD exit 1\n`);
  await command(['build','-t',bad,temp]);
  const broken=(JSON.parse(await command(['image','inspect',bad])))[0].Id;
  const mutate=async(home,args,image)=>{
@@ -45,4 +45,5 @@ try {
  await command(['image','rm',bad,good]).catch(()=>{});
  rmSync(temp,{recursive:true,force:true});
 }
+
 
