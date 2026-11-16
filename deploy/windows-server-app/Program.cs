@@ -75,7 +75,7 @@ sealed class SetupWindow : Form
     internal void PreviewBusy() { buttons.Enabled=false; }
     public SetupWindow()
     {
-        Text = "Limix Cloud Server 0.2.3 beta · Hyper-V";
+        Text = "Limix Cloud Server 0.2.4 beta · Hyper-V";
         Size = new Size(1000, 760); MinimumSize = new Size(930, 700); StartPosition = FormStartPosition.CenterScreen;
         Font = new Font("Segoe UI", 10); BackColor = Color.FromArgb(18,18,18); ForeColor = Color.White;
         var top = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, FlowDirection = FlowDirection.TopDown, Padding = new Padding(18), WrapContents = false };
@@ -101,6 +101,11 @@ sealed class SetupWindow : Form
         });
         AddButton("Tự đăng nhập / Limix Bot nền", () => {
             using var window = new WindowsStartupWindow();
+            window.ShowDialog(this);
+            return Task.CompletedTask;
+        });
+        AddButton("Docker / Dịch vụ khác tự khởi động", () => {
+            using var window = new DockerStartupWindow();
             window.ShowDialog(this);
             return Task.CompletedTask;
         });
@@ -164,3 +169,4 @@ sealed class SetupWindow : Form
         process.StandardInput.Close();await process.WaitForExitAsync();return process.ExitCode;
     }
 }
+
