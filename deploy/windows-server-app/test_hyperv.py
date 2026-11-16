@@ -19,7 +19,7 @@ class CutoverTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix='limix-hyperv-fixture-') as temp:
             root = Path(temp)
             app = root / 'app'; app.mkdir()
-            for name in ['hyperv-setup.ps1','hyperv-common.ps1','host.mjs','docker-backend.mjs','compose.yaml','linux-bootstrap.py','linux-health.py']:
+            for name in ['hyperv-setup.ps1','hyperv-common.ps1','host.mjs','power-probe.mjs','updater.mjs','docker-backend.mjs','compose.yaml','linux-bootstrap.py','linux-health.py']:
                 source = HERE / name
                 if not source.exists(): source = HERE.parent / 'managed-beta' / name
                 shutil.copy2(source, app / name)
@@ -173,7 +173,7 @@ class SeedTests(unittest.TestCase):
     def test_generated_seed_protects_credentials_and_does_not_activate_host(self):
         with tempfile.TemporaryDirectory(prefix='limix-seed-fixture-') as temp:
             root=Path(temp)
-            for name in ['host.mjs','docker-backend.mjs','compose.yaml','linux-bootstrap.py','linux-health.py','hyperv-common.ps1']:
+            for name in ['host.mjs','power-probe.mjs','updater.mjs','docker-backend.mjs','compose.yaml','linux-bootstrap.py','linux-health.py','hyperv-common.ps1']:
                 source=HERE/name
                 if not source.exists():source=HERE.parent/'managed-beta'/name
                 shutil.copy2(source,root/name)

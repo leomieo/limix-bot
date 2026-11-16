@@ -106,3 +106,6 @@ Mốc mã nguồn đã khảo sát (pin, không dùng "latest"):
 - Sau MỖI thay đổi (file, quyết định, phát hiện mới): cập nhật `PROJECT_MEMORY.md` mục 1 (trạng thái), mục 2 nếu có file mới, mục 4 nếu có rủi ro, và thêm một dòng nhật ký ở mục 5.
 - Chưa cập nhật bộ nhớ = chưa được báo "xong".
 - Sự thật mới chỉ vào mục 3 khi đã xác minh và có nguồn.
+
+## Active agent tools (2026-11-17 owner decision)
+Prefer tools actually exposed by the active agent, including native image generation. Never force a separately configured image provider ahead of an available native tool, silently switch providers, or invent a missing tool. Separate Limix image providers remain explicit user-selected alternatives.

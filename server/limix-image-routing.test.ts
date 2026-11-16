@@ -21,3 +21,11 @@ it("keeps the native image tool discoverable before a key is configured, with ro
   expect(prompt.volatile).not.toContain(IMAGE_ROUTING_PROMPT);
   expect(prompt.stable).toContain("A code-drawn illustration is not a photorealistic generated image");
 });
+
+it.each(["image_gen", "imagegen", "generate_image"])("does not block native image tool %s", name => {
+  expect(imageConnectorRefusal(name, { prompt: "cat" })).toBeNull();
+});
+it("prefers exposed agent tools without forcing separate credentials", () => {
+  expect(IMAGE_ROUTING_PROMPT).toContain("Do not require Limix image-provider setup before calling an available native tool");
+  expect(IMAGE_ROUTING_PROMPT).toContain("An unavailable tool must never be invented");
+});

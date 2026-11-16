@@ -55,6 +55,8 @@ function New-CloudInit([string]$InstallId, [string]$Key, [string]$HostToken, [in
         '/etc/limix-server/health-key' = $Key
         '/etc/limix-server/host.env' = "LIMIX_BETA_HOST_TOKEN=$HostToken`nLIMIX_BETA_CAPACITY=$Capacity`nLIMIX_HOME_IMAGE=$Image`nLIMIX_HOME_GATEWAY=1`n"
         '/opt/limix-server/host.mjs' = [IO.File]::ReadAllText((Join-Path $Payload 'host.mjs'))
+        '/opt/limix-server/power-probe.mjs' = [IO.File]::ReadAllText((Join-Path $Payload 'power-probe.mjs'))
+        '/opt/limix-server/updater.mjs' = [IO.File]::ReadAllText((Join-Path $Payload 'updater.mjs'))
         '/opt/limix-server/docker-backend.mjs' = [IO.File]::ReadAllText((Join-Path $Payload 'docker-backend.mjs'))
         '/opt/limix-server/compose.yaml' = [IO.File]::ReadAllText((Join-Path $Payload 'compose.yaml'))
         '/opt/limix-server/bootstrap.py' = [IO.File]::ReadAllText((Join-Path $Payload 'linux-bootstrap.py'))

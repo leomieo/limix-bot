@@ -17,7 +17,7 @@ static class Program
         {
             using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("LimixServer.payload.zip") ?? Assembly.GetExecutingAssembly().GetManifestResourceNames().Where(x => x.EndsWith("payload.zip")).Select(x => Assembly.GetExecutingAssembly().GetManifestResourceStream(x)).First()!;
             using var zip = new ZipArchive(stream);
-            var required = new[] { "hyperv-setup.ps1", "hyperv-common.ps1", "hyperv-control.ps1", "linux-bootstrap.py", "linux-health.py", "image-tools.Dockerfile", "host.mjs", "docker-backend.mjs", "compose.yaml" };
+            var required = new[] { "hyperv-setup.ps1", "hyperv-common.ps1", "hyperv-control.ps1", "linux-bootstrap.py", "linux-health.py", "image-tools.Dockerfile", "host.mjs", "power-probe.mjs", "updater.mjs", "docker-backend.mjs", "compose.yaml" };
             if (required.Any(x => !zip.Entries.Any(e => e.FullName == x && e.Length > 0))) Environment.Exit(1);
             Console.WriteLine("Embedded server payload: PASS");
             return;

@@ -2,7 +2,7 @@
 $ErrorActionPreference = 'Stop'
 $stage = Join-Path $PSScriptRoot 'payload'
 New-Item -ItemType Directory -Path $stage -Force | Out-Null
-foreach ($name in @('host.ps1','host.mjs','docker-backend.mjs','compose.yaml')) {
+foreach ($name in @('host.ps1','host.mjs','power-probe.mjs','updater.mjs','docker-backend.mjs','compose.yaml')) {
     Copy-Item -LiteralPath (Join-Path "$PSScriptRoot\..\managed-beta" $name) -Destination $stage -Force
 }
 foreach ($name in @('setup.ps1','supervisor.ps1')) {

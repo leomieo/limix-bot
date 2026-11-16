@@ -1,0 +1,39 @@
+name: Limix Managed Cloud Image
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [Limix Bot Desktop]
+    types: [completed]
+permissions:
+  contents: read
+  packages: write
+concurrency:
+  group: limix-managed-image
+  cancel-in-progress: false
+jobs:
+  image:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: Build managed runtime
+        run: |
+          docker build --target cloud-home --build-arg 'CLOUD_HOME_ENGINES=@anthropic-ai/claude-code @openai/codex' -t limix-cloud-home:beta .
+          v=$(node -p "require('./package.json').version")
+          docker build -f deploy/managed-beta/Dockerfile --label com.limix.managed-update=1 --label org.opencontainers.image.version="$v" --label org.opencontainers.image.source=https://github.com/leomieo/limix-bot -t limix-managed-home:beta .
+      - name: Verify image and isolated homes
+        run: |
+          node --test deploy/managed-beta/host.test.mjs deploy/managed-beta/updater.test.mjs
+          LIMIX_HOME_IMAGE=limix-managed-home:beta node deploy/managed-beta/smoke.mjs
+          LIMIX_HOME_IMAGE=limix-managed-home:beta node deploy/managed-beta/update-smoke.mjs
+      - name: Publish versioned managed image
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$TOKEN" | docker login ghcr.io -u '${{ github.actor }}' --password-stdin
+          v=$(node -p "require('./package.json').version")
+          docker tag limix-managed-home:beta "ghcr.io/leomieo/limix-bot:managed-v$v"
+          docker push "ghcr.io/leomieo/limix-bot:managed-v$v"
