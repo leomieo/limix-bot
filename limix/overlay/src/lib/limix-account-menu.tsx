@@ -14,10 +14,10 @@ export function useLimixAccount(): { username: string; email: string } | null {
   return account;
 }
 
-/** Adds sign-out through the caller’s themed app confirmation. */
+/** The Limix desktop session owns sign-out; Cloud account switching stays available. */
 export function withLimixSignOut(account: { username: string; email: string } | null, items: SidebarMenuItem[], onSignOut: () => void): SidebarMenuItem[] {
   if (!account || !window.ogb?.limixAccount) return items;
-  return [...items, {
+  return [...items.filter((item) => item.key !== "accounts-sign-out"), {
     key: "limix-sign-out",
     label: lx("Đăng xuất", "Sign out"),
     subtitle: account.username ? lx(`Tài khoản Limix: ${account.username}`, `Limix account: ${account.username}`) : lx("Tài khoản Limix", "Limix account"),
