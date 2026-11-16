@@ -383,3 +383,5 @@
 - Legacy web-admin sessions revoked after authentication migration; existing account/app/bot sessions preserved. Final root TypeScript check, Python/JavaScript syntax checks, rebrand patch consistency and git diff check passed.
 
 - Follow-up: old /cloud-admin page clears desktop bearer fragments then redirects to admin.limixmedia.com/#cloud; admin installer removes obsolete standalone credential assignments.
+
+- Deployment verified: Limix Cloudflare run 43913279439 completed success on commit 0d0554ab6. Live VPS checks after rollout: legacy page 200 with fixed central redirect and fragment clearing, Leox login 200, unified Cloud list 200, owner runtime running, root panel 200 containing Cloud tab. Installer twice against isolated copied account source is idempotent, hooks unique and old admin credential assignments removed.
