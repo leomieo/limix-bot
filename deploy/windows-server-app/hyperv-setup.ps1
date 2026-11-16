@@ -77,6 +77,11 @@ try {
     if ($oldTaskEnabled) { Disable-ScheduledTask -TaskName 'Limix Cloud Server' | Out-Null }
     Write-Output 'Đang dừng riêng Cloud để chụp dữ liệu nhất quán. CRM tiếp tục chạy.'
     foreach ($name in @($ids) + @('limix-managed-tunnel','limix-managed-wake')) {
+        if ($name -in @('limix-managed-tunnel','limix-managed-wake')) {
+            $existing = @(& $docker ps -a --filter "name=^/${name}$" --format '{{.ID}}')
+            if ($LASTEXITCODE -ne 0) { throw 'Không đọc được danh sách container Cloud phụ trợ.' }
+            if (-not $existing.Count) { continue }
+        }
         $running = & $docker inspect --format '{{.State.Running}}' $name 2>$null
         if ($LASTEXITCODE -eq 0 -and $running -eq 'true') {
             & $docker stop $name | Out-Null

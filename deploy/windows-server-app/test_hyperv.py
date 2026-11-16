@@ -34,7 +34,7 @@ function Get-GuestHealth($Config) { @{Address='127.0.0.1';Data=@{phase='prepared
 Add-Content $env:FIXTURE_CALLS ('docker '+($args -join ' '));$global:LASTEXITCODE=0
 if($args[0] -eq 'info') { 'linux' }
 if($args[0] -eq 'image') { [IO.File]::WriteAllText($args[3],'fixture') }
-if($args[0] -eq 'ps') { 'fixture-container' }
+if($args[0] -eq 'ps') { if($env:FIXTURE_FAILURE -eq 'missing-sidecars' -and (($args -join ' ') -match 'name=\^/limix-managed-')) { } else { 'fixture-container' } }
 if($args[0] -eq 'inspect') {
  if($args.Count -eq 2) { '[{"Name":"/limix-home-11111111-1111-4111-8111-111111111111-home-1","Mounts":[{"Type":"volume","Name":"limix-home-11111111-1111-4111-8111-111111111111_cloud"}]}]' }
  else { 'true' }
@@ -97,6 +97,13 @@ function global:Invoke-RestMethod { Add-Content $env:FIXTURE_CALLS 'activation a
         self.assertNotEqual(code,0)
         self.assertIn('docker start fixture-container',calls)
         self.assertNotIn('activation attempted',calls)
+
+    def test_missing_old_tunnel_and_wake_do_not_block_installation(self):
+        code,calls,config,out=self.scenario('missing-sidecars')
+        self.assertEqual(code,0,out)
+        self.assertNotIn('inspect --format {{.State.Running}} limix-managed-tunnel',calls)
+        self.assertNotIn('inspect --format {{.State.Running}} limix-managed-wake',calls)
+        self.assertEqual(config['MigrationState'],'active')
 
     def test_disk_failure_restarts_original_cloud(self):
         code,calls,_,_=self.scenario('disk')

@@ -446,3 +446,4 @@
 - Server 0.2.12: fixed startup status visibility with fixed bottom panel, separate Limix startup/Windows autologon configuration states, refresh button and refresh on activation. Increased resizable window; inspected real preview screenshot with footer visible. Registry configuration is not reboot acceptance.
 
 - Channel replies: implemented password-unlocked administrator text replies to bound channel conversations and separate trusted-owner agent instructions with full approval. External transcripts remain untrusted reference data. Local mock/unit verification passed; live platform delivery and packaged acceptance remain unverified. No deployment/account-specific records included.
+- Server installer clean-install fix: absent legacy tunnel/wake containers are skipped before inspect, avoiding PowerShell native stderr failure. Added regression fixture; 20 installer tests PASS. Generic product behavior only; no operational account or machine records.
