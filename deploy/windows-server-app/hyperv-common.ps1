@@ -26,6 +26,9 @@ function Grant-ServerVmAccess([string]$Store, $Vm) {
 }
 function Assert-ServerResources($Request) {
     if ($Request.Cpu -notin 2..16 -or $Request.MemoryGb -notin 8..32 -or $Request.DiskGb -notin 80..512) { throw 'Cấu hình máy ảo nằm ngoài giới hạn cho phép.' }
+    $path = [string]$Request.StorageRoot
+    if ($path -notmatch '^[A-Za-z]:\\' -or $path.Contains(',') -or $path.Contains('"') -or -not (Test-Path -LiteralPath $path -PathType Container)) { throw 'Chọn thư mục lưu trên ổ đĩa cục bộ. Không dùng thư mục mạng hoặc đường dẫn chứa dấu phẩy.' }
+    if ($path.StartsWith($env:WINDIR, [StringComparison]::OrdinalIgnoreCase)) { throw 'Không lưu máy Cloud trong thư mục Windows.' }
 }
 function Get-GuestPhaseText([string]$Phase) {
     $labels = @{booting='Đang khởi động Linux';packages='Đang cài thành phần hệ thống';verifying='Đang kiểm tra dữ liệu';image='Đang nhập image Cloud';volumes='Đang khôi phục dữ liệu bot';prepared='Đã chuẩn bị xong, chờ kích hoạt';starting='Đang khởi động Cloud';ready='Các máy Cloud được theo dõi đã đạt kiểm tra sức khỏe';'setup-error'='Chuẩn bị lỗi; dịch vụ sẽ thử lại, xem Nhật ký Linux'}

@@ -75,7 +75,7 @@ function global:Invoke-RestMethod { Add-Content $env:FIXTURE_CALLS 'activation a
             env.update(FIXTURE_ROOT=str(root),FIXTURE_CALLS=str(root / 'calls'),FIXTURE_FAILURE=failure,
                        PSModulePath=str(Path(os.environ['SystemRoot']) / 'System32/WindowsPowerShell/v1.0/Modules'))
             result = subprocess.run(['powershell.exe','-NoProfile','-ExecutionPolicy','Bypass','-File',str(root / 'harness.ps1')],
-                input=json.dumps({'Cpu':4,'MemoryGb':12,'DiskGb':120,'Switch':'Default Switch'}), capture_output=True,text=True,encoding='utf-8',errors='replace',env=env,timeout=30)
+                input=json.dumps({'Cpu':4,'MemoryGb':12,'DiskGb':120,'Switch':'Default Switch','StorageRoot':str(root)}), capture_output=True,text=True,encoding='utf-8',errors='replace',env=env,timeout=30)
             calls = (root / 'calls').read_text(encoding='utf-8-sig') if (root / 'calls').exists() else ''
             metadata = json.loads((root / 'hyperv.json').read_text(encoding='utf-8-sig')) if (root / 'hyperv.json').exists() else None
             self.assertNotIn('a'*43,result.stdout+result.stderr+calls)
@@ -87,6 +87,8 @@ function global:Invoke-RestMethod { Add-Content $env:FIXTURE_CALLS 'activation a
         self.assertLess(calls.index('-czf'),calls.index('VM started'))
         self.assertLess(calls.index('VM started'),calls.index('activation attempted'))
         self.assertEqual(config['MigrationState'],'active')
+        self.assertNotIn('ProgramData',config['Store'])
+        self.assertIn('LimixCloudServer',config['Store'])
         self.assertNotIn('docker start fixture-container',calls)
         self.assertNotIn('volume rm',calls)
 
@@ -201,3 +203,5 @@ class SeedTests(unittest.TestCase):
             self.assertNotIn('a'*43,result.stdout+result.stderr)
 
 if __name__=='__main__':unittest.main()
+
+

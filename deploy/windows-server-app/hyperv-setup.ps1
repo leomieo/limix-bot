@@ -30,7 +30,8 @@ $oldTaskEnabled = $oldTask -and $oldTask.Settings.Enabled
 $docker = (Get-Command docker.exe -ErrorAction Stop).Source
 if ((& $docker info --format '{{.OSType}}' 2>$null) -ne 'linux') { throw 'Mở Docker Desktop Linux để sao lưu dữ liệu Cloud hiện có.' }
 $installId = [guid]::NewGuid().ToString()
-$store = Join-Path $env:ProgramData ('LimixCloudServer\' + $installId)
+$storageRoot = [IO.Path]::GetFullPath([string]$request.StorageRoot)
+$store = Join-Path $storageRoot ('LimixCloudServer\' + $installId)
 Protect-ServerDirectory $store
 $transfer = Join-Path $store 'transfer'
 $seed = Join-Path $store 'seed'

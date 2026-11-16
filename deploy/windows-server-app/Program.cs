@@ -67,6 +67,7 @@ sealed class SetupWindow : Form
     readonly NumericUpDown memory = new() { Minimum=8,Maximum=32,Value=12,Width=65 };
     readonly NumericUpDown disk = new() { Minimum=80,Maximum=512,Value=120,Width=75 };
     readonly TextBox network = new() { Text="Default Switch",Width=170 };
+    readonly TextBox storage = new() { Width=600,ReadOnly=true };
     readonly TextBox output = new() { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, Dock = DockStyle.Fill, BackColor = Color.FromArgb(24, 24, 24), ForeColor = Color.White };
     readonly ServerButton install = new() { Text = "Cài đặt và chuyển Cloud", AutoSize = true };
     readonly FlowLayoutPanel buttons = new() { Dock = DockStyle.Top, AutoSize = true };
@@ -75,7 +76,7 @@ sealed class SetupWindow : Form
     internal void PreviewBusy() { buttons.Enabled=false; }
     public SetupWindow()
     {
-        Text = "Limix Cloud Server 0.2.4 beta · Hyper-V";
+        Text = "Limix Cloud Server 0.2.5 beta · Hyper-V";
         Size = new Size(1000, 760); MinimumSize = new Size(930, 700); StartPosition = FormStartPosition.CenterScreen;
         Font = new Font("Segoe UI", 10); BackColor = Color.FromArgb(18,18,18); ForeColor = Color.White;
         var top = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, FlowDirection = FlowDirection.TopDown, Padding = new Padding(18), WrapContents = false };
@@ -88,6 +89,15 @@ sealed class SetupWindow : Form
         resources.Controls.Add(new Label { Text="Ổ đĩa (GB)",AutoSize=true });resources.Controls.Add(disk);
         resources.Controls.Add(new Label { Text="Switch mạng",AutoSize=true });resources.Controls.Add(network);
         top.Controls.Add(resources);
+        top.Controls.Add(new Label {Text="Nơi lưu bản sao lưu và máy Cloud (chọn ổ còn đủ chỗ)",AutoSize=true});
+        var storageRow=new FlowLayoutPanel {AutoSize=true,WrapContents=false};
+        storageRow.Controls.Add(storage);
+        var chooseStorage=new ServerButton {Text="Chọn thư mục",AutoSize=true};
+        chooseStorage.Click+=(_,_)=>{
+            using var picker=new FolderBrowserDialog {Description="Chọn thư mục trên ổ đã dùng cho dữ liệu Docker; bộ cài tạo thư mục riêng LimixCloudServer."};
+            if(picker.ShowDialog(this)==DialogResult.OK)storage.Text=picker.SelectedPath;
+        };
+        storageRow.Controls.Add(chooseStorage);top.Controls.Add(storageRow);
         top.Controls.Add(new Label { Text="Chỉ chuyển Cloud; giữ CRM và dữ liệu gốc. Cần nhiều dung lượng trống cho bản sao lưu.",AutoSize=true });
         top.Controls.Add(consent);
         buttons.Controls.Add(install);
@@ -125,11 +135,12 @@ sealed class SetupWindow : Form
     async Task Install()
     {
         if(!consent.Checked) { MessageBox.Show("Xác nhận đã dừng Cloud host cũ. Giữ Docker Desktop đang mở để sao lưu.");return; }
+        if(string.IsNullOrWhiteSpace(storage.Text)) { MessageBox.Show("Chọn nơi lưu bản sao lưu và máy Cloud trước khi cài. Nên chọn ổ đang lưu dữ liệu Docker.");return; }
         busy=true; buttons.Enabled=false;
         try
         {
             Program.Extract();
-            var settings=JsonSerializer.Serialize(new { Cpu=(int)cpu.Value,MemoryGb=(int)memory.Value,DiskGb=(int)disk.Value,Switch=network.Text.Trim() });
+            var settings=JsonSerializer.Serialize(new { Cpu=(int)cpu.Value,MemoryGb=(int)memory.Value,DiskGb=(int)disk.Value,Switch=network.Text.Trim(),StorageRoot=storage.Text.Trim() });
             var script=Path.Combine(Program.Root,"app","hyperv-setup.ps1");
             var code=await Run(null,script,settings);
             if(code!=0) Log("Cài đặt chưa hoàn tất. Xem lỗi phía trên; dữ liệu gốc được giữ. Không bật host cũ nếu Cloud mới đã chạy.");
@@ -169,4 +180,5 @@ sealed class SetupWindow : Form
         process.StandardInput.Close();await process.WaitForExitAsync();return process.ExitCode;
     }
 }
+
 
