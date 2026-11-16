@@ -7,7 +7,7 @@ namespace LimixServer;
 sealed class WindowsStartupWindow : Form
 {
     readonly TextBox executable = new() { Width=650, ReadOnly=true };
-    readonly ServerLabel status = new() { AutoSize=true, MaximumSize=new Size(720,0) };
+    readonly ServerLabel status = new() { Dock=DockStyle.Fill, AutoSize=false, Padding=new Padding(12,8,12,8) };
     readonly FlowLayoutPanel content = new() { Dock=DockStyle.Fill, FlowDirection=FlowDirection.TopDown, WrapContents=false, Padding=new Padding(20), AutoScroll=true };
     const string RunPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     const string Entry = "Limix Bot Server Desktop";
@@ -15,7 +15,7 @@ sealed class WindowsStartupWindow : Form
     {
         Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         Text="Limix Bot · Tự đăng nhập và chạy nền";
-        Size=new Size(800,500); MinimumSize=new Size(760,460);
+        Size=new Size(820,700); MinimumSize=new Size(780,540);
         StartPosition=FormStartPosition.CenterParent;
         BackColor=Color.FromArgb(18,18,18); ForeColor=Color.White; Font=new Font("Segoe UI",10);
         Controls.Add(content);
@@ -42,7 +42,12 @@ sealed class WindowsStartupWindow : Form
         });
         AddText("Tài khoản cấu hình: "+WindowsIdentity.GetCurrent().Name);
         AddText("Tự đăng nhập cho phép người có mặt tại máy truy cập desktop. Không Sleep, khóa hoặc đăng xuất nếu bot cần thao tác giao diện. Sau khi cài, thử khởi động lại và kiểm tra từ máy khác.");
-        content.Controls.Add(status); ServerTheme.Apply(this); RefreshStatus();
+        var footer=new Panel { Dock=DockStyle.Bottom,Height=116,Padding=new Padding(8),BackColor=Color.FromArgb(28,28,28) };
+        var refresh=new ServerButton {Text="Làm mới trạng thái",Dock=DockStyle.Right,Width=165};
+        refresh.Click+=(_,_)=>RefreshStatus();
+        footer.Controls.Add(status);footer.Controls.Add(refresh);Controls.Add(footer);
+        ServerTheme.Apply(this); RefreshStatus();
+        Activated+=(_,_)=>RefreshStatus();
     }
     internal static string StartupCommand(string path) => "\""+path+"\" --omb-hidden";
     void AddText(string value,int size=10) => content.Controls.Add(new ServerLabel { Text=value,AutoSize=true,MaximumSize=new Size(720,0),Font=new Font("Segoe UI",size),Margin=new Padding(0,8,0,8) });
@@ -56,7 +61,7 @@ sealed class WindowsStartupWindow : Form
     {
         using var run=Registry.CurrentUser.OpenSubKey(RunPath);
         using var winlogon=Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon");
-        status.Text="Limix Bot tự chạy: "+(run?.GetValue(Entry) is string ? "Đã bật" : "Chưa bật")+". Windows AutoAdminLogon: "+(winlogon?.GetValue("AutoAdminLogon") as string == "1" ? "Đã bật (cần thử reboot)" : "Chưa bật")+".";
+        status.Text="TRẠNG THÁI CẤU HÌNH\nLimix Bot tự mở: "+(run?.GetValue(Entry) is string ? "Đã cấu hình" : "Chưa cấu hình")+"\nWindows tự đăng nhập: "+(winlogon?.GetValue("AutoAdminLogon") as string == "1" ? "Đã bật" : "Chưa bật")+"\nCần thử khởi động lại để xác nhận hoạt động thực tế.";
     }
     async Task OpenAutologon()
     {
