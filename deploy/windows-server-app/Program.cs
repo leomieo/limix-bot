@@ -91,6 +91,7 @@ sealed class SetupWindow : Form
         top.Controls.Add(resources);
         top.Controls.Add(new Label {Text="Nơi lưu bản sao lưu và máy Cloud (chọn ổ còn đủ chỗ)",AutoSize=true});
         var storageRow=new FlowLayoutPanel {AutoSize=true,WrapContents=false};
+        if(Directory.Exists(@"D:\DockerData")) storage.Text=@"D:\DockerData";
         storageRow.Controls.Add(storage);
         var chooseStorage=new ServerButton {Text="Chọn thư mục",AutoSize=true};
         chooseStorage.Click+=(_,_)=>{
