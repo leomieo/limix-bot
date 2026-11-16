@@ -43,3 +43,8 @@ dotnet deploy/windows-server-app/bin/Release/net8.0-windows/win-x64/LimixServer-
 13 new Hyper-V/guest tests, 6 legacy regression tests and 11 host/backend tests. Tests do not modify real VMs/tasks/Docker.
 
 Sources: [VM startup](https://learn.microsoft.com/en-us/powershell/module/hyper-v/set-vm), [Linux Secure Boot](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/learn-more/Generation-2-virtual-machine-security-settings-for-Hyper-V), [Ubuntu image](https://cloud-images.ubuntu.com/noble/20261017/), [Node release](https://nodejs.org/dist/v24.14.0/).
+
+## Windows desktop bots / Bot điều khiển Windows
+Bộ cài có mục Tự đăng nhập / Limix Bot nền: mở Microsoft Autologon chính thức, xác minh chữ ký Microsoft trước khi chạy. Nhập mật khẩu trực tiếp trong cửa sổ Microsoft; không dùng PIN. Với tài khoản không mật khẩu, thử để trống và xác nhận bằng reboot. Chọn đúng Limix Bot.exe đã cài để thêm mục tự chạy riêng của tài khoản Windows đang mở bộ cài; có nút xóa mục này. Nếu UAC dùng tài khoản quản trị khác, mục tự chạy thuộc tài khoản đó: cần mở bộ cài bằng đúng tài khoản chạy bot. Tắt tự đăng nhập trong Microsoft Autologon bằng Disable. Bộ cài không tự reboot hay thay đổi mật khẩu. Máy khóa/đăng xuất không bảo đảm điều khiển giao diện.
+
+Use Windows desktop startup to open the signed Microsoft Autologon tool and configure an independent per-user Limix Bot startup entry. Passwords are entered only in Microsoft's window. The setup does not change passwords or reboot Windows. Disable automatic Windows sign-in in Autologon; remove the Limix startup entry using the separate disable button. Interactive desktop automation requires an available unlocked desktop. Reboot acceptance on the Z840 remains required.

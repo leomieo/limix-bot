@@ -23,6 +23,15 @@ static class Program
             return;
         }
         ApplicationConfiguration.Initialize();
+        if (args.Length == 2 && args[0] == "--preview-startup")
+        {
+            using var preview = new WindowsStartupWindow();
+            preview.Show(); Application.DoEvents();
+            using var bitmap = new Bitmap(preview.Width, preview.Height);
+            preview.DrawToBitmap(bitmap, new Rectangle(0,0,preview.Width,preview.Height));
+            bitmap.Save(args[1], System.Drawing.Imaging.ImageFormat.Png);
+            return;
+        }
         if (args.Length == 2 && args[0] == "--preview")
         {
             using var preview = new SetupWindow();
@@ -87,6 +96,11 @@ sealed class SetupWindow : Form
         AddButton("Kiểm tra Hyper-V", async () => await Control("Check"));
         AddButton("Bật Hyper-V", async () => {
             if(MessageBox.Show("Bật tính năng Hyper-V có thể cần khởi động lại Windows. Bộ cài không tự reboot. Tiếp tục?","Hyper-V",MessageBoxButtons.YesNo)==DialogResult.Yes) await Control("EnableHyperV");
+        });
+        AddButton("Tự đăng nhập / Limix Bot nền", () => {
+            using var window = new WindowsStartupWindow();
+            window.ShowDialog(this);
+            return Task.CompletedTask;
         });
         top.Controls.Add(buttons);
         Controls.Add(output); Controls.Add(top);
