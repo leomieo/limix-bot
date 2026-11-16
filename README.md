@@ -54,7 +54,7 @@ Use your own authorized accounts and follow the terms of AI providers and messag
 
 [Releases](https://github.com/leomieo/limix-bot/releases) · [Skill library](https://github.com/leomieo/limix-skill-hub) · [Contributing](CONTRIBUTING.md) · [Code of Conduct](CODE_OF_CONDUCT.md) · [Security](SECURITY.md) · [License](LICENSE) · [Notices](NOTICE)
 
-Developed by **Limix AI**.
+Limix Bot is developed by Limix AI, based on OpenMausBot.
 
 ---
 
@@ -169,4 +169,4 @@ Limix Bot kết nối với dịch vụ của các nhà cung cấp AI và ứng 
 
 [Thư viện kỹ năng](https://github.com/leomieo/limix-skill-hub) · [Đóng góp](CONTRIBUTING.md) · [Bảo mật](SECURITY.md) · [Quy tắc ứng xử](CODE_OF_CONDUCT.md) · [Giấy phép](LICENSE) · [Ghi công](NOTICE)
 
-Limix Bot do **Limix AI** phát triển.
+Limix Bot do **Limix AI** phát triển dựa trên OpenMausBot.
