@@ -75,83 +75,91 @@ sealed class SetupWindow : Form
     readonly TextBox storage = new() { Width=600,ReadOnly=true };
     readonly TextBox output = new() { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, Dock = DockStyle.Fill, BackColor = Color.FromArgb(24, 24, 24), ForeColor = Color.White };
     readonly ServerButton install = new() { Text = "Cài đặt và chuyển Cloud", AutoSize = true };
-    readonly FlowLayoutPanel buttons = new() { Dock = DockStyle.Top, AutoSize = true };
+    readonly Panel buttons = new() { Dock = DockStyle.Top, AutoSize = true };
     readonly CheckBox consent = new() { AutoSize = true, Text = "Tôi đã dừng Cloud host cũ; cho phép sao lưu và chuyển các container Cloud." };
     bool busy;
     internal void PreviewBusy() { buttons.Enabled=false; }
+    readonly ServerLabel summary=new() {AutoSize=true,MaximumSize=new Size(740,0),Font=new Font("Segoe UI",12,FontStyle.Bold)};
+    FlowLayoutPanel actionPage=null!;
+    bool HasSetup => File.Exists(Path.Combine(Program.Root,"hyperv.json"));
     public SetupWindow()
     {
-        Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-        Text = "Limix Cloud Server 0.2.13 beta · Hyper-V";
-        Size = new Size(1000, 760); MinimumSize = new Size(930, 700); StartPosition = FormStartPosition.CenterScreen;
-        Font = new Font("Segoe UI", 10); BackColor = Color.FromArgb(18,18,18); ForeColor = Color.White;
-        var top = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, FlowDirection = FlowDirection.TopDown, Padding = new Padding(18), WrapContents = false };
-        top.Controls.Add(new ServerLabel { Text = "Limix Cloud Server · Hyper-V", Font = new Font("Segoe UI", 20, FontStyle.Bold), AutoSize = true });
-        top.Controls.Add(new ServerLabel { MaximumSize = new Size(820,0), AutoSize = true, Text = "Chạy Cloud trong máy Linux Hyper-V riêng, tự khởi động cùng Windows, không cần bấm Sign in hoặc có mật khẩu Windows. Cần Windows Pro/Enterprise, Hyper-V và Cloud Docker Desktop đã cấu hình. Máy Xeon phải bật và không Sleep." });
-        top.Controls.Add(new ServerLabel { Text = "Tài khoản Windows: " + WindowsIdentity.GetCurrent().Name, AutoSize = true });
-        var resources = new FlowLayoutPanel { AutoSize=true,WrapContents=false };
-        resources.Controls.Add(new ServerLabel { Text="CPU",AutoSize=true });resources.Controls.Add(cpu);
-        resources.Controls.Add(new ServerLabel { Text="RAM (GB)",AutoSize=true });resources.Controls.Add(memory);
-        resources.Controls.Add(new ServerLabel { Text="Ổ đĩa (GB)",AutoSize=true });resources.Controls.Add(disk);
-        resources.Controls.Add(new ServerLabel { Text="Switch mạng",AutoSize=true });resources.Controls.Add(network);
-        top.Controls.Add(resources);
-        top.Controls.Add(new ServerLabel {Text="Nơi lưu bản sao lưu và máy Cloud (chọn ổ còn đủ chỗ)",AutoSize=true});
-        var storageRow=new FlowLayoutPanel {AutoSize=true,WrapContents=false};
-        if(Directory.Exists(@"D:\DockerData")) storage.Text=@"D:\DockerData";
-        storageRow.Controls.Add(storage);
-        var chooseStorage=new ServerButton {Text="Chọn thư mục",AutoSize=true};
-        chooseStorage.Click+=(_,_)=>{
-            using var picker=new FolderBrowserDialog {Description="Chọn thư mục trên ổ đã dùng cho dữ liệu Docker; bộ cài tạo thư mục riêng LimixCloudServer."};
-            if(picker.ShowDialog(this)==DialogResult.OK)storage.Text=picker.SelectedPath;
-        };
-        storageRow.Controls.Add(chooseStorage);top.Controls.Add(storageRow);
-        top.Controls.Add(new ServerLabel { Text="Chỉ chuyển Cloud; giữ CRM và dữ liệu gốc. Cần nhiều dung lượng trống cho bản sao lưu.",AutoSize=true });
-        top.Controls.Add(consent);
-        buttons.Controls.Add(install);
-        AddButton("Bắt đầu", async () => await ControlTask(true));
-        AddButton("Dừng", async () => await ControlTask(false));
-        AddButton("Xem trạng thái", async () => await Control("Status"));
-        AddButton("Nhật ký Linux", async () => await Control("Logs"));
-        AddButton("Kiểm tra Hyper-V", async () => await Control("Check"));
-        AddButton("Bật Hyper-V", async () => {
-            if(MessageBox.Show("Bật tính năng Hyper-V có thể cần khởi động lại Windows. Bộ cài không tự reboot. Tiếp tục?","Hyper-V",MessageBoxButtons.YesNo)==DialogResult.Yes) await Control("EnableHyperV");
+        Icon=Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+        Text="Limix Cloud Server 0.3.0 beta";
+        Size=new Size(1120,860);MinimumSize=new Size(1000,760);StartPosition=FormStartPosition.CenterScreen;
+        Font=new Font("Segoe UI",11);BackColor=Color.FromArgb(18,18,18);ForeColor=Color.White;
+        var header=new Panel {Dock=DockStyle.Top,Height=94,Padding=new Padding(22,16,22,8)};
+        header.Controls.Add(new ServerLabel {Text="Limix Cloud Server",Dock=DockStyle.Top,Height=36,Font=new Font("Segoe UI",22,FontStyle.Bold)});
+        var sidebar=new FlowLayoutPanel {Dock=DockStyle.Left,Width=210,FlowDirection=FlowDirection.TopDown,WrapContents=false,Padding=new Padding(14,12,8,12)};
+        buttons.Dock=DockStyle.Fill;buttons.AutoSize=false;
+        var logPanel=new Panel {Dock=DockStyle.Bottom,Height=220,Padding=new Padding(16,8,16,12)};
+        logPanel.Controls.Add(output);
+        logPanel.Controls.Add(new ServerLabel {Text="NHẬT KÝ · Kết quả thao tác",Dock=DockStyle.Top,Height=28});
+        var pages=new List<FlowLayoutPanel>();
+        FlowLayoutPanel Page(string name,string title,string description) {
+            var page=new FlowLayoutPanel {Dock=DockStyle.Fill,AutoScroll=true,FlowDirection=FlowDirection.TopDown,WrapContents=false,Padding=new Padding(18,10,16,10),Visible=false};
+            page.Controls.Add(new ServerLabel {Text=title,AutoSize=true,Font=new Font("Segoe UI",18,FontStyle.Bold),Margin=new Padding(0,0,0,12)});
+            page.Controls.Add(new ServerLabel {Text=description,AutoSize=true,MaximumSize=new Size(730,0),Margin=new Padding(0,0,0,16)});
+            pages.Add(page);buttons.Controls.Add(page);
+            var nav=new ServerButton {Text=name,Width=185,Height=50};
+            nav.Click+=(_,_)=>{foreach(var item in pages)item.Visible=item==page;page.BringToFront();};sidebar.Controls.Add(nav);
+            return page;
+        }
+        void Note(FlowLayoutPanel page,string text) => page.Controls.Add(new ServerLabel {Text=text,AutoSize=true,MaximumSize=new Size(730,0),Margin=new Padding(0,8,0,8)});
+        var overview=Page("Tổng quan","Theo dõi máy chủ","Kiểm tra trạng thái trước khi thay đổi. Cài mới chỉ dùng khi chưa có máy Cloud; không cài lại để cập nhật ứng dụng.");
+        summary.Text=HasSetup?"Đã có cấu hình Cloud. Bấm Làm mới để kiểm tra máy đang chạy hay đang tắt.":"Chưa có cấu hình Cloud trên tài khoản Windows này. Vào Cài đặt lần đầu để bắt đầu.";
+        overview.Controls.Add(summary);actionPage=overview;
+        AddButton("Làm mới trạng thái",async()=>await Control("Status"));
+        AddButton("Bật máy Cloud",async()=>await ControlTask(true));
+        AddButton("Tắt máy Cloud",async()=>await ControlTask(false));
+        Note(overview,"Tắt máy Cloud cũng tắt tự khởi động. Bấm Bật máy Cloud để bật lại cả hai. Không ảnh hưởng CRM hoặc container khác trên Docker Desktop.");
+        AddButton("Xem nhật ký Linux",async()=>await Control("Logs"));
+        var setup=Page("Cài đặt lần đầu","Chuẩn bị và cài server","Bước 1: kiểm tra Hyper-V và Docker Desktop. Bước 2: chọn tài nguyên và ổ lưu. Bước 3: cài đặt, rồi quay lại Tổng quan để xác nhận sẵn sàng.");
+        actionPage=setup;
+        AddButton("1 · Kiểm tra Hyper-V và mạng",async()=>await Control("Check"));
+        AddButton("Bật tính năng Hyper-V nếu chưa có",async()=>{
+            if(MessageBox.Show("Bật Hyper-V có thể cần khởi động lại Windows. Tiếp tục?","Limix Server",MessageBoxButtons.YesNo)==DialogResult.Yes)await Control("EnableHyperV");
         });
-        AddButton("Tự đăng nhập / Limix Bot nền", () => {
-            using var window = new WindowsStartupWindow();
-            window.ShowDialog(this);
-            return Task.CompletedTask;
-        });
-        AddButton("Docker / Dịch vụ khác tự khởi động", () => {
-            using var window = new DockerStartupWindow();
-            window.ShowDialog(this);
-            return Task.CompletedTask;
-        });
-        AddButton("Đổi ổ / Chuyển server", () => {
-            using var window = new ServerStorageWindow();
-            window.ShowDialog(this);
-            return Task.CompletedTask;
-        });
-        AddButton("Sửa máy Cloud đã cài", async () => {
-            if(MessageBox.Show("Dừng máy Cloud trước khi sửa. Công cụ cập nhật dịch vụ bên trong Linux, giữ nguyên ổ dữ liệu. Tiếp tục?","Limix Server",MessageBoxButtons.OKCancel)!=DialogResult.OK)return;
+        var resources=new FlowLayoutPanel {AutoSize=true,WrapContents=true,MaximumSize=new Size(730,0)};
+        foreach(var pair in new (string,Control)[]{("CPU",cpu),("RAM (GB)",memory),("Ổ máy Cloud (GB)",disk),("Switch mạng",network)}) {resources.Controls.Add(new ServerLabel {Text=pair.Item1,AutoSize=true,Margin=new Padding(0,6,8,0)});resources.Controls.Add(pair.Item2);}
+        Note(setup,"2 · Tài nguyên dành cho máy Cloud");setup.Controls.Add(resources);
+        Note(setup,"Thư mục lưu máy Cloud và bản sao lưu (chọn ổ còn đủ chỗ)");
+        storage.Width=670;if(Directory.Exists(@"D:\DockerData"))storage.Text=@"D:\DockerData";setup.Controls.Add(storage);
+        AddButton("Chọn thư mục lưu",()=>{using var picker=new FolderBrowserDialog {Description="Chọn ổ lưu dữ liệu Cloud"};if(picker.ShowDialog(this)==DialogResult.OK)storage.Text=picker.SelectedPath;return Task.CompletedTask;});
+        consent.MaximumSize=new Size(730,0);consent.Text="Tôi đã dừng host Cloud cũ; cho phép sao lưu dữ liệu Cloud nếu có. Các dịch vụ Docker khác được giữ nguyên.";setup.Controls.Add(consent);
+        install.Text="3 · Cài đặt server";install.Enabled=!HasSetup;setup.Controls.Add(install);
+        if(HasSetup)Note(setup,"Đã có cấu hình. Dùng Tổng quan để bật/tắt, Khắc phục để sửa, hoặc Dữ liệu để chuyển ổ. Không cài lại đè lên máy hiện có.");
+        var startup=Page("Khởi động tự động","Chạy lại sau khi bật máy","Cloud Hyper-V tự khởi động cùng Windows khi đã bấm Bật máy Cloud. Bot điều khiển ứng dụng Windows và Docker Desktop cần phiên desktop đã đăng nhập.");
+        actionPage=startup;
+        AddButton("Windows và Limix Bot chạy nền",()=>{using var window=new WindowsStartupWindow();window.ShowDialog(this);return Task.CompletedTask;});
+        AddButton("Các dịch vụ Docker Desktop",()=>{using var window=new DockerStartupWindow();window.ShowDialog(this);return Task.CompletedTask;});
+        Note(startup,"Microsoft Autologon không hỗ trợ mật khẩu trống. Nếu giữ Windows không mật khẩu, cần bấm Sign in để mở desktop; Cloud Hyper-V không cần bước này. Sau khi cấu hình, thử reboot khi thuận tiện để xác nhận từng dịch vụ.");
+        var data=Page("Dữ liệu","Lưu trữ và chuyển server","Chuyển ổ máy Cloud, xuất bản sao mã hóa hoặc nhập trên máy mới. Dừng máy Cloud trước khi thao tác; không di chuyển dữ liệu nội bộ Docker Desktop.");
+        actionPage=data;AddButton("Mở quản lý dữ liệu",()=>{using var window=new ServerStorageWindow();window.ShowDialog(this);return Task.CompletedTask;});
+        var repair=Page("Khắc phục","Sửa cấu hình dịch vụ","Chỉ dùng sửa chữa khi đã có máy Cloud nhưng dịch vụ lỗi. Giữ nguyên ổ dữ liệu, không khôi phục host cũ song song.");
+        actionPage=repair;
+        AddButton("Sửa máy Cloud đã cài",async()=>{
+            if(MessageBox.Show("Dừng máy Cloud trước khi sửa. Công cụ giữ nguyên ổ dữ liệu. Tiếp tục?","Limix Server",MessageBoxButtons.OKCancel)!=DialogResult.OK)return;
             busy=true;buttons.Enabled=false;
-            try { Program.Extract();await Run(null,Path.Combine(Program.Root,"app","repair.ps1")); }
-            finally {busy=false;buttons.Enabled=true;}
+            try{Program.Extract();await Run(null,Path.Combine(Program.Root,"app","repair.ps1"));}finally{busy=false;buttons.Enabled=true;}
         });
-        top.Controls.Add(buttons);
-        Controls.Add(output); Controls.Add(top);
-        ServerTheme.Apply(this);
-        install.Click += async (_,_) => await Install();
-        FormClosing += (_,e) => { if(busy) { e.Cancel=true; MessageBox.Show("Đang chuyển dữ liệu. Chờ hoàn tất trước khi đóng bộ cài."); } };
+        AddButton("Xem nhật ký chẩn đoán",async()=>await Control("Logs"));
+        Controls.Add(buttons);Controls.Add(sidebar);Controls.Add(logPanel);Controls.Add(header);
+        ServerTheme.Apply(this);overview.Visible=true;overview.BringToFront();
+        install.Click+=async(_,_)=>await Install();
+        FormClosing+=(_,e)=>{if(busy){e.Cancel=true;MessageBox.Show("Đang xử lý. Chờ hoàn tất trước khi đóng.");}};
     }
     void AddButton(string text, Func<Task> action)
     {
         var button=new ServerButton { Text=text,AutoSize=true };
         button.Click += async (_,_) => { try { await action(); } catch(Exception e) { Log(e.Message); } };
-        buttons.Controls.Add(button);
+        actionPage.Controls.Add(button);
     }
-    void Log(string text) { if(IsDisposed)return; if(InvokeRequired) { BeginInvoke(()=>Log(text));return; } output.AppendText(text+Environment.NewLine); }
+    void Log(string text) { if(IsDisposed)return; if(InvokeRequired) { BeginInvoke(()=>Log(text));return; } output.AppendText(text+Environment.NewLine);
+        if(text.Contains("Hyper-V:")||text.Contains("Máy Cloud đạt")||text.Contains("Chưa nhận được")||text.Contains("Đã kích hoạt"))summary.Text=text; }
     async Task Install()
     {
+        if(HasSetup) {MessageBox.Show("Đã có cấu hình. Dùng Tổng quan hoặc Khắc phục.");return;}
         if(!consent.Checked) { MessageBox.Show("Xác nhận đã dừng Cloud host cũ. Giữ Docker Desktop đang mở để sao lưu.");return; }
         if(string.IsNullOrWhiteSpace(storage.Text)) { MessageBox.Show("Chọn nơi lưu bản sao lưu và máy Cloud trước khi cài. Nên chọn ổ đang lưu dữ liệu Docker.");return; }
         busy=true; buttons.Enabled=false;
@@ -199,6 +207,7 @@ sealed class SetupWindow : Form
         process.StandardInput.Close();await process.WaitForExitAsync();return process.ExitCode;
     }
 }
+
 
 
 

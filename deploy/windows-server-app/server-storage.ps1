@@ -1,4 +1,4 @@
-﻿[Console]::InputEncoding=[Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding=[Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding=[Text.UTF8Encoding]::new($false)
 $OutputEncoding=[Text.UTF8Encoding]::new($false)
 $ErrorActionPreference='Stop'
@@ -15,7 +15,7 @@ if ($request.Action -eq 'Import') {
     if (Get-VM -Name 'LimixCloudServer' -ErrorAction SilentlyContinue) {throw 'Máy Cloud đã tồn tại. Không ghi đè.'}
     $package=[IO.Path]::GetFullPath([string]$request.Package)
     $manifest=Get-Content -LiteralPath (Join-Path $package 'manifest.json') -Raw | ConvertFrom-Json
-    if ($manifest.Format -ne 1 -or [version]$manifest.Version -gt [version]'0.2.6') {throw 'Bản xuất mới hơn bộ cài này hoặc sai định dạng.'}
+    if ($manifest.Format -ne 1 -or [version]$manifest.Version -gt [version]'0.3.0') {throw 'Bản xuất mới hơn bộ cài này hoặc sai định dạng.'}
     $config=Get-Content -LiteralPath (Join-Path $package 'hyperv.json') -Raw | ConvertFrom-Json
     if ($config.InstallId -notmatch '^[a-f0-9-]{36}$') {throw 'Mã cài đặt không hợp lệ.'}
     $files=@(Get-ChildItem -LiteralPath $package -Recurse -Filter '*.vmcx')
@@ -58,6 +58,7 @@ if ($request.Action -eq 'Move') {
     if (@(Get-ChildItem -LiteralPath $destination -Force).Count) {throw 'Thư mục xuất phải trống.'}
     Export-VM -VM $vm -Path $destination
     Copy-Item -LiteralPath $configPath -Destination (Join-Path $destination 'hyperv.json')
-    @{Format=1;Version='0.2.6'} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $destination 'manifest.json') -Encoding UTF8
+    @{Format=1;Version='0.3.0'} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $destination 'manifest.json') -Encoding UTF8
     Write-Output 'Đã xuất máy Cloud đang tắt. Server cũ tiếp tục được giữ tắt.'
 } else {throw 'Thao tác lưu trữ không hợp lệ.'}
+

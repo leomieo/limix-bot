@@ -20,7 +20,7 @@ sealed class WindowsStartupWindow : Form
         BackColor=Color.FromArgb(18,18,18); ForeColor=Color.White; Font=new Font("Segoe UI",10);
         Controls.Add(content);
         AddText("Chạy bot điều khiển ứng dụng Windows",18);
-        AddText("1. Cấu hình tự đăng nhập bằng Microsoft Autologon. Dùng tài khoản Windows đang chạy bot; mật khẩu Windows khác mã PIN. Máy không có mật khẩu có thể để trống trong công cụ Microsoft.");
+        AddText("1. Cấu hình tự đăng nhập bằng Microsoft Autologon. Dùng tài khoản Windows đang chạy bot; mật khẩu Windows khác mã PIN. Microsoft Autologon không hỗ trợ mật khẩu trống. Máy không mật khẩu cần đăng nhập desktop bằng tay.");
         AddButton("Mở Microsoft Autologon (bật / tắt)", async () => await OpenAutologon());
         AddText("2. Chọn Limix Bot đã cài rồi bật chạy nền sau đăng nhập.");
         content.Controls.Add(executable);
