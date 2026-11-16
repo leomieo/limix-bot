@@ -115,3 +115,6 @@ Do not publish administrator login names or map product author names to privileg
 
 ## Commercial public release content
 Public release notes and customer-facing materials must contain customer-relevant behavior only. Exclude internal administrator accounts, privilege exceptions, approval operations, internal deployment details and engineering test logs. Maintain matching English and Vietnamese copy. Record internal verification and limitations in engineering documents; preserve customer-relevant limitations without exposing internal identities.
+
+## Private operational records
+Do not commit or publish internal account identities, customer data, machine identifiers, deployment addresses, operational transcripts or private installation state. Keep operational notes in locally excluded storage. Project memory committed to a public repository must describe generic product behavior and sanitized engineering results only. User requests to save project memory do not authorize publishing private information.
