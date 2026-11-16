@@ -1,0 +1,5 @@
+bin/
+obj/
+payload/
+payload.zip
+__pycache__/

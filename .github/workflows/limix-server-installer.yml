@@ -1,0 +1,37 @@
+name: Limix Cloud Server Installer
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - deploy/windows-server-app/**
+      - deploy/managed-beta/**
+      - .github/workflows/limix-server-installer.yml
+permissions:
+  contents: read
+jobs:
+  installer:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Isolated migration and Docker backend tests
+        run: |
+          python -m unittest discover -s deploy/windows-server-app -p 'test_*.py' -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node --test deploy/managed-beta/docker-backend.test.mjs deploy/managed-beta/host.test.mjs
+      - name: Build self-contained server installer
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File deploy/windows-server-app/build.ps1
+      - name: Verify embedded payload
+        run: dotnet deploy/windows-server-app/bin/Release/net8.0-windows/win-x64/LimixServer-Setup.dll --verify
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LimixServer-Setup-beta-win-x64
+          path: .omb-scratch/server-installer/LimixServer-Setup.exe
+          if-no-files-found: error

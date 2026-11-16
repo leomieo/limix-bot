@@ -1,3 +1,4 @@
+import { dockerInvocation } from "./docker-backend.mjs";
 import { execFile } from "node:child_process";
 import { createHmac } from "node:crypto";
 import { promisify } from "node:util";
@@ -15,7 +16,8 @@ export const TUNNEL_IMAGE = "cloudflare/cloudflared:2026.9.3";
 async function docker(args, extraEnv = {}) {
   const env = { ...process.env, ...extraEnv };
   delete env.LIMIX_BETA_HOST_TOKEN;
-  const result = await run("docker", args, { env, windowsHide: true, timeout: 90000 });
+  const invocation = dockerInvocation(args, env);
+  const result = await run(invocation.file, invocation.args, { env: invocation.env, windowsHide: true, timeout: 90000 });
   return result.stdout.trim();
 }
 
