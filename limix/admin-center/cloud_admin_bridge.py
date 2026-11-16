@@ -29,7 +29,13 @@ def owner_credentials_ok(db, username, password):
         conn.close()
 
 def handle(handler, db, session_valid, path, method):
-    routes = {("GET", "/api/admin/cloud/requests"): "requests", ("POST", "/api/admin/cloud/decision"): "decision"}
+    from customer_admin import handle as customer_handle
+    if customer_handle(handler, db, session_valid, path, method):
+        return True
+    from account_structure import handle as structure_handle
+    if structure_handle(handler, db, session_valid, path, method):
+        return True
+    routes = {("GET", "/api/admin/cloud/requests"): "requests", ("POST", "/api/admin/cloud/decision"): "decision", ("GET", "/api/admin/cloud/resources"): "resources", ("POST", "/api/admin/cloud/resources"): "resources"}
     if not path.startswith("/api/admin/cloud/"):
         return False
     def reply(value, status):
@@ -50,7 +56,11 @@ def handle(handler, db, session_valid, path, method):
                 raise ValueError()
             body = json.loads(handler.rfile.read(size))
             import re
-            if not isinstance(body, dict) or not isinstance(body.get("principal"), str) or not re.fullmatch(r"limix:[A-Za-z0-9_.@-]{1,100}", body["principal"]) or body.get("decision") not in ("approve", "decline", "revoke"):
+            if not isinstance(body, dict) or not isinstance(body.get("principal"), str) or not re.fullmatch(r"limix:[A-Za-z0-9_.@-]{1,100}", body["principal"]):
+                raise ValueError()
+            if route == "decision" and body.get("decision") not in ("approve", "decline", "revoke"):
+                raise ValueError()
+            if route == "resources" and body.get("reset") is not True and (type(body.get("cpus")) is not int or not 1 <= body["cpus"] <= 16 or type(body.get("memory_gb")) is not int or not 2 <= body["memory_gb"] <= 32):
                 raise ValueError()
         except (ValueError, TypeError):
             return reply({"error": "invalid_request"}, 400)

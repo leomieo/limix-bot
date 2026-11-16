@@ -1,0 +1,51 @@
+<section class="section" id="tab-structure">
+ <div class="lm-heading"><div><div class="lm-eyebrow">CƠ CẤU KHÁCH HÀNG</div><h2>Tổ chức & vai trò</h2><p>Sắp xếp tài khoản theo tổ chức và xác định người phụ trách.</p></div><button class="lm-button" onclick="loadStructure()">Làm mới</button></div>
+ <div class="lm-note">Super Admin hệ thống: <strong>Leox</strong>. Vai trò dưới đây quản lý cơ cấu khách hàng; chưa tự cấp quyền truy cập dữ liệu bot hoặc bảng Super Admin. Phân quyền thực thi trong ứng dụng cần tích hợp riêng.</div>
+ <form class="lm-form" onsubmit="createOrganization(event)"><div class="lm-field"><label for="org-name">Tạo tổ chức / nhóm khách hàng</label><input id="org-name" maxlength="100" required placeholder="Ví dụ: Công ty ABC"></div><button class="lm-button primary" type="submit">Tạo tổ chức</button></form>
+ <form class="lm-form" onsubmit="assignOrganizationMember(event)">
+  <div class="lm-field"><label for="org-user">Tài khoản</label><select id="org-user" required></select></div>
+  <div class="lm-field"><label for="org-target">Tổ chức</label><select id="org-target" required></select></div>
+  <div class="lm-field"><label for="org-role">Vai trò trong tổ chức</label><select id="org-role"><option value="owner">Chủ tổ chức</option><option value="admin">Quản trị viên tổ chức</option><option value="member">Thành viên</option></select></div>
+  <button class="lm-button primary" type="submit">Lưu phân công</button>
+ </form><p id="structure-status" role="status" class="lm-muted"></p><div id="structure-list"></div>
+ <details class="lm-note"><summary>Lịch sử thay đổi cơ cấu</summary><div id="structure-audit"></div></details>
+</section>
+<section class="section" id="tab-plans">
+ <div class="lm-heading"><div><div class="lm-eyebrow">DỊCH VỤ & TÀI KHOẢN</div><h2>Gói tài khoản</h2><p>Xem gói hiện có, thời hạn và thay đổi gói cho từng khách.</p></div><button class="lm-button" onclick="loadAdminPlans()">Làm mới</button></div>
+ <div class="lm-note">Gói tài khoản hiện có được lưu trên máy chủ tài khoản. CPU/RAM Cloud chỉnh độc lập tại mục <strong>Máy Cloud</strong>; không tự thay đổi theo gói. Quota ổ đĩa và số bot chưa được thực thi.</div>
+ <div id="plan-catalog" class="lm-grid"></div><p id="plans-status" class="lm-muted" role="status"></p><div id="plan-accounts"></div>
+</section>
+<script>
+function lmCell(row,text,cls){const cell=document.createElement('td');cell.textContent=text??'—';if(cls)cell.className=cls;row.append(cell);return cell}
+function lmTable(headers){const wrap=document.createElement('div');wrap.className='lm-table-wrap';const table=document.createElement('table');table.className='lm-table';const head=document.createElement('thead'),tr=document.createElement('tr');for(const h of headers){const th=document.createElement('th');th.textContent=h;tr.append(th)}head.append(tr);const body=document.createElement('tbody');table.append(head,body);wrap.append(table);return {wrap,body}}
+async function accountAdminRead(path){const r=await fetch(path);const d=await r.json();if(!r.ok||d.ok===false)throw new Error(r.status===401?'Phiên đăng nhập hết hạn. Hãy đăng nhập lại.':'Không tải được dữ liệu tài khoản.');return d}
+const structureErrors={invalid_name:'Tên tổ chức cần từ 1–100 ký tự.',duplicate_name:'Tên tổ chức đã tồn tại.',last_owner:'Cần chỉ định chủ tổ chức khác trước khi chuyển người chủ cuối cùng.',first_member_must_own:'Thành viên đầu tiên cần là Chủ tổ chức.',protected_or_missing_user:'Tài khoản không tồn tại hoặc được bảo vệ.',invalid_membership:'Kiểm tra tổ chức và vai trò đã chọn.'};
+async function structureWrite(body){const r=await fetch('/api/admin/structure',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(structureErrors[d.error]||'Không lưu được cơ cấu. Hãy kiểm tra quyền và thử lại.');return d}
+async function loadStructure(){
+ const status=document.getElementById('structure-status');status.textContent='Đang tải cơ cấu...';
+ try{const data=await accountAdminRead('/api/admin/structure');
+ const users=document.getElementById('org-user'),orgs=document.getElementById('org-target');users.replaceChildren();orgs.replaceChildren();
+ for(const m of data.members.filter(m=>m.username.toLowerCase()!=='leox')){const o=document.createElement('option');o.value=m.id;o.textContent=m.username;users.append(o)}
+ for(const org of data.organizations){const o=document.createElement('option');o.value=org.id;o.textContent=org.name;orgs.append(o)}
+ const roles={owner:'Chủ tổ chức',admin:'Quản trị viên tổ chức',member:'Thành viên'};
+ const {wrap,body}=lmTable(['Tài khoản','Email','Tổ chức','Vai trò','Thao tác']);
+ for(const m of data.members){const tr=document.createElement('tr');lmCell(tr,m.username,'lm-account');lmCell(tr,m.email);lmCell(tr,m.organization||'Chưa phân nhóm');lmCell(tr,m.username.toLowerCase()==='leox'?'Super Admin':roles[m.role]||'Chưa phân công');const cell=lmCell(tr,'');if(m.organization_id){const b=document.createElement('button');b.className='lm-button';b.textContent='Gỡ khỏi tổ chức';b.onclick=async()=>{if(!confirm('Gỡ '+m.username+' khỏi tổ chức?'))return;b.disabled=true;try{await structureWrite({action:'remove_member',user_id:m.id});await loadStructure()}catch(e){status.textContent=e.message;b.disabled=false}};cell.append(b)}body.append(tr)}
+ document.getElementById('structure-list').replaceChildren(wrap);
+ status.textContent=data.organizations.length+' tổ chức · '+data.members.length+' tài khoản khách hàng. Leox là Super Admin ngoài cơ cấu khách.';
+ const audit=document.getElementById('structure-audit');audit.replaceChildren();const actionLabels={create_organization:'Tạo tổ chức',assign_member:'Phân công thành viên',remove_member:'Gỡ thành viên'};
+ for(const entry of data.audit){const line=document.createElement('p');line.textContent=new Date(entry.created_at).toLocaleString('vi-VN')+' · '+entry.actor+' · '+(actionLabels[entry.action]||entry.action)+' · '+entry.details;audit.append(line)}
+ }catch(e){status.textContent=e.message}
+}
+async function createOrganization(e){e.preventDefault();const b=e.submitter;b.disabled=true;try{await structureWrite({action:'create_organization',name:document.getElementById('org-name').value});document.getElementById('org-name').value='';await loadStructure()}catch(err){document.getElementById('structure-status').textContent=err.message}finally{b.disabled=false}}
+async function assignOrganizationMember(e){e.preventDefault();const b=e.submitter;b.disabled=true;try{await structureWrite({action:'assign_member',user_id:Number(document.getElementById('org-user').value),organization_id:Number(document.getElementById('org-target').value),role:document.getElementById('org-role').value});await loadStructure()}catch(err){document.getElementById('structure-status').textContent=err.message}finally{b.disabled=false}}
+async function loadAdminPlans(){
+ const status=document.getElementById('plans-status');status.textContent='Đang tải gói tài khoản...';
+ try{const [catalog,data]=await Promise.all([accountAdminRead('/api/admin/account-plans'),accountAdminRead('/api/admin/users')]);
+ const cards=document.getElementById('plan-catalog');cards.replaceChildren();
+ for(const [key,plan] of Object.entries(catalog.plans)){const card=document.createElement('div');card.className='lm-stat';const label=document.createElement('span');label.textContent=key;const title=document.createElement('strong');title.style.fontSize='18px';title.textContent=plan.name||key;const days=document.createElement('p');days.className='lm-muted';days.textContent=plan.days?plan.days+' ngày':'Theo thiết lập tài khoản';card.append(label,title,days);cards.append(card)}
+ const {wrap,body}=lmTable(['Tài khoản','Gói hiện tại','Hết hạn','Trạng thái','Thao tác']);
+ for(const user of data.users.filter(u=>u.status!=='deleted')){const tr=document.createElement('tr');lmCell(tr,user.username,'lm-account');lmCell(tr,catalog.plans[user.plan]?.name||user.plan);lmCell(tr,user.expires_at);lmCell(tr,({active:'Hoạt động',pending:'Chờ xác thực',suspended:'Đã khóa'})[user.status]||user.status);const cell=lmCell(tr,'');const button=document.createElement('button');button.className='lm-button';button.textContent='Đổi gói / gia hạn';button.onclick=()=>openExtend(user.id);cell.append(button);body.append(tr)}
+ document.getElementById('plan-accounts').replaceChildren(wrap);status.textContent='Thay đổi gói dùng cùng chức năng gia hạn hiện có; không tự thay tài nguyên Docker.';
+ }catch(e){status.textContent=e.message}
+}
+</script>

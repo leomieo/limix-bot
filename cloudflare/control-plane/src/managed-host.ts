@@ -67,5 +67,7 @@ export async function managedHostAssignments(request: Request, env: Env & HostBi
     console.error(JSON.stringify({ message: "managed host routing sync failed", error: error instanceof Error ? error.message : "unknown" }));
   }
   const suffix = readConfig(env).cloudflare.companionHostSuffix;
-  return json({ homes, power, origins: Object.fromEntries(homes.map(id => [id, managedHomeOrigin(id, suffix)])), routing });
+  const { results: resourceRows } = await env.DB.prepare('SELECT b.workspace_id AS id,r.cpus,r.memory_gb FROM managed_cloud_beta b JOIN limix_cloud_resource_overrides r ON r.principal=b.principal WHERE b.workspace_id IS NOT NULL').all<{id:string;cpus:number;memory_gb:number}>();
+  const resources = Object.fromEntries(resourceRows.map(row=>[row.id,{cpus:row.cpus,memoryGb:row.memory_gb}]));
+  return json({ homes, power, resources, origins: Object.fromEntries(homes.map(id => [id, managedHomeOrigin(id, suffix)])), routing });
 }

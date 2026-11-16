@@ -6,6 +6,17 @@ import { cloudSummary } from '../src/limix-cloud-admin';
 const bindings = { ...env, LIMIX_ACCOUNT_URL: 'https://accounts.test', LIMIX_BETA_HOST_TOKEN: 'fixture-host-token-'.repeat(3) };
 function request(name: string, body?: object) { return new Request('https://cloud.test/api/cloud/owner/decision', { method: body ? 'POST' : 'GET', headers: { authorization: 'Bearer limix.' + btoa('one') + '.token-' + name, 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }); }
 afterEach(async () => { vi.restoreAllMocks(); await env.DB.batch(['managed_cloud_beta', 'limix_cloud_requests', 'limix_cloud_devices'].map(t => env.DB.prepare(`DELETE FROM ${t}`))); });
+it('resource overrides require owner, enrollment and bounded CPU/RAM',async()=>{
+    vi.spyOn(globalThis,'fetch').mockImplementation(async (_input,init)=>Response.json({valid:true,username:JSON.parse(String(init?.body)).token.slice(6)}));
+    const path='/api/cloud/owner/resources';
+    await env.DB.prepare("INSERT INTO managed_cloud_beta(principal,workspace_id,requested_at) VALUES ('limix:alice',?,'fixture')").bind(crypto.randomUUID()).run();
+    await expect(cloudOwnerRoute(path,request('alice',{principal:'limix:alice',cpus:3,memory_gb:6}),bindings)).rejects.toMatchObject({status:403});
+    await expect(cloudOwnerRoute(path,request('leox',{principal:'limix:alice',cpus:1000,memory_gb:6}),bindings)).rejects.toMatchObject({status:400});
+    expect((await cloudOwnerRoute(path,request('leox',{principal:'limix:alice',cpus:3,memory_gb:6}),bindings)).status).toBe(200);
+    const list=await (await cloudOwnerRoute(path,request('leox'),bindings)).json() as {overrides:Array<{principal:string;cpus:number;memory_gb:number}>};
+    expect(list.overrides).toContainEqual(expect.objectContaining({principal:'limix:alice',cpus:3,memory_gb:6}));
+    expect((await cloudOwnerRoute(path,request('leox',{principal:'limix:alice',reset:true}),bindings)).status).toBe(200);
+});
 it('owner authorization, approval, rejection and revocation are enforced server-side', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (_input, init) => Response.json({ valid: true, username: JSON.parse(String(init?.body)).token.slice(6) }));
     await env.DB.prepare("INSERT INTO limix_cloud_requests(principal,requested_at) VALUES ('limix:alice',1)").run();

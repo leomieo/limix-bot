@@ -33,10 +33,13 @@ function originFor(id, origins) {
   return origin;
 }
 
-export async function reconcile(homes, capacity, report, command = docker, { origins = {}, hostToken = "", power = {}, gateway = "1" } = {}) {
+export async function reconcile(homes, capacity, report, command = docker, { origins = {}, hostToken = "", power = {}, resources = {}, gateway = "1" } = {}) {
   if (!Array.isArray(homes) || !homes.every(id => typeof id === "string" && uuid.test(id)) ||
       new Set(homes).size !== homes.length || !Number.isSafeInteger(capacity) || capacity < 1) {
     throw new Error("Invalid host assignments or capacity");
+  }
+  for (const limit of Object.values(resources)) {
+    if (!limit || !Number.isInteger(limit.cpus) || limit.cpus < 1 || limit.cpus > 16 || !Number.isInteger(limit.memoryGb) || limit.memoryGb < 2 || limit.memoryGb > 32) throw new Error("Invalid resource override");
   }
   const running = await command(["ps", "--filter", "label=com.limix.managed-home=beta-xeon",
     "--format", '{{.Label "com.docker.compose.project"}}']);
@@ -74,7 +77,7 @@ export async function reconcile(homes, capacity, report, command = docker, { ori
       const origin = originFor(id, origins);
       if (!origin || !hostToken) state = "starting";
       else try {
-        const env = { LIMIX_HOME_ID: id, LIMIX_HOME_ORIGIN: origin, LIMIX_HOME_SECRET: homeBootstrapSecret(hostToken, id), LIMIX_HOME_GATEWAY: gateway };
+        const env = { LIMIX_HOME_ID: id, LIMIX_HOME_ORIGIN: origin, LIMIX_HOME_SECRET: homeBootstrapSecret(hostToken, id), LIMIX_HOME_GATEWAY: gateway, ...(resources[id] ? { LIMIX_HOME_CPUS: String(resources[id].cpus), LIMIX_HOME_MEMORY_GB: String(resources[id].memoryGb) } : {}) };
         // --remove-orphans: a home from the earlier beta still has its separate edge container.
         await compose(id, ["up", "-d", "--no-build", "--remove-orphans", "home"], env);
         const container = await compose(id, ["ps", "-q", "home"], env);
@@ -130,9 +133,9 @@ if (import.meta.main) {
         console.log("Tunnel connector:", await ensureTunnel((await call("tunnel")).token));
         tunnelReady = true;
       }
-      const { homes, origins, routing, power } = await call("assignments");
+      const { homes, origins, routing, power, resources } = await call("assignments");
       if (routing !== "ready") console.warn("Public addresses are still being set up; retrying next round.");
-      await reconcile(homes, capacity, (id, state) => call("assignments", { id, state, sleepBlocked: process.env.LIMIX_HOME_GATEWAY !== "0" }), docker, { origins, hostToken: token, power, gateway: process.env.LIMIX_HOME_GATEWAY ?? "1" });
+      await reconcile(homes, capacity, (id, state) => call("assignments", { id, state, sleepBlocked: process.env.LIMIX_HOME_GATEWAY !== "0" }), docker, { origins, hostToken: token, power, resources, gateway: process.env.LIMIX_HOME_GATEWAY ?? "1" });
     } catch (error) {
       console.error("Host reconciliation failed:", error.message);
       if (process.argv.includes("--once")) process.exitCode = 1;

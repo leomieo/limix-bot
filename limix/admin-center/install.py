@@ -2,6 +2,7 @@
 import ast
 import shutil
 import sys
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -9,6 +10,7 @@ def install(root):
     source = Path(__file__).parent
     server = root / "gui_server.py"
     panel = root / "gui/admin_panel.html"
+    database = root / "db_manager.py"
     text = server.read_text(encoding="utf-8-sig")
     html = panel.read_text(encoding="utf-8-sig")
     tree = ast.parse(text)
@@ -40,12 +42,54 @@ def install(root):
         assert "if(name==='settings') loadSettings();" in html
         html = html.replace("if(name==='settings') loadSettings();", "if(name==='settings') loadSettings();\n  if(name==='cloud') loadCloudRequests();")
         html = html.replace('</body>', "<script>window.addEventListener('load',()=>{if(location.hash==='#cloud')showTab('cloud')});</script></body>")
+    cloud = (source / 'cloud-panel.html').read_text(encoding='utf-8')
+    html = re.sub(r'<section class="section" id="tab-cloud">[\s\S]*?</script>\s*',lambda _:cloud.rstrip()+'\n',html,count=1)
+    for key, filename in [('structure','structure-panel.html'),('customers','customer-panel.html')]:
+        start='<!-- limix-'+key+'-start -->'
+        end='<!-- limix-'+key+'-end -->'
+        block=start+'\n'+(source/filename).read_text(encoding='utf-8')+'\n'+end
+        if start in html:
+            html=re.sub(re.escape(start)+r'[\s\S]*?'+re.escape(end),lambda _:block,html,count=1)
+        else:
+            html=html.replace(marker,marker+'\n'+block,1)
+    shell_start='<!-- limix-shell-start -->';shell_end='<!-- limix-shell-end -->'
+    shell=shell_start+'\n'+(source/'admin-shell.html').read_text(encoding='utf-8')+'\n'+shell_end
+    if shell_start in html:
+        html=re.sub(re.escape(shell_start)+r'[\s\S]*?'+re.escape(shell_end),lambda _:shell,html,count=1)
+    else:
+        html=html.replace('</body>',shell+'</body>')
+    db_text=database.read_text(encoding='utf-8-sig')
+    tree=ast.parse(db_text)
+    node=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='limixbot_max_machines')
+    replacement='''def limixbot_max_machines(user_id=None) -> int:
+    if user_id is not None:
+        conn = get_db()
+        try:
+            exists = conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='limix_account_limits'").fetchone()
+            row = conn.execute("SELECT max_devices FROM limix_account_limits WHERE user_id=?", (user_id,)).fetchone() if exists else None
+            if row:
+                return max(1, min(1000, int(row[0])))
+        finally:
+            conn.close()
+    try:
+        return max(1, int(get_setting("limixbot_max_machines", "10")))
+    except Exception:
+        return 10'''
+    db_text=db_text.replace(ast.get_source_segment(db_text,node),replacement)
+    for node in ast.parse(db_text).body:
+        if isinstance(node,ast.FunctionDef) and node.name in ('limixbot_login','limixbot_list_machines','limixbot_remove_machine'):
+            original=ast.get_source_segment(db_text,node)
+            db_text=db_text.replace(original,original.replace('limixbot_max_machines()', 'limixbot_max_machines(user["id"])'))
+    ast.parse(db_text)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
-    for file in (server, panel):
+    for file in (server, panel, database):
         shutil.copy2(file, str(file) + ".bak-admin-center-" + stamp)
     shutil.copy2(source / "cloud_admin_bridge.py", root / "cloud_admin_bridge.py")
+    for filename in ['account_structure.py','customer_admin.py']:
+        shutil.copy2(source / filename,root / filename)
     server.write_text(text, encoding="utf-8")
     panel.write_text(html, encoding="utf-8")
+    database.write_text(db_text,encoding='utf-8')
     print("Admin center installed; original files backed up.")
 
 if __name__ == "__main__":

@@ -3,6 +3,18 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { ensureTunnel, homeBootstrapSecret, reconcile, TUNNEL_CONTAINER } from "./host.mjs";
 
+test("applies per-account CPU and RAM independently of plan", async () => {
+  const id = randomUUID(), envs=[];
+  await reconcile([id],1,()=>{},async(args,env)=>{
+    if(args.includes("up"))envs.push(env);
+    return args[0]==="inspect"?"healthy":args.includes("-q")?"fixture":"";
+  },{origins:{[id]:`https://lc-${id.replaceAll('-','')}.limixmedia.com`},hostToken:"fixture",resources:{[id]:{cpus:3,memoryGb:7}}});
+  assert.equal(envs[0].LIMIX_HOME_CPUS,"3");assert.equal(envs[0].LIMIX_HOME_MEMORY_GB,"7");
+});
+test("invalid resource overrides fail before Docker mutation",async()=>{
+  await assert.rejects(reconcile([randomUUID()],1,assert.fail,assert.fail,{resources:{bad:{cpus:1000,memoryGb:4}}}),/Invalid resource/);
+});
+
 test("caps active homes, stops a revoked home, and never removes a volume", async () => {
   const [a, b, revoked] = Array.from({ length: 3 }, () => randomUUID());
   const calls = [], reports = [];

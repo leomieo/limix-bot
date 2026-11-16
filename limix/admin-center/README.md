@@ -35,3 +35,10 @@ Chạy bộ cài mở rộng theo lệnh ở trên; bộ cài tự sao lưu hai 
 Phần mở rộng này chưa có chỉnh CPU/RAM/ổ đĩa theo khách hoặc trình sửa gói Cloud thống nhất. Các nút gói tài khoản cũ chưa thay đổi hạn mức Docker. Nút quản trị trên mã desktop đã trỏ về trung tâm này; ứng dụng đã cài cần bản phát hành tiếp theo để nhận thay đổi.
 
 Deployment note: legacy web-admin sessions were revoked on the deployed VPS on 2026-11-16; sign in again with the existing Leox account. No account passwords were changed.
+
+
+## Administration center update / Cập nhật quản trị
+
+The extension now includes customer profile/plan/exact-expiry/device-limit editing, transactional voucher allocation and organization membership registry. Password reset revokes account web sessions, Bot tokens and Studio license records. Leox is protected. Installer also patches db_manager.py and backs it up. Deploy all extension files together; retain the account database and service environment.
+
+Bổ sung menu bên trái, sửa thông tin/gói/hạn thiết bị cho khách, tổ chức/vai trò và tạo/cấp voucher. Vai trò tổ chức mới chỉ là cơ cấu lưu trữ, chưa cấp quyền runtime hoặc quyền Super Admin. Voucher được cấp/lưu nhưng chưa áp dụng thanh toán. Cloud CPU/RAM riêng cần Worker migration0023 và host mới; tùy chỉnh có thể tạo lại container. Disk/bot quotas chưa có. Không gọi các giới hạn chưa thực thi là đã hỗ trợ. Mọi thay đổi phải qua phiên quản trị và Origin kiểm tra tại backend; cấu hình máy không phụ thuộc gói.
