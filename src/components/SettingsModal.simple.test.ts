@@ -209,7 +209,8 @@ describe("Settings in Simple mode", () => {
 
   it("keeps the everyday rows, puts limits and Automatic recovery behind More settings, and leaves the five other builder controls to Advanced, where search still points", () => {
     const general = open("general");
-    for (const shown of ['aria-label="Send usage analytics"', 'aria-label="Color my messages with the bot&#x27;s color"', 'aria-label="Send messages with"',
+    expect(general).not.toContain('aria-label="Send usage analytics"');
+    for (const shown of ['aria-label="Color my messages with the bot&#x27;s color"', 'aria-label="Send messages with"',
       'aria-label="Notification sounds"', 'aria-label="Show the notification feed"', 'aria-label="App language"', 'role="radiogroup" aria-label="Light or dark"']) {
       expect(placement(general, shown), shown).toBe("shown");
     }
@@ -241,7 +242,7 @@ describe("Settings in Simple mode", () => {
     vi.stubGlobal("window", { ogb: { ...desktop.ogb, updater: { check: vi.fn(), install: vi.fn(), onState: vi.fn() } } });
     fixture.updater = { status: "idle" };
     const html = open("updates");
-    expect(html).toMatch(/>MausBot [^<]+<\/div>/);
+    expect(html).toMatch(/>Limix Bot [^<]+<\/div>/);
     for (const shown of ["Check for updates", "MARKER:updatesConsent;", "Replay welcome tour", "Diagnostics"]) expect(placement(html, shown), shown).toBe("shown");
   });
 
@@ -250,7 +251,7 @@ describe("Settings in Simple mode", () => {
     const onSelect = vi.fn();
     fixture.serverUpdate = { phase: "up-to-date", pending: false, label: "Up to date", item: { key: "update", label: "Up to date", subtitle: "v1.2.3", icon: null, disabled: false, onSelect } };
     const html = open("updates");
-    expect(html).toMatch(/>MausBot [^<]+<\/div>/);
+    expect(html).toMatch(/>Limix Bot [^<]+<\/div>/);
     expect(html).toContain("Up to date v1.2.3");
     expect(placement(html, "Check for updates")).toBe("shown");
   });
@@ -383,7 +384,7 @@ describe("Settings in Advanced mode", () => {
     expect(html.indexOf('aria-label="Advanced mode"')).toBeLessThan(html.indexOf("Language"));
     expect(html).toContain("Show every technical control on this device");
     expect(html).not.toContain("More settings");
-    for (const kept of ["Group turns", 'aria-label="Effort for new bots"', 'aria-label="Send usage analytics"', "Diagnostics"]) {
+    for (const kept of ["Group turns", 'aria-label="Effort for new bots"', "Diagnostics"]) {
       expect(placement(html, kept), kept).toBe("shown");
     }
   });

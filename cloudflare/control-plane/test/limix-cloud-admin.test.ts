@@ -66,7 +66,7 @@ afterEach(async () => {
 it("signs a Limix account in, takes its trial request, and pairs only its own home once the host runs it", async () => {
   const fake = fakes();
   vi.spyOn(globalThis, "fetch").mockImplementation(fake.handler);
-  const bindings = { ...env, LIMIX_ACCOUNT_URL: "https://accounts.test", ALLOWED_ORIGINS: "https://cloud.limixmedia.test", LIMIX_BETA_HOST_TOKEN: HOST_TOKEN };
+  const bindings = { ...env, LIMIX_ACCOUNT_URL: "https://accounts.test", ALLOWED_ORIGINS: "https://cloud.limixmedia.test" as Env["ALLOWED_ORIGINS"], LIMIX_BETA_HOST_TOKEN: HOST_TOKEN };
   const send = (path: string, init: RequestInit = {}) => worker.fetch(new Request("https://cloud.limixmedia.test" + path, init), bindings, createExecutionContext());
   const signIn = async (name: string) => {
     const response = await send("/api/cloud/desktop/limix-token", { method: "POST", headers: { authorization: "Bearer limix." + btoa("one") + ".token-" + name, "content-type": "application/json" },
