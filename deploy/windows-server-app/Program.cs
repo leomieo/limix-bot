@@ -22,6 +22,7 @@ static class Program
             Console.WriteLine("Embedded server payload: PASS");
             return;
         }
+        if(args.Contains("--verify-encoding")) { Directory.CreateDirectory(Root);ProcessEncoding.Verify();return; }
         ApplicationConfiguration.Initialize();
         if(args.Length==2 && args[0]=="--preview-storage-busy") {
             using var preview=new ServerStorageWindow();preview.PreviewBusy();preview.Show();Application.DoEvents();
@@ -81,7 +82,7 @@ sealed class SetupWindow : Form
     public SetupWindow()
     {
         Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-        Text = "Limix Cloud Server 0.2.10 beta · Hyper-V";
+        Text = "Limix Cloud Server 0.2.11 beta · Hyper-V";
         Size = new Size(1000, 760); MinimumSize = new Size(930, 700); StartPosition = FormStartPosition.CenterScreen;
         Font = new Font("Segoe UI", 10); BackColor = Color.FromArgb(18,18,18); ForeColor = Color.White;
         var top = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, FlowDirection = FlowDirection.TopDown, Padding = new Padding(18), WrapContents = false };
@@ -185,6 +186,7 @@ sealed class SetupWindow : Form
     async Task<int> Run(string? command, string? file=null, string? input=null, string? argument=null)
     {
         var info=new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System),"WindowsPowerShell","v1.0","powershell.exe")) { UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true,RedirectStandardInput=true,StandardOutputEncoding=Encoding.UTF8,StandardErrorEncoding=Encoding.UTF8 };
+        ProcessEncoding.Utf8(info);
         info.ArgumentList.Add("-NoProfile");info.ArgumentList.Add("-ExecutionPolicy");info.ArgumentList.Add("Bypass");
         info.Environment["PSModulePath"] = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System),"WindowsPowerShell","v1.0","Modules");
         if(file!=null) { info.ArgumentList.Add("-File");info.ArgumentList.Add(file); if(argument!=null) { info.ArgumentList.Add("-Action");info.ArgumentList.Add(argument); } }

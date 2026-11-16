@@ -1,3 +1,6 @@
+﻿[Console]::InputEncoding=[Text.UTF8Encoding]::new($false)
+[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false)
+$OutputEncoding=[Text.UTF8Encoding]::new($false)
 $ErrorActionPreference='Stop'
 [Console]::OutputEncoding=[Text.Encoding]::UTF8
 . (Join-Path $PSScriptRoot 'hyperv-common.ps1')

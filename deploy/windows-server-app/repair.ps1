@@ -1,3 +1,6 @@
+﻿[Console]::InputEncoding=[Text.UTF8Encoding]::new($false)
+[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false)
+$OutputEncoding=[Text.UTF8Encoding]::new($false)
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'hyperv-common.ps1')
 Import-Module Hyper-V -ErrorAction Stop

@@ -33,6 +33,7 @@ sealed class DockerStartupWindow : Form
     static async Task<string> Docker(params string[] args)
     {
         var info=new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),"Docker","Docker","resources","bin","docker.exe")) {UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true};
+        ProcessEncoding.Utf8(info);
         foreach(var arg in args)info.ArgumentList.Add(arg);
         using var p=Process.Start(info) ?? throw new InvalidOperationException("Không mở được Docker.");
         var output=p.StandardOutput.ReadToEndAsync();var error=p.StandardError.ReadToEndAsync();

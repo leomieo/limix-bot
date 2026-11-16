@@ -56,6 +56,7 @@ sealed class ServerStorageWindow : Form
             var input=JsonSerializer.Serialize(new {Action=action,Destination=action=="Export"?package:destination.Text,Package=package,Switch=network.Text.Trim()});
             status.Text="Đang xử lý, không đóng bộ cài. Máy Cloud sẽ được giữ tắt.";
             var info=new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System),"WindowsPowerShell","v1.0","powershell.exe")) {UseShellExecute=false,CreateNoWindow=true,RedirectStandardInput=true,RedirectStandardOutput=true,RedirectStandardError=true};
+            ProcessEncoding.Utf8(info);
             foreach(var arg in new[]{"-NoProfile","-ExecutionPolicy","Bypass","-File",Path.Combine(Program.Root,"app","server-storage.ps1")})info.ArgumentList.Add(arg);
             using var process=Process.Start(info)!;var output=process.StandardOutput.ReadToEndAsync();var error=process.StandardError.ReadToEndAsync();await process.StandardInput.WriteAsync(input);process.StandardInput.Close();await process.WaitForExitAsync();var text=await output;await error;
             if(process.ExitCode!=0)throw new InvalidOperationException();
