@@ -1,5 +1,15 @@
 namespace LimixServer;
 
+sealed class ServerLabel : Label
+{
+    public ServerLabel() { ForeColor=Color.FromArgb(235,235,235); }
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        e.Graphics.Clear(BackColor);
+        TextRenderer.DrawText(e.Graphics,Text,Font,ClientRectangle,ForeColor,TextFormatFlags.WordBreak|TextFormatFlags.TextBoxControl);
+    }
+}
+
 sealed class ServerButton : Button
 {
     bool hovering, pressed;
@@ -34,6 +44,8 @@ static class ServerTheme
     {
         foreach(Control child in root.Controls)
         {
+            child.ForeColor=Color.FromArgb(235,235,235);
+            if(child is Panel) child.BackColor=Color.FromArgb(18,18,18);
             if(child is TextBoxBase || child is NumericUpDown)
             {
                 child.BackColor=Color.FromArgb(32,32,32);

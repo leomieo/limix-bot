@@ -23,6 +23,10 @@ static class Program
             return;
         }
         ApplicationConfiguration.Initialize();
+        if(args.Length==2 && args[0]=="--preview-storage-busy") {
+            using var preview=new ServerStorageWindow();preview.PreviewBusy();preview.Show();Application.DoEvents();
+            using var bitmap=new Bitmap(preview.Width,preview.Height);preview.DrawToBitmap(bitmap,new Rectangle(0,0,preview.Width,preview.Height));bitmap.Save(args[1]);return;
+        }
         if (args.Length == 2 && args[0] == "--preview-startup")
         {
             using var preview = new WindowsStartupWindow();
@@ -77,20 +81,20 @@ sealed class SetupWindow : Form
     public SetupWindow()
     {
         Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-        Text = "Limix Cloud Server 0.2.9 beta · Hyper-V";
+        Text = "Limix Cloud Server 0.2.10 beta · Hyper-V";
         Size = new Size(1000, 760); MinimumSize = new Size(930, 700); StartPosition = FormStartPosition.CenterScreen;
         Font = new Font("Segoe UI", 10); BackColor = Color.FromArgb(18,18,18); ForeColor = Color.White;
         var top = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, FlowDirection = FlowDirection.TopDown, Padding = new Padding(18), WrapContents = false };
-        top.Controls.Add(new Label { Text = "Limix Cloud Server · Hyper-V", Font = new Font("Segoe UI", 20, FontStyle.Bold), AutoSize = true });
-        top.Controls.Add(new Label { MaximumSize = new Size(820,0), AutoSize = true, Text = "Chạy Cloud trong máy Linux Hyper-V riêng, tự khởi động cùng Windows, không cần bấm Sign in hoặc có mật khẩu Windows. Cần Windows Pro/Enterprise, Hyper-V và Cloud Docker Desktop đã cấu hình. Máy Xeon phải bật và không Sleep." });
-        top.Controls.Add(new Label { Text = "Tài khoản Windows: " + WindowsIdentity.GetCurrent().Name, AutoSize = true });
+        top.Controls.Add(new ServerLabel { Text = "Limix Cloud Server · Hyper-V", Font = new Font("Segoe UI", 20, FontStyle.Bold), AutoSize = true });
+        top.Controls.Add(new ServerLabel { MaximumSize = new Size(820,0), AutoSize = true, Text = "Chạy Cloud trong máy Linux Hyper-V riêng, tự khởi động cùng Windows, không cần bấm Sign in hoặc có mật khẩu Windows. Cần Windows Pro/Enterprise, Hyper-V và Cloud Docker Desktop đã cấu hình. Máy Xeon phải bật và không Sleep." });
+        top.Controls.Add(new ServerLabel { Text = "Tài khoản Windows: " + WindowsIdentity.GetCurrent().Name, AutoSize = true });
         var resources = new FlowLayoutPanel { AutoSize=true,WrapContents=false };
-        resources.Controls.Add(new Label { Text="CPU",AutoSize=true });resources.Controls.Add(cpu);
-        resources.Controls.Add(new Label { Text="RAM (GB)",AutoSize=true });resources.Controls.Add(memory);
-        resources.Controls.Add(new Label { Text="Ổ đĩa (GB)",AutoSize=true });resources.Controls.Add(disk);
-        resources.Controls.Add(new Label { Text="Switch mạng",AutoSize=true });resources.Controls.Add(network);
+        resources.Controls.Add(new ServerLabel { Text="CPU",AutoSize=true });resources.Controls.Add(cpu);
+        resources.Controls.Add(new ServerLabel { Text="RAM (GB)",AutoSize=true });resources.Controls.Add(memory);
+        resources.Controls.Add(new ServerLabel { Text="Ổ đĩa (GB)",AutoSize=true });resources.Controls.Add(disk);
+        resources.Controls.Add(new ServerLabel { Text="Switch mạng",AutoSize=true });resources.Controls.Add(network);
         top.Controls.Add(resources);
-        top.Controls.Add(new Label {Text="Nơi lưu bản sao lưu và máy Cloud (chọn ổ còn đủ chỗ)",AutoSize=true});
+        top.Controls.Add(new ServerLabel {Text="Nơi lưu bản sao lưu và máy Cloud (chọn ổ còn đủ chỗ)",AutoSize=true});
         var storageRow=new FlowLayoutPanel {AutoSize=true,WrapContents=false};
         if(Directory.Exists(@"D:\DockerData")) storage.Text=@"D:\DockerData";
         storageRow.Controls.Add(storage);
@@ -100,7 +104,7 @@ sealed class SetupWindow : Form
             if(picker.ShowDialog(this)==DialogResult.OK)storage.Text=picker.SelectedPath;
         };
         storageRow.Controls.Add(chooseStorage);top.Controls.Add(storageRow);
-        top.Controls.Add(new Label { Text="Chỉ chuyển Cloud; giữ CRM và dữ liệu gốc. Cần nhiều dung lượng trống cho bản sao lưu.",AutoSize=true });
+        top.Controls.Add(new ServerLabel { Text="Chỉ chuyển Cloud; giữ CRM và dữ liệu gốc. Cần nhiều dung lượng trống cho bản sao lưu.",AutoSize=true });
         top.Controls.Add(consent);
         buttons.Controls.Add(install);
         AddButton("Bắt đầu", async () => await ControlTask(true));

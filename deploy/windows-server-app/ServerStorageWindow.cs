@@ -11,13 +11,14 @@ sealed class ServerStorageWindow : Form
     readonly TextBox destination=new() {Width=610,ReadOnly=true};
     readonly TextBox password=new() {Width=400,UseSystemPasswordChar=true};
     readonly TextBox network=new() {Width=220,Text="Default Switch"};
-    readonly Label status=new() {AutoSize=true,MaximumSize=new Size(740,0)};
+    readonly ServerLabel status=new() {AutoSize=true,MaximumSize=new Size(740,0)};
     readonly FlowLayoutPanel panel=new() {Dock=DockStyle.Fill,AutoScroll=true,FlowDirection=FlowDirection.TopDown,WrapContents=false,Padding=new Padding(20)};
     bool busy;
     public ServerStorageWindow()
     {
         Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-        Text="Limix Server · Lưu trữ và chuyển máy";Size=new Size(830,590);BackColor=Color.FromArgb(18,18,18);ForeColor=Color.White;Font=new Font("Segoe UI",10);StartPosition=FormStartPosition.CenterParent;Controls.Add(panel);
+        Text="Limix Server · Lưu trữ và chuyển máy";Size=new Size(860,740);MinimumSize=new Size(800,660);BackColor=Color.FromArgb(18,18,18);ForeColor=Color.White;Font=new Font("Segoe UI",10);StartPosition=FormStartPosition.CenterParent;Controls.Add(panel);
+        panel.Controls.Add(new ServerLabel {Text="Lưu trữ và chuyển server",AutoSize=true,Font=new Font("Segoe UI",20,FontStyle.Bold),Margin=new Padding(0,0,0,14)});
         Note("Dừng máy Cloud trước khi chuyển ổ hoặc xuất. Giữ server cũ tắt sau khi nhập trên máy mới để tránh hai máy cùng xử lý tài khoản. Công cụ này chỉ chuyển máy Cloud Hyper-V, không chuyển CRM hay container Docker Desktop khác.");
         Note("Thư mục đích trên ổ đĩa cục bộ (cần đủ chỗ cho toàn bộ máy Cloud và file tạm)");panel.Controls.Add(destination);
         Button("Chọn thư mục",()=>{using var pick=new FolderBrowserDialog();if(pick.ShowDialog(this)==DialogResult.OK)destination.Text=pick.SelectedPath;return Task.CompletedTask;});
@@ -29,8 +30,10 @@ sealed class ServerStorageWindow : Form
         panel.Controls.Add(status);ServerTheme.Apply(this);
         FormClosing+=(_,e)=>{if(busy)e.Cancel=true;};
     }
-    void Note(string text)=>panel.Controls.Add(new Label {Text=text,AutoSize=true,MaximumSize=new Size(740,0),Margin=new Padding(0,5,0,8)});
-    void Button(string text,Func<Task> action) {var button=new ServerButton {Text=text,AutoSize=true};button.Click+=async(_,_)=>{busy=true;panel.Enabled=false;try{await action();}catch{status.Text="Thao tác chưa hoàn tất. Kiểm tra mật khẩu, dung lượng và trạng thái Hyper-V. Dữ liệu nguồn không bị xóa.";}finally{busy=false;panel.Enabled=true;password.Clear();}};panel.Controls.Add(button);}
+    void Note(string text)=>panel.Controls.Add(new ServerLabel {Text=text,AutoSize=true,MaximumSize=new Size(740,0),Margin=new Padding(0,5,0,8)});
+    void Button(string text,Func<Task> action) {var button=new ServerButton {Text=text,AutoSize=true};button.Click+=async(_,_)=>{busy=true;SetBusy(true);try{await action();}catch{status.Text="Thao tác chưa hoàn tất. Kiểm tra mật khẩu, dung lượng và trạng thái Hyper-V. Dữ liệu nguồn không bị xóa.";}finally{busy=false;SetBusy(false);password.Clear();}};panel.Controls.Add(button);}
+    void SetBusy(bool value) { foreach(Control control in panel.Controls) if(control is Button || control is TextBox) control.Enabled=!value; }
+    internal void PreviewBusy() { SetBusy(true);status.Text="Đang chuyển dữ liệu. Vui lòng giữ cửa sổ mở đến khi hoàn tất."; }
     async Task Execute(string action)
     {
         if(!Directory.Exists(destination.Text))throw new IOException();

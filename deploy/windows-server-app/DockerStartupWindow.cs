@@ -8,7 +8,7 @@ sealed class DockerStartupWindow : Form
 {
     sealed record ServiceContainer(string Id,string Name,string Status);
     readonly CheckedListBox items=new() { Dock=DockStyle.Fill,CheckOnClick=true,BackColor=Color.FromArgb(28,28,28),ForeColor=Color.White,DisplayMember="Name" };
-    readonly Label status=new() { AutoSize=true,MaximumSize=new Size(740,0) };
+    readonly ServerLabel status=new() { AutoSize=true,MaximumSize=new Size(740,0) };
     readonly FlowLayoutPanel controls=new() { Dock=DockStyle.Top,AutoSize=true,FlowDirection=FlowDirection.TopDown,WrapContents=false,Padding=new Padding(18) };
     readonly ServerButton refresh=new() {Text="Quét container đang chạy",AutoSize=true};
     readonly ServerButton apply=new() {Text="Bật khởi động cùng Windows cho dịch vụ đã chọn",AutoSize=true};
@@ -17,8 +17,8 @@ sealed class DockerStartupWindow : Form
         Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         Text="Docker · Khởi động các dịch vụ cùng Windows";Size=new Size(850,580);MinimumSize=new Size(780,500);
         BackColor=Color.FromArgb(18,18,18);ForeColor=Color.White;Font=new Font("Segoe UI",10);StartPosition=FormStartPosition.CenterParent;
-        controls.Controls.Add(new Label {AutoSize=true,MaximumSize=new Size(760,0),Text="Giữ các dịch vụ trên Docker Desktop hiện tại. Chọn container để đặt chính sách unless-stopped: Docker tự chạy lại sau reboot, nhưng giữ tắt dịch vụ bạn đã chủ động dừng. Không chuyển dữ liệu, không khởi động lại container lúc cấu hình. Nếu dùng Compose, cần giữ restart: unless-stopped trong cấu hình gốc để lần triển khai sau không ghi đè."});
-        controls.Controls.Add(new Label {AutoSize=true,MaximumSize=new Size(760,0),Text="Docker Desktop chạy sau đăng nhập Windows. Cấu hình tự đăng nhập trong mục Limix Bot nền nếu cần phục hồi sau mất điện. Máy Cloud Hyper-V chạy riêng; không chuyển CRM hoặc dịch vụ khác vào máy đó."});
+        controls.Controls.Add(new ServerLabel {AutoSize=true,MaximumSize=new Size(760,0),Text="Giữ các dịch vụ trên Docker Desktop hiện tại. Chọn container để đặt chính sách unless-stopped: Docker tự chạy lại sau reboot, nhưng giữ tắt dịch vụ bạn đã chủ động dừng. Không chuyển dữ liệu, không khởi động lại container lúc cấu hình. Nếu dùng Compose, cần giữ restart: unless-stopped trong cấu hình gốc để lần triển khai sau không ghi đè."});
+        controls.Controls.Add(new ServerLabel {AutoSize=true,MaximumSize=new Size(760,0),Text="Docker Desktop chạy sau đăng nhập Windows. Cấu hình tự đăng nhập trong mục Limix Bot nền nếu cần phục hồi sau mất điện. Máy Cloud Hyper-V chạy riêng; không chuyển CRM hoặc dịch vụ khác vào máy đó."});
         controls.Controls.Add(refresh);controls.Controls.Add(apply);controls.Controls.Add(status);
         Controls.Add(items);Controls.Add(controls);
         refresh.Click+=async(_,_)=>await Work(Scan);

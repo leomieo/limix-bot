@@ -7,7 +7,7 @@ namespace LimixServer;
 sealed class WindowsStartupWindow : Form
 {
     readonly TextBox executable = new() { Width=650, ReadOnly=true };
-    readonly Label status = new() { AutoSize=true, MaximumSize=new Size(720,0) };
+    readonly ServerLabel status = new() { AutoSize=true, MaximumSize=new Size(720,0) };
     readonly FlowLayoutPanel content = new() { Dock=DockStyle.Fill, FlowDirection=FlowDirection.TopDown, WrapContents=false, Padding=new Padding(20), AutoScroll=true };
     const string RunPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     const string Entry = "Limix Bot Server Desktop";
@@ -45,7 +45,7 @@ sealed class WindowsStartupWindow : Form
         content.Controls.Add(status); ServerTheme.Apply(this); RefreshStatus();
     }
     internal static string StartupCommand(string path) => "\""+path+"\" --omb-hidden";
-    void AddText(string value,int size=10) => content.Controls.Add(new Label { Text=value,AutoSize=true,MaximumSize=new Size(720,0),Font=new Font("Segoe UI",size),Margin=new Padding(0,8,0,8) });
+    void AddText(string value,int size=10) => content.Controls.Add(new ServerLabel { Text=value,AutoSize=true,MaximumSize=new Size(720,0),Font=new Font("Segoe UI",size),Margin=new Padding(0,8,0,8) });
     void AddButton(string text,Func<Task> action)
     {
         var button=new ServerButton { Text=text,AutoSize=true };
