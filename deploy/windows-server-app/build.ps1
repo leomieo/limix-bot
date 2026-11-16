@@ -12,6 +12,13 @@ foreach ($name in @('setup.ps1','supervisor.ps1')) {
 foreach ($name in @('repair.ps1','server-storage.ps1','hyperv-setup.ps1','hyperv-common.ps1','hyperv-control.ps1','linux-bootstrap.py','linux-health.py','image-tools.Dockerfile')) {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination $stage -Force
 }
+foreach ($script in Get-ChildItem -LiteralPath $stage -Filter '*.ps1') {
+    $content = [IO.File]::ReadAllText($script.FullName, [Text.Encoding]::UTF8)
+    [IO.File]::WriteAllText($script.FullName, $content, [Text.UTF8Encoding]::new($true))
+    $parseErrors = $null
+    [Management.Automation.Language.Parser]::ParseFile($script.FullName, [ref]$null, [ref]$parseErrors) | Out-Null
+    if ($parseErrors.Count) { throw "Invalid packaged PowerShell script: $($script.Name)" }
+}
 Compress-Archive -Path "$stage\*" -DestinationPath "$PSScriptRoot\payload.zip" -Force
 dotnet publish "$PSScriptRoot\LimixServer.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o $Output
 if ($LASTEXITCODE -ne 0) { throw 'Build installer failed.' }
