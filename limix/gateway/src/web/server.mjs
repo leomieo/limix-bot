@@ -1,3 +1,4 @@
+import { ownerReply } from "../owner-reply.mjs";
 import { facebookEvents, validFacebookSignature } from "../channels/facebook.mjs";
 import { publicBase, publicMedia } from "../public-media.mjs";
 import { mediaPolicy, platformMediaLimits } from "../media.mjs";
@@ -83,6 +84,7 @@ export function createApp({ store, secrets, pairing, gateway, makeChannel = defa
   }
 
   const routes = {
+    "POST /api/channel-reply": body => ownerReply({store,secrets,gateway,makeChannel},body),
     "GET /api/app/bots": async () => ({ inside: insideApp(), bots: insideApp() ? await askApp("bots") : [] }),
     "POST /api/app/link": async (body) => {
       if (typeof body.botId !== "string" || !/^[\w-]{1,128}$/.test(body.botId)) throw Object.assign(new Error("Chọn một bot"), { status: 400 });
@@ -283,7 +285,9 @@ export function createApp({ store, secrets, pairing, gateway, makeChannel = defa
       // The desktop launcher stops the server with its own one-run token; it never sees the page's admin token.
       const launcherShutdown = launcherToken && req.method === "POST" && url.pathname === "/api/shutdown"
         && sameSecret(req.headers["x-limix-launcher"], launcherToken);
-      if (!launcherShutdown && !sameSecret(req.headers["x-limix-admin"], adminToken)) return send(res, 401, { error: "Phiên hết hạn, tải lại trang" });
+      const ownerReplyCall=req.method === "POST" && url.pathname === "/api/channel-reply" && sameSecret(req.headers["x-limix-owner"],process.env.LIMIX_OWNER_LANE_TOKEN || "") && Boolean(process.env.LIMIX_OWNER_LANE_TOKEN);
+      if(url.pathname === "/api/channel-reply" && !ownerReplyCall) return send(res,403,{error:"Verified owner transport required"});
+      if (!ownerReplyCall && !launcherShutdown && !sameSecret(req.headers["x-limix-admin"], adminToken)) return send(res, 401, { error: "Phiên hết hạn, tải lại trang" });
       const found = match(req.method, url.pathname);
       if (!found) return send(res, 404, { error: "Không có" });
       if (found.id && url.pathname.startsWith("/api/connections/") && !store.getConnection(found.id)) {

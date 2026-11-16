@@ -15,6 +15,8 @@ delete process.env.LIMIX_OWNER_LANE_TOKEN;
 /** The secret, for the sidecar connector only (never for an engine). */
 export const limixOwnerLaneToken = (): string => (process.env.LIMIX_GATEWAY_SIDECAR === "1" ? TOKEN : "");
 
+export const channelOwnerTransportToken = (): string => TOKEN;
+
 export const LIMIX_OWNER_HEADER = "x-limix-owner";
 
 export function limixOwnerCall(header: string | string[] | undefined): boolean {

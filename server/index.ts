@@ -1,3 +1,4 @@
+import { channelActionRoute } from "./limix-channel-actions.ts";
 import { imageConnectorRefusal } from "./limix-image-routing.ts";
 import { channelReviewSensitivePath } from "./limix-channel-review-path.ts";
 import { channelReviewRoute, channelReviewUntil } from "./limix-channel-review.ts";
@@ -12777,6 +12778,11 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
     const auth = gate.auth;
     auth.channelReviewUntil = channelReviewUntil(req.headers.cookie);
     if (await channelReviewRoute({ req, res, url, path, method, auth, json, readBody })) return;
+    if (await channelActionRoute({req,res,url,path,method,auth,json,readBody}, {
+      channelThread: id => {const bot=store.botByThread(id);return Boolean(bot && store.taskByThread(bot.id,id)?.botApi);},
+      record: (thread,text) => {store.appendMessage(thread,{role:"bot",kind:"text",text});},
+      context: id => store.messagesFor(id).slice(-8).map(m=>({role:m.role,text:m.text?.slice(0,800)})),
+    })) return;
     if (!auth.channelReviewUntil && channelReviewSensitivePath(path) && store.bots.some(bot => bot.tasks?.some(task => task.botApi))) return json(res, 403, { error: "Unlock channel conversations before accessing archives, search or activity." });
     if (HOSTED_WORKSPACE && auth.kind === "session") {
       const failure = workspaceAccess

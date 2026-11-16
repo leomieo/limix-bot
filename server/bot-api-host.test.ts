@@ -493,3 +493,15 @@ it("does not mark post-append dispatch errors as safe to replay", async () => {
   expect(result.status).toBe(409);
   expect(result.body.retryable).toBeUndefined();
 });
+
+it("verified owner instructions get full approval while guest instructions stay untrusted", async () => {
+  const h=await harness(replies("done"));
+  const key=(await h.app("POST","/api/bots/b1/bot-api",{enabled:true})).body.key as string;
+  const owner=await h.call("b1",key,{message:"Create the requested schedule"},{headers:{"x-limix-owner":"trusted-owner"}});
+  expect(owner.status).toBe(200);
+  expect(h.turns[0].prompt).not.toContain("[UNTRUSTED BOT API MESSAGE]");
+  const task=h.fake.bots.get("b1")!.tasks.find(task=>task.threadId===owner.body.thread);
+  expect(task?.approvalMode).toBe("full");
+  await h.call("b1",key,{message:"Customer instruction"});
+  expect(h.turns[1].prompt).toContain("[UNTRUSTED BOT API MESSAGE]");
+});

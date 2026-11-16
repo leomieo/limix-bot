@@ -170,7 +170,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       threadId = task.threadId;
       opened = true;
       store.patchTask(botId, threadId, { botApi: true, outside: true });
-      if (owner) markLimixOwnerThread(threadId);
+      if (owner) { markLimixOwnerThread(threadId); store.patchTask(botId,threadId,{approvalMode:"full"}); }
       if (call.conversation) deps.channelIdentities?.bind(threadId, call.conversation, owner);
     }
     const media = await saveChannelAttachments(call.attachments ?? []);
@@ -181,7 +181,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     let dispatchError: string | undefined;
     markRunning(botId, threadId, true);
     try {
-      await deps.startTurn(botId, [botApiPrompt(message, receivedAt), media.tags].filter(Boolean).join("\n\n"), {
+      await deps.startTurn(botId, [owner ? message : botApiPrompt(message, receivedAt), media.tags].filter(Boolean).join("\n\n"), {
         threadId, automationSource: "api", unattended: true, userMessage,
         onSettled: (outcome) => { settled = outcome; markRunning(botId, threadId!, false); },
         onDispatchError: (message) => { dispatchError = message; markRunning(botId, threadId!, false); },

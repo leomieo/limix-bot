@@ -10298,5 +10298,14 @@
   "teamSettings.workspace": "Thư mục làm việc",
   "teamSettings.workspaceHint": "Áp dụng thư mục cho các bot hiện có trong nhóm. Cuộc chat đã chọn thư mục riêng tiếp tục dùng thư mục đó. Khi thêm thành viên mới, áp dụng lại để dùng cùng thư mục.",
   "teamSettings.permissionTarget": "Áp dụng quyền cho",
-  "teamSettings.allMembers": "Tất cả thành viên"
+  "teamSettings.allMembers": "Tất cả thành viên",
+  "chat.channel.replyMode": "Chế độ trả lời",
+  "chat.channel.direct": "Trả lời khách",
+  "chat.channel.agent": "Nhờ bot trả lời",
+  "chat.channel.directHint": "Nội dung bạn viết được gửi trực tiếp về cuộc trò chuyện trên nền tảng.",
+  "chat.channel.agentHint": "Bot xử lý yêu cầu trong cuộc trò chuyện chủ riêng rồi gửi kết quả về đây. Quyền chủ yêu cầu xác thực mật khẩu.",
+  "chat.channel.replyText": "Câu trả lời hoặc yêu cầu cho bot",
+  "chat.channel.sending": "Đang gửi…",
+  "chat.channel.send": "Gửi",
+  "chat.channel.delivered": "Đã xác nhận gửi câu trả lời."
 }

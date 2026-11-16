@@ -1,23 +1,23 @@
-# Limix Bot 0.3.57
+# Limix Bot 0.3.58
 
 ## Tiếng Việt
 
-- Ưu tiên công cụ gốc mà agent cung cấp trong phiên hiện tại, bao gồm tạo ảnh khi được hỗ trợ.
-- Thêm mục Limix Cloud riêng trong Cài đặt và lối mở nhanh từ menu tài khoản.
-- Làm rõ lựa chọn kết nối điện thoại với máy tính đang dùng.
-- Cải thiện trải nghiệm đăng xuất và điều hướng cài đặt Cloud.
+- Thêm ô trả lời trong cuộc trò chuyện Telegram, Zalo, Discord và Facebook đã kết nối.
+- Chọn Trả lời khách để gửi trực tiếp nội dung bạn viết về đúng cuộc trò chuyện.
+- Chọn Nhờ bot trả lời để xử lý yêu cầu trong chat chủ riêng rồi gửi kết quả về khách.
+- Yêu cầu mở khóa cuộc trò chuyện bằng mật khẩu; tin từ khách tiếp tục giữ quyền riêng.
 
 ### Lưu ý
-- Tạo ảnh phụ thuộc vào công cụ và quyền truy cập do agent đang dùng cung cấp; chọn model chat không bảo đảm có công cụ tạo ảnh.
-- Tính năng Cloud và máy chủ đang ở giai đoạn beta. Sao lưu dữ liệu quan trọng trước khi nâng cấp.
+- Đợt này hỗ trợ câu trả lời văn bản; việc gửi phụ thuộc quyền và giới hạn của nền tảng kết nối.
+- Chỉ báo đã gửi khi kết nối trả kết quả thành công. Nếu chưa xác nhận, kiểm tra kênh trước khi thử lại để tránh trùng tin.
 
 ## English
 
-- Prefer tools exposed by the active agent, including native image generation when supported.
-- Add a dedicated Limix Cloud Settings page and a shortcut in the account menu.
-- Clarify phone pairing with the current computer.
-- Improve sign-out and Cloud settings navigation.
+- Add replies to connected Telegram, Zalo, Discord and Facebook conversations.
+- Choose Reply to customer to send your text to the bound channel conversation.
+- Choose Ask bot to reply to process instructions in a separate owner conversation and send the result to the customer.
+- Require password verification to unlock conversations; external messages retain separate privileges.
 
 ### Notes
-- Image generation depends on tools and access exposed by the active agent; selecting a chat model does not guarantee image generation support.
-- Cloud and server features remain in beta. Back up important data before upgrading.
+- This update supports text replies subject to platform permissions and limits.
+- Delivery is confirmed only after the connector succeeds. Check the channel before retrying an unconfirmed send to avoid duplicates.

@@ -1,0 +1,32 @@
+{
+  "server/index.ts": [
+    {
+      "before": "import { imageConnectorRefusal } from \"./limix-image-routing.ts\";\n",
+      "after": "import { channelActionRoute } from \"./limix-channel-actions.ts\";\nimport { imageConnectorRefusal } from \"./limix-image-routing.ts\";\n"
+    },
+    {
+      "before": "    if (!auth.channelReviewUntil && channelReviewSensitivePath(path) && store.bots.some(bot => bot.tasks?.some(task => task.botApi))) return json(res, 403, { error: \"Unlock channel conversations before accessing archives, search or activity.\" });\n",
+      "after": "    if (await channelActionRoute({req,res,url,path,method,auth,json,readBody}, {\n      channelThread: id => {const bot=store.botByThread(id);return Boolean(bot && store.taskByThread(bot.id,id)?.botApi);},\n      record: (thread,text) => {store.appendMessage(thread,{role:\"bot\",kind:\"text\",text});},\n      context: id => store.messagesFor(id).slice(-8).map(m=>({role:m.role,text:m.text?.slice(0,800)})),\n    })) return;\n    if (!auth.channelReviewUntil && channelReviewSensitivePath(path) && store.bots.some(bot => bot.tasks?.some(task => task.botApi))) return json(res, 403, { error: \"Unlock channel conversations before accessing archives, search or activity.\" });\n"
+    }
+  ],
+  "server/bot-api-host.ts": [
+    {
+      "before": "      if (owner) markLimixOwnerThread(threadId);\n",
+      "after": "      if (owner) { markLimixOwnerThread(threadId); store.patchTask(botId,threadId,{approvalMode:\"full\"}); }\n"
+    },
+    {
+      "before": "      await deps.startTurn(botId, [botApiPrompt(message, receivedAt), media.tags].filter(Boolean).join(\"\\n\\n\"), {\n",
+      "after": "      await deps.startTurn(botId, [owner ? message : botApiPrompt(message, receivedAt), media.tags].filter(Boolean).join(\"\\n\\n\"), {\n"
+    }
+  ],
+  "src/components/ChatView.tsx": [
+    {
+      "before": "import { createContext, memo, use, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch } from \"react\";\n",
+      "after": "import { ChannelReplyComposer } from \"./ChannelReplyComposer\";\nimport { createContext, memo, use, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch } from \"react\";\n"
+    },
+    {
+      "before": "        <div className=\"pointer-events-auto mx-5 mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-hairline/60 bg-raised px-4 py-3\" data-testid=\"channel-conversation-composer\">\n          <div className=\"min-w-0 flex-1\">\n            <p className=\"text-[14px] font-medium text-ink\">{t(\"chat.channel.title\")}</p>\n            <p className=\"mt-1 text-[13px] text-ink-secondary\">{t(\"chat.channel.readOnly\")}</p>\n          </div>\n          <button type=\"button\" onClick={() => openBot(dispatch, profile, showThreads)} className=\"shrink-0 rounded-full bg-control px-3 py-2 text-[13px] font-medium text-ink hover:bg-raised-hover\">\n            {t(\"chat.channel.openInternal\")}\n          </button>\n        </div>\n",
+      "after": "        <ChannelReplyComposer key={bot.threadId} threadId={bot.threadId} onInternal={() => openBot(dispatch,profile,showThreads)} />\n"
+    }
+  ]
+}

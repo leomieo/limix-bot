@@ -1,3 +1,4 @@
+import { ChannelReplyComposer } from "./ChannelReplyComposer";
 import { createContext, memo, use, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch } from "react";
 import { useAdvancedMode } from "@/lib/interface-mode";
 import { PHONE_LAYOUT, useMediaQuery } from "@/lib/use-media-query";
@@ -1276,15 +1277,7 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
       )}
       <LiveCallBar bot={bot} />
       {channelConversation ? (
-        <div className="pointer-events-auto mx-5 mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-hairline/60 bg-raised px-4 py-3" data-testid="channel-conversation-composer">
-          <div className="min-w-0 flex-1">
-            <p className="text-[14px] font-medium text-ink">{t("chat.channel.title")}</p>
-            <p className="mt-1 text-[13px] text-ink-secondary">{t("chat.channel.readOnly")}</p>
-          </div>
-          <button type="button" onClick={() => openBot(dispatch, profile, showThreads)} className="shrink-0 rounded-full bg-control px-3 py-2 text-[13px] font-medium text-ink hover:bg-raised-hover">
-            {t("chat.channel.openInternal")}
-          </button>
-        </div>
+        <ChannelReplyComposer key={bot.threadId} threadId={bot.threadId} onInternal={() => openBot(dispatch,profile,showThreads)} />
       ) : canWrite === false ? (
         <NewConversationInstead bot={bot} onNew={() => dispatch({ type: "newTask", botId: bot.id })} />
       ) : (

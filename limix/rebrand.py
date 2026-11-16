@@ -2252,3 +2252,14 @@ for rel, edits in json.loads((ROOT / "limix/patches/cloud-navigation.json").read
                 s = must(s, patch["before"], patch["after"])
         return s
     edit(rel, cloud_navigation_patch)
+
+for rel, edits in json.loads((ROOT / "limix/patches/channel-owner-replies.json").read_text(encoding="utf-8")).items():
+    target = ROOT / rel
+    current = target.read_text(encoding="utf-8")
+    for edit in edits:
+        if edit["after"] in current:
+            continue
+        if edit["before"] not in current:
+            raise RuntimeError(f"Channel owner reply patch drift: {rel}")
+        current = current.replace(edit["before"], edit["after"], 1)
+    target.write_text(current, encoding="utf-8")

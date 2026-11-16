@@ -10299,6 +10299,14 @@
   "teamSettings.workspace": "Working folder",
   "teamSettings.workspaceHint": "Apply this folder to the bots currently in this team. Existing chats with their own selected folder keep that folder. Add new members to the same folder by applying again.",
   "teamSettings.permissionTarget": "Apply permissions to",
-  "teamSettings.allMembers": "All team members"
-
+  "teamSettings.allMembers": "All team members",
+  "chat.channel.replyMode": "Reply mode",
+  "chat.channel.direct": "Reply to customer",
+  "chat.channel.agent": "Ask bot to reply",
+  "chat.channel.directHint": "Your message is sent directly to this channel conversation.",
+  "chat.channel.agentHint": "The bot processes your instruction in a separate owner conversation and sends the result here. Owner access requires password verification.",
+  "chat.channel.replyText": "Reply or instruction",
+  "chat.channel.sending": "Sending…",
+  "chat.channel.send": "Send",
+  "chat.channel.delivered": "Reply delivery confirmed."
 }
