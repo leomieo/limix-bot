@@ -109,3 +109,6 @@ Mốc mã nguồn đã khảo sát (pin, không dùng "latest"):
 
 ## Active agent tools (2026-11-17 owner decision)
 Prefer tools actually exposed by the active agent, including native image generation. Never force a separately configured image provider ahead of an available native tool, silently switch providers, or invent a missing tool. Separate Limix image providers remain explicit user-selected alternatives.
+
+## Public administrator identity
+Do not publish administrator login names or map product author names to privileged accounts in release notes, public help text or UI instructions. Use role descriptions such as authorized administrator. Keep authentication checks unchanged; public wording is not an access-control boundary.

@@ -56,7 +56,7 @@ export async function cloudOwnerRoute(path: string, request: Request, env: Env):
 function ownerPage(): Response {
     const nonce = crypto.randomUUID();
     return new Response(`<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Quản trị Limix</title>
-    <h1>Trung tâm quản trị Limix</h1><p>Quản lý tài khoản và Cloud tại <a href="https://admin.limixmedia.com/#cloud">admin.limixmedia.com</a>. Đăng nhập bằng tài khoản Limix Leox.</p>
+    <h1>Trung tâm quản trị Limix</h1><p>Quản lý tài khoản và Cloud tại <a href="https://admin.limixmedia.com/#cloud">admin.limixmedia.com</a>. Đăng nhập bằng tài khoản quản trị được cấp quyền.</p>
     <script nonce="${nonce}">history.replaceState(null,'',location.pathname);location.replace('https://admin.limixmedia.com/#cloud');</script></html>`, {
         headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'referrer-policy': 'no-referrer',
             'content-security-policy': `default-src 'none'; script-src 'nonce-${nonce}'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'` },

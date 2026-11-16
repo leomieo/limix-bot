@@ -1,6 +1,6 @@
 <section class="section" id="tab-structure">
  <div class="lm-heading"><div><div class="lm-eyebrow">CƠ CẤU KHÁCH HÀNG</div><h2>Tổ chức & vai trò</h2><p>Sắp xếp tài khoản theo tổ chức và xác định người phụ trách.</p></div><button class="lm-button" onclick="loadStructure()">Làm mới</button></div>
- <div class="lm-note">Super Admin hệ thống: <strong>Leox</strong>. Vai trò dưới đây quản lý cơ cấu khách hàng; chưa tự cấp quyền truy cập dữ liệu bot hoặc bảng Super Admin. Phân quyền thực thi trong ứng dụng cần tích hợp riêng.</div>
+ <div class="lm-note">Quản trị hệ thống. Vai trò dưới đây quản lý cơ cấu khách hàng; chưa tự cấp quyền truy cập dữ liệu bot hoặc bảng Super Admin. Phân quyền thực thi trong ứng dụng cần tích hợp riêng.</div>
  <form class="lm-form" onsubmit="createOrganization(event)"><div class="lm-field"><label for="org-name">Tạo tổ chức / nhóm khách hàng</label><input id="org-name" maxlength="100" required placeholder="Ví dụ: Công ty ABC"></div><button class="lm-button primary" type="submit">Tạo tổ chức</button></form>
  <form class="lm-form" onsubmit="assignOrganizationMember(event)">
   <div class="lm-field"><label for="org-user">Tài khoản</label><select id="org-user" required></select></div>
@@ -31,7 +31,7 @@ async function loadStructure(){
  const {wrap,body}=lmTable(['Tài khoản','Email','Tổ chức','Vai trò','Thao tác']);
  for(const m of data.members){const tr=document.createElement('tr');lmCell(tr,m.username,'lm-account');lmCell(tr,m.email);lmCell(tr,m.organization||'Chưa phân nhóm');lmCell(tr,m.username.toLowerCase()==='leox'?'Super Admin':roles[m.role]||'Chưa phân công');const cell=lmCell(tr,'');if(m.organization_id){const b=document.createElement('button');b.className='lm-button';b.textContent='Gỡ khỏi tổ chức';b.onclick=async()=>{if(!confirm('Gỡ '+m.username+' khỏi tổ chức?'))return;b.disabled=true;try{await structureWrite({action:'remove_member',user_id:m.id});await loadStructure()}catch(e){status.textContent=e.message;b.disabled=false}};cell.append(b)}body.append(tr)}
  document.getElementById('structure-list').replaceChildren(wrap);
- status.textContent=data.organizations.length+' tổ chức · '+data.members.length+' tài khoản khách hàng. Leox là Super Admin ngoài cơ cấu khách.';
+ status.textContent=data.organizations.length+' tổ chức · '+data.members.length+' tài khoản khách hàng. Tài khoản quản trị hệ thống nằm ngoài cơ cấu khách.';
  const audit=document.getElementById('structure-audit');audit.replaceChildren();const actionLabels={create_organization:'Tạo tổ chức',assign_member:'Phân công thành viên',remove_member:'Gỡ thành viên'};
  for(const entry of data.audit){const line=document.createElement('p');line.textContent=new Date(entry.created_at).toLocaleString('vi-VN')+' · '+entry.actor+' · '+(actionLabels[entry.action]||entry.action)+' · '+entry.details;audit.append(line)}
  }catch(e){status.textContent=e.message}
