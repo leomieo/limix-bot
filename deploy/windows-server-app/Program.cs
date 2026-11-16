@@ -17,7 +17,7 @@ static class Program
         {
             using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("LimixServer.payload.zip") ?? Assembly.GetExecutingAssembly().GetManifestResourceNames().Where(x => x.EndsWith("payload.zip")).Select(x => Assembly.GetExecutingAssembly().GetManifestResourceStream(x)).First()!;
             using var zip = new ZipArchive(stream);
-            var required = new[] { "hyperv-setup.ps1", "hyperv-common.ps1", "hyperv-control.ps1", "linux-bootstrap.py", "linux-health.py", "image-tools.Dockerfile", "host.mjs", "power-probe.mjs", "updater.mjs", "docker-backend.mjs", "compose.yaml" };
+            var required = new[] { "server-storage.ps1", "hyperv-setup.ps1", "hyperv-common.ps1", "hyperv-control.ps1", "linux-bootstrap.py", "linux-health.py", "image-tools.Dockerfile", "host.mjs", "power-probe.mjs", "updater.mjs", "docker-backend.mjs", "compose.yaml" };
             if (required.Any(x => !zip.Entries.Any(e => e.FullName == x && e.Length > 0))) Environment.Exit(1);
             Console.WriteLine("Embedded server payload: PASS");
             return;
@@ -76,7 +76,7 @@ sealed class SetupWindow : Form
     internal void PreviewBusy() { buttons.Enabled=false; }
     public SetupWindow()
     {
-        Text = "Limix Cloud Server 0.2.5 beta · Hyper-V";
+        Text = "Limix Cloud Server 0.2.6 beta · Hyper-V";
         Size = new Size(1000, 760); MinimumSize = new Size(930, 700); StartPosition = FormStartPosition.CenterScreen;
         Font = new Font("Segoe UI", 10); BackColor = Color.FromArgb(18,18,18); ForeColor = Color.White;
         var top = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, FlowDirection = FlowDirection.TopDown, Padding = new Padding(18), WrapContents = false };
@@ -117,6 +117,11 @@ sealed class SetupWindow : Form
         });
         AddButton("Docker / Dịch vụ khác tự khởi động", () => {
             using var window = new DockerStartupWindow();
+            window.ShowDialog(this);
+            return Task.CompletedTask;
+        });
+        AddButton("Đổi ổ / Chuyển server", () => {
+            using var window = new ServerStorageWindow();
             window.ShowDialog(this);
             return Task.CompletedTask;
         });
@@ -181,5 +186,6 @@ sealed class SetupWindow : Form
         process.StandardInput.Close();await process.WaitForExitAsync();return process.ExitCode;
     }
 }
+
 
 

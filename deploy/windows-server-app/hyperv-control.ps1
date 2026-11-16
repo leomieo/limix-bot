@@ -18,6 +18,7 @@ $root=Split-Path -Parent $PSScriptRoot
 $path=Join-Path $root 'hyperv.json'
 if (-not (Test-Path -LiteralPath $path)) { throw 'Chưa cài Cloud Server Hyper-V. Bấm Cài đặt trước; Bắt đầu không thay cho cài đặt.' }
 $config=Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+if (-not (Test-Path -LiteralPath $config.Store -PathType Container)) {throw 'Không tìm thấy ổ hoặc thư mục dữ liệu Cloud. Kết nối lại ổ; không tạo máy mới hoặc ghi dữ liệu trống.'}
 $vm=Get-ServerVm $config
 if ($Action -eq 'Start') {
     if ($config.MigrationState -eq 'rolled-back') { throw 'Lần chuyển trước đã quay lại bản gốc. Không tự khởi động bản sao cũ; cần kiểm tra dữ liệu trước.' }
