@@ -66,7 +66,7 @@ afterEach(async () => {
 it("signs a Limix account in, takes its trial request, and pairs only its own home once the host runs it", async () => {
   const fake = fakes();
   vi.spyOn(globalThis, "fetch").mockImplementation(fake.handler);
-  const bindings = { ...env, LIMIX_ACCOUNT_URL: "https://accounts.test", LIMIX_BETA_HOST_TOKEN: HOST_TOKEN };
+  const bindings = { ...env, LIMIX_ACCOUNT_URL: "https://accounts.test", ALLOWED_ORIGINS: "https://cloud.limixmedia.test", LIMIX_BETA_HOST_TOKEN: HOST_TOKEN };
   const send = (path: string, init: RequestInit = {}) => worker.fetch(new Request("https://cloud.limixmedia.test" + path, init), bindings, createExecutionContext());
   const signIn = async (name: string) => {
     const response = await send("/api/cloud/desktop/limix-token", { method: "POST", headers: { authorization: "Bearer limix." + btoa("one") + ".token-" + name, "content-type": "application/json" },
@@ -75,7 +75,7 @@ it("signs a Limix account in, takes its trial request, and pairs only its own ho
     return await response.json() as { accessToken: string; account: { id: string }; device: { id: string }; expiresAt: number; cloudContractVersion: number };
   };
   const as = (token: string, path: string, method = "GET", body?: object) =>
-    send("/api/cloud/desktop/" + path, { method, headers: { authorization: "Bearer " + token, ...(body ? { "content-type": "application/json" } : {}) }, body: body && JSON.stringify(body) });
+    send("/api/cloud/desktop/" + path, { method, headers: { origin: "https://cloud.limixmedia.test", authorization: "Bearer " + token, ...(body ? { "content-type": "application/json" } : {}) }, body: body && JSON.stringify(body) });
   const host = (path: string, body?: object) => send("/v1/managed-cloud/host/" + path, { method: body ? "POST" : "GET", headers: { authorization: "Bearer " + HOST_TOKEN, "content-type": "application/json" }, body: body && JSON.stringify(body) });
 
   expect((await send("/api/cloud/desktop/limix-token", { method: "POST", headers: { authorization: "Bearer limix." + btoa("one") + ".bad" } })).status).toBe(401);
@@ -118,6 +118,14 @@ it("signs a Limix account in, takes its trial request, and pairs only its own ho
 
   expect((await as(alice.accessToken, "session", "DELETE", {})).status).toBe(200);
   expect((await as(alice.accessToken, "session")).status).toBe(401);
+  await env.DB.prepare("INSERT INTO limix_cloud_requests(principal,requested_at) VALUES ('limix:review',1)").run();
+  const review = (origin: string, name: string) => send("/api/cloud/owner/decision", {
+    method: "POST", headers: { origin, authorization: "Bearer limix." + btoa("one") + ".token-" + name, "content-type": "application/json" },
+    body: JSON.stringify({ principal: "limix:review", decision: "approve" }),
+  });
+  expect((await review("https://cloud.limixmedia.test", "Leox")).status).toBe(200);
+  expect((await review("https://cloud.limixmedia.test", "alice")).status).toBe(403);
+  expect((await review("https://attacker.test", "Leox")).status).toBe(403);
   const owner = await signIn("Leox");
   const ownerSession = await (await as(owner.accessToken, "session")).json();
   expect(ownerSession).toMatchObject({ account: { id: "limix:leox" }, entitlement: { status: "active" }, limixTrial: "approved" });

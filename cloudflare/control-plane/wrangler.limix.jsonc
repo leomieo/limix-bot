@@ -12,7 +12,7 @@
   "vars": {
     "BETTER_AUTH_URL": "https://accounts.limixmedia.com",
     "EMAIL_FROM": "noreply@limixmedia.com",
-    "ALLOWED_ORIGINS": "",
+    "ALLOWED_ORIGINS": "https://cloud.limixmedia.com",
     "LIMIX_ACCOUNT_URL": "https://tiktok.limixmedia.com/api/limixbot",
     "CLOUDFLARE_ACCOUNT_ID": "e2c5f1d87da45803ba77f9eb676ec3ed",
     "CLOUDFLARE_ZONE_ID": "b6ded94cfef973f6dbb5e480d7dde361",
