@@ -404,3 +404,5 @@
 - 13 new isolated Hyper-V/guest tests, 6 legacy and 11 Node tests passed. Self-contained build, embedded payload, PowerShell syntax and rendered UI checked. No real migration/reboot/network acceptance on Xeon yet. Local Docker daemon unavailable and Hyper-V not enabled, so there is no live virtualization proof.
 
 - 2026-11-17 Cloud navigation: dedicated Limix Cloud settings page and account-menu entry; removed Cloud phone destination from local sidebar while retaining local phone connection. 108 affected tests passed, 4 failures matched baseline exactly (analytics/old branding expectations); typecheck result reported separately.
+
+- Delivered Hyper-V server prerelease server-v0.2.0-beta.1 (161943070-byte EXE; SHA256 0ed6585da48f4564a5918f09d80a7e0a24f170657379df423a283c96a254af75). GitHub asset digest verified. Windows CI 43934994718 success on 1999f1e01. Root typecheck passed for Cloud navigation 0ea93011e; desktop navigation source pushed but no new desktop version published in this task. Xeon acceptance still pending.
