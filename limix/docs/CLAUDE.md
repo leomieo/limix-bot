@@ -8,6 +8,10 @@
 
 Use Limix Bot for product-facing names, release notes, commit subjects/bodies and public project summaries. Do not add upstream project names, upstream author names or Co-authored-by trailers to integration commits. Integrate changes under the Limix Bot identity. Preserve required copyright, LICENSE, NOTICE and third-party notices. Preserve protocol identifiers, migration aliases and compatibility paths unless a verified migration replaces them. Keep precise source provenance in engineering records, outside product copy. Do not rewrite unrelated historical authorship.
 
+## Release note language
+
+Write complete, natural Vietnamese and English release notes for the version being published. Vietnamese must describe the feature's actual role and behavior. Use “máy chủ đám mây”, “tạm dừng máy Cloud” and “khởi động lại máy Cloud” where applicable. Avoid literal wording such as “đưa đội bot lên mây”, “ngủ/thức”, “duyệt tay”, and unsupported claims such as “nhẹ và nhanh hơn” or “mọi loại tệp”. State known platform and runtime limitations. Put the current version's Vietnamese bullet list first so the update dialog displays current changes. Keep historical notes outside the release body's current changelog. Before publishing, verify the first four highlights shown by the update dialog and ensure they belong to that release. When correcting published notes, update the GitHub release body as well.
+
 ## 1. Dự án là gì (một câu)
 
 Limix Bot = ứng dụng tạo và quản lý Bot AI — **bản fork đổi thương hiệu của OpenMausBot** (giao diện như mausbot.com), tác giả **Leox ৹ Limix AI**, thêm **tự học skill** và **kết nối native** tới Telegram, Zalo, WhatsApp, Discord, lấy có chọn lọc từ **Hermes Agent**.
