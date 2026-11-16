@@ -21,10 +21,10 @@ try {
  await compose(id,['up','-d','--no-build','home']);
  await waitHealthy(command,await compose(id,['ps','-q','home']));
  await compose(id,['exec','-T','--user','0','home','sh','-c','echo original > /data/update-fixture.txt']);
- writeFileSync(join(temp,'Dockerfile'),`FROM ${initial}\nLABEL com.limix.fixture="${id}"\n`);
+ writeFileSync(join(temp,'Dockerfile'),`FROM ${initial}\nLABEL com.limix.fixture="${id}" org.opencontainers.image.version="99.0.1"\n`);
  await command(['build','-t',good,temp]);
  const target=(JSON.parse(await command(['image','inspect',good])))[0].Id;
- await updateHome({id,target,tag:'v0.0.1',command,compose,store,prepare:async()=>true});
+ await updateHome({id,target,tag:'v99.0.1',command,compose,store,prepare:async()=>true});
  assert.equal(store.state.homes[id].image,target);
  writeFileSync(join(temp,'Dockerfile'),`FROM ${good}\nHEALTHCHECK --interval=1s --timeout=1s --start-period=1s --retries=1 CMD exit 1\n`);
  await command(['build','-t',bad,temp]);
@@ -34,7 +34,7 @@ try {
    if(args[0]==='up' && image===broken)await compose(id,['exec','-T','--user','0','home','sh','-c','echo changed > /data/update-fixture.txt'],broken);
    return result;
  };
- await assert.rejects(updateHome({id,target:broken,tag:'v0.0.2',command,compose:mutate,store,prepare:async()=>true}),/health check/);
+ await assert.rejects(updateHome({id,target:broken,tag:'v99.0.2',command,compose:mutate,store,prepare:async()=>true}),/health check/);
  assert.equal(store.state.homes[id].image,target);
  assert.equal(await compose(id,['exec','-T','home','cat','/data/update-fixture.txt'],target),'original');
  console.log('PASS real isolated Docker update, failed health check and snapshot restore');
@@ -45,3 +45,4 @@ try {
  await command(['image','rm',bad,good]).catch(()=>{});
  rmSync(temp,{recursive:true,force:true});
 }
+
