@@ -109,6 +109,7 @@ export async function ensureTunnel(token, command = docker) {
 }
 
 if (import.meta.main) {
+  console.log("Limix Cloud host starting; Node", process.version);
   const token = process.env.LIMIX_BETA_HOST_TOKEN;
   const capacity = Number(process.env.LIMIX_BETA_CAPACITY ?? 1);
   if (!token || token.length < 43 || !process.env.LIMIX_HOME_IMAGE) throw new Error("Set host token and runtime image");
@@ -121,7 +122,9 @@ if (import.meta.main) {
     return response.json();
   };
   const wakeName = "limix-managed-wake";
+  console.log("Connecting Cloud control plane and tunnel");
   await ensureTunnel((await call("tunnel")).token);
+  console.log("Cloud tunnel ready; preparing wake proxy");
   const wakeRunning = await docker(["ps", "-a", "--filter", "name=^"+wakeName+"$", "--format", "{{.State}}"]);
   if (!wakeRunning) await docker(["run", "-d", "--name", wakeName, "--restart", "unless-stopped", "--network", EDGE_NETWORK,
     "--cap-drop", "ALL", "--security-opt", "no-new-privileges:true", "--read-only", "--user", "1000:1000", "--memory", "128m", "--pids-limit", "64",
@@ -137,6 +140,7 @@ if (import.meta.main) {
         tunnelReady = true;
       }
       const { homes, origins, routing, power, resources } = await call("assignments");
+      console.log("Cloud assignments:", homes.length, "routing:", routing);
       if (routing !== "ready") console.warn("Public addresses are still being set up; retrying next round.");
       if (!Array.isArray(homes) || !homes.every(id => typeof id === "string" && uuid.test(id))) throw new Error("Invalid update assignments");
       for (const limit of Object.values(resources ?? {})) {

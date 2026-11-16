@@ -52,6 +52,12 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 result = command('journalctl', '--no-pager', '-n', '80', '-u', 'limix-cloud-host.service', '-u', 'limix-cloud-bootstrap.service')
                 text = result.stdout[-32000:]
+                for args in [
+                    ('systemctl', 'show', 'limix-cloud-host.service', '--property=ActiveState,SubState,MainPID,ExecMainStatus,NRestarts'),
+                    ('docker', 'ps', '-a', '--format', '{{.Names}} {{.Status}} {{.Image}}'),
+                ]:
+                    probe = command(*args)
+                    text += '\n' + probe.stdout[-8000:] + probe.stderr[-2000:]
                 for line in (CONFIG / 'host.env').read_text().splitlines():
                     if line.startswith('LIMIX_BETA_HOST_TOKEN='):
                         text = text.replace(line.split('=', 1)[1], '[redacted]')

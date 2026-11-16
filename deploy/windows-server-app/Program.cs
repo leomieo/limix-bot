@@ -77,7 +77,7 @@ sealed class SetupWindow : Form
     public SetupWindow()
     {
         Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-        Text = "Limix Cloud Server 0.2.7 beta · Hyper-V";
+        Text = "Limix Cloud Server 0.2.8 beta · Hyper-V";
         Size = new Size(1000, 760); MinimumSize = new Size(930, 700); StartPosition = FormStartPosition.CenterScreen;
         Font = new Font("Segoe UI", 10); BackColor = Color.FromArgb(18,18,18); ForeColor = Color.White;
         var top = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, FlowDirection = FlowDirection.TopDown, Padding = new Padding(18), WrapContents = false };
@@ -125,6 +125,12 @@ sealed class SetupWindow : Form
             using var window = new ServerStorageWindow();
             window.ShowDialog(this);
             return Task.CompletedTask;
+        });
+        AddButton("Sửa máy Cloud đã cài", async () => {
+            if(MessageBox.Show("Dừng máy Cloud trước khi sửa. Công cụ cập nhật dịch vụ bên trong Linux, giữ nguyên ổ dữ liệu. Tiếp tục?","Limix Server",MessageBoxButtons.OKCancel)!=DialogResult.OK)return;
+            busy=true;buttons.Enabled=false;
+            try { Program.Extract();await Run(null,Path.Combine(Program.Root,"app","repair.ps1")); }
+            finally {busy=false;buttons.Enabled=true;}
         });
         top.Controls.Add(buttons);
         Controls.Add(output); Controls.Add(top);

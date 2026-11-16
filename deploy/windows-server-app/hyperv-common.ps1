@@ -43,6 +43,11 @@ function Get-ServerVm($Config) {
 function Get-GuestHealth($Config) {
     $vm = Get-ServerVm $Config
     $ips = @((Get-VMNetworkAdapter -VM $vm).IPAddresses | Where-Object { $_ -match '^\d+\.\d+\.\d+\.\d+$' -and $_ -notmatch '^127\.' })
+    foreach ($adapter in @(Get-VMNetworkAdapter -VM $vm)) {
+        $mac = $adapter.MacAddress -replace '(.{2})(?!$)', '$1-'
+        $ips += @(Get-NetNeighbor -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.LinkLayerAddress -eq $mac } | Select-Object -ExpandProperty IPAddress)
+    }
+    $ips = @($ips | Select-Object -Unique)
     foreach ($ip in $ips) {
         try {
             $result = Invoke-RestMethod -Uri "http://${ip}:9876/healthz" -Headers @{Authorization=('Bearer ' + $Config.HealthKey)} -TimeoutSec 8
