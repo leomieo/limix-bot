@@ -10,11 +10,12 @@ it('owner authorization, approval, rejection and revocation are enforced server-
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (_input, init) => Response.json({ valid: true, username: JSON.parse(String(init?.body)).token.slice(6) }));
     await env.DB.prepare("INSERT INTO limix_cloud_requests(principal,requested_at) VALUES ('limix:alice',1)").run();
     await expect(cloudOwnerRoute('/api/cloud/owner/requests', request('alice'), bindings)).rejects.toMatchObject({ status: 403 });
-    const action = (decision: string) => cloudOwnerRoute('/api/cloud/owner/decision', request('tqtuan', { principal: 'limix:alice', decision }), bindings);
+    await expect(cloudOwnerRoute('/api/cloud/owner/requests', request('tqtuan'), bindings)).rejects.toMatchObject({ status: 403 });
+    const action = (decision: string) => cloudOwnerRoute('/api/cloud/owner/decision', request('Leox', { principal: 'limix:alice', decision }), bindings);
     expect((await action('approve')).status).toBe(200);
     expect(await env.DB.prepare("SELECT principal FROM managed_cloud_beta WHERE principal='limix:alice'").first()).toBeTruthy();
     expect((await action('approve')).status).toBe(200);
-    const listed = await cloudOwnerRoute('/api/cloud/owner/requests', request('tqtuan'), bindings);
+    const listed = await cloudOwnerRoute('/api/cloud/owner/requests', request('Leox'), bindings);
     expect(await listed.json()).toMatchObject({ requests: [{ principal: 'limix:alice', decision: 'approved' }] });
     await action('revoke');
     expect(await env.DB.prepare('SELECT principal FROM managed_cloud_beta').first()).toBeNull();
@@ -59,6 +60,9 @@ it('concurrent customer activity cancels the pending sleep decision', async () =
 it('owner page contains no account data and unauthenticated APIs are refused',async()=>{
   const response=await cloudOwnerRoute('/cloud-admin',new Request('https://cloud.test/cloud-admin'),bindings);
   expect(response.headers.get('content-security-policy')).toContain("frame-ancestors 'none'");
-  expect(await response.text()).not.toContain('token-tqtuan');
+  const html = await response.text();
+  expect(html).not.toContain('id="token"');
+  expect(html).toContain("history.replaceState");
+  expect(response.headers.get('referrer-policy')).toBe('no-referrer');
   await expect(cloudOwnerRoute('/api/cloud/owner/requests',new Request('https://cloud.test/api/cloud/owner/requests'),bindings)).rejects.toMatchObject({status:401});
 });

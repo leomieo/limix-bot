@@ -310,6 +310,7 @@ export function CloudAccountSettings({ linkRequest = 0, cloudHome = false, teamH
           <button type="button" disabled={busy} className="ui-button" onClick={() => void perform(() => bridge.cancel())}>{t("organization.cancel")}</button></div>
       </div>}
       {signed && <div className="flex flex-col gap-3">
+        {account.account?.id === "limix:leox" && <button type="button" disabled={busy} className="ui-button" onClick={() => void perform(() => bridge.openDashboard())}>{lx("Quản trị Limix Cloud", "Manage Limix Cloud")}</button>}
         {account.account && <p className="break-all text-[14px] text-ink">{account.account.email}</p>}
         {line && <p role="status" data-cloud-plan={view.kind} className="text-[15px] font-medium text-ink">{line}
           {view.kind === "paid" && view.checking && <span className="ms-2 text-[12px] font-normal text-ink-secondary">{t("cloudAccount.checking")}</span>}</p>}

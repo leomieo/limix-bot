@@ -1,3 +1,13 @@
+# Limix Bot 0.3.53
+
+English
+
+The Leox account can open Limix Cloud administration from Cloud settings using its existing Limix sign-in. Browser sessions end when the page is closed or reloaded. Owner authorization is enforced by the server.
+
+Tiếng Việt
+
+Tài khoản Leox có thể mở Quản trị Limix Cloud từ cài đặt Cloud bằng phiên đăng nhập Limix hiện tại. Phiên trình duyệt kết thúc khi đóng hoặc tải lại trang. Máy chủ kiểm tra quyền quản trị.
+
 Limix Bot 0.3.52
 
 ## Tiếng Việt

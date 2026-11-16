@@ -843,6 +843,16 @@ async function limixCloudSignIn(asked = false) {
   return client.state().status === "signed-out" ? client.signInWithLimix(credential.bearer) : client.state();
 }
 
+/** Open the trusted owner page with the current Limix account; it immediately removes the fragment. */
+async function openLimixCloudAdmin() {
+  const credential = limixRemoteCredential();
+  if (credential?.userId !== "limix:leox") throw new Error("Sign in as Leox to manage Limix Cloud.");
+  const target = new URL("/cloud-admin", cloudTarget(process.env).origin);
+  target.hash = new URLSearchParams({ session: credential.bearer }).toString();
+  await shell.openExternal(target.toString());
+  return ensureCloudAccount().state();
+}
+
 /** The free trial's popup, at most once a day per notice across this computer's page and the Cloud's. */
 let trialNotices = null;
 function cloudTrialNotices() {
@@ -2529,7 +2539,9 @@ const localWorkspaceOnly = (channel, handler) => localOnly(channel, workspaceOnl
 for (const method of ["state", "begin", "signInAgain", "reopen", "cancel", "refresh", "signOut", "openDashboard", "offer"]) {
   // Limix: signing in to Limix Cloud is the Limix account this computer is signed in with, never an email or a browser step.
   ipcMain.handle(`cloud-account:${method}`, localWorkspaceOnly(`cloud-account:${method}`, () => (method === "signOut" ? accounts.signOutActive()
-    : method === "begin" || method === "signInAgain" ? limixCloudSignIn(true) : ensureCloudAccount()[method]())));
+    : method === "begin" || method === "signInAgain" ? limixCloudSignIn(true)
+    : method === "openDashboard" && limixRemoteCredential()?.userId === "limix:leox"
+      ? openLimixCloudAdmin() : ensureCloudAccount()[method]())));
 }
 ipcMain.handle("cloud-account:requestTrial", localWorkspaceOnly("cloud-account:requestTrial", () => ensureCloudAccount().requestTrial()));
 ipcMain.handle("cloud-account:checkout", localWorkspaceOnly("cloud-account:checkout", async (_event, plan, source) => {

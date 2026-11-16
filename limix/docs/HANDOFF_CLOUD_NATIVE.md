@@ -90,3 +90,7 @@ Làm trên nhánh `cloud-native-codex` tách từ `cloud-native`; không đẩy 
   bản mới. Volume cũ `limix-home-<id>_data` được giữ nguyên.
 - Đừng chạy workflow "Limix Cloudflare" từ `main` trước khi gộp: `main` còn lỗi `redirect: "error"` (đã sửa ở nhánh).
 - Không bao giờ in hoặc ghi `LIMIX_BETA_HOST_TOKEN` hay bí mật của home ra log.
+
+## Cloud administration update — 0.3.53
+
+The owner account is Leox (normalized principal limix:leox), explicitly selected by the project owner. The previous tqtuan principal has no owner access. In the local desktop app, Cloud settings exposes Manage Limix Cloud only to Leox. Main-process authorization checks the active Limix credential, and the Worker independently checks the validated account. The trusted HTTPS admin page consumes the sign-in fragment, immediately removes it from the current history entry, and retains the bearer only in page memory. Closing or reloading ends the browser session. Manual token entry has been removed.
