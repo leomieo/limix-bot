@@ -1,3 +1,4 @@
+import { waitForInstalledUi } from "./limix-install-ready.mjs";
 import { createLimixSignOutHandler } from "./limix-sign-out.mjs";
 import { app, autoUpdater as nativeAutoUpdater, BrowserWindow, Tray, WebContentsView, clipboard, desktopCapturer, dialog, globalShortcut, ipcMain, Menu, nativeImage, Notification, net, powerMonitor, powerSaveBlocker, safeStorage, screen, session, shell, systemPreferences, utilityProcess, nativeTheme } from "electron";
 import { LIMIX_ACCOUNT_URL, LIMIX_CLOUD_ENABLED, LIMIX_CLOUD_SALES, LIMIX_ORGANIZATION_ENABLED } from "./limix-features.mjs";
@@ -2875,7 +2876,23 @@ let limixLanActive = false;
 app.whenReady().then(async () => {
   // Limix Bot: a damaged install (no UI files, e.g. after an interrupted update) explains itself instead of showing
   // a bare "no route" page.
-  if (app.isPackaged && !fs.existsSync(path.join(process.resourcesPath, "ui", "index.html"))) {
+  const installedUIReady = !app.isPackaged || await waitForInstalledUi({
+    resourcesPath: process.resourcesPath,
+    timeoutMs: process.platform === "win32" ? 300_000 : 0,
+    cancelled: () => desktopShutdownStarted,
+    onWaiting: () => {
+      startupScreen ??= createStartupScreen({
+        BrowserWindow, iconPath: APP_ICON, isQuitting: () => desktopShutdownStarted,
+        onQuit: () => app.quit(), t: nativeT, lang: nativeText.intlTag(),
+        onFinished: () => { startupScreen = null; },
+      });
+      startupScreen.status(/^vi\b/i.test(nativeText.intlTag())
+        ? "Đang chờ hoàn tất cập nhật Limix Bot…"
+        : "Waiting for the Limix Bot update to finish…");
+    },
+  });
+  if (desktopShutdownStarted) return;
+  if (!installedUIReady) {
     const vi = /^vi/i.test(app.getLocale());
     const { response } = await dialog.showMessageBox({
       type: "error",
@@ -2913,7 +2930,7 @@ app.whenReady().then(async () => {
   limixGateway.start();
   limixTools = createLimixTools({ userData: app.getPath("userData"), resourcesPath: process.resourcesPath, serverRequest: (route, init) => localServerRequest(route, init), log: slog });
   hiddenStart = loginItem.startedHidden() || reopenedOutOfSight();
-  startupScreen = hiddenStart ? null : createStartupScreen({
+  startupScreen ??= hiddenStart ? null : createStartupScreen({
     BrowserWindow, iconPath: APP_ICON, isQuitting: () => desktopShutdownStarted, t: nativeT, lang: nativeText.intlTag(),
     onQuit: () => app.quit(),
     onHide: desktopTray ? (win) => desktopTray.hide(win) : undefined,
@@ -2921,6 +2938,7 @@ app.whenReady().then(async () => {
     onShow: (win) => desktopTray?.windowShown(win),
     onFinished: () => { startupScreen = null; },
   });
+  startupScreen?.status(/^vi\b/i.test(nativeText.intlTag()) ? "Đang mở Limix Bot…" : "Opening Limix Bot…");
   await startupScreen?.ready;
   if (desktopShutdownStarted) return;
   session.defaultSession.on("will-download", (_event, item) => {

@@ -1,14 +1,15 @@
-# Limix Bot 0.3.54
+# Limix Bot 0.3.55
 
 ## Tiếng Việt
 
-- Tài khoản quản trị cao nhất Leox được dùng Limix Cloud trực tiếp, không cần đăng ký dùng thử.
-- Giữ nguyên máy Cloud đã cấp khi tài khoản Leox làm mới trạng thái kết nối.
-- Gộp hai mục đăng xuất trong menu tài khoản thành một mục đăng xuất Limix.
-
-- Dùng hộp xác nhận của ứng dụng khi đăng xuất tài khoản Limix từ menu.
+- Chờ bộ cài Windows chép xong giao diện trước khi kết luận ứng dụng bị thiếu tệp.
+- Hiển thị trạng thái đang hoàn tất cập nhật khi app được mở trong lúc cài đặt.
+- Kiểm tra các tệp giao diện liên quan trước khi tiếp tục khởi động.
+- Sửa lỗi trang quản trị Limix Cloud báo thiếu quyền khi Leox gửi lệnh duyệt tài khoản.
 
 ## English
 
-- The verified Leox super administrator gets direct access to Limix Cloud without a trial request.
-- The account menu now shows one Limix sign-out action.
+- Wait for the Windows installer to finish extracting the UI before reporting missing installation files.
+- Show update completion status when the app is opened during installation.
+- Verify referenced UI assets before continuing startup.
+- Allow authenticated owner decisions from the Limix Cloud administration website.

@@ -445,8 +445,29 @@ edit("electron-builder.yml", lambda s: s if "include: build/limix-installer.nsh"
 # {"error":"no route: GET /"}. Limix Bot says so plainly instead and offers the installer download.
 def ui_check(s):
     if "Limix Bot: a damaged install" in s:
+        if 'import { waitForInstalledUi }' not in s:
+            s = 'import { waitForInstalledUi } from "./limix-install-ready.mjs";\n' + s
+        s = s.replace('  startupScreen = hiddenStart ? null : createStartupScreen({', '  startupScreen ??= hiddenStart ? null : createStartupScreen({')
+        s = s.replace('  if (app.isPackaged && !fs.existsSync(path.join(process.resourcesPath, "ui", "index.html"))) {\n', r"""  const installedUIReady = !app.isPackaged || await waitForInstalledUi({
+    resourcesPath: process.resourcesPath,
+    timeoutMs: process.platform === "win32" ? 300_000 : 0,
+    cancelled: () => desktopShutdownStarted,
+    onWaiting: () => {
+      startupScreen ??= createStartupScreen({
+        BrowserWindow, iconPath: APP_ICON, isQuitting: () => desktopShutdownStarted,
+        onQuit: () => app.quit(), t: nativeT, lang: nativeText.intlTag(),
+        onFinished: () => { startupScreen = null; },
+      });
+      startupScreen.status(/^vi\b/i.test(nativeText.intlTag())
+        ? "Đang chờ hoàn tất cập nhật Limix Bot…"
+        : "Waiting for the Limix Bot update to finish…");
+    },
+  });
+  if (desktopShutdownStarted) return;
+  if (!installedUIReady) {
+""")
         return s
-    return must(s, "app.whenReady().then(async () => {\n", """app.whenReady().then(async () => {
+    return ui_check(must(s, "app.whenReady().then(async () => {\n", """app.whenReady().then(async () => {
   // Limix Bot: a damaged install (no UI files, e.g. after an interrupted update) explains itself instead of showing
   // a bare "no route" page.
   if (app.isPackaged && !fs.existsSync(path.join(process.resourcesPath, "ui", "index.html"))) {
@@ -464,7 +485,7 @@ def ui_check(s):
     app.exit(1);
     return;
   }
-""")
+"""))
 edit("electron/main.mjs", ui_check)
 
 # 6c. MausBot's finished chrome pictures of the trademark cursor (face included) go: with no pictures for a body the
