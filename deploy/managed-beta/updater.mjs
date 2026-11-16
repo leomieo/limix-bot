@@ -43,10 +43,12 @@ export async function updateHome({id,target,tag,command,compose,store,prepare=as
   const [info]=JSON.parse(await command(['inspect',container]));
   if(info.State?.Health?.Status!=='healthy')return;
   const volume=homeVolume(id,info);
+  entry.image=info.Image;
+  store.save();
   if(info.Image===target) { entry.image=target;entry.version=tag;store.save();return; }
   const installed=info.Config?.Labels?.['org.opencontainers.image.version'];
   const current=installed ? 'v'+installed : entry.version;
-  if(current && version.test(current) && !newer(tag,current))return;
+  if(current && version.test(current) && !newer(tag,current)) { entry.version=current;store.save();return; }
   if(!await prepare(id,container))return;
   const backup='limix-update-'+id;
   const old=info.Image;
