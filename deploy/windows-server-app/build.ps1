@@ -6,6 +6,10 @@ foreach ($name in @('host.ps1','host.mjs','docker-backend.mjs','compose.yaml')) 
     Copy-Item -LiteralPath (Join-Path "$PSScriptRoot\..\managed-beta" $name) -Destination $stage -Force
 }
 foreach ($name in @('setup.ps1','supervisor.ps1')) {
+    $legacy = Join-Path $stage $name
+    if (Test-Path -LiteralPath $legacy) { Remove-Item -LiteralPath $legacy }
+}
+foreach ($name in @('hyperv-setup.ps1','hyperv-common.ps1','hyperv-control.ps1','linux-bootstrap.py','linux-health.py','image-tools.Dockerfile')) {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination $stage -Force
 }
 Compress-Archive -Path "$stage\*" -DestinationPath "$PSScriptRoot\payload.zip" -Force

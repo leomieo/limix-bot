@@ -396,3 +396,9 @@
 - CI: Limix Cloud Server Installer builds downloadable Windows artifact independently of desktop releases. Credentials are not in source/binary/config; Windows receives the startup password locally through Task Scheduler registration.
 
 - Server beta delivered: commit 9fa8a8eb7 on main; prerelease server-v0.1.0-beta.1 contains LimixServer-Setup.exe (161930782 bytes). SHA-256 AE52B8324498BDFDEB7DB36956A5CF7919B61699F76D660AFC6B0E586AAA43F3 matches GitHub asset digest. Independent Windows CI run 43915187843 completed success (mock migration tests, Node backend tests, self-contained build, payload verification, uploaded artifact). Real Xeon cutover and reboot-before-logon still require acceptance; no local Docker/tasks were modified by verification.
+
+
+### 2026-11-17 — HP Z840 no-password Hyper-V Cloud installer
+- User confirmed BIOS power restoration/virtualization enabled. Windows has no password but sign-in requires interaction. Setup 0.2 uses dedicated Hyper-V Linux, independent of Windows login; no autologon/password changes.
+- Defaults 4 vCPU/12GB/120GB. Checks Hyper-V/switch/config and stopped host. Two-stage migration: consistent backups, prepare Linux without connectors, authenticate readiness, activate. Rollback before activation only; ambiguous activation never restarts old connectors. Original Desktop volumes and CRM preserved; unknown mounts/existing VM refused.
+- 13 new isolated Hyper-V/guest tests, 6 legacy and 11 Node tests passed. Self-contained build, embedded payload, PowerShell syntax and rendered UI checked. No real migration/reboot/network acceptance on Xeon yet. Local Docker daemon unavailable and Hyper-V not enabled, so there is no live virtualization proof.

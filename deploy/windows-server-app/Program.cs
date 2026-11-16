@@ -17,7 +17,7 @@ static class Program
         {
             using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("LimixServer.payload.zip") ?? Assembly.GetExecutingAssembly().GetManifestResourceNames().Where(x => x.EndsWith("payload.zip")).Select(x => Assembly.GetExecutingAssembly().GetManifestResourceStream(x)).First()!;
             using var zip = new ZipArchive(stream);
-            var required = new[] { "setup.ps1", "supervisor.ps1", "host.ps1", "host.mjs", "docker-backend.mjs", "compose.yaml" };
+            var required = new[] { "hyperv-setup.ps1", "hyperv-common.ps1", "hyperv-control.ps1", "linux-bootstrap.py", "linux-health.py", "image-tools.Dockerfile", "host.mjs", "docker-backend.mjs", "compose.yaml" };
             if (required.Any(x => !zip.Entries.Any(e => e.FullName == x && e.Length > 0))) Environment.Exit(1);
             Console.WriteLine("Embedded server payload: PASS");
             return;
@@ -53,7 +53,10 @@ static class Program
 
 sealed class SetupWindow : Form
 {
-    readonly TextBox password = new() { UseSystemPasswordChar = true, Width = 520 };
+    readonly NumericUpDown cpu = new() { Minimum=2,Maximum=16,Value=4,Width=65 };
+    readonly NumericUpDown memory = new() { Minimum=8,Maximum=32,Value=12,Width=65 };
+    readonly NumericUpDown disk = new() { Minimum=80,Maximum=512,Value=120,Width=75 };
+    readonly TextBox network = new() { Text="Default Switch",Width=170 };
     readonly TextBox output = new() { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, Dock = DockStyle.Fill, BackColor = Color.FromArgb(24, 24, 24), ForeColor = Color.White };
     readonly Button install = new() { Text = "Cài đặt và chuyển Cloud", AutoSize = true };
     readonly FlowLayoutPanel buttons = new() { Dock = DockStyle.Top, AutoSize = true };
@@ -61,20 +64,30 @@ sealed class SetupWindow : Form
     bool busy;
     public SetupWindow()
     {
-        Text = "Limix Cloud Server · Thiết lập máy chủ";
-        Size = new Size(900, 680); MinimumSize = new Size(800, 600); StartPosition = FormStartPosition.CenterScreen;
+        Text = "Limix Cloud Server 0.2 beta · Hyper-V";
+        Size = new Size(1000, 760); MinimumSize = new Size(930, 700); StartPosition = FormStartPosition.CenterScreen;
         Font = new Font("Segoe UI", 10); BackColor = Color.FromArgb(18,18,18); ForeColor = Color.White;
         var top = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, FlowDirection = FlowDirection.TopDown, Padding = new Padding(18), WrapContents = false };
-        top.Controls.Add(new Label { Text = "Limix Cloud Server", Font = new Font("Segoe UI", 20, FontStyle.Bold), AutoSize = true });
-        top.Controls.Add(new Label { MaximumSize = new Size(820,0), AutoSize = true, Text = "Chạy Cloud bằng Docker Engine trong WSL riêng, tự khởi động trước đăng nhập Windows. Cần Node.js, WSL 2, Docker Desktop và Cloud đã cấu hình. Máy Xeon cần luôn bật, có Internet và không Sleep." });
+        top.Controls.Add(new Label { Text = "Limix Cloud Server · Hyper-V", Font = new Font("Segoe UI", 20, FontStyle.Bold), AutoSize = true });
+        top.Controls.Add(new Label { MaximumSize = new Size(820,0), AutoSize = true, Text = "Chạy Cloud trong máy Linux Hyper-V riêng, tự khởi động cùng Windows, không cần bấm Sign in hoặc có mật khẩu Windows. Cần Windows Pro/Enterprise, Hyper-V và Cloud Docker Desktop đã cấu hình. Máy Xeon phải bật và không Sleep." });
         top.Controls.Add(new Label { Text = "Tài khoản Windows: " + WindowsIdentity.GetCurrent().Name, AutoSize = true });
-        top.Controls.Add(new Label { AutoSize = true, Text = "Mật khẩu Windows thật (không dùng mã PIN). Windows lưu cho tác vụ khởi động; không gửi lên Cloud." });
-        top.Controls.Add(password); top.Controls.Add(consent);
+        var resources = new FlowLayoutPanel { AutoSize=true,WrapContents=false };
+        resources.Controls.Add(new Label { Text="CPU",AutoSize=true });resources.Controls.Add(cpu);
+        resources.Controls.Add(new Label { Text="RAM (GB)",AutoSize=true });resources.Controls.Add(memory);
+        resources.Controls.Add(new Label { Text="Ổ đĩa (GB)",AutoSize=true });resources.Controls.Add(disk);
+        resources.Controls.Add(new Label { Text="Switch mạng",AutoSize=true });resources.Controls.Add(network);
+        top.Controls.Add(resources);
+        top.Controls.Add(new Label { Text="Chỉ chuyển Cloud; giữ CRM và dữ liệu gốc. Cần nhiều dung lượng trống cho bản sao lưu.",AutoSize=true });
+        top.Controls.Add(consent);
         buttons.Controls.Add(install);
         AddButton("Bắt đầu", async () => await ControlTask(true));
         AddButton("Dừng", async () => await ControlTask(false));
-        AddButton("Xem trạng thái", async () => await Run("$t=Get-ScheduledTask -TaskName 'Limix Cloud Server' -ErrorAction Stop; $i=Get-ScheduledTaskInfo -TaskName $t.TaskName; Write-Output ('Task: '+$t.State+'; Last result: '+$i.LastTaskResult); wsl.exe -d LimixCloud -u root --exec docker ps --format 'table {{.Names}}\t{{.Status}}'"));
-        AddButton("Mở nhật ký", () => { var file=Path.Combine(Program.Root,"host.log"); if(File.Exists(file)) Process.Start(new ProcessStartInfo("notepad.exe") { ArgumentList={file},UseShellExecute=true }); return Task.CompletedTask; });
+        AddButton("Xem trạng thái", async () => await Control("Status"));
+        AddButton("Nhật ký Linux", async () => await Control("Logs"));
+        AddButton("Kiểm tra Hyper-V", async () => await Control("Check"));
+        AddButton("Bật Hyper-V", async () => {
+            if(MessageBox.Show("Bật tính năng Hyper-V có thể cần khởi động lại Windows. Bộ cài không tự reboot. Tiếp tục?","Hyper-V",MessageBoxButtons.YesNo)==DialogResult.Yes) await Control("EnableHyperV");
+        });
         top.Controls.Add(buttons);
         Controls.Add(output); Controls.Add(top);
         install.Click += async (_,_) => await Install();
@@ -89,17 +102,16 @@ sealed class SetupWindow : Form
     void Log(string text) { if(IsDisposed)return; if(InvokeRequired) { BeginInvoke(()=>Log(text));return; } output.AppendText(text+Environment.NewLine); }
     async Task Install()
     {
-        if(password.Text.Length==0 || !consent.Checked) { MessageBox.Show("Nhập mật khẩu Windows và xác nhận đã dừng host cũ.");return; }
+        if(!consent.Checked) { MessageBox.Show("Xác nhận đã dừng Cloud host cũ. Giữ Docker Desktop đang mở để sao lưu.");return; }
         busy=true; buttons.Enabled=false;
         try
         {
             Program.Extract();
-            var secret=JsonSerializer.Serialize(new { Password=password.Text }); password.Clear();
-            var script=Path.Combine(Program.Root,"app","setup.ps1");
-            var code=await Run(null,script,secret);
-            secret="";
+            var settings=JsonSerializer.Serialize(new { Cpu=(int)cpu.Value,MemoryGb=(int)memory.Value,DiskGb=(int)disk.Value,Switch=network.Text.Trim() });
+            var script=Path.Combine(Program.Root,"app","hyperv-setup.ps1");
+            var code=await Run(null,script,settings);
             if(code!=0) Log("Cài đặt chưa hoàn tất. Xem lỗi phía trên; dữ liệu gốc được giữ. Không bật host cũ nếu Cloud mới đã chạy.");
-            else Log("Đã cài. Hãy kiểm tra Cloud, sau đó thử khởi động lại Xeon mà chưa đăng nhập Windows để xác minh.");
+            else Log("Đã chuyển sang Hyper-V. Kiểm tra Cloud trên máy khác, rồi thử reboot Xeon khi chưa đăng nhập Windows.");
         }
         catch(Exception e) { Log(e.Message); }
         finally { busy=false;buttons.Enabled=true; }
@@ -107,19 +119,25 @@ sealed class SetupWindow : Form
     async Task ControlTask(bool start)
     {
         if(busy)return;
-        var stop=Path.Combine(Program.Root,"stop");
-        if(start) { if(File.Exists(stop))File.Delete(stop); }
-        else { Directory.CreateDirectory(Program.Root);File.WriteAllText(stop,""); }
-        await Run(start ? "Enable-ScheduledTask -TaskName 'Limix Cloud Server' | Out-Null; Start-ScheduledTask -TaskName 'Limix Cloud Server'" : "Disable-ScheduledTask -TaskName 'Limix Cloud Server' | Out-Null; Stop-ScheduledTask -TaskName 'Limix Cloud Server'");
-        if(start) Log("Đã yêu cầu chạy host. Xem trạng thái Cloud để xác nhận.");
-        else Log("Đã dừng host và tắt tự khởi động. Container đang chạy chưa bị dừng.");
+        if(!start && MessageBox.Show("Tắt máy Linux sẽ ngắt Cloud và bot, đồng thời tắt tự khởi động. Tiếp tục?","Dừng Cloud",MessageBoxButtons.YesNo)!=DialogResult.Yes)return;
+        await Control(start ? "Start" : "Stop");
     }
-    async Task<int> Run(string? command, string? file=null, string? input=null)
+    async Task Control(string action)
+    {
+        if(busy)return;
+        busy=true;buttons.Enabled=false;
+        try {
+            Program.Extract();
+            var code=await Run(null,Path.Combine(Program.Root,"app","hyperv-control.ps1"),null,action);
+            if(code!=0)Log("Lệnh chưa thành công. Xem thông báo phía trên; chưa xác nhận Cloud đã chạy.");
+        } finally { busy=false;buttons.Enabled=true; }
+    }
+    async Task<int> Run(string? command, string? file=null, string? input=null, string? argument=null)
     {
         var info=new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System),"WindowsPowerShell","v1.0","powershell.exe")) { UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true,RedirectStandardInput=true,StandardOutputEncoding=Encoding.UTF8,StandardErrorEncoding=Encoding.UTF8 };
         info.ArgumentList.Add("-NoProfile");info.ArgumentList.Add("-ExecutionPolicy");info.ArgumentList.Add("Bypass");
         info.Environment["PSModulePath"] = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System),"WindowsPowerShell","v1.0","Modules");
-        if(file!=null) { info.ArgumentList.Add("-File");info.ArgumentList.Add(file); }
+        if(file!=null) { info.ArgumentList.Add("-File");info.ArgumentList.Add(file); if(argument!=null) { info.ArgumentList.Add("-Action");info.ArgumentList.Add(argument); } }
         else { info.ArgumentList.Add("-Command");info.ArgumentList.Add("[Console]::OutputEncoding=[Text.Encoding]::UTF8; $ErrorActionPreference='Stop'; "+command); }
         using var process=new Process { StartInfo=info };
         process.OutputDataReceived+=(_,e)=>{if(e.Data!=null)Log(e.Data);};

@@ -1,28 +1,37 @@
-# Limix Cloud Server for Windows / Máy chủ Limix Cloud trên Windows
+# Limix Cloud Server 0.2 beta — Hyper-V
 
 ## Tiếng Việt
 
-Bộ cài beta dành cho máy Windows đã chạy Limix Cloud qua Docker Desktop. Bộ cài chuyển các container Cloud sang Docker Engine trong bản WSL 2 riêng tên `LimixCloud`, đăng ký tác vụ **AtStartup** bằng tài khoản Windows hiện tại với mật khẩu được Windows lưu. Tác vụ không yêu cầu phiên đăng nhập tương tác. Cần kiểm chứng trên máy đích bằng khởi động lại thực tế; build và kiểm thử giả lập chưa chứng minh WSL chạy được trước đăng nhập trên mọi máy.
+Tạo máy Linux Hyper-V riêng cho Cloud trên Windows Pro/Enterprise, tự bật cùng Windows không cần Sign in hoặc mật khẩu. HP Z840 cần BIOS After Power Loss = On và VTx enabled; Windows không được Sleep. Không chỉnh tự đăng nhập/mật khẩu Windows. CRM và volume Docker Desktop gốc được giữ.
 
-### Cài trên Xeon
+### Cài đặt
 
-1. Giữ Docker Desktop mở, dừng cửa sổ Cloud host cũ bằng Ctrl+C. Cần dùng cùng tài khoản Windows đang giữ cấu hình `LimixBot-Managed-Host/host.xml`.
-2. Chạy `LimixServer-Setup.exe`, chấp nhận UAC. Node.js 24+, WSL 2, ảo hóa và image `limix-managed-home:beta` phải có sẵn. Không tự cài driver Windows hoặc tự reboot.
-3. Nhập mật khẩu **Windows thật**, không phải PIN hoặc mật khẩu Limix. Mật khẩu chỉ đi vào stdin của tiến trình cài tại máy và Windows Task Scheduler; không có trong argv, file cấu hình ứng dụng hoặc yêu cầu mạng.
-4. Xác nhận đã dừng host cũ, bấm **Cài đặt và chuyển Cloud**. Cần Internet để tải Ubuntu và gói Docker, cùng dung lượng trống cho bản WSL, image và bản sao volume. Kiểm tra dung lượng trên ổ người dùng trước khi cài; bản sao image có thể nhiều GB.
-5. Sau khi hoàn tất, thử Cloud. Khởi động lại Xeon, **chưa đăng nhập Windows**, kiểm tra Cloud từ máy khác. Chỉ đánh dấu đạt chạy 24/7 sau phép thử này.
+1. Dừng cửa sổ host cũ bằng Ctrl+C, giữ Docker Desktop mở. Dùng tài khoản Windows đang có cấu hình LimixBot-Managed-Host/host.xml. Cần quyền UAC quản trị.
+2. Mở LimixServer-Setup.exe bản 0.2, bấm Kiểm tra Hyper-V. Nếu chưa bật tính năng Windows thì bấm Bật Hyper-V, tự reboot khi Windows yêu cầu rồi mở lại. Chỉ bật BIOS chưa đủ; bộ cài không tự reboot.
+3. Mặc định 4 vCPU, 12 GB RAM cố định, ổ hệ thống 120 GB mở rộng động. Đây là giới hạn tổng của môi trường Cloud. Switch Default Switch phải tồn tại và có Internet; không tự đổi card mạng đang dùng từ xa.
+4. Xác nhận đã dừng host cũ, bấm Cài đặt và chuyển Cloud. Tải Ubuntu/Node chính thức, kiểm tra SHA-256, sao lưu image/volume, tạo ổ VM, nhập dữ liệu rồi kiểm tra trước khi kích hoạt. Chuẩn bị có thể 10–30 phút. Cần đủ chỗ cho image, bản sao, ổ chuyển dữ liệu và ổ hệ thống; tối thiểu 25 GB chỉ là kiểm tra ban đầu.
+5. Xem trạng thái và thử Cloud từ máy khác. Reboot Xeon, chưa Sign in, kiểm tra lại. Thử ngắt mạng rồi nối lại. Chỉ xác nhận chạy ổn sau kiểm thử thật.
 
-Ứng dụng giữ token/capacity trong cấu hình DPAPI cũ; không tạo token mới. Không thay đổi CRM hoặc Docker Desktop. Chỉ dừng container gắn nhãn Cloud và hai container ingress được chỉ định. Volume Docker Desktop và bản sao lưu được giữ lại. Không bật đồng thời host cũ và mới vì có thể chạy hai bộ bot/connector.
+### Phục hồi và giới hạn
 
-**Bắt đầu** bật lại tự khởi động và chạy host; **Dừng** dừng host, tắt tự khởi động nhưng không dừng các container Cloud đang chạy. Nhật ký: `%LOCALAPPDATA%/LimixBot-Server/host.log`, xoay ở khoảng 5 MB. Một lần đối soát có thể kéo dài hơn 30 giây; khoảng nghỉ giữa hai lượt là 30 giây. Tác vụ tự chạy lại khi thoát lỗi, không giới hạn thời gian chạy và không tự chỉnh Sleep của Windows.
+- Token/capacity giữ từ cấu hình DPAPI cũ. Không cần Node/WSL chạy trên Windows sau chuyển đổi; runtime Node và Docker nằm trong Linux.
+- Chỉ dừng container Cloud được nhận diện và ingress chỉ định. Volume hoặc bind mount chưa hỗ trợ sẽ làm bộ cài dừng để kiểm tra. Không xóa/ghi đè VM có sẵn.
+- Chuẩn bị Linux chưa bật connector. Nếu lỗi trước kích hoạt thì thử dừng VM mới và mở lại container cũ; cần chạy lại host cũ để tiếp tục quản lý bản gốc. Sau khi gửi kích hoạt, lỗi mạng không tự bật lại bản cũ vì có thể tạo hai bộ bot. Xem trạng thái/nhật ký; không chạy hai host.
+- Hyper-V bật VM cùng Windows; systemd chạy Docker/host và thử lại sau lỗi. Container giữ chính sách restart hiện có. Kernel panic được cấu hình reboot sau 10 giây; không bảo đảm sửa mọi lỗi phần cứng/ổ đĩa.
+- Bắt đầu chỉ bật VM đã cài; Dừng tắt VM và autostart, không xóa dữ liệu. Chưa cài thì báo lỗi rõ ràng. Nhật ký Linux lọc token.
+- Seed và cấu hình chứa bí mật có ACL riêng. Guest health API cổng 9876 dùng khóa ngẫu nhiên, không trả dữ liệu tài khoản; chỉ dùng mạng nội bộ, không công khai cổng này. Linux không bật đăng nhập SSH bằng mật khẩu hoặc public SSH.
+- Bản WSL 0.1 đã có server.json cần chuyển riêng, không tự lấy nhầm dữ liệu Desktop cũ. Không có gỡ/xóa VM tự động, cập nhật image hay đồng bộ ngược thay đổi về Desktop.
+- Chưa kiểm chứng migration, Secure Boot, DHCP trước Sign in, reboot và mất mạng trên Xeon thật. Build, mock tests, payload và ảnh giao diện không thay thế kiểm thử máy đích. Windows có PIN mở khóa đĩa trước boot sẽ còn phụ thuộc bước đó.
 
-Nếu lỗi trước khi chuyển xong volume, bộ cài thử chạy lại các container cũ đã dừng. Nếu volume WSL đích đã có dữ liệu, bộ cài dừng, không ghi đè. Nếu đã bắt đầu tác vụ mới thì không tự khởi động bộ cũ khi có lỗi sau đó; kiểm tra trước khi quay lại để tránh chạy trùng. Không tự xóa WSL hoặc volume để thử lại.
+## English
 
-Quay lại thủ công: Dừng tác vụ mới, xác nhận các container Cloud trong `LimixCloud` đã dừng, rồi khởi động các container gốc theo danh sách `OriginalContainers` trong `server.json` và chạy host Docker Desktop cũ. Những thay đổi phát sinh trên WSL sau chuyển đổi không tự sao chép ngược. Đổi mật khẩu Windows sẽ cần đăng ký lại mật khẩu cho tác vụ; phiên bản beta chưa có nút cập nhật mật khẩu tác vụ. Không lưu mật khẩu Windows trong script riêng.
+The 0.2 beta uses a dedicated Hyper-V Ubuntu VM instead of password-based WSL startup. It automatically starts with Windows and runs Docker/host via Linux systemd without interactive Windows sign-in. No Windows passwords or autologon changes. Requires Windows Pro/Enterprise, Hyper-V, an Internet-capable existing switch, an already-configured Docker Desktop Cloud host, administrator access and ample disk space.
 
-Chưa có quản lý cài mới không có host.xml, cập nhật tự động image, gỡ cài tự động hoặc UI điều chỉnh cấu hình WSL. Chữ ký mã Windows chưa được cấp. Cần bảo đảm nguồn tải đúng; file beta chưa ký có thể bị Windows cảnh báo.
+Default resources: 4 vCPUs, 12 GB fixed RAM and 120 GB dynamic OS disk. The installer verifies pinned Ubuntu/Node downloads, saves consistent Cloud image/volume backups and prepares Linux without connectors. Only authenticated guest readiness permits activation. Pre-activation failure attempts rollback; ambiguous activation never restarts old connectors. Original volumes/CRM are preserved. Existing VM/unknown mounts are refused. Seed files are ACL-restricted; guest status/logs require a private key. Do not publish port 9876 or run both hosts.
 
-### Kiểm chứng
+Actual Hyper-V boot, Secure Boot, DHCP before sign-in, migration, network recovery and power restoration on Xeon are NOT verified by automated tests. This unsigned beta needs target acceptance. Legacy WSL source is retained for regression testing but not shipped in the current payload.
+
+## Validation / Kiểm chứng
 
 ```powershell
 python -m unittest discover -s deploy/windows-server-app -p 'test_*.py' -v
@@ -31,14 +40,6 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File deploy/windows-server-ap
 dotnet deploy/windows-server-app/bin/Release/net8.0-windows/win-x64/LimixServer-Setup.dll --verify
 ```
 
-6 phép thử cài đặt giả lập xác minh thứ tự sao lưu/nhập volume, mật khẩu sai không dừng container, lỗi xuất/nhập phục hồi container cũ và từ chối ghi đè dữ liệu đích. 11 phép thử Node xác minh đối soát/cách ly và chuyển Docker sang WSL mà không đưa secret vào argv. Kiểm thử này không chạy WSL, không tạo tác vụ thật và không thay đổi Docker người dùng.
+13 new Hyper-V/guest tests, 6 legacy regression tests and 11 host/backend tests. Tests do not modify real VMs/tasks/Docker.
 
-## English
-
-This beta installer migrates an already-configured Windows Docker Desktop Cloud host to a dedicated `LimixCloud` WSL 2 distribution. It registers a noninteractive startup task under the current Windows account using a locally supplied Windows password. Existing DPAPI host configuration is retained. The host supervisor retries reconciliation, holds the WSL session open and rotates logs. Windows Task Scheduler restarts the task if it exits with an error.
-
-The installer needs administrator access, WSL 2, Node 24+, an existing Linux Docker Desktop engine/image and sufficient free space. It downloads an official Ubuntu 24.04 rootfs over HTTPS and verifies its pinned SHA-256 before importing it; a changed upstream archive is rejected. Docker Engine packages come from Ubuntu repositories. It saves the configured Cloud image, stops only labeled Cloud/explicit ingress containers, exports and imports their Cloud volumes, then starts the new task. Original volumes and backups are retained. Existing destination data is never overwritten. A failed migration attempts to restart original containers before the new host starts; post-start failures require deliberate operator recovery.
-
-There is no general fresh-host setup or automatic image upgrade in this version. Do not run the old and new host simultaneously. A real reboot-before-logon acceptance test on the target Xeon is required. No such live acceptance is implied by mock tests, payload inspection or successful compilation.
-
-References: [Microsoft WSL import](https://learn.microsoft.com/en-us/windows/wsl/use-custom-distro), [Ubuntu rootfs and checksums](https://cloud-images.ubuntu.com/wsl/releases/noble/current/), [Docker Desktop logon startup](https://docs.docker.com/desktop/settings-and-maintenance/settings/).
+Sources: [VM startup](https://learn.microsoft.com/en-us/powershell/module/hyper-v/set-vm), [Linux Secure Boot](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/learn-more/Generation-2-virtual-machine-security-settings-for-Hyper-V), [Ubuntu image](https://cloud-images.ubuntu.com/noble/20261017/), [Node release](https://nodejs.org/dist/v24.14.0/).
