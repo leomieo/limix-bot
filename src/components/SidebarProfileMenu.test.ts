@@ -376,6 +376,16 @@ describe("profileMenuItems", () => {
     ...patch,
   });
 
+  it("opens Cloud directly when the window provides Cloud settings", () => {
+    const onCloud = vi.fn();
+    const items = build({ onCloud });
+    const cloud = items.find(item => item.key === "limix-cloud")!;
+    expect(cloud.label).toBe("Limix Cloud");
+    cloud.onSelect();
+    expect(onCloud).toHaveBeenCalledOnce();
+    expect(build().some(item => item.key === "limix-cloud")).toBe(false);
+  });
+
   it("groups usage and the phone, then help and settings, then the account under a divider", () => {
     const items = build();
     expect(items.map((item) => item.key)).toEqual(["usage", "phone-app", "support", "settings", "account"]);

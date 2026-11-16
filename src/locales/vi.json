@@ -1232,7 +1232,7 @@
   "settings.section.general": "Chung",
   "settings.section.desktopWorkspaces": "Máy chủ",
   "settings.section.organization": "Tổ chức",
-  "settings.section.cloudAccount": "Limix Bot Cloud",
+  "settings.section.cloudAccount": "Limix Cloud",
   "cloudAccount.optional": "Limix Bot Cloud là tùy chọn không bắt buộc. Bạn vẫn có thể sử dụng cục bộ miễn phí, truy cập các cuộc trò chuyện và tài khoản mô hình riêng mà không cần đăng nhập.",
   "cloudAccount.separate": "Tài khoản Cloud cá nhân của bạn tách biệt với đăng nhập của tổ chức.",
   "cloudAccount.desktopOnly": "Sử dụng Limix Bot Cloud trong ứng dụng máy tính cục bộ trên máy tính này.",

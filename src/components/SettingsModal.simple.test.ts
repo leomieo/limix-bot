@@ -130,15 +130,15 @@ const open = (section: AppSettingsSection) => { fixture.section = section; retur
 describe("Settings in Simple mode", () => {
   it("draws five pages on the desktop, General, AI, Computer, Usage & billing and Updates, and none of the Advanced-only ones", () => {
     const html = render();
-    expect(pages(html)).toEqual(["general", "ai", "skills", "computer", "billing", "backups", "updates"]);
-    expect(SIMPLE_PAGES.map((page) => page.id)).toEqual(["general", "botAccess", "ai", "skills", "computer", "billing", "backups", "updates"]);
+    expect(pages(html)).toEqual(["general", "ai", "skills", "computer", "billing", "backups", "cloudAccount", "updates"]);
+    expect(SIMPLE_PAGES.map((page) => page.id)).toEqual(["general", "botAccess", "ai", "skills", "computer", "billing", "backups", "cloudAccount", "updates"]);
     expect(html).toMatch(/General<\/span>[\s\S]*AI<\/span>[\s\S]*Computer<\/span>[\s\S]*Usage &amp; billing<\/span>[\s\S]*Updates<\/span>/);
     expect(html).not.toContain("data-settings-group=");
     expect(html).not.toContain("data-settings-section=");
     expect(html).not.toMatch(/class="(?:[^"]*\s)?uppercase(?:\s[^"]*)?"/);
     for (const hidden of ["experimental", "workspaces"]) expect(html).not.toContain(`value="${hidden}"`);
     const picker = html.match(/<select aria-label="Settings"[\s\S]*?<\/select>/)![0];
-    expect([...picker.matchAll(/<option value="([^"]+)"/g)].map((match) => match[1])).toEqual(["general", "ai", "skills", "computer", "billing", "backups", "updates"]);
+    expect([...picker.matchAll(/<option value="([^"]+)"/g)].map((match) => match[1])).toEqual(["general", "ai", "skills", "computer", "billing", "backups", "cloudAccount", "updates"]);
     expect(html).toContain('data-settings-look="simple"');
   });
 
@@ -283,14 +283,16 @@ describe("Settings in Simple mode", () => {
     expect(html).toContain('aria-label="Enable the built-in browser"');
   });
 
-  it("leads Usage & billing with one usage block, folds the limits, then shows the plan", () => {
+  it("opens Cloud in its own page and keeps it out of Usage and billing", () => {
     fixture.section = "cloudAccount";
-    const html = render();
+    let html = render();
+    expect(currentPage(html)).toBe("cloudAccount");
+    expect(blocks(html)).toEqual(["cloudAccount"]);
+    expect(html).toContain("MARKER:cloudAccount;");
+    fixture.section = "usage";
+    html = render();
     expect(currentPage(html)).toBe("billing");
-    expect(blocks(html)).toEqual(["usage", "cloudAccount"]);
-    expect(html.indexOf("See all limits")).toBeLessThan(html.indexOf("MARKER:cloudAccount;"));
-    expect(placement(html, "MARKER:usage;")).toBe("folded");
-    expect(groupLabels(html)).toContain("Plan");
+    expect(html).not.toContain("MARKER:cloudAccount;");
   });
 
   it("shows a hosted workspace's admins People in Account and Activity as its own group", () => {
@@ -334,7 +336,7 @@ describe("Settings in Simple mode", () => {
     ["computer", "computer"],
     ["logins", "computer"],
     ["usage", "billing"],
-    ["cloudAccount", "billing"],
+    ["cloudAccount", "cloudAccount"],
     ["updates", "updates"],
   ])("lands a deep link to %s on %s", (section, page) => {
     fixture.section = section;
@@ -350,7 +352,7 @@ describe("Settings in Simple mode", () => {
   ])("opens a hidden page (%s) for as long as it is the open one", (section, content) => {
     fixture.section = section;
     const html = render();
-    expect(pages(html)).toEqual(["general", "ai", "skills", "computer", "billing", "backups", "updates", section]);
+    expect(pages(html)).toEqual(["general", "ai", "skills", "computer", "billing", "backups", "cloudAccount", "updates", section]);
     expect(currentPage(html)).toBe(section);
     if (content === "skillAuthoring") expect(html).toContain("Bots may write their own skills");
     else expect(markers(html)).toContain(content);

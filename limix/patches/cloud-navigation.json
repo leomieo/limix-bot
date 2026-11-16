@@ -1,0 +1,62 @@
+{
+  "src/components/SettingsModal.tsx": [
+    {
+      "before": "sections: [\"usage\", \"cloudAccount\"], keywords:",
+      "after": "sections: [\"usage\"], keywords:"
+    },
+    {
+      "before": "  { id: \"updates\", labelKey: \"settings.simple.page.updates\",",
+      "after": "  { id: \"cloudAccount\", labelKey: \"settings.section.cloudAccount\", icon: Cloud, sections: [\"cloudAccount\"], keywords: [\"cloud\", \"limix cloud\", \"đám mây\", \"máy chủ\", \"server\"] },\n  { id: \"updates\", labelKey: \"settings.simple.page.updates\","
+    }
+  ],
+  "src/components/SidebarProfileMenu.tsx": [
+    {
+      "before": "import { LIMIX_PHONE_APPS_ENABLED }",
+      "after": "import { LIMIX_CLOUD_ENABLED, LIMIX_PHONE_APPS_ENABLED }"
+    },
+    {
+      "before": "  onUsage,\n  onSettings,",
+      "after": "  onUsage,\n  onCloud,\n  onSettings,"
+    },
+    {
+      "before": "  onUsage: () => void;\n  onSettings:",
+      "after": "  onUsage: () => void;\n  onCloud?: () => void;\n  onSettings:"
+    },
+    {
+      "before": "  const settings: SidebarMenuItem =",
+      "after": "  const cloudItem: SidebarMenuItem | null = onCloud ? { key: \"limix-cloud\", label: t(\"settings.section.cloudAccount\"), icon: <Cloud size={18} />, onSelect: onCloud } : null;\n  const settings: SidebarMenuItem ="
+    },
+    {
+      "before": "...present(connectItem), support, settings,",
+      "after": "...present(connectItem), ...present(cloudItem), support, settings,"
+    },
+    {
+      "before": "[...present(usageItem), ...present(connectItem), settings],",
+      "after": "[...present(usageItem), ...present(connectItem), ...present(cloudItem), settings],"
+    },
+    {
+      "before": "    onUsage: () => dispatch({ type: \"toggleAppSettings\", open: true, section: \"usage\" }),",
+      "after": "    onUsage: () => dispatch({ type: \"toggleAppSettings\", open: true, section: \"usage\" }),\n    ...(LIMIX_CLOUD_ENABLED && !window.ogb?.remoteClient?.active && (window.ogb?.cloudAccount || (window.ogb?.cloudPlan && state.config?.cloudHome)) ? { onCloud: openCloudAccount } : {}),"
+    },
+    {
+      "before": "  const cloudPhone = useCloudPhoneDestination(connectPhone?.target === \"computer\");\n  const destinations = phoneDestinations(connectPhone, cloudPhone.cloud);",
+      "after": "  const destinations = phoneDestinations(connectPhone, null);"
+    },
+    {
+      "before": "selectPhoneDestination(destination, { bridge: cloudPhone.bridge, dispatch })",
+      "after": "selectPhoneDestination(destination, { dispatch })"
+    }
+  ],
+  "src/locales/en.json": [
+    {
+      "before": "\"settings.section.cloudAccount\": \"Limix Bot Cloud\"",
+      "after": "\"settings.section.cloudAccount\": \"Limix Cloud\""
+    }
+  ],
+  "src/locales/vi.json": [
+    {
+      "before": "\"settings.section.cloudAccount\": \"Limix Bot Cloud\"",
+      "after": "\"settings.section.cloudAccount\": \"Limix Cloud\""
+    }
+  ]
+}

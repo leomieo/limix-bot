@@ -1233,7 +1233,7 @@
   "settings.section.general": "General",
   "settings.section.desktopWorkspaces": "Servers",
   "settings.section.organization": "Organization",
-  "settings.section.cloudAccount": "Limix Bot Cloud",
+  "settings.section.cloudAccount": "Limix Cloud",
   "cloudAccount.optional": "Limix Bot Cloud is optional. Free local use, your chats and your own model accounts remain available without signing in.",
   "cloudAccount.separate": "Your personal Cloud account is separate from organization sign-in.",
   "cloudAccount.desktopOnly": "Use Limix Bot Cloud in the local desktop app on this computer.",

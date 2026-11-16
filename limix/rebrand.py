@@ -2244,3 +2244,11 @@ for rel, edits in json.loads((ROOT / "limix/patches/admin-center.json").read_tex
                 s = must(s, patch["before"], patch["after"])
         return s
     edit(rel, admin_center_patch)
+
+for rel, edits in json.loads((ROOT / "limix/patches/cloud-navigation.json").read_text(encoding="utf-8")).items():
+    def cloud_navigation_patch(s, edits=edits):
+        for patch in edits:
+            if patch["after"] not in s:
+                s = must(s, patch["before"], patch["after"])
+        return s
+    edit(rel, cloud_navigation_patch)

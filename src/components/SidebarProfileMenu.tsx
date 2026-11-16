@@ -1,5 +1,5 @@
 import { LimixSignOutDialog } from "./LimixSignOutDialog";
-import { LIMIX_PHONE_APPS_ENABLED } from "../../shared/limix-features";
+import { LIMIX_CLOUD_ENABLED, LIMIX_PHONE_APPS_ENABLED } from "../../shared/limix-features";
 import { useEffect, useRef, useState } from "react";
 import {
   Archive,
@@ -465,6 +465,7 @@ export function profileMenuItems({
   accounts = [],
   simple,
   onUsage,
+  onCloud,
   onSettings,
   onShortcuts,
   onAbout,
@@ -483,6 +484,7 @@ export function profileMenuItems({
   accounts?: SidebarMenuItem[];
   simple?: { tools: SidebarMenuItem[]; places: SidebarMenuItem[] };
   onUsage: () => void;
+  onCloud?: () => void;
   onSettings: () => void;
   onShortcuts: () => void;
   onAbout: () => void;
@@ -515,11 +517,12 @@ export function profileMenuItems({
     key: "connect", label: t("sidebar.menu.connect"), icon: <Link2 size={18} />,
     onSelect: () => { void window.ogb?.limixGateway?.open().catch((error: unknown) => window.alert(String((error as Error)?.message ?? error).replace(/^Error invoking remote method '[^']*': (Error: )?/, ""))); },
   } : null;
+  const cloudItem: SidebarMenuItem | null = onCloud ? { key: "limix-cloud", label: t("settings.section.cloudAccount"), icon: <Cloud size={18} />, onSelect: onCloud } : null;
   const settings: SidebarMenuItem = { key: "settings", label: t("sidebar.menu.settings"), icon: <SettingsIcon size={18} />, onSelect: onSettings };
   const accountItem: SidebarMenuItem | null = account ? { key: "account", label: account, icon: <CircleUserRound size={18} />, onSelect: onAccount } : null;
   const present = (...items: Array<SidebarMenuItem | null | false>) => items.filter((item): item is SidebarMenuItem => Boolean(item));
   if (!simple) {
-    const rest = [...present(usageItem), ...phone, ...present(connectItem), support, settings, ...present(update), ...(accountItem ? [{ ...accountItem, separatorBefore: true }] : []), ...accounts.map((item, index) => (index === 0 ? { ...item, separatorBefore: true } : item))];
+    const rest = [...present(usageItem), ...phone, ...present(connectItem), ...present(cloudItem), support, settings, ...present(update), ...(accountItem ? [{ ...accountItem, separatorBefore: true }] : []), ...accounts.map((item, index) => (index === 0 ? { ...item, separatorBefore: true } : item))];
     return [...move, ...rest.map((item, index) => (move.length && index === 0 ? { ...item, separatorBefore: true } : item))];
   }
   const raised: SidebarMenuItem | null = update && updateTop ? {
@@ -534,7 +537,7 @@ export function profileMenuItems({
     present(raised),
     // Places you go first, then the app's own settings, then getting the phone app and help.
     simple.tools,
-    [...present(usageItem), ...present(connectItem), settings],
+    [...present(usageItem), ...present(connectItem), ...present(cloudItem), settings],
     [...phone, { ...support, submenu: raised ? help : [...help, ...present(update)] }],
     [...simple.places, ...present(accountItem)],
     accounts,
@@ -569,8 +572,7 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
   const engineUsage = usePlanUsageSummary(simple && menuOpen && cloudUsage === null && window.ogb?.remoteClient?.active !== true);
   const phone = useSidebarPhoneStatus();
   const connectPhone = useConnectPhoneEntry(state.config?.cloudHome === true);
-  const cloudPhone = useCloudPhoneDestination(connectPhone?.target === "computer");
-  const destinations = phoneDestinations(connectPhone, cloudPhone.cloud);
+  const destinations = phoneDestinations(connectPhone, null);
   const desktopUpdate = useUpdateItem();
   const serverUpdate = useServerUpdateItem(!window.ogb?.updater);
   const update = desktopUpdate ?? serverUpdate;
@@ -598,7 +600,7 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
 
   const profile = profileForSession(state.config?.profile, session);
   const name = profileLabel(profile);
-  const connectTo = (destination: PhoneDestination) => LIMIX_PHONE_APPS_ENABLED ? selectPhoneDestination(destination, { bridge: cloudPhone.bridge, dispatch }) : setLimixPhoneOpen(true);
+  const connectTo = (destination: PhoneDestination) => LIMIX_PHONE_APPS_ENABLED ? selectPhoneDestination(destination, { dispatch }) : setLimixPhoneOpen(true);
   const remote = window.ogb?.remoteClient?.active === true;
   const besideRail = railShown(usePlaces());
   const filesReady = useCloudFilesReady();
@@ -636,6 +638,7 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
       places: placeMenuItems(account.place, { owner: account.owner, name: state.config?.team?.name, besideRail, onCloudSettings: openCloudAccount }),
     } } : {}),
     onUsage: () => dispatch({ type: "toggleAppSettings", open: true, section: "usage" }),
+    ...(LIMIX_CLOUD_ENABLED && !window.ogb?.remoteClient?.active && (window.ogb?.cloudAccount || (window.ogb?.cloudPlan && state.config?.cloudHome)) ? { onCloud: openCloudAccount } : {}),
     onSettings: () => dispatch({ type: "toggleAppSettings" }),
     onShortcuts: () => {
       triggerRef.current?.closest("button")?.focus();
