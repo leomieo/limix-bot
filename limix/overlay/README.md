@@ -54,7 +54,7 @@ Use your own authorized accounts and follow the terms of AI providers and messag
 
 [Releases](https://github.com/leomieo/limix-bot/releases) · [Skill library](https://github.com/leomieo/limix-skill-hub) · [Contributing](CONTRIBUTING.md) · [Code of Conduct](CODE_OF_CONDUCT.md) · [Security](SECURITY.md) · [License](LICENSE) · [Notices](NOTICE)
 
-Developed by **Leox ৹ Limix AI**.
+Developed by **Limix AI**.
 
 ---
 
@@ -70,8 +70,8 @@ Developed by **Leox ৹ Limix AI**.
 </p>
 
 <p align="center">
-  <b>Điều hành cả một đội bot AI ngay trên máy tính của bạn.</b><br>
-  Mỗi bot có máy tính riêng, tự học kỹ năng mới và trả lời khách trên Telegram, Zalo, Discord.
+  <b>Quản lý đội bot AI ngay trên máy tính của bạn.</b><br>
+  Giao vai trò cho từng bot, cho bot dùng kỹ năng và kết nối với Telegram, Zalo hoặc Discord.
 </p>
 
 <p align="center">
@@ -97,7 +97,7 @@ Developed by **Leox ৹ Limix AI**.
   <a href="https://github.com/leomieo/limix-skill-hub">Thư viện kỹ năng</a>
 </p>
 
-> **Bản thử nghiệm (beta).** Limix Bot đang phát triển nhanh và cập nhật gần như mỗi ngày. Hãy sao lưu dữ liệu quan trọng và tự chịu trách nhiệm khi dùng.
+> **Bản thử nghiệm (beta).** Limix Bot đang trong giai đoạn phát triển. Hãy sao lưu dữ liệu quan trọng và kiểm tra quyền trước khi bật tính năng tự động hóa.
 
 ---
 
@@ -107,17 +107,17 @@ Developed by **Leox ৹ Limix AI**.
 
 **Dùng AI bạn đã có.** Kết nối tài khoản Claude, ChatGPT/Codex, Google Gemini (Antigravity), Grok và nhiều AI khác, hoặc dùng khóa API. Nếu máy đã cài Antigravity CLI (`agy`), Limix Bot có thể dùng công cụ đó.
 
-**Trả lời khách trên các ứng dụng chat.** Nối bot với Telegram, Zalo và Discord từ một màn hình. Bot nhận tin, xử lý, gửi lại chữ và ảnh vào đúng cuộc trò chuyện hay nhóm.
+**Trả lời khách trên các ứng dụng chat.** Nối bot với Telegram, Zalo và Discord từ một màn hình. Bot nhận và trả lời tin nhắn trong cuộc trò chuyện đã kết nối. Các loại tệp hỗ trợ tùy theo nền tảng.
 
-**Tự học kỹ năng.** Bot rút ra quy trình hay từ các lần làm việc và lưu thành kỹ năng để dùng lại. Thư viện kỹ năng Limix có sẵn các kỹ năng đã được chọn lọc, quét bảo mật, Việt hóa và chấm điểm. Bấm là tải về.
+**Tự học kỹ năng.** Lưu các quy trình hữu ích thành kỹ năng để dùng lại. Bạn có thể tải kỹ năng từ thư viện Limix, xem kết quả kiểm tra và duyệt trước khi bật.
 
-**Máy tính riêng cho bot.** Mỗi bot có thể có một máy tính để duyệt web, mở ứng dụng và làm việc thật. Có máy ảo riêng trên máy bạn (Docker), máy tính đám mây (Boat, Instabox) hoặc VPS của bạn.
+**Máy tính riêng cho bot.** Mỗi bot có thể có một máy tính để duyệt web, mở ứng dụng và làm việc thật. Có thể dùng môi trường Docker trên máy này, dịch vụ máy tính đám mây được hỗ trợ hoặc máy chủ riêng, tùy cấu hình.
 
-**Cài công cụ một chạm.** Limix Bot tự kiểm tra và cài những gì kỹ năng cần: Docker, Node.js, ffmpeg, Java, JADX, Ghidra, Agent-Reach… Tự cài công cụ hiện hỗ trợ Windows; trên Mac/Linux dùng công cụ đã cài riêng.
+**Công cụ cho kỹ năng.** Kiểm tra công cụ mà các kỹ năng đã cài cần dùng. Trên Windows, Limix Bot có thể cài các công cụ còn thiếu nếu được hỗ trợ. Trên macOS và Linux, bạn có thể cài chúng riêng.
 
-**Điều khiển từ điện thoại hoặc laptop.** Quét mã QR là mở Limix Bot trong trình duyệt điện thoại, cùng Wi-Fi hay qua Internet. Mỗi mã chỉ dùng một lần. Có nút chép link để mở trên laptop.
+**Truy cập từ xa.** Ghép nối để mở Limix Bot bằng trình duyệt trên điện thoại hoặc máy tính khác. Khả năng kết nối phụ thuộc vào mạng và cấu hình truy cập từ xa.
 
-**Chạy nền, tự động hóa.** Hẹn lịch cho bot làm việc định kỳ, theo dõi mức dùng của từng AI, nhận thông báo từ khay hệ thống. Ứng dụng tự cập nhật bản mới.
+**Chạy nền, tự động hóa.** Hẹn lịch cho bot làm việc định kỳ, theo dõi mức dùng của từng AI, nhận thông báo từ khay hệ thống. Bạn có thể cập nhật ứng dụng ngay trong Limix Bot.
 
 ---
 
@@ -134,7 +134,7 @@ Limix Bot đã có bộ cài cho Windows, macOS và Linux. Chọn đúng hệ đ
 
 1. **Tải và cài đặt** gói phù hợp ở bảng trên. Bạn cũng có thể tải tại [limixmedia.com](https://limixmedia.com) hoặc xem [toàn bộ tệp của bản phát hành mới nhất](https://github.com/leomieo/limix-bot/releases/latest).
 2. **Đăng nhập** tài khoản Limix khi ứng dụng yêu cầu.
-3. **Kết nối AI:** vào **Cài đặt → AI**, chọn AI bạn có và đăng nhập.
+3. **Kết nối AI:** vào **Cài đặt → AI**, chọn nhà cung cấp rồi đăng nhập hoặc cấu hình khóa API.
 4. **Tạo bot đầu tiên** bằng nút **+** ở thanh bên, đặt tên và giao việc ngay trong khung chat.
 5. **Tùy chọn:**
    - Nối Telegram, Zalo, Discord ở menu tài khoản → **Kết nối Telegram, Zalo, Discord**.
@@ -156,7 +156,7 @@ Limix Bot đã có bộ cài cho Windows, macOS và Linux. Chọn đúng hệ đ
 
 ## Dùng có trách nhiệm
 
-Limix Bot kết nối tới dịch vụ của các nhà cung cấp AI và ứng dụng chat bằng tài khoản của chính bạn.
+Limix Bot kết nối với dịch vụ của các nhà cung cấp AI và ứng dụng chat bằng tài khoản của chính bạn.
 
 - **Tuân thủ điều khoản** của từng nhà cung cấp AI và từng nền tảng chat (Telegram, Zalo, Discord…).
 - **Tôn trọng giới hạn sử dụng.** Limix Bot không vượt hay né giới hạn của gói bạn đăng ký.
@@ -167,6 +167,6 @@ Limix Bot kết nối tới dịch vụ của các nhà cung cấp AI và ứng 
 
 ## Liên kết
 
-[Thư viện kỹ năng](https://github.com/leomieo/limix-skill-hub) · [Bảo mật](SECURITY.md) · [Quy tắc ứng xử](CODE_OF_CONDUCT.md) · [Giấy phép](LICENSE) · [Ghi công](NOTICE)
+[Thư viện kỹ năng](https://github.com/leomieo/limix-skill-hub) · [Đóng góp](CONTRIBUTING.md) · [Bảo mật](SECURITY.md) · [Quy tắc ứng xử](CODE_OF_CONDUCT.md) · [Giấy phép](LICENSE) · [Ghi công](NOTICE)
 
-Limix Bot do **Leox ৹ Limix AI** phát triển.
+Limix Bot do **Limix AI** phát triển.

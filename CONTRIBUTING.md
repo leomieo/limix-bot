@@ -77,7 +77,7 @@ Keep reusable Limix-specific code in its existing module. Mirror overlay-managed
 
 This document is maintained in `limix/overlay/CONTRIBUTING.md` and copied to the repository root by the existing overlay step. Keep both copies identical.
 
-Record material decisions and validation results in `limix/docs/PROJECT_MEMORY.md` and the relevant module plan. Cloud services and account synchronization remain disabled unless the project owner explicitly authorizes activation.
+Explain significant decisions and test results in the pull request. Keep account data and operational records out of public contributions.
 
 ## Pull requests
 
@@ -184,7 +184,7 @@ Dùng `pnpm exec vitest run <test-files>` để kiểm tra tập trung. Tuân th
 
 Bản chuẩn tài liệu này nằm tại `limix/overlay/CONTRIBUTING.md`, được sao chép về thư mục gốc qua bước overlay. Giữ hai bản giống nhau.
 
-Ghi quyết định quan trọng và bằng chứng kiểm tra trong `limix/docs/PROJECT_MEMORY.md` cùng kế hoạch module liên quan. Cloud và đồng bộ tài khoản tiếp tục tắt trừ khi chủ dự án cho phép kích hoạt rõ ràng.
+Giải thích các quyết định quan trọng và nêu kết quả kiểm tra trong pull request. Giữ thông tin tài khoản và hồ sơ vận hành ngoài kho mã công khai.
 
 ## Pull Request
 

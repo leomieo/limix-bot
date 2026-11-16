@@ -78,6 +78,6 @@ Nhấp đúp `Kiem-tra.bat` để chạy bộ kiểm thử tự động (dùng m
 ## Nguồn tham khảo
 
 - Cách chia tin dài và cơ chế mã ghép cặp: chuyển thể từ Hermes Agent (MIT License, Copyright (c) 2025 Nous Research),
-  commit `b50d007e`. Chi tiết: `../docs/HERMES_EXTRACTION.md`.
+  commit `b50d007e`.
 - Bot API: tài liệu OpenMausBot `docs/bot-api.md` commit `6f226f15`.
 - Telegram Bot API: https://core.telegram.org/bots/api · Zalo Bot API: https://docs.zaloplatforms.com/zalo-bot

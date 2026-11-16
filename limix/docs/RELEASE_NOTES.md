@@ -3,20 +3,20 @@
 ## Tiếng Việt
 
 - Thêm ô trả lời trong cuộc trò chuyện Telegram, Zalo, Discord và Facebook đã kết nối.
-- Chọn Trả lời khách để gửi trực tiếp nội dung bạn viết về đúng cuộc trò chuyện.
-- Chọn Nhờ bot trả lời để xử lý yêu cầu trong chat chủ riêng rồi gửi kết quả về khách.
-- Yêu cầu mở khóa cuộc trò chuyện bằng mật khẩu; tin từ khách tiếp tục giữ quyền riêng.
+- Chọn Trả lời khách để gửi trực tiếp tin nhắn bạn viết vào cuộc trò chuyện đó.
+- Chọn Nhờ bot trả lời để bot soạn câu trả lời trong cuộc trò chuyện riêng của chủ bot rồi gửi cho khách.
+- Chủ bot mở khóa cuộc trò chuyện bằng mật khẩu. Quyền của khách khi nhắn qua kênh kết nối vẫn giữ nguyên.
 
 ### Lưu ý
-- Đợt này hỗ trợ câu trả lời văn bản; việc gửi phụ thuộc quyền và giới hạn của nền tảng kết nối.
-- Chỉ báo đã gửi khi kết nối trả kết quả thành công. Nếu chưa xác nhận, kiểm tra kênh trước khi thử lại để tránh trùng tin.
+- Bản này hỗ trợ trả lời bằng văn bản, tùy theo quyền và giới hạn của từng nền tảng.
+- Ứng dụng báo đã gửi khi nền tảng xác nhận. Nếu chưa có xác nhận, hãy kiểm tra cuộc trò chuyện trên nền tảng trước khi gửi lại để tránh trùng tin.
 
 ## English
 
 - Add replies to connected Telegram, Zalo, Discord and Facebook conversations.
-- Choose Reply to customer to send your text to the bound channel conversation.
+- Choose Reply to customer to send your message directly to that conversation.
 - Choose Ask bot to reply to process instructions in a separate owner conversation and send the result to the customer.
-- Require password verification to unlock conversations; external messages retain separate privileges.
+- Require password verification to unlock conversations; messages from customers keep their existing permissions.
 
 ### Notes
 - This update supports text replies subject to platform permissions and limits.

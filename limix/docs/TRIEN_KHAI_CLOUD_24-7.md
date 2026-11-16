@@ -4,7 +4,7 @@ Tắt máy tính, đóng ứng dụng Limix Bot: bot trên máy chủ vẫn tr�
 
 **Chọn đường cài:**
 - Máy thuê có IP riêng (VPS) → làm Bước 1–4 bên dưới.
-- Máy đặt ở nhà/văn phòng, mạng cáp quang thường, không IP tĩnh (ví dụ máy Xeon của chủ dự án) → làm
+- Máy đặt ở nhà/văn phòng, mạng cáp quang thường, không IP tĩnh → làm
   "Phần A: cài Ubuntu" rồi "Máy ở nhà hoặc văn phòng — dùng đường hầm Cloudflare", sau đó Bước 2–4.
 
 ## Phần A: cài Ubuntu lên máy trống (máy ở nhà, khoảng 30–45 phút)
@@ -71,9 +71,9 @@ Quan trọng: một bot Telegram/Zalo chỉ nên được kết nối ở **mộ
 
 ## Máy ở nhà hoặc văn phòng (không có IP tĩnh) — dùng đường hầm Cloudflare
 
-Không cần mở cổng trên modem, không cần IP tĩnh. Tên miền phải nằm trên Cloudflare (ví dụ `limixmedia.com`).
+Không cần mở cổng trên modem, không cần IP tĩnh. Tên miền phải nằm trên Cloudflare (ví dụ `example.com`).
 
-1. Trên Cloudflare: **Zero Trust → Networks → Tunnels → Create a tunnel → Cloudflared**, đặt tên (ví dụ `limix-xeon`).
+1. Trên Cloudflare: **Zero Trust → Networks → Tunnels → Create a tunnel → Cloudflared**, đặt tên (ví dụ `limix-server`).
    Cloudflare hiện một lệnh cài có đoạn `--token eyJ...`: chép riêng phần mã sau `--token` (giữ bí mật).
 2. Ở bước **Public hostname**: Subdomain `bot`, Domain `limixmedia.com`, Service **HTTP**, URL `caddy:80`. Lưu.
 3. Trên máy chủ (Ubuntu 22.04/24.04), chạy (thay MÃ bằng mã vừa chép):
