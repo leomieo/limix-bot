@@ -1,0 +1,8 @@
+{
+  "electron/main.mjs": [
+    {
+      "before": "  const target = new URL(\"/cloud-admin\", cloudTarget(process.env).origin);\n  target.hash = new URLSearchParams({ session: credential.bearer }).toString();\n  await shell.openExternal(target.toString());",
+      "after": "  await shell.openExternal(\"https://admin.limixmedia.com/#cloud\");"
+    }
+  ]
+}

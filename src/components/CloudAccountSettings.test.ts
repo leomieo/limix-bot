@@ -409,7 +409,7 @@ it("decides from the first snapshot after the link, and connects to a Ready Clou
   }
 });
 
-const PHONE = "Use the Cloud on your phone";
+const PHONE = "Open phone access instructions";
 const STEPS = ["Server menu → My Cloud", "choose Connect your phone"];
 it("a paid plan with a Ready Cloud opens it on its phone pairing with one click, sending nothing from the page", async () => {
   await ready(readyCloud);
@@ -419,11 +419,11 @@ it("a paid plan with a Ready Cloud opens it on its phone pairing with one click,
   expect(bridge.connectHomeForPhone).toHaveBeenCalledExactlyOnceWith();
   expect(bridge.connectHome).not.toHaveBeenCalled();
 });
-it("before the Cloud is Ready, explains the two steps instead of offering a switch that cannot work", async () => {
-  for (const machine of [{ status: "provisioning" }, { status: "stopped", origin }, { status: "payment-problem", origin }, { status: "failed", origin }] as const) {
+it("before Cloud is reachable, hides pairing instructions and the access button", async () => {
+  for (const machine of [{ status: "provisioning" }, { status: "stopped", origin }, { status: "payment-problem", origin }, { status: "failed", origin }, { status: "ready", origin, unreachable: { cause: "host", since: 1 } }] as const) {
     f.values = []; await ready({ ...pro, machine });
     const html = render().html;
-    expect(html).toContain('data-cloud-phone="steps"'); all(html, ["is not ready yet", ...STEPS]);
+    expect(html).toContain('data-cloud-phone="steps"'); all(html, ["Cloud is not ready or cannot currently be reached"]); none(html, STEPS);
     expect(button(PHONE)).toBeUndefined();
   }
   f.values = []; await ready(pro);

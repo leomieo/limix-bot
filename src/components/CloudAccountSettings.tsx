@@ -102,10 +102,10 @@ function cloudPhoneCard({ ready, busy, failed, onUse }: { ready: boolean; busy: 
       {failed && <p role="alert" className="text-[13px] text-danger">{t("cloudPhone.failed")}</p>}
       {(!ready || failed) && <>
         <p className="text-[13px] text-ink-secondary">{t(ready ? "cloudPhone.stepsIntro" : "cloudPhone.notReady")}</p>
-        <ol className="list-decimal ps-5 text-[13px] leading-relaxed text-ink-secondary">
+        {ready && <ol className="list-decimal ps-5 text-[13px] leading-relaxed text-ink-secondary">
           <li>{t("cloudPhone.step1")}</li>
           <li>{t("cloudPhone.step2")}</li>
-        </ol>
+        </ol>}
       </>}
     </div>
   </Card>;
@@ -343,7 +343,7 @@ export function CloudAccountSettings({ linkRequest = 0, cloudHome = false, teamH
     {machine && (onTeamPlan
       ? cloudHomeCard({ machine, busy, failed: homeFailed, onConnect: () => { if (team) openTeam(team.id); }, team: { name: team?.name ?? null } })
       : cloudHomeCard({ machine, busy, failed: homeFailed, onConnect: connectHome, trial: Boolean(account?.trial), waking: account?.waking === true, moving }))}
-    {signed && view.kind === "paid" && !onTeamPlan && cloudPhoneCard({ ready: machine?.status === "ready", busy, failed: phoneFailed, onUse: openOnPhone })}
+    {signed && view.kind === "paid" && !onTeamPlan && cloudPhoneCard({ ready: machine?.status === "ready" && !machine.unreachable, busy, failed: phoneFailed, onUse: openOnPhone })}
     <CloudKeepHere bridge={window.ogb?.cloudSendPage} />
   </>;
 }

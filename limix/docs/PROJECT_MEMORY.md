@@ -371,3 +371,13 @@
 - 2026-11-16 Chủ dự án yêu cầu ghi chú cập nhật dùng tiếng Việt tự nhiên, đúng nghĩa và đúng chức năng. Phát hiện cửa sổ cập nhật 0.3.53 hiển thị gạch đầu dòng cũ từ 0.3.52 vì ghi chú mới chỉ có đoạn văn. Ghi chú phát hành phải chỉ chứa thay đổi của phiên bản hiện tại, danh sách tiếng Việt đặt trước tiếng Anh. Cần sửa cả nội dung release đã công bố trên GitHub.
 
 - 2026-11-16 0.3.55: cloud.limixmedia.com was missing from ALLOWED_ORIGINS. Owner GET worked but browser POST returned origin_not_allowed, incorrectly displayed as lack of administrator rights. Fixed configuration and error reporting, deployed branch fix/cloud-owner-origin successfully (43853538169). Worker regression includes valid Leox browser POST, denied ordinary account and denied foreign origin. Windows startup previously reported a damaged installation immediately if ui/index.html was absent; it now waits up to five minutes for complete UI and referenced assets, with a cancellable loading screen. The slow extraction scenario is simulated in tests, not verified through a real installer upgrade.
+
+
+### 2026-11-16 — Centralized account and Cloud administration
+- Canonical admin entry: https://admin.limixmedia.com/; /admin redirects to root. VPS Nginx tested and reloaded.
+- Account service authenticates the existing Limix leox account for web administration, replacing separate web-admin credentials. Passwords unchanged.
+- Extension in limix/admin-center installs Cloud request/status/decision controls in the existing account admin panel. Cookie stays on the account server; owner bearer is backend-only, fixed HTTPS destination, no redirects. POST requires exact admin Origin and JSON.
+- Live VPS proof: owner login 200, Cloud list 200 (leox workspace running), idempotent owner approval 200, anonymous 401, foreign Origin 403. Fixed Cloudflare 1010 by giving backend requests the explicit LimixBot-Admin user agent. 10 isolated adapter checks pass.
+- Existing account plan controls are not Docker resource quotas. Custom per-account Cloud CPU/RAM/storage and a shared Cloud plan editor remain future work. Browser rendering is not automatically verified.
+- Phone copy updated in English/Vietnamese to browser access; pairing instructions hidden until Cloud is reachable. 6 focused checks pass; full component suite still has the same 19 pre-existing baseline failures. Root TypeScript check passed before admin entry link update; final rerun recorded in task result.
+- Legacy web-admin sessions revoked after authentication migration; existing account/app/bot sessions preserved. Final root TypeScript check, Python/JavaScript syntax checks, rebrand patch consistency and git diff check passed.

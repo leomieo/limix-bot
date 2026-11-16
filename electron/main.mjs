@@ -848,9 +848,7 @@ async function limixCloudSignIn(asked = false) {
 async function openLimixCloudAdmin() {
   const credential = limixRemoteCredential();
   if (credential?.userId !== "limix:leox") throw new Error("Sign in as Leox to manage Limix Cloud.");
-  const target = new URL("/cloud-admin", cloudTarget(process.env).origin);
-  target.hash = new URLSearchParams({ session: credential.bearer }).toString();
-  await shell.openExternal(target.toString());
+  await shell.openExternal("https://admin.limixmedia.com/#cloud");
   return ensureCloudAccount().state();
 }
 

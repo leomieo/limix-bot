@@ -1,0 +1,68 @@
+{
+  "src/locales/vi.json": [
+    {
+      "before": "\"cloudPhone.title\": \"Điện thoại của bạn\"",
+      "after": "\"cloudPhone.title\": \"Truy cập trên điện thoại\""
+    },
+    {
+      "before": "\"cloudPhone.subtitle\": \"Ghép nối ứng dụng điện thoại với Cloud thay vì máy tính này, và ứng dụng sẽ tiếp tục hoạt động khi máy tính này tắt.\"",
+      "after": "\"cloudPhone.subtitle\": \"Mở Limix Cloud bằng trình duyệt trên điện thoại để trò chuyện và quản lý bot. Bot đang chạy trên máy chủ tiếp tục hoạt động khi máy tính cá nhân tắt. Không cần cài ứng dụng điện thoại riêng.\""
+    },
+    {
+      "before": "\"cloudPhone.action\": \"Sử dụng Cloud trên điện thoại của bạn\"",
+      "after": "\"cloudPhone.action\": \"Mở hướng dẫn truy cập trên điện thoại\""
+    },
+    {
+      "before": "\"cloudPhone.help\": \"Mở Cloud trong cửa sổ này, tại mục ghép nối điện thoại. Tạo một mã ở đó và quét mã bằng ứng dụng điện thoại.\"",
+      "after": "\"cloudPhone.help\": \"Mở Cloud trong cửa sổ này để tạo liên kết truy cập. Dùng camera điện thoại quét mã QR, rồi mở liên kết bằng trình duyệt.\""
+    },
+    {
+      "before": "\"cloudPhone.notReady\": \"Cloud chưa sẵn sàng. Khi đã sẵn sàng, bạn chỉ cần thực hiện hai bước:\"",
+      "after": "\"cloudPhone.notReady\": \"Cloud chưa sẵn sàng hoặc hiện không thể kết nối. Hướng dẫn truy cập sẽ xuất hiện khi Cloud sẵn sàng.\""
+    },
+    {
+      "before": "\"cloudPhone.step2\": \"Mở menu dưới tên của bạn, chọn Kết nối điện thoại, và quét mã bằng ứng dụng điện thoại.\"",
+      "after": "\"cloudPhone.step2\": \"Mở menu tài khoản, chọn Kết nối điện thoại. Dùng camera điện thoại quét mã QR và mở liên kết bằng trình duyệt.\""
+    }
+  ],
+  "src/locales/en.json": [
+    {
+      "before": "\"cloudPhone.title\": \"Your phone\"",
+      "after": "\"cloudPhone.title\": \"Access from your phone\""
+    },
+    {
+      "before": "\"cloudPhone.subtitle\": \"Pair the phone app with the Cloud instead of this computer, and it keeps working when this computer is off.\"",
+      "after": "\"cloudPhone.subtitle\": \"Open Limix Cloud in your phone’s browser to chat and manage bots. Bots running on the server keep working when your personal computer is off. No separate mobile app is required.\""
+    },
+    {
+      "before": "\"cloudPhone.action\": \"Use the Cloud on your phone\"",
+      "after": "\"cloudPhone.action\": \"Open phone access instructions\""
+    },
+    {
+      "before": "\"cloudPhone.help\": \"Opens the Cloud in this window, at its phone pairing. Create a code there and scan it with the phone app.\"",
+      "after": "\"cloudPhone.help\": \"Opens Cloud in this window to create an access link. Scan the QR code with your phone’s camera, then open the link in your browser.\""
+    },
+    {
+      "before": "\"cloudPhone.notReady\": \"The Cloud is not ready yet. Once it is, it takes two steps:\"",
+      "after": "\"cloudPhone.notReady\": \"Cloud is not ready or cannot currently be reached. Access instructions will appear when Cloud is ready.\""
+    },
+    {
+      "before": "\"cloudPhone.step2\": \"Open the menu under your name, choose Connect your phone, and scan the code with the phone app.\"",
+      "after": "\"cloudPhone.step2\": \"Open the account menu and choose Connect your phone. Scan the QR code with your phone’s camera and open the link in your browser.\""
+    }
+  ],
+  "src/components/CloudAccountSettings.tsx": [
+    {
+      "before": "        <ol className=\"list-decimal ps-5 text-[13px] leading-relaxed text-ink-secondary\">",
+      "after": "        {ready && <ol className=\"list-decimal ps-5 text-[13px] leading-relaxed text-ink-secondary\">"
+    },
+    {
+      "before": "          <li>{t(\"cloudPhone.step2\")}</li>\n        </ol>",
+      "after": "          <li>{t(\"cloudPhone.step2\")}</li>\n        </ol>}"
+    },
+    {
+      "before": "ready: machine?.status === \"ready\", busy, failed: phoneFailed",
+      "after": "ready: machine?.status === \"ready\" && !machine.unreachable, busy, failed: phoneFailed"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+<section class="section" id="tab-cloud">
+<h2>Limix Cloud</h2>
+<p>Quản lý quyền sử dụng Cloud và xem trạng thái máy của từng tài khoản.</p>
+<button class="btn" type="button" onclick="loadCloudRequests()">Làm mới</button>
+<p id="cloud-status" role="status"></p><div id="cloud-requests"></div>
+</section>
+<script>
+async function cloudAdminApi(route,body){
+ const response=await fetch('/api/admin/cloud/'+route,{method:body?'POST':'GET',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
+ const data=await response.json();
+ if(!response.ok) throw new Error(response.status===401?'Phiên quản trị đã hết hạn. Hãy đăng nhập lại.':data.error==='owner_cloud_credential_unavailable'?'Máy chủ chưa có cấu hình xác thực chủ Cloud.':'Không kết nối được quản trị Cloud. Hãy thử lại.');
+ return data;
+}
+async function loadCloudRequests(){
+ const status=document.getElementById('cloud-status'),list=document.getElementById('cloud-requests');
+ status.textContent='Đang tải...';list.replaceChildren();
+ const decisions={approved:'Đã duyệt',declined:'Đã từ chối',pending:'Chờ duyệt'};
+ const states={running:'Đang chạy',starting:'Đang khởi động',waiting_capacity:'Chờ tài nguyên máy chủ',failed:'Khởi động lỗi',asleep:'Đã tạm dừng'};
+ try{const data=await cloudAdminApi('requests');
+ for(const row of data.requests){
+ const card=document.createElement('article');card.style.cssText='padding:16px;margin:12px 0;border:1px solid var(--border);border-radius:12px;overflow-wrap:anywhere';
+ const title=document.createElement('h3');title.textContent=row.principal;card.append(title);
+ const info=document.createElement('p');info.textContent=(decisions[row.decision]||'Chờ duyệt')+' · '+(states[row.runtime_state]||(row.workspace_id?'Chờ máy chủ nhận yêu cầu':'Chưa cấp máy'));card.append(info);
+ if(row.workspace_id){const id=document.createElement('p');id.textContent='Mã máy: '+row.workspace_id;card.append(id);}
+ for(const [decision,label] of [['approve','Duyệt'],['decline','Từ chối'],['revoke','Thu hồi']]){
+ const button=document.createElement('button');button.className='btn';button.type='button';button.textContent=label;button.style.marginRight='8px';
+ button.onclick=async()=>{if(!confirm(label+' quyền Cloud của '+row.principal+'?'))return;const buttons=card.querySelectorAll('button');buttons.forEach(b=>b.disabled=true);try{await cloudAdminApi('decision',{principal:row.principal,decision});await loadCloudRequests()}catch(e){status.textContent=e.message;buttons.forEach(b=>b.disabled=false)}};card.append(button);
+ }list.append(card);
+ }status.textContent=data.requests.length?data.requests.length+' tài khoản có yêu cầu Cloud.':'Chưa có yêu cầu Cloud.';
+ }catch(e){status.textContent=e.message;}
+}
+</script>
