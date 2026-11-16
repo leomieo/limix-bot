@@ -16,6 +16,7 @@ sealed class ServerStorageWindow : Form
     bool busy;
     public ServerStorageWindow()
     {
+        Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         Text="Limix Server · Lưu trữ và chuyển máy";Size=new Size(830,590);BackColor=Color.FromArgb(18,18,18);ForeColor=Color.White;Font=new Font("Segoe UI",10);StartPosition=FormStartPosition.CenterParent;Controls.Add(panel);
         Note("Dừng máy Cloud trước khi chuyển ổ hoặc xuất. Giữ server cũ tắt sau khi nhập trên máy mới để tránh hai máy cùng xử lý tài khoản. Công cụ này chỉ chuyển máy Cloud Hyper-V, không chuyển CRM hay container Docker Desktop khác.");
         Note("Thư mục đích trên ổ đĩa cục bộ (cần đủ chỗ cho toàn bộ máy Cloud và file tạm)");panel.Controls.Add(destination);

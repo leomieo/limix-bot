@@ -14,6 +14,7 @@ sealed class DockerStartupWindow : Form
     readonly ServerButton apply=new() {Text="Bật khởi động cùng Windows cho dịch vụ đã chọn",AutoSize=true};
     public DockerStartupWindow()
     {
+        Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         Text="Docker · Khởi động các dịch vụ cùng Windows";Size=new Size(850,580);MinimumSize=new Size(780,500);
         BackColor=Color.FromArgb(18,18,18);ForeColor=Color.White;Font=new Font("Segoe UI",10);StartPosition=FormStartPosition.CenterParent;
         controls.Controls.Add(new Label {AutoSize=true,MaximumSize=new Size(760,0),Text="Giữ các dịch vụ trên Docker Desktop hiện tại. Chọn container để đặt chính sách unless-stopped: Docker tự chạy lại sau reboot, nhưng giữ tắt dịch vụ bạn đã chủ động dừng. Không chuyển dữ liệu, không khởi động lại container lúc cấu hình. Nếu dùng Compose, cần giữ restart: unless-stopped trong cấu hình gốc để lần triển khai sau không ghi đè."});

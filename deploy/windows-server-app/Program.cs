@@ -76,7 +76,8 @@ sealed class SetupWindow : Form
     internal void PreviewBusy() { buttons.Enabled=false; }
     public SetupWindow()
     {
-        Text = "Limix Cloud Server 0.2.6 beta · Hyper-V";
+        Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+        Text = "Limix Cloud Server 0.2.7 beta · Hyper-V";
         Size = new Size(1000, 760); MinimumSize = new Size(930, 700); StartPosition = FormStartPosition.CenterScreen;
         Font = new Font("Segoe UI", 10); BackColor = Color.FromArgb(18,18,18); ForeColor = Color.White;
         var top = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, FlowDirection = FlowDirection.TopDown, Padding = new Padding(18), WrapContents = false };

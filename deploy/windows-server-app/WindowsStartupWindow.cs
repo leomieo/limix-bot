@@ -13,6 +13,7 @@ sealed class WindowsStartupWindow : Form
     const string Entry = "Limix Bot Server Desktop";
     public WindowsStartupWindow()
     {
+        Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         Text="Limix Bot · Tự đăng nhập và chạy nền";
         Size=new Size(800,500); MinimumSize=new Size(760,460);
         StartPosition=FormStartPosition.CenterParent;
