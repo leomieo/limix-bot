@@ -3104,6 +3104,9 @@ async function botOverview(bot: BotRecord, shown: { routine(routine: Routine): b
 /** Defense in depth against hand-edited records. Delegation uses the receiving bot's grant, never the sender's, except a Chief's (delegatedLevel). */
 const approvalModeForTurn = (bot: BotRecord, peerInitiated = false, threadId = bot.threadId): ApprovalMode => {
   // Judged by the conversation the turn runs in, never whichever of the bot's conversations is active.
+  // Limix: the bot's verified owner writing from Telegram/Zalo (owner lane, secret header + /link) controls the bot
+  // remotely and is not at the app to press a card: Full access, whatever the bot's own level. The never-list still denies.
+  if (isLimixOwnerThread(threadId)) return "full";
   if (cloudGuestDriven(threadId) || botApiThread(threadId) || proactive.fence.confines(threadId)) return "ask";
   const mode = approvalModeForOrigin(approvalModeFor(bot), { peerInitiated });
   if (!supportsApprovalMode(bot.modelSelection, mode)) {

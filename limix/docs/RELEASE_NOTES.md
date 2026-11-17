@@ -1,3 +1,13 @@
+Limix Bot 0.3.66
+
+## Tiếng Việt
+
+- Chủ bot điều khiển từ xa qua Telegram/Zalo: cuộc trò chuyện của chủ luôn chạy ở chế độ toàn quyền, bất kể mức quyền đang đặt cho bot trong app. Bot chạy lệnh, đọc/sửa tệp mà không dừng chờ duyệt. Lệnh trong danh sách cấm vẫn luôn bị chặn; khách vẫn bị giới hạn như cũ.
+
+## English
+
+- The bot's owner controlling it remotely over Telegram/Zalo: the owner's conversation always runs at Full access, whatever level the bot has in the app. The bot runs commands and reads/edits files without stopping for approval. Never-list commands are still denied; guests stay confined.
+
 Limix Bot 0.3.65
 
 ## Tiếng Việt
