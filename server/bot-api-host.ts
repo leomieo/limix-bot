@@ -113,9 +113,13 @@ function pendingCard(lines: readonly Message[]): boolean {
   return lines.some((line) => line.card?.requestId !== undefined && !line.card.answered && !line.card.dismissed);
 }
 
+/** The answer, not the progress notes before it: a turn's last text is marked terminal, and its earlier texts ("I'm looking
+ * into it") are updates the caller never asked for. Texts with no turn at all (older rows) are all kept. */
 function replyText(lines: readonly Message[]): string {
-  return redactSecretsInText(lines.filter((line) => line.role === "bot" && line.kind === "text" && typeof line.text === "string" && line.text.trim())
-    .map((line) => line.text!.trim()).join("\n\n"));
+  const said = lines.filter((line) => line.role === "bot" && line.kind === "text" && typeof line.text === "string" && line.text.trim());
+  const final = said.filter((line) => line.turnTerminal === true);
+  const picked = final.length ? final : said.some((line) => line.turnId) ? said.slice(-1) : said;
+  return redactSecretsInText(picked.map((line) => line.text!.trim()).join("\n\n"));
 }
 
 export function createBotApiHost(deps: BotApiHostDeps) {
