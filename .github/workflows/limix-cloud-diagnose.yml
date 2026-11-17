@@ -1,0 +1,32 @@
+# Limix Cloud health, read-only: home states (no account names), routing, and five minutes of the Worker's
+# pairing/routing log lines. Run it, then try the move in the app while it runs.
+name: Limix Cloud diagnose
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: e2c5f1d87da45803ba77f9eb676ec3ed
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund --no-save --no-package-lock wrangler@4.125.0
+      - name: homes and routing
+        run: |
+          npx wrangler d1 execute limix-control-plane --remote --json --command "SELECT substr(workspace_id,1,8) AS home, runtime_state, CAST(strftime('%s','now') AS INTEGER) - runtime_seen AS seen_seconds_ago, power_desired, power_observed FROM managed_cloud_beta WHERE workspace_id IS NOT NULL" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.stringify(JSON.parse(s)[0].results,null,1)))'
+          npx wrangler d1 execute limix-control-plane --remote --json --command "SELECT tunnel_id IS NOT NULL AS has_tunnel, routed, configured FROM managed_cloud_host WHERE id = 1" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.stringify(JSON.parse(s)[0].results,null,1)))'
+      - name: five minutes of pairing and routing lines
+        run: |
+          timeout 300 npx wrangler tail limix-control-plane --format json 2>/dev/null | node -e '
+            const rl=require("readline").createInterface({input:process.stdin});
+            rl.on("line",l=>{try{const e=JSON.parse(l);for(const m of e.logs??[]){const t=String(m.message?.[0]??"");if(/pairing|routing|home/i.test(t))console.log(new Date(m.timestamp).toISOString(),t.slice(0,300));}
+              const r=e.event?.request;if(r&&/\/api\/cloud\/desktop\/(pairing|session)/.test(r.url))console.log(new Date(e.eventTimestamp).toISOString(),r.method,new URL(r.url).pathname,e.event?.response?.status??"",e.outcome);}catch{}});' || true
