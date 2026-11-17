@@ -1,3 +1,13 @@
+Limix Bot 0.3.72
+
+## Tiếng Việt
+
+- Có trang quản lý Limix Cloud cho khách trên trình duyệt. Trong Cài đặt → Limix Cloud, bấm "Quản lý trong trình duyệt của bạn" là vào thẳng, không cần đăng nhập lại. Trang cho xem gói dịch vụ, tình trạng máy Cloud (đang chạy, đang ngủ, đang chuẩn bị, lỗi), đánh thức Cloud, xin dùng thử, xem và đăng xuất các máy đã đăng nhập. Liên kết chỉ dùng một lần, phiên trên trình duyệt hết hạn sau 2 giờ.
+
+## English
+
+- Limix Cloud has a management page for customers in the browser. In Settings → Limix Cloud, "Manage in your browser" opens it already signed in. It shows the plan and the Cloud machine's state (running, asleep, getting ready, failed), and lets you wake the Cloud, ask for a trial, and see and sign out signed-in devices. The link works once; the browser session lasts 2 hours.
+
 Limix Bot 0.3.71
 
 ## Tiếng Việt

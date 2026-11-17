@@ -16,6 +16,7 @@ import { managedHomeHostname, managedHomeOrigin } from "./managed-grant";
 import { managedHostToken } from "./managed-host";
 import { routedHostnames } from "./managed-routing";
 import { readConfig } from "./config";
+import { devices, limixCloudWebRoute, revokeDevice, webCode, WEB_ROUTES } from "./limix-cloud-web";
 
 export const CONTRACT = 1;
 export const DEVICE_TOKEN_DAYS = 90;
@@ -58,7 +59,7 @@ export async function homeRequestHeaders(secret: string, method: string, target:
   return { "x-omb-cloud-timestamp": timestamp, "x-omb-cloud-nonce": nonce, "x-omb-cloud-signature": `v1=${signature}` };
 }
 
-interface Device { id: string; principal: string; expires_at: number }
+interface Device { id: string; principal: string; expires_at: number; platform: string }
 interface BetaRow { workspace_id: string | null; runtime_state: string | null; runtime_seen: number | null; power_desired?: string; power_since?: number; sleep_enabled?: number; sleep_blocked?: number; power_observed?: string }
 
 function account(principal: string) {
@@ -70,7 +71,7 @@ async function device(request: Request, env: Env): Promise<Device> {
   const token = /^Bearer (omc_[A-Za-z0-9_-]{43})$/.exec(request.headers.get("authorization") ?? "")?.[1];
   if (!token || !TOKEN.test(token)) throw new HTTPError(401, "invalid_token");
   const row = await env.DB.prepare(
-    "SELECT id, principal, expires_at FROM limix_cloud_devices WHERE token_hash = ? AND revoked_at IS NULL",
+    "SELECT id, principal, expires_at, platform FROM limix_cloud_devices WHERE token_hash = ? AND revoked_at IS NULL",
   ).bind(await sha256(token)).first<Device>();
   if (!row || row.expires_at <= Date.now()) throw new HTTPError(401, "invalid_token");
   return row;
@@ -223,12 +224,16 @@ const DESKTOP = "/api/cloud/desktop/";
 export function limixCloudAdminRoute(path: string, request: Request, env: Env, fetcher: typeof fetch = fetch): Promise<Response> | null {
   if (path === "/cloud-admin" || path.startsWith("/api/cloud/owner/")) return cloudOwnerRoute(path, request, env);
   if (path === "/api/public/config") return Promise.resolve(json({ cloudContractVersion: CONTRACT }));
+  const web = limixCloudWebRoute(path, request, env);
+  if (web) return web;
   if (!path.startsWith(DESKTOP)) return null;
   const route = path.slice(DESKTOP.length);
   if (route === "limix-token") return signIn(request, env);
   return (async () => {
     const found = await device(request, env);
     const post = request.method === "POST";
+    // A browser sign-in (the customer page) reads and manages; moving bots stays the desktop's.
+    if (found.platform === "web" && !WEB_ROUTES.has(route)) throw new HTTPError(403, "forbidden");
     if (route === "session" && request.method === "GET") return session(env, found);
     if (route === "session" && request.method === "DELETE") {
       await env.DB.prepare("UPDATE limix_cloud_devices SET revoked_at = ? WHERE id = ?").bind(Date.now(), found.id).run();
@@ -241,6 +246,9 @@ export function limixCloudAdminRoute(path: string, request: Request, env: Env, f
       return session(env, found);
     }
     if (route === "trial" && post) return askForTrial(env, found);
+    if (route === "web-code" && post) return webCode(env, found.principal);
+    if (route === "devices" && request.method === "GET") return devices(env, found);
+    if (route === "devices/revoke" && post) return revokeDevice(request, env, found);
     if (route === "pairing" && post) return pairing(env, found, fetcher);
     if (route === "moved" && post) return move(request, env, found, "moved");
     if (route === "kept" && post) return move(request, env, found, "kept");
