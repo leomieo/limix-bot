@@ -10,6 +10,10 @@ const { englishText } = nativeText;
 /** Limix Cloud's own Admin (cloudflare/control-plane/src/limix-cloud-admin.ts). */
 export const CLOUD_ORIGIN = "https://cloud.limixmedia.com";
 /** The staging Admin (Dodo test mode, real test Clouds): a fixed address, on only with OMB_CLOUD_STAGING=1. */
+/** Limix Cloud has no plan page of its own: the owner manages Cloud on the Admin, a customer on their Limix account page. */
+export const LIMIX_CLOUD_ADMIN = "https://admin.limixmedia.com/#cloud";
+export const LIMIX_ACCOUNT_PAGE = "https://tiktok.limixmedia.com/dashboard";
+const LIMIX_OWNER = "limix:leox";
 export const STAGING_CLOUD_ORIGIN = "https://omb-cloud-staging.fly.dev";
 /** Which Admin this app signs in to, and the files that depend on it (the sign-in, saved servers with the Cloud's
  * entry, Files' state, the Cloud's chosen name): staging never reads or writes production's. */
@@ -545,7 +549,7 @@ export function createCloudAccountClient({ store, openBrowser, platform, deviceN
     },
     cancel: () => { if (!pending && value.status !== "connecting") return Promise.resolve(state()); opened = null; return signOut(); },
     refresh, signOut,
-    async openDashboard() { await openBrowser(`${origin}/cloud`); return state(); },
+    async openDashboard() { await openBrowser(origin === CLOUD_ORIGIN ? (grant?.account?.id === LIMIX_OWNER ? LIMIX_CLOUD_ADMIN : LIMIX_ACCOUNT_PAGE) : `${origin}/cloud`); return state(); },
     async upgradePreview(plan, source) {
       if (!UPGRADE_TIERS.includes(plan) || !UPGRADE_SOURCES.includes(source)) throw new Error("Invalid Cloud upgrade.");
       const signedIn = grant;

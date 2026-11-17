@@ -1,3 +1,13 @@
+Limix Bot 0.3.71
+
+## Tiếng Việt
+
+- Nút "Quản lý trong trình duyệt của bạn" ở Cài đặt → Limix Cloud nay mở đúng trang quản lý tài khoản Limix, không còn ra trang báo lỗi "not_found".
+
+## English
+
+- "Manage in your browser" in Settings → Limix Cloud now opens the Limix account page instead of a "not_found" error page.
+
 Limix Bot 0.3.70
 
 ## Tiếng Việt
