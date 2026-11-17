@@ -39,7 +39,7 @@ static class Program
         }
         if (args.Length == 2 && (args[0] == "--preview" || args[0] == "--preview-disabled"))
         {
-            using var preview = new SetupWindow();
+            using var preview = new SetupWindow(previewOnly:true);
             if(args[0] == "--preview-disabled") preview.PreviewBusy();
             preview.Show(); Application.DoEvents();
             using var bitmap = new Bitmap(preview.Width, preview.Height);
@@ -68,8 +68,15 @@ static class Program
 
 sealed class SetupWindow : Form
 {
-    readonly NumericUpDown cpu = new() { Minimum=2,Maximum=16,Value=4,Width=65 };
-    readonly NumericUpDown memory = new() { Minimum=8,Maximum=32,Value=12,Width=65 };
+    readonly NumericUpDown cpu = new() { Minimum=2,Value=4,Width=80 };
+    readonly NumericUpDown memory = new() { Minimum=8,Value=12,Width=80 };
+    readonly NumericUpDown resizeCpu = new() { Minimum=2, Value=4, Width=80 };
+    readonly NumericUpDown resizeMemory = new() { Minimum=8, Value=12, Width=80 };
+    readonly ServerButton applyResources = new() { Text="Lưu CPU và RAM", AutoSize=true, Enabled=false };
+    readonly ServerButton maxResources = new() { Text="Dùng mức tối đa", AutoSize=true, Enabled=false };
+    readonly ServerButton maxSetupResources = new() { Text="Dùng mức tối đa", AutoSize=true, Enabled=false };
+    readonly ServerLabel resourceStatus = new() { AutoSize=true, MaximumSize=new Size(730,0) };
+    readonly ServerLabel setupLimits = new() { AutoSize=true, MaximumSize=new Size(730,0) };
     readonly NumericUpDown disk = new() { Minimum=80,Maximum=512,Value=120,Width=75 };
     readonly TextBox network = new() { Text="Default Switch",Width=170 };
     readonly TextBox storage = new() { Width=600,ReadOnly=true };
@@ -82,10 +89,10 @@ sealed class SetupWindow : Form
     readonly ServerLabel summary=new() {AutoSize=true,MaximumSize=new Size(740,0),Font=new Font("Segoe UI",12,FontStyle.Bold)};
     FlowLayoutPanel actionPage=null!;
     bool HasSetup => File.Exists(Path.Combine(Program.Root,"hyperv.json"));
-    public SetupWindow()
+    public SetupWindow(bool previewOnly=false)
     {
         Icon=Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-        Text="Limix Cloud Server 0.3.1 beta";
+        Text="Limix Cloud Server 0.3.2 beta";
         Size=new Size(1120,860);MinimumSize=new Size(1000,760);StartPosition=FormStartPosition.CenterScreen;
         Font=new Font("Segoe UI",11);BackColor=Color.FromArgb(18,18,18);ForeColor=Color.White;
         var header=new Panel {Dock=DockStyle.Top,Height=94,Padding=new Padding(22,16,22,8)};
@@ -123,12 +130,31 @@ sealed class SetupWindow : Form
         var resources=new FlowLayoutPanel {AutoSize=true,WrapContents=true,MaximumSize=new Size(730,0)};
         foreach(var pair in new (string,Control)[]{("CPU",cpu),("RAM (GB)",memory),("Ổ máy Cloud (GB)",disk),("Switch mạng",network)}) {resources.Controls.Add(new ServerLabel {Text=pair.Item1,AutoSize=true,Margin=new Padding(0,6,8,0)});resources.Controls.Add(pair.Item2);}
         Note(setup,"2 · Tài nguyên dành cho máy Cloud");setup.Controls.Add(resources);
+        setup.Controls.Add(setupLimits);
+        setup.Controls.Add(maxSetupResources);
+        maxSetupResources.Click+=(_,_)=>{ cpu.Value=cpu.Maximum; memory.Value=memory.Maximum; };
         Note(setup,"Thư mục lưu máy Cloud và bản sao lưu (chọn ổ còn đủ chỗ)");
         storage.Width=670;if(Directory.Exists(@"D:\DockerData"))storage.Text=@"D:\DockerData";setup.Controls.Add(storage);
         AddButton("Chọn thư mục lưu",()=>{using var picker=new FolderBrowserDialog {Description="Chọn ổ lưu dữ liệu Cloud"};if(picker.ShowDialog(this)==DialogResult.OK)storage.Text=picker.SelectedPath;return Task.CompletedTask;});
         consent.MaximumSize=new Size(730,0);consent.Text="Tôi đã dừng host Cloud cũ; cho phép sao lưu dữ liệu Cloud nếu có. Các dịch vụ Docker khác được giữ nguyên.";setup.Controls.Add(consent);
-        install.Text="3 · Cài đặt server";install.Enabled=!HasSetup;setup.Controls.Add(install);
+        install.Text="3 · Cài đặt server";install.Enabled=false;setup.Controls.Add(install);
         if(HasSetup)Note(setup,"Đã có cấu hình. Dùng Tổng quan để bật/tắt, Khắc phục để sửa, hoặc Dữ liệu để chuyển ổ. Không cài lại đè lên máy hiện có.");
+        var compute=Page("CPU và RAM","Tài nguyên máy Cloud",
+            "Đổi CPU và RAM của máy Cloud Hyper-V đã cài. Tắt máy Cloud trong Tổng quan trước khi lưu, rồi bật lại để áp dụng.");
+        compute.Controls.Add(resourceStatus);
+        actionPage=compute;
+        AddButton("Đọc lại cấu hình", LoadResourceLimits);
+        var resizeFields=new FlowLayoutPanel {AutoSize=true,WrapContents=false};
+        resizeFields.Controls.Add(new ServerLabel {Text="vCPU",AutoSize=true});
+        resizeFields.Controls.Add(resizeCpu);
+        resizeFields.Controls.Add(new ServerLabel {Text="RAM (GB)",AutoSize=true});
+        resizeFields.Controls.Add(resizeMemory);
+        compute.Controls.Add(resizeFields);
+        compute.Controls.Add(maxResources);
+        maxResources.Click+=(_,_)=>{ resizeCpu.Value=resizeCpu.Maximum; resizeMemory.Value=resizeMemory.Maximum; };
+        compute.Controls.Add(applyResources);
+        applyResources.Click+=async(_,_)=>await ResizeResources();
+        Note(compute,"Giới hạn RAM chừa lại 8 GB cho Windows. Nếu Windows hoặc Docker Desktop đang dùng nhiều RAM, hãy chọn mức thấp hơn. Số máy Cloud chạy cùng lúc là thiết lập riêng.");
         var startup=Page("Khởi động tự động","Chạy lại sau khi bật máy","Cloud Hyper-V tự khởi động cùng Windows khi đã bấm Bật máy Cloud. Bot điều khiển ứng dụng Windows và Docker Desktop cần phiên desktop đã đăng nhập.");
         actionPage=startup;
         AddButton("Windows và Limix Bot chạy nền",()=>{using var window=new WindowsStartupWindow();window.ShowDialog(this);return Task.CompletedTask;});
@@ -147,6 +173,7 @@ sealed class SetupWindow : Form
         Controls.Add(buttons);Controls.Add(sidebar);Controls.Add(logPanel);Controls.Add(header);
         ServerTheme.Apply(this);overview.Visible=true;overview.BringToFront();
         install.Click+=async(_,_)=>await Install();
+        if (!previewOnly) Shown+=async(_,_)=>await LoadResourceLimits();
         FormClosing+=(_,e)=>{if(busy){e.Cancel=true;MessageBox.Show("Đang xử lý. Chờ hoàn tất trước khi đóng.");}};
     }
     void AddButton(string text, Func<Task> action)
@@ -180,6 +207,7 @@ sealed class SetupWindow : Form
         if(busy)return;
         if(!start && MessageBox.Show("Tắt máy Linux sẽ ngắt Cloud và bot, đồng thời tắt tự khởi động. Tiếp tục?","Dừng Cloud",MessageBoxButtons.YesNo)!=DialogResult.Yes)return;
         await Control(start ? "Start" : "Stop");
+        await LoadResourceLimits();
     }
     async Task Control(string action)
     {
@@ -191,7 +219,66 @@ sealed class SetupWindow : Form
             if(code!=0)Log("Lệnh chưa thành công. Xem thông báo phía trên; chưa xác nhận Cloud đã chạy.");
         } finally { busy=false;buttons.Enabled=true; }
     }
-    async Task<int> Run(string? command, string? file=null, string? input=null, string? argument=null)
+    async Task LoadResourceLimits()
+    {
+        if (busy) return;
+        busy=true; buttons.Enabled=false;
+        var response=new StringBuilder();
+        install.Enabled=maxSetupResources.Enabled=applyResources.Enabled=maxResources.Enabled=false;
+        setupLimits.Text=resourceStatus.Text="Đang đọc cấu hình máy chủ…";
+        try {
+            Program.Extract();
+            var code=await Run(null,Path.Combine(Program.Root,"app","hyperv-control.ps1"),
+                argument:"ResourceLimits", captureOutput:line=>response.AppendLine(line));
+            if (code!=0) throw new InvalidOperationException("Không đọc được tài nguyên. Xem nhật ký rồi chọn Đọc lại cấu hình.");
+            using var document=JsonDocument.Parse(response.ToString());
+            var config=document.RootElement;
+            int maxCpu=config.GetProperty("MaxCpu").GetInt32();
+            int maxRam=config.GetProperty("MaxMemoryGb").GetInt32();
+            if (maxCpu<2 || maxRam<8) throw new InvalidOperationException("Máy chủ cần ít nhất 2 luồng CPU và 16 GB RAM để cài Cloud.");
+            setupLimits.Text=$"Tối đa {maxCpu} vCPU và {maxRam} GB RAM, chừa 8 GB cho Windows.";
+            SetResourceRange(cpu,maxCpu,cpu.Value);
+            SetResourceRange(memory,maxRam,memory.Value);
+            install.Enabled=maxSetupResources.Enabled=!HasSetup;
+            if (!config.TryGetProperty("VmState",out var state)) {
+                resourceStatus.Text="Chưa có máy Cloud. Hãy chọn tài nguyên trong Cài đặt lần đầu.";
+                return;
+            }
+            int configuredCpu=config.GetProperty("ConfiguredCpu").GetInt32();
+            int configuredRam=config.GetProperty("ConfiguredMemoryGb").GetInt32();
+            SetResourceRange(resizeCpu,maxCpu,configuredCpu);
+            SetResourceRange(resizeMemory,maxRam,configuredRam);
+            bool off=state.GetString()=="Off";
+            resourceStatus.Text=$"Hiện tại: {configuredCpu} vCPU · {configuredRam} GB RAM. {setupLimits.Text}";
+            if (!off) resourceStatus.Text+=" Tắt máy Cloud trước khi lưu.";
+            applyResources.Enabled=maxResources.Enabled=off;
+        }
+        catch (Exception e) { setupLimits.Text=resourceStatus.Text=e.Message; }
+        finally { busy=false; buttons.Enabled=true; }
+    }
+
+    static void SetResourceRange(NumericUpDown input, int maximum, decimal value)
+    {
+        input.Maximum=maximum;
+        input.Value=Math.Clamp(value,input.Minimum,input.Maximum);
+    }
+
+    async Task ResizeResources()
+    {
+        if (busy || !HasSetup) return;
+        busy=true; buttons.Enabled=false;
+        try {
+            Program.Extract();
+            var request=JsonSerializer.Serialize(new { Cpu=(int)resizeCpu.Value, MemoryGb=(int)resizeMemory.Value });
+            var code=await Run(null,Path.Combine(Program.Root,"app","hyperv-control.ps1"),request,"Resize");
+            if (code!=0) Log("Chưa xác nhận cấu hình CPU và RAM mới. Xem lỗi phía trên.");
+        }
+        catch (Exception e) { Log(e.Message); }
+        finally { busy=false; buttons.Enabled=true; }
+        await LoadResourceLimits();
+    }
+
+    async Task<int> Run(string? command, string? file=null, string? input=null, string? argument=null, Action<string>? captureOutput=null)
     {
         var info=new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System),"WindowsPowerShell","v1.0","powershell.exe")) { UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true,RedirectStandardInput=true,StandardOutputEncoding=Encoding.UTF8,StandardErrorEncoding=Encoding.UTF8 };
         ProcessEncoding.Utf8(info);
@@ -200,7 +287,7 @@ sealed class SetupWindow : Form
         if(file!=null) { info.ArgumentList.Add("-File");info.ArgumentList.Add(file); if(argument!=null) { info.ArgumentList.Add("-Action");info.ArgumentList.Add(argument); } }
         else { info.ArgumentList.Add("-Command");info.ArgumentList.Add("[Console]::OutputEncoding=[Text.Encoding]::UTF8; $ErrorActionPreference='Stop'; "+command); }
         using var process=new Process { StartInfo=info };
-        process.OutputDataReceived+=(_,e)=>{if(e.Data!=null)Log(e.Data);};
+        process.OutputDataReceived+=(_,e)=>{if(e.Data!=null){ if(captureOutput!=null)captureOutput(e.Data); else Log(e.Data); }};
         process.ErrorDataReceived+=(_,e)=>{if(e.Data!=null)Log(e.Data);};
         process.Start();process.BeginOutputReadLine();process.BeginErrorReadLine();
         if(input!=null) await process.StandardInput.WriteAsync(input);

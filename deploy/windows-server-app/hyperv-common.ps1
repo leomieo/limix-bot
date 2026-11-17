@@ -24,8 +24,25 @@ function Grant-ServerVmAccess([string]$Store, $Vm) {
     $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($sid,'FullControl','ContainerInherit,ObjectInherit','None','Allow'))
     Set-Acl -LiteralPath $Store -AclObject $acl
 }
+function Get-ServerResourceLimits {
+    $system = Get-CimInstance Win32_ComputerSystem
+    $cpu = [int]$system.NumberOfLogicalProcessors
+    $memoryGb = [int][math]::Floor($system.TotalPhysicalMemory / 1GB)
+    if ($cpu -lt 1 -or $memoryGb -lt 1) { throw 'Không đọc được CPU hoặc RAM của máy chủ Windows.' }
+    return @{ MaxCpu = $cpu; MaxMemoryGb = [math]::Max(0, $memoryGb - 8); HostMemoryGb = $memoryGb }
+}
+function Assert-CloudCompute($Request) {
+    $limits = Get-ServerResourceLimits
+    if (($Request.Cpu -isnot [int] -and $Request.Cpu -isnot [long]) -or
+        ($Request.MemoryGb -isnot [int] -and $Request.MemoryGb -isnot [long]) -or
+        $Request.Cpu -lt 2 -or $Request.Cpu -gt $limits.MaxCpu -or
+        $Request.MemoryGb -lt 8 -or $Request.MemoryGb -gt $limits.MaxMemoryGb) {
+        throw "Cấu hình vượt giới hạn: tối đa $($limits.MaxCpu) vCPU và $($limits.MaxMemoryGb) GB RAM. Giữ lại 8 GB cho Windows."
+    }
+}
 function Assert-ServerResources($Request) {
-    if ($Request.Cpu -notin 2..16 -or $Request.MemoryGb -notin 8..32 -or $Request.DiskGb -notin 80..512) { throw 'Cấu hình máy ảo nằm ngoài giới hạn cho phép.' }
+    Assert-CloudCompute $Request
+    if ($Request.DiskGb -notin 80..512) { throw 'Dung lượng ổ máy Cloud phải từ 80 đến 512 GB.' }
     $path = [string]$Request.StorageRoot
     if ($path -notmatch '^[A-Za-z]:\\' -or $path.Contains(',') -or $path.Contains('"') -or -not (Test-Path -LiteralPath $path -PathType Container)) { throw 'Chọn thư mục lưu trên ổ đĩa cục bộ. Không dùng thư mục mạng hoặc đường dẫn chứa dấu phẩy.' }
     if ($path.StartsWith($env:WINDIR, [StringComparison]::OrdinalIgnoreCase)) { throw 'Không lưu máy Cloud trong thư mục Windows.' }

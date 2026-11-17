@@ -51,7 +51,7 @@ New-Item -ItemType Directory -Path (Join-Path $env:LOCALAPPDATA 'LimixBot-Manage
 function global:Import-Module { }
 function global:Get-Service { @{Status='Running'} }
 function global:Get-Command { @{Source=(Join-Path $env:FIXTURE_ROOT 'docker.ps1')} }
-function global:Get-CimInstance { param($ClassName) if($ClassName -eq 'Win32_ComputerSystem') { @{TotalPhysicalMemory=64GB} } }
+function global:Get-CimInstance { param($ClassName) if($ClassName -eq 'Win32_ComputerSystem') { @{TotalPhysicalMemory=64GB;NumberOfLogicalProcessors=56} } }
 function global:Get-ScheduledTask { if($env:FIXTURE_FAILURE -like '*old-task') { [pscustomobject]@{State='Ready';Settings=@{Enabled=$true}} } else { $null } }
 function global:Disable-ScheduledTask { Add-Content $env:FIXTURE_CALLS 'old task disabled' }
 function global:Enable-ScheduledTask { Add-Content $env:FIXTURE_CALLS 'old task enabled' }
@@ -181,6 +181,51 @@ function Import-Module($Name) {}
                     self.assertIn('chưa có máy Cloud trong danh sách kiểm tra', run.stdout)
                     if expected:
                         self.assertIn(expected, run.stdout)
+
+
+    def test_resize_accepts_hardware_limits_and_refuses_a_running_vm(self):
+        with tempfile.TemporaryDirectory(prefix='limix-resize-fixture-') as temp:
+            root = Path(temp)
+            app = root / 'app'
+            app.mkdir()
+            for name in ['hyperv-control.ps1', 'hyperv-common.ps1']:
+                (app / name).write_text((HERE / name).read_text(encoding='utf-8-sig'), encoding='utf-8-sig')
+            (root / 'hyperv.json').write_text(json.dumps({'Store': str(root), 'InstallId': 'fixture'}))
+            harness = root / 'harness.ps1'
+            harness.write_text(r'''
+param($Action, $State)
+$ErrorActionPreference = 'Stop'
+$global:FixtureVm=@{Notes='LimixCloudServer:fixture';State=$State;ProcessorCount=4;MemoryStartup=12GB}
+function Import-Module($Name) {}
+function Get-CimInstance($ClassName) { @{NumberOfLogicalProcessors=56;TotalPhysicalMemory=64GB} }
+function Get-VM($Name) { $global:FixtureVm }
+function Set-VM($VM,$ProcessorCount,$MemoryStartupBytes) {
+    $VM.ProcessorCount=$ProcessorCount
+    $VM.MemoryStartup=$MemoryStartupBytes
+    Write-Output 'fixture-applied'
+}
+& (Join-Path $PSScriptRoot 'app/hyperv-control.ps1') -Action $Action
+''', encoding='utf-8-sig')
+
+            def run(action, state='Off', cpu=56, memory=56):
+                return subprocess.run(
+                    ['powershell.exe','-NoProfile','-ExecutionPolicy','Bypass','-File',str(harness),action,state],
+                    input=json.dumps({'Cpu':cpu,'MemoryGb':memory}), capture_output=True,
+                    encoding='utf-8', errors='replace', timeout=15
+                )
+
+            limits = run('ResourceLimits')
+            self.assertEqual(limits.returncode, 0, limits.stderr)
+            self.assertEqual(json.loads(limits.stdout), {
+                'MaxCpu':56,'MaxMemoryGb':56,'HostMemoryGb':64,
+                'ConfiguredCpu':4,'ConfiguredMemoryGb':12,'VmState':'Off',
+            })
+            changed = run('Resize')
+            self.assertEqual(changed.returncode, 0, changed.stderr)
+            self.assertIn('fixture-applied', changed.stdout)
+            for invalid in (run('Resize', cpu=57), run('Resize', memory=57), run('Resize', state='Running')):
+                self.assertNotEqual(invalid.returncode, 0)
+                self.assertNotIn('fixture-applied', invalid.stdout)
 
 
 class GuestTests(unittest.TestCase):

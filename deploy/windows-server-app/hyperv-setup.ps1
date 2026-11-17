@@ -14,8 +14,6 @@ if ((Get-Service vmms -ErrorAction Stop).Status -ne 'Running') { throw 'Dịch v
 if (Get-VM -Name 'LimixCloudServer' -ErrorAction SilentlyContinue) { throw 'Đã có máy LimixCloudServer. Không ghi đè máy hoặc ổ đĩa hiện có.' }
 $switch = Get-VMSwitch -Name $request.Switch -ErrorAction Stop
 if ($switch.SwitchType -notin @('Internal','External')) { throw 'Switch cần kết nối mạng ra ngoài. Không dùng Private switch.' }
-$hostMemory = [math]::Floor((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB)
-if ($request.MemoryGb -gt ($hostMemory - 8)) { throw 'Cần giữ tối thiểu 8 GB RAM cho Windows và công việc khác.' }
 $sourceConfig = Join-Path $env:LOCALAPPDATA 'LimixBot-Managed-Host\host.xml'
 if (-not (Test-Path -LiteralPath $sourceConfig)) { throw 'Không tìm thấy cấu hình Cloud. Dùng tài khoản Windows đã chạy host trước đây.' }
 $source = Import-Clixml -LiteralPath $sourceConfig
