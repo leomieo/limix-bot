@@ -85,7 +85,7 @@ sealed class SetupWindow : Form
     public SetupWindow()
     {
         Icon=Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-        Text="Limix Cloud Server 0.3.0 beta";
+        Text="Limix Cloud Server 0.3.1 beta";
         Size=new Size(1120,860);MinimumSize=new Size(1000,760);StartPosition=FormStartPosition.CenterScreen;
         Font=new Font("Segoe UI",11);BackColor=Color.FromArgb(18,18,18);ForeColor=Color.White;
         var header=new Panel {Dock=DockStyle.Top,Height=94,Padding=new Padding(22,16,22,8)};
@@ -156,7 +156,7 @@ sealed class SetupWindow : Form
         actionPage.Controls.Add(button);
     }
     void Log(string text) { if(IsDisposed)return; if(InvokeRequired) { BeginInvoke(()=>Log(text));return; } output.AppendText(text+Environment.NewLine);
-        if(text.Contains("Hyper-V:")||text.Contains("Máy Cloud đạt")||text.Contains("Chưa nhận được")||text.Contains("Đã kích hoạt"))summary.Text=text; }
+        if(text.Contains("Hyper-V:")||text.Contains("Máy Cloud đạt")||text.StartsWith("Dịch vụ Cloud đang chạy")||text.Contains("Chưa nhận được")||text.Contains("Đã kích hoạt"))summary.Text=text; }
     async Task Install()
     {
         if(HasSetup) {MessageBox.Show("Đã có cấu hình. Dùng Tổng quan hoặc Khắc phục.");return;}
@@ -170,7 +170,7 @@ sealed class SetupWindow : Form
             var script=Path.Combine(Program.Root,"app","hyperv-setup.ps1");
             var code=await Run(null,script,settings);
             if(code!=0) Log("Cài đặt chưa hoàn tất. Xem lỗi phía trên; dữ liệu gốc được giữ. Không bật host cũ nếu Cloud mới đã chạy.");
-            else Log("Đã chuyển sang Hyper-V. Kiểm tra Cloud trên máy khác, rồi thử reboot Xeon khi chưa đăng nhập Windows.");
+            else Log("Đã chuyển sang Hyper-V. Kiểm tra Cloud từ máy khác, rồi khởi động lại máy chủ và thử kết nối trước khi đăng nhập Windows.");
         }
         catch(Exception e) { Log(e.Message); }
         finally { busy=false;buttons.Enabled=true; }

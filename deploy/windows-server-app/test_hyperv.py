@@ -145,6 +145,44 @@ def load_script(name):
     spec=importlib.util.spec_from_file_location(name.replace('-','_'),HERE / (name+'.py'))
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
 
+class ControlTests(unittest.TestCase):
+    def test_status_logs_and_power_actions_are_dispatched(self):
+        with tempfile.TemporaryDirectory(prefix='limix-control-fixture-') as temp:
+            root = Path(temp)
+            app = root / 'app'
+            app.mkdir()
+            control = app / 'hyperv-control.ps1'
+            control.write_text((HERE / control.name).read_text(encoding='utf-8-sig'), encoding='utf-8-sig')
+            (root / 'hyperv.json').write_text(json.dumps({'Store': str(root), 'MigrationState': 'active'}))
+            (app / 'hyperv-common.ps1').write_text(r'''
+function Get-ServerVm($Config) { @{State = 'Running'} }
+function Get-GuestHealth($Config) { @{Address='127.0.0.1'; Data=@{phase='ready'; healthyHomes=0; expectedHomes=0}} }
+function Get-GuestPhaseText($Phase) { 'fixture-phase' }
+function Set-VM($VM,$AutomaticStartAction) { Write-Output "autostart=$AutomaticStartAction" }
+function Stop-VM($VM) { Write-Output 'fixture-stop' }
+function Invoke-RestMethod($Uri,$Headers,$TimeoutSec) { @{logs='fixture-logs'} }
+''', encoding='utf-8-sig')
+            harness = root / 'harness.ps1'
+            harness.write_text(r'''
+param($Action)
+$ErrorActionPreference = 'Stop'
+function Import-Module($Name) {}
+& (Join-Path $PSScriptRoot 'app/hyperv-control.ps1') -Action $Action
+''', encoding='utf-8-sig')
+            for action, expected in [('Status', None), ('Logs', 'fixture-logs'),
+                                     ('Start', 'autostart=Start'), ('Stop', 'fixture-stop')]:
+                with self.subTest(action=action):
+                    run = subprocess.run(
+                        ['powershell.exe','-NoProfile','-ExecutionPolicy','Bypass','-File',str(harness),action],
+                        capture_output=True, encoding='utf-8', errors='replace', timeout=15
+                    )
+                    self.assertEqual(run.returncode, 0, run.stderr)
+                    self.assertNotIn('0/0', run.stdout)
+                    self.assertIn('chưa có máy Cloud trong danh sách kiểm tra', run.stdout)
+                    if expected:
+                        self.assertIn(expected, run.stdout)
+
+
 class GuestTests(unittest.TestCase):
     def test_manifest_refuses_path_traversal_and_changed_transfer(self):
         module=load_script('linux-bootstrap')

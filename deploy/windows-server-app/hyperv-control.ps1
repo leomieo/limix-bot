@@ -1,9 +1,8 @@
-﻿[Console]::InputEncoding=[Text.UTF8Encoding]::new($false)
+﻿param([ValidateSet('Status','Start','Stop','Check','EnableHyperV','Logs')][string]$Action='Status')
+[Console]::InputEncoding=[Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding=[Text.UTF8Encoding]::new($false)
 $OutputEncoding=[Text.UTF8Encoding]::new($false)
-param([ValidateSet('Status','Start','Stop','Check','EnableHyperV','Logs')][string]$Action='Status')
 $ErrorActionPreference='Stop'
-[Console]::OutputEncoding=[Text.Encoding]::UTF8
 . (Join-Path $PSScriptRoot 'hyperv-common.ps1')
 if ($Action -eq 'EnableHyperV') {
     Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All -All -NoRestart | Out-Null
@@ -36,7 +35,12 @@ if ($Action -eq 'Start') {
 Write-Output ('Hyper-V: ' + (Get-ServerVm $config).State + '; Chuyển dữ liệu: ' + $config.MigrationState)
 $health=Get-GuestHealth $config
 if ($health) {
-    Write-Output ((Get-GuestPhaseText $health.Data.phase) + '; Máy Cloud đạt kiểm tra: ' + $health.Data.healthyHomes + '/' + $health.Data.expectedHomes)
+    $status = Get-GuestPhaseText $health.Data.phase
+    if ($health.Data.phase -eq 'ready' -and $health.Data.expectedHomes -eq 0) {
+        Write-Output 'Dịch vụ Cloud đang chạy; chưa có máy Cloud trong danh sách kiểm tra.'
+    } else {
+        Write-Output ($status + '; Máy Cloud đạt kiểm tra: ' + $health.Data.healthyHomes + '/' + $health.Data.expectedHomes)
+    }
     if ($Action -eq 'Logs') {
         $answer = Invoke-RestMethod -Uri ('http://' + $health.Address + ':9876/logs') -Headers @{Authorization=('Bearer ' + $config.HealthKey)} -TimeoutSec 15
         Write-Output $answer.logs
