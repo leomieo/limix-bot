@@ -2283,6 +2283,8 @@ for rel, edits in json.loads((ROOT / "limix/patches/messaging-module.json").read
     target = ROOT / rel
     current = original = target.read_text(encoding="utf-8")
     for patch in edits:
+        if patch["after"] and patch["after"] in current:
+            continue
         if patch["before"] in current:
             current = current.replace(patch["before"], patch["after"], 1)
     if current != original:

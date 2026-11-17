@@ -72,6 +72,18 @@
   {
    "before": "instances: () => registry.describe(), channels: limixGatewayConnections })",
    "after": "instances: () => registry.describe() })"
+  },
+  {
+   "before": "import { imageConnectorRefusal } from \"./limix-image-routing.ts\";\n",
+   "after": "import { imageConnectorRefusal } from \"./limix-image-routing.ts\";\nimport { withoutLimixHiddenApps } from \"./limix-app-catalog.ts\";\n"
+  },
+  {
+   "before": "catalog: () => composio.listToolkits(cfg),",
+   "after": "catalog: () => composio.listToolkits(cfg).then(withoutLimixHiddenApps),"
+  },
+  {
+   "before": "      const { cards, source, pagination } = await composio.listToolkits(cfg);",
+   "after": "      const { cards, source, pagination } = withoutLimixHiddenApps(await composio.listToolkits(cfg));"
   }
  ],
  "server/routes/bot-skills.ts": [

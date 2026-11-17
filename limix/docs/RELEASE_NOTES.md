@@ -1,3 +1,13 @@
+Limix Bot 0.3.76
+
+## Tiếng Việt
+
+- Mục Ứng dụng không còn hiện Telegram trong danh sách và kết quả tìm kiếm, cũng không gợi ý Telegram cho bot, để không nhầm với cách kết nối bot Telegram của Limix.
+
+## English
+
+- Apps no longer lists Telegram, in the catalog, in search or in suggestions to bots, so it is not mistaken for Limix's own Telegram bot connection.
+
 Limix Bot 0.3.75
 
 ## Tiếng Việt
