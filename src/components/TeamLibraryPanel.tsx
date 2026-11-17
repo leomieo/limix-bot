@@ -11,6 +11,7 @@ import { api, useStore, type Bot, type Group } from "@/state/store";
 import { ArrowLeft, Check, Compass, ExternalLink, FolderOpen, Github, Loader2, RefreshCw, Search, Share2, UploadCloud, Users, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { TeamTemplateDetails } from "./TemplateDetails";
 import { catalogCopy, catalogMatches, type TeamCatalog, type TeamCatalogEntry } from "@/lib/team-catalog";
 
 import { TEAM_GLYPHS, TeamImportDetails } from "./TeamImportDetails";
@@ -128,6 +129,7 @@ export function TeamLibraryPanel({
   const [creating, setCreating] = useState(false);
   const [sharing, setSharing] = useState<string | null>(null);
   const [nestedDialog, setNestedDialog] = useState(false);
+  const [teamDetails, setTeamDetails] = useState<TeamCatalogEntry | null>(null);
   const [orgListing, setOrgListing] = useState<OrgLibraryListing | null>(null);
   const [orgBusy, setOrgBusy] = useState<string | null>(null);
   const [orgNotice, setOrgNotice] = useState("");
@@ -713,6 +715,7 @@ export function TeamLibraryPanel({
               )}
               {tab === "teams" && (
                 <div>
+                  {teamDetails && <TeamTemplateDetails entry={teamDetails} onClose={() => { setTeamDetails(null); setNestedDialog(false); }} onUse={() => { const entry = teamDetails; setTeamDetails(null); setNestedDialog(false); void loadLibraryTeam(entry); }} />}
                   {catalogLoading && (
                     <div className="flex items-center justify-center gap-2 py-24 text-[13px] text-ink-secondary">
                       <Loader2 size={16} className="animate-spin" /> {t("templates.loading")}
@@ -740,6 +743,7 @@ export function TeamLibraryPanel({
                               {entry.setupMinutes && ` · ${t("templates.minutes", { count: entry.setupMinutes })}`}
                             </p>
                           </div>
+                          <button type="button" data-team-details={entry.slug} onClick={() => { setTeamDetails(entry); setNestedDialog(true); }} className="shrink-0 rounded-full px-2.5 py-2 text-[13px] text-accent-text hover:underline">{lx("Xem thêm", "See more")}</button>
                           <button
                             onClick={() => void loadLibraryTeam(entry)}
                             disabled={busySlug !== null}

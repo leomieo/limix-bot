@@ -1,6 +1,10 @@
 // "Xem thêm" on a bot template or a team template: everything the template brings, laid out the same way for each, so a
 // person can compare two before pressing "Dùng mẫu". Nothing is created here.
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { catalogCopy, type TeamCatalogEntry } from "@/lib/team-catalog";
+import { teamImportPreview, type PendingTeamImport } from "@/lib/team-import";
+import { t } from "@/lib/i18n";
+import { api } from "@/state/store";
 import { createPortal } from "react-dom";
 import { Loader2, Plus, X } from "lucide-react";
 import { lx } from "@/lib/limix-text";
@@ -59,4 +63,39 @@ export function TemplateDetails({ title, subtitle, icon, loading, error, section
       <button type="button" data-details-close="" onClick={onClose} aria-label={lx("Đóng", "Close")} className="ui-icon-button absolute end-3 top-3"><X size={16} /></button>
     </div>
   </div>, document.body);
+}
+
+/** "Xem thêm" on a team template: the catalog line plus who is on the team, read from its manifest. */
+export function TeamTemplateDetails({ entry, onUse, onClose }: { entry: TeamCatalogEntry; onUse: () => void; onClose: () => void }) {
+  const copy = catalogCopy(entry);
+  const [team, setTeam] = useState<PendingTeamImport | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    let live = true;
+    api(`/api/team-library/teams/${entry.slug}`).then((manifest) => { if (live) setTeam(teamImportPreview(manifest)); },
+      (cause: unknown) => { if (live) setError(cause instanceof Error ? cause.message : String(cause)); });
+    return () => { live = false; };
+  }, [entry.slug]);
+  const facts = [
+    t("templates.botCount", { count: team?.members.length ?? entry.members }),
+    ...(team ? [lx(`${team.rooms} phòng`, `${team.rooms} rooms`), lx(`${team.routines} lịch định kỳ`, `${team.routines} routines`)] : []),
+    ...(entry.setupMinutes ? [t("templates.minutes", { count: entry.setupMinutes })] : []),
+  ];
+  return <TemplateDetails
+    title={copy.name}
+    subtitle={entry.category}
+    loading={!team && !error}
+    error={error}
+    sections={[
+      { label: lx("Nhóm này làm gì", "What the team does"), body: [copy.summary, copy.outcome].filter(Boolean).join("\n\n") },
+      { label: lx("Tổng quan", "At a glance"), body: facts },
+      { label: lx("Thành viên", "Members"), body: (team?.members ?? []).map((member) => (member.title ? `${member.name} — ${member.title}` : member.name)) },
+      { label: lx("Kỹ năng đi kèm", "Skills included"), body: team?.skills?.length ? team.skills : entry.skills },
+      { label: lx("Ứng dụng cần kết nối", "Apps needed"), body: team?.apps.length ? team.apps.map((app) => (app.optional ? lx(`${app.label} (không bắt buộc)`, `${app.label} (optional)`) : app.label)) : entry.requires.apps },
+      { label: lx("Lưu ý", "Notes"), body: team?.warnings ?? [] },
+    ]}
+    useLabel={t("templates.load")}
+    onUse={onUse}
+    onClose={onClose}
+  />;
 }

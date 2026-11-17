@@ -250,7 +250,7 @@ export const PinnedBotCircle = memo(function PinnedBotCircle({
             />
           )}
         </span>
-        <span className="w-full truncate text-center text-[11px] leading-4 text-ink">{bot.name}</span>
+        <span className="w-full whitespace-normal [overflow-wrap:anywhere] text-center text-[11px] leading-4 text-ink">{bot.name}</span>
       </button>
       {/* Same short slot on every circle, so a chevron on only some bots does not shift the row. */}
       {showThreads && density !== "icons" && <div className="flex h-4 w-full items-center justify-center">
