@@ -166,6 +166,21 @@ sealed class SetupWindow : Form
         compute.Controls.Add(applyResources);
         applyResources.Click+=async(_,_)=>await ResizeResources();
         Note(compute,"Giới hạn RAM chừa lại 8 GB cho Windows. Nếu Windows hoặc Docker Desktop đang dùng nhiều RAM, hãy chọn mức thấp hơn. Số máy Cloud chạy cùng lúc là thiết lập riêng.");
+        Note(compute,"Số máy Cloud chạy đồng thời (1–64). Tắt Cloud trước khi lưu. Cập nhật dịch vụ cần Docker Desktop đang chạy và sẽ khởi động lại máy Cloud.");
+        var capacityInput=new NumericUpDown {Minimum=1,Maximum=64,Value=2,Width=85};
+        compute.Controls.Add(capacityInput);
+        actionPage=compute;
+        AddButton("Lưu số máy và cập nhật dịch vụ",async()=>{
+            if(MessageBox.Show("Áp dụng số máy đã chọn và cập nhật dịch vụ Cloud. Máy Cloud phải đang tắt. Tiếp tục?",
+                "Cập nhật Cloud Server",MessageBoxButtons.OKCancel)!=DialogResult.OK)return;
+            busy=true;buttons.Enabled=false;
+            try{
+                Program.Extract();
+                var settings=JsonSerializer.Serialize(new {Capacity=(int)capacityInput.Value});
+                var code=await Run(null,Path.Combine(Program.Root,"app","repair.ps1"),settings);
+                if(code!=0)Log("Chưa áp dụng xong. Xem lỗi phía trên.");
+            }finally{busy=false;buttons.Enabled=true;}
+        });
         var startup=Page("Khởi động tự động","Chạy lại sau khi bật máy","Cloud Hyper-V tự khởi động cùng Windows khi đã bấm Bật máy Cloud. Bot điều khiển ứng dụng Windows và Docker Desktop cần phiên desktop đã đăng nhập.");
         actionPage=startup;
         AddButton("Windows và Limix Bot chạy nền",()=>{using var window=new WindowsStartupWindow();window.ShowDialog(this);return Task.CompletedTask;});

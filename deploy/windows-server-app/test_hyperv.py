@@ -288,7 +288,9 @@ class SeedTests(unittest.TestCase):
             boot=entries['/etc/systemd/system/limix-cloud-bootstrap.service'][1]
             self.assertIn('TimeoutStartSec=infinity',boot)
             commands=text.split('runcmd:')[1]
-            self.assertNotIn('limix-cloud-host.service',commands)
+            self.assertIn('[systemctl, try-restart, limix-cloud-host.service]', commands)
+            self.assertNotIn('[systemctl, enable, --now, limix-cloud-host.service]', commands)
+            self.assertNotIn('[systemctl, start, limix-cloud-host.service]', commands)
             self.assertIn('limix-cloud-health.service, limix-cloud-bootstrap.service',commands)
             self.assertNotIn('a'*43,result.stdout+result.stderr)
 

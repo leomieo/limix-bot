@@ -11,6 +11,16 @@ $vm=Get-ServerVm $config
 if ($vm.State -ne 'Off') {throw 'Bấm Dừng, chờ máy Cloud tắt rồi bấm Sửa máy Cloud. Không dừng Docker Desktop.'}
 if (-not (Test-Path -LiteralPath $config.Store)) {throw 'Không tìm thấy ổ dữ liệu Cloud. Kết nối lại ổ trước khi sửa.'}
 $source=Import-Clixml -LiteralPath (Join-Path $env:LOCALAPPDATA 'LimixBot-Managed-Host\host.xml')
+$inputText = [Console]::In.ReadToEnd()
+if (-not [string]::IsNullOrWhiteSpace($inputText)) {
+    $request = $inputText | ConvertFrom-Json
+    if (($request.Capacity -isnot [int] -and $request.Capacity -isnot [long]) -or $request.Capacity -lt 1 -or $request.Capacity -gt 64) {
+        throw 'Số máy Cloud chạy đồng thời phải từ 1 đến 64.'
+    }
+    $source.Capacity = $request.Capacity
+    $source | Export-Clixml -LiteralPath (Join-Path $env:LOCALAPPDATA 'LimixBot-Managed-Host\host.xml')
+}
+
 $token=[Net.NetworkCredential]::new('', $source.Token).Password
 $repair=Join-Path $config.Store ('repair-'+[guid]::NewGuid())
 Protect-ServerDirectory $repair

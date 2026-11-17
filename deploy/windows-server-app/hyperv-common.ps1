@@ -141,6 +141,6 @@ WantedBy=multi-user.target
         $mode = if ($entry.Key -like '/etc/limix-server/*') {'0600'} else {'0644'}
         $text += "  - path: $($entry.Key)`n    owner: root:root`n    permissions: '$mode'`n    encoding: b64`n    content: $([Convert]::ToBase64String($bytes))`n"
     }
-    $text += "runcmd:`n  - [systemctl, daemon-reload]`n  - [systemctl, enable, --now, limix-cloud-health.service, limix-cloud-bootstrap.service]`n"
+    $text += "runcmd:`n  - [systemctl, daemon-reload]`n  - [systemctl, enable, --now, limix-cloud-health.service, limix-cloud-bootstrap.service]`n  - [systemctl, try-restart, limix-cloud-host.service]`n"
     return $text
 }
