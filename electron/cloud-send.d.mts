@@ -139,7 +139,10 @@ export interface CloudSendPageBridge {
 
 /** Some of this computer's bots moving to My Cloud (bot-move-main.mjs). `bot`: the first of them, `bots`: how many go. */
 export interface BotMoveView { bot: { id: string; name: string }; team: { id: string; name: string }; phase: "moving" | "failed" | "done"; bots?: number }
-export interface BotMoveState { available: boolean; moving: string[] }
+/** Why bots cannot move now, when they cannot: signed out of Limix Cloud, no Cloud yet (not approved), the Cloud still
+ * setting up, failed, ended, not taking bots, or this computer's whole team is on its way. */
+export type BotMoveBlock = "signed-out" | "no-cloud" | "setting-up" | "failed" | "ended" | "no-moves" | "busy";
+export interface BotMoveState { available: boolean; moving: string[]; blocked?: BotMoveBlock }
 
 /** The switch "Keep this computer's bots on this computer" (one-home-main.mjs). `shown`: this person has a Cloud of their
  * own the move applies to; `moved`: this computer's bots live on My Cloud, so turning it on brings them home; `coming`:

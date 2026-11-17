@@ -308,9 +308,22 @@ export function installOneHome({ localRequest: anyServer, clean = null, account,
     if (sendDeps.cloudPage(event) !== "local") throw new Error(`${channel} is only available on this computer's page`);
     return handler(...args);
   };
+  const moveBlock = (journalMove) => {
+    const state = account()?.state();
+    if (state?.status !== "connected") return "signed-out";
+    const machine = state.machine;
+    if (!machine) return "no-cloud";
+    if (machine.hold) return "ended";
+    if (machine.status === "failed") return "failed";
+    if (machine.status !== "ready" || !machine.origin) return "setting-up";
+    if (machine.moves !== true) return "no-moves";
+    return journalMove && journalMove.phase !== "back" ? "busy" : null;
+  };
   const botMoveState = () => {
     const moving = parseJournal(journal.read());
-    return { available: cloudTakesBots() && (!moving || moving.phase === "back"), moving: botMove.moving() };
+    const available = cloudTakesBots() && (!moving || moving.phase === "back");
+    const blocked = available ? null : moveBlock(moving) ?? "no-moves";
+    return { available, moving: botMove.moving(), ...(blocked ? { blocked } : {}) };
   };
   sendDeps.ipcMain.handle("cloud-send:bot-move-state", localPage("cloud-send:bot-move-state", botMoveState));
   // Asked on whichever page is open: a person just back from buying My Cloud is looking at My Cloud. The bots come from this

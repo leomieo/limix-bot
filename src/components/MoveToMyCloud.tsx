@@ -112,6 +112,19 @@ function useBotMoveState(): BotMoveState | null {
   return known;
 }
 
+/** The one reason the menu item is greyed out, so the person knows what to do next instead of a catch-all. */
+function blockedHint(blocked: BotMoveState["blocked"]): string {
+  switch (blocked) {
+    case "signed-out": return lx("Bạn chưa đăng nhập Limix Cloud. Mở Cài đặt → Limix Cloud để đăng nhập.", "You are not signed in to Limix Cloud. Open Settings → Limix Cloud to sign in.");
+    case "no-cloud": return lx("Tài khoản chưa có Cloud (yêu cầu dùng thử chưa được duyệt). Mở Cài đặt → Limix Cloud để gửi yêu cầu hoặc xem trạng thái.", "This account has no Cloud yet (the trial is not approved). Open Settings → Limix Cloud to ask or check.");
+    case "setting-up": return lx("Cloud đang được khởi tạo, chưa sẵn sàng nhận bot. Thử lại sau ít phút.", "Your Cloud is still setting up. Try again in a few minutes.");
+    case "failed": return lx("Cloud đang gặp lỗi khởi động và sẽ tự thử lại. Xem chi tiết trong Cài đặt → Limix Cloud.", "Your Cloud failed to start and will retry. See Settings → Limix Cloud.");
+    case "ended": return lx("Cloud của tài khoản đã dừng hoặc hết hạn.", "This account's Cloud has stopped or ended.");
+    case "busy": return lx("Đang có đợt chuyển cả đội bot lên Cloud. Chờ đợt đó xong rồi thử lại.", "The whole team is moving to Cloud. Wait for it to finish.");
+    default: return lx("Cloud chưa nhận bot. Kiểm tra trạng thái trong Cài đặt → Limix Cloud.", "Your Cloud is not taking bots yet. Check Settings → Limix Cloud.");
+  }
+}
+
 /** A bot's own "Move to My Cloud", and the one confirm it opens. */
 export function useMoveToMyCloud() {
   const known = useBotMoveState();
@@ -132,7 +145,7 @@ export function useMoveToMyCloud() {
       const moving = known?.moving.includes(bot.id);
       if (!known?.available || moving) return [item(<Cloud size={16} className="text-ink-secondary" />, t("cloudSend.botMove.menu"), undefined, {
         disabled: true,
-        hint: moving ? lx("Bot này đang được chuyển lên Cloud.", "This bot is moving to Cloud.") : known === null ? lx("Chưa đọc được trạng thái chuyển bot. Mở Cài đặt → Limix Cloud để kiểm tra kết nối.", "Transfer status is unavailable. Check Settings → Limix Cloud.") : lx("Cloud chưa cho phép chuyển bot hoặc đang có đợt chuyển khác. Kiểm tra trạng thái trong Cài đặt → Limix Cloud.", "Cloud is not accepting bot transfers or another transfer is in progress. Check Settings → Limix Cloud."),
+        hint: moving ? lx("Bot này đang được chuyển lên Cloud.", "This bot is moving to Cloud.") : known === null ? lx("Chưa đọc được trạng thái chuyển bot. Mở Cài đặt → Limix Cloud để kiểm tra kết nối.", "Transfer status is unavailable. Check Settings → Limix Cloud.") : blockedHint(known.blocked),
       })];
       return [item(<Cloud size={16} className="text-ink-secondary" />, t("cloudSend.botMove.menu"), () => { setError(null); setAsked(bot); })];
     },
