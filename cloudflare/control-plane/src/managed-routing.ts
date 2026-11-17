@@ -34,6 +34,9 @@ export async function routedHostnames(env: Env): Promise<Set<string>> {
   return new Set(Object.keys(JSON.parse(routed.routed) as Record<string, string>).filter(name => live.has(name)));
 }
 
+const RECHECK_MS = 5 * 60_000;
+const lastChecked = new Map<string, number>();
+
 /** Brings DNS and ingress in line with the workspaces; progress is saved after each step, so a failure resumes later. */
 export async function syncHostRouting(env: Env, workspaceIds: string[], fetcher: CloudflareFetch = fetch): Promise<boolean> {
   const tunnelId = await hostTunnelId(env, fetcher);
@@ -46,7 +49,18 @@ export async function syncHostRouting(env: Env, workspaceIds: string[], fetcher:
   let complete = true;
 
   for (const hostname of desired.keys()) {
-    if (routed[hostname]) continue;
+    if (routed[hostname]) {
+      // A record we made can go missing (deleted in the dashboard) or point at an older tunnel (the host's tunnel was made
+      // again): the home then looks ready while nothing reaches it, and pairing and moves fail with "not ready". Checked
+      // again every few minutes, not on every poll.
+      if (Date.now() - (lastChecked.get(hostname) ?? 0) < RECHECK_MS) continue;
+      lastChecked.set(hostname, Date.now());
+      const record = await client.getDNSRecord(routed[hostname]!);
+      if (record && record.content.toLowerCase() === target && record.name.toLowerCase() === hostname) continue;
+      if (record && record.name.toLowerCase() === hostname) await client.deleteDNSRecord(routed[hostname]!);
+      delete routed[hostname];
+      await save();
+    }
     const records = await client.listDNSRecords(hostname);
     const ours = records.find(record => record.content.toLowerCase() === target);
     if (ours) routed[hostname] = ours.id;
