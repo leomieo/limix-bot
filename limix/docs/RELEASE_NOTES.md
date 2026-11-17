@@ -1,3 +1,13 @@
+Limix Bot 0.3.65
+
+## Tiếng Việt
+
+- Chủ bot nhắn qua Telegram/Zalo ở chế độ toàn quyền: bot không còn dừng chờ duyệt khi chạy lệnh mở ứng dụng hoặc lệnh phức tạp trên máy. Các lệnh nguy hiểm trong danh sách cấm (ví dụ xoá sạch ổ đĩa) vẫn luôn bị chặn.
+
+## English
+
+- The bot's owner on Telegram/Zalo at Full access: the bot no longer stops for approval on commands that open apps or are too complex to read. Commands on the never-list (such as wiping a drive) are still always denied.
+
 Limix Bot 0.3.64
 
 ## Tiếng Việt
