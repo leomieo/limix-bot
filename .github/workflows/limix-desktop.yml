@@ -20,13 +20,83 @@ jobs:
     with:
       publish: false
     secrets: inherit
-  package:
+  package-mac:
     strategy:
-      fail-fast: false
       matrix:
         include:
           - os: macos-15
             platform: macos
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: pnpm/action-setup@ff378ebe6b225b0680b81c1ad4498ae0d1d3a5e3
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Verify channel replies and Cloud move menu
+        run: node node_modules/vitest/vitest.mjs run src/components/MoveToMyCloud.dom.test.ts src/components/ChannelReplyComposer.dom.test.ts server/limix-channel-actions.test.ts
+      - name: Verify template mascot library
+        run: |
+          node --experimental-strip-types scripts/gen-template-mascots.ts --check
+          node node_modules/vitest/vitest.mjs run server/limix-template-mascot.test.ts server/limix-bot-library.test.ts src/lib/ready-bots.test.ts
+      - name: Verify gateway clipboard
+        run: |
+          node --test electron/limix-docker-mac.node-test.mjs electron/limix-gateway-clipboard.node-test.mjs limix/gateway/test/*.test.mjs
+          node node_modules/vitest/vitest.mjs run src/components/LimixGatewayClipboard.dom.test.ts src/lib/copy-text.test.ts src/lib/copy-text.guard.test.ts
+      - name: Verify channel isolation and privacy
+        run: node node_modules/vitest/vitest.mjs run server/limix-channel-review.test.ts server/limix-channel-identity.test.ts server/bot-api-host.test.ts src/state/thread-navigation.test.ts
+      - name: Verify Responses image generation
+        run: node node_modules/vitest/vitest.mjs run server/limix-image-routing.test.ts server/limix-image-routing.e2e.test.ts server/image-generation.test.ts server/limix-image-connections.test.ts server/routes/image-settings.test.ts server/routes/image-tools.test.ts src/components/ImageGenerationSettings.test.ts
+      - name: Verify transfer and skill changes
+        run: |
+          node --test limix/account-sync/account-sync.test.mjs electron/limix-sign-out.node-test.mjs electron/limix-skill-install.node-test.mjs
+          pnpm exec vitest run server/limix-transfer-account.test.ts server/workspace-backup-http.test.ts src/components/LimixSignOutDialog.test.ts src/components/LimixToolsDialog.scan.dom.test.ts server/limix-transfer-version.test.ts server/limix-hub-download.test.ts server/workspace-backup.test.ts src/components/WorkspaceBackupSettings.test.ts src/components/SkillsSection.behavior.test.ts
+      - name: Prepare pinned Python and uv
+        run: node scripts/prepare-limix-runtime.mjs
+      - name: Verify selected upstream improvements
+        run: node scripts/verify-limix-upstream.mjs
+      - name: Build macOS Apple Silicon and Intel
+        if: matrix.platform == 'macos'
+        run: pnpm package:mac
+      - name: Build Linux x64
+        if: matrix.platform == 'linux'
+        run: pnpm package:linux
+      - name: Check packaged macOS server on Apple Silicon
+        if: matrix.platform == 'macos'
+        run: |
+          node scripts/smoke-limix-packaged.mjs 'release/mac-arm64/Limix Bot.app/Contents/MacOS/Limix Bot' 'release/mac-arm64/Limix Bot.app/Contents/Resources'
+          v=$(node -p "require('./package.json').version")
+          cp "release/LimixBot-$v-arm64.dmg" release/LimixBot-Apple-Silicon.dmg
+          cp "release/LimixBot-$v-x64.dmg" release/LimixBot-Intel.dmg
+      - name: Check packaged Linux server
+        if: matrix.platform == 'linux'
+        run: |
+          node scripts/smoke-limix-packaged.mjs release/linux-unpacked/openmausbot release/linux-unpacked/resources
+          v=$(node -p "require('./package.json').version")
+          cp "release/LimixBot-$v-x86_64.AppImage" release/LimixBot-Linux-x64.AppImage
+          cp "$(find release -maxdepth 1 -name '*.deb' -print -quit)" release/LimixBot-Linux-x64.deb
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: limix-bot-${{ matrix.platform }}
+          path: |
+            release/*.dmg
+            release/*.zip
+            release/*.blockmap
+            release/*.AppImage
+            release/*.deb
+            release/latest*.yml
+          if-no-files-found: error
+          retention-days: 30
+  package-linux:
+    strategy:
+      matrix:
+        include:
           - os: ubuntu-24.04
             platform: linux
     runs-on: ${{ matrix.os }}
@@ -97,7 +167,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
   intel-smoke:
-    needs: package
+    needs: package-mac
     runs-on: macos-15-intel
     timeout-minutes: 15
     steps:
@@ -116,7 +186,7 @@ jobs:
           ditto -x -k "$zip" "$RUNNER_TEMP/limix-intel"
           node scripts/smoke-limix-packaged.mjs "$RUNNER_TEMP/limix-intel/Limix Bot.app/Contents/MacOS/Limix Bot" "$RUNNER_TEMP/limix-intel/Limix Bot.app/Contents/Resources"
   publish:
-    needs: [windows, package, intel-smoke]
+    needs: [windows, package-linux]
     if: github.event_name == 'push' || inputs.publish
     runs-on: ubuntu-24.04
     steps:
@@ -129,12 +199,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
         with:
-          pattern: limix-bot-*
+          pattern: limix-bot-{windows,linux}
           merge-multiple: true
           path: release
       - name: Verify every updater file and platform
-        run: node scripts/verify-limix-release.mjs release
-      - name: Publish all platforms together
+        run: node scripts/verify-limix-release.mjs release windows,linux
+      - name: Publish Windows and Linux first (macOS follows)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -143,5 +213,29 @@ jobs:
           if ! gh release view "$tag" >/dev/null 2>&1; then
             gh release create "$tag" --draft --title "Limix Bot $v" --notes-file limix/docs/RELEASE_NOTES.md --target "$GITHUB_SHA"
           fi
-          gh release upload "$tag" release/*.exe release/*.dmg release/*.zip release/*.AppImage release/*.deb release/*.blockmap release/latest*.yml --clobber
+          gh release upload "$tag" release/*.exe release/*.AppImage release/*.deb release/*.blockmap release/latest.yml release/latest-linux.yml --clobber
           gh release edit "$tag" --draft=false --latest
+  publish-mac:
+    needs: [package-mac, intel-smoke, publish]
+    if: github.event_name == 'push' || inputs.publish
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: pnpm/action-setup@ff378ebe6b225b0680b81c1ad4498ae0d1d3a5e3
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          name: limix-bot-macos
+          path: release
+      - name: Verify macOS updater file
+        run: node scripts/verify-limix-release.mjs release macos
+      - name: Add macOS to the published release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v=$(node -p "require('./package.json').version")
+          gh release upload "v$v" release/*.dmg release/*.zip release/*.blockmap release/latest-mac.yml --clobber
