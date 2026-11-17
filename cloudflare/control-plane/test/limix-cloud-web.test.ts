@@ -22,7 +22,8 @@ it("opens the customer page with a one-time code, and a browser sign-in only man
     send("/api/cloud/desktop/" + path, { method, headers: { origin, authorization: "Bearer " + token, ...(body ? { "content-type": "application/json" } : {}) }, body: body && JSON.stringify(body) });
   const exchange = (code: string) => send("/api/cloud/web/exchange", { method: "POST", headers: { origin, "content-type": "application/json" }, body: JSON.stringify({ code }) });
 
-  const page = await send("/cloud");
+  expect((await send("/cloud")).status).toBe(200);
+  const page = await send("/");
   expect(page.status).toBe(200);
   expect(page.headers.get("content-type")).toContain("text/html");
   expect(page.headers.get("content-security-policy")).toContain("script-src 'nonce-");

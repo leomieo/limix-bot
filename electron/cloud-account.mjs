@@ -545,7 +545,7 @@ export function createCloudAccountClient({ store, openBrowser, platform, deviceN
     },
     cancel: () => { if (!pending && value.status !== "connecting") return Promise.resolve(state()); opened = null; return signOut(); },
     refresh, signOut,
-    async openDashboard() /* Limix Cloud: the customer page, signed in by a one-time code in the fragment. */ { const code = origin === CLOUD_ORIGIN && grant ? await request("web-code", { method: "POST", body: {}, token: grant.token }).then(r => (/^[A-Za-z0-9_-]{43}$/.test(r?.code ?? "") ? r.code : null), () => null) : null; await openBrowser(`${origin}/cloud${code ? `#code=${code}` : ""}`); return state(); },
+    async openDashboard() /* Limix Cloud: the customer page, signed in by a one-time code in the fragment. */ { const code = origin === CLOUD_ORIGIN && grant ? await request("web-code", { method: "POST", body: {}, token: grant.token }).then(r => (/^[A-Za-z0-9_-]{43}$/.test(r?.code ?? "") ? r.code : null), () => null) : null; await openBrowser(`${origin}${origin === CLOUD_ORIGIN ? "/" : "/cloud"}${code ? `#code=${code}` : ""}`); return state(); },
     async upgradePreview(plan, source) {
       if (!UPGRADE_TIERS.includes(plan) || !UPGRADE_SOURCES.includes(source)) throw new Error("Invalid Cloud upgrade.");
       const signedIn = grant;

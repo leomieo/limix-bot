@@ -1,3 +1,13 @@
+Limix Bot 0.3.73
+
+## Tiếng Việt
+
+- Trang quản lý Limix Cloud nay ở địa chỉ gọn cloud.limixmedia.com.
+
+## English
+
+- The Limix Cloud management page now lives at the short address cloud.limixmedia.com.
+
 Limix Bot 0.3.72
 
 ## Tiếng Việt

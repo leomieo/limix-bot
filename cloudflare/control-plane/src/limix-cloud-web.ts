@@ -1,4 +1,4 @@
-// Limix Cloud's page for customers: https://cloud.limixmedia.com/cloud. The desktop app (Settings → Limix Cloud →
+// Limix Cloud's page for customers: https://cloud.limixmedia.com (also at /cloud, for apps before 0.3.73). The desktop app (Settings → Limix Cloud →
 // "Manage in your browser") asks for a one-time code with its device token and opens the page with the code in the
 // address's fragment, which never reaches a server log. The page trades it for a short browser sign-in (a device row with
 // platform "web") and then reads the same session the desktop reads: the plan, the Cloud's state, and the computers signed
@@ -69,7 +69,7 @@ export async function revokeDevice(request: Request, env: Env, found: { id: stri
 
 /** Null for a path that is not the page's. */
 export function limixCloudWebRoute(path: string, request: Request, env: Env): Promise<Response> | null {
-  if (path === "/cloud" && request.method === "GET") return Promise.resolve(page());
+  if ((path === "/" || path === "/cloud") && request.method === "GET") return Promise.resolve(page());
   if (path === "/api/cloud/web/exchange") return exchange(request, env);
   return null;
 }
