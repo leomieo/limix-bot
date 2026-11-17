@@ -308,6 +308,11 @@ export function installOneHome({ localRequest: anyServer, clean = null, account,
     if (sendDeps.cloudPage(event) !== "local") throw new Error(`${channel} is only available on this computer's page`);
     return handler(...args);
   };
+  // A whole-team move that has not frozen anything yet (copying, or waiting for a quiet moment) gives way: moving chosen
+  // bots turns on "keep this computer's bots here", which drops it before any bot leaves. Once frozen, switched or away,
+  // it holds until it is done or back.
+  const blocksBotMoves = (journalMove) => Boolean(journalMove) && journalMove.phase !== "back"
+    && !(["copy", "wait"].includes(journalMove.phase) && !journalMove.thaw);
   const moveBlock = (journalMove) => {
     const state = account()?.state();
     if (state?.status !== "connected") return "signed-out";
@@ -317,11 +322,11 @@ export function installOneHome({ localRequest: anyServer, clean = null, account,
     if (machine.status === "failed") return "failed";
     if (machine.status !== "ready" || !machine.origin) return "setting-up";
     if (machine.moves !== true) return "no-moves";
-    return journalMove && journalMove.phase !== "back" ? "busy" : null;
+    return blocksBotMoves(journalMove) ? "busy" : null;
   };
   const botMoveState = () => {
     const moving = parseJournal(journal.read());
-    const available = cloudTakesBots() && (!moving || moving.phase === "back");
+    const available = cloudTakesBots() && !blocksBotMoves(moving);
     const blocked = available ? null : moveBlock(moving) ?? "no-moves";
     return { available, moving: botMove.moving(), ...(blocked ? { blocked } : {}) };
   };

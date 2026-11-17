@@ -193,3 +193,30 @@ test("a first move waits for the person's choice, asked on whichever page is ope
     assert.equal(alone.kept()?.phase, "copy", "with one bot there is nothing to choose");
   } finally { asked.main.close(); alone.main.close(); rmSync(folder, { recursive: true, force: true }); }
 });
+
+test("a whole-team move still copying gives way to moving chosen bots; once frozen it holds", async () => {
+  const CLOUD = "https://omb-t-2.fly.dev";
+  const folder = mkdtempSync(join(tmpdir(), "omb-move-giveway-"));
+  const handlers = new Map();
+  let kept = { v: 1, phase: "copy", cloud: { origin: CLOUD, account: "acct-1", machine: CLOUD }, startedAt: 1 }, keepChoice = null;
+  const bots = [{ id: "b0", name: "Bot 0" }, { id: "b1", name: "Bot 1" }];
+  const main = installOneHome({
+    ipcMain: { handle: (channel, handler) => handlers.set(channel, handler) }, cloudPage: (event) => event.page ?? null, server: () => null, home: () => ({ origin: CLOUD, grant: async () => ({ origin: CLOUD, code: "x" }) }),
+    cookieFetch: async () => json({}, 401), reconnect: async () => false, power: { asleep: () => false }, file: () => join(folder, "cloud-send.json"),
+    window: () => null, localOrigin: () => "http://127.0.0.1:4100", fetch: async () => json({}, 404),
+    localRequest: async (route) => (route === "/api/bots?messages=0" ? json({ bots }) : json({ frozen: false })),
+    account: () => ({ state: () => ({ status: "connected", account: { id: "acct-1", email: "person@example.test" }, machine: { status: "ready", origin: CLOUD, moves: true } }), pairHome: async () => { throw new Error("not in this test"); } }),
+    journalFile: () => join(folder, "one-home.json"), tempRoot: () => folder, journal: { read: () => kept, write: (value) => { kept = value; } },
+    keep: { read: () => keepChoice, write: (value) => { keepChoice = value; } }, chooses: true,
+  });
+  const ask = (channel, ...args) => handlers.get(channel)({ page: "local" }, ...args);
+  try {
+    assert.deepEqual(ask("cloud-send:bot-move-state"), { available: true, moving: [] }, "a copy that froze nothing does not hold the menu");
+    await ask("cloud-send:move-bots", ["b1"]).catch(() => {});
+    assert.equal(kept, null, "moving chosen bots drops the whole-team move before any bot leaves");
+    assert.equal(keepChoice?.on, true);
+
+    kept = { v: 1, phase: "final", cloud: { origin: CLOUD, account: "acct-1", machine: CLOUD }, startedAt: 1 };
+    assert.equal(ask("cloud-send:bot-move-state").blocked, "busy", "a frozen move holds until it is done");
+  } finally { main.close(); rmSync(folder, { recursive: true, force: true }); }
+});

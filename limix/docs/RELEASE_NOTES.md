@@ -1,3 +1,13 @@
+Limix Bot 0.3.63
+
+## Tiếng Việt
+
+- Sửa lỗi "Chuyển sang My Cloud" bị mờ với lý do "đang có đợt chuyển cả đội bot": một lần chuyển cả đội còn đang chép dở (chưa khoá máy) giờ nhường chỗ; khi bạn chọn chuyển từng bot, lần chuyển cả đội đó được huỷ trước khi bot nào rời máy.
+
+## English
+
+- Fix "Move to My Cloud" greyed out with "the whole team is moving": a whole-team move still copying (nothing frozen yet) now gives way; choosing bots to move cancels it before any bot leaves.
+
 Limix Bot 0.3.62
 
 ## Tiếng Việt
