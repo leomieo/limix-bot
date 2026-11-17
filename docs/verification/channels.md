@@ -54,3 +54,10 @@ busy rooms, pending approvals, goal leads and in-flight credential saves.
 Public channel creation and edits use the same validation as the Chief tools.
 Chiefs cannot move rooms/bots between sections, remove themselves, or change
 working folders. These tools add no separate approval workflow.
+
+## Reply to a channel chat: final answer only
+
+`replyText` in `server/bot-api-host.ts` hands the caller (and so the Telegram chat when the owner asks the bot to reply) the
+turn's terminal text. The progress notes a bot wrote on the way are no longer joined into it; texts with no turn id (older
+rows) are still all kept. Covered by `server/bot-api-host.test.ts` ("sends the final answer only…"). Not yet measured with a
+real chat: timing from request to delivery, and delivery count.
