@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { ArrowRightLeft, Check, Cloud, CloudAlert, CloudCheck, CloudOff, CloudUpload, Loader2, RotateCw, X } from "lucide-react";
-import type { BotMoveState, BotMoveStatus, BotMoveView } from "../../electron/cloud-send.mjs";
+import type { BotMoveState, BotMoveStatus, BotMoveView, MoveLevel } from "../../electron/cloud-send.mjs";
 import { botMoveLine, filterBots, ipcErrorText, CHOOSER_PAGE, MY_CLOUD_TEAM } from "@/lib/cloud-send";
 import { t } from "@/lib/i18n";
 import { lx } from "@/lib/limix-text";
@@ -16,8 +16,28 @@ type MenuItem = (icon: ReactNode, label: string, onClick?: () => void, opts?: { 
 
 const bridge = () => (!window.ogb?.remoteClient?.active ? window.ogb?.cloudSendPage : undefined);
 
+const LEVELS: ReadonlyArray<{ level: MoveLevel; title: string; line: string }> = [
+  { level: "bot", title: lx("Chỉ bot", "The bot only"), line: lx("Bộ nhớ, kỹ năng riêng, chỉ dẫn và cài đặt của bot. Nhanh nhất.", "Its memory, own skills, instructions and settings. Fastest.") },
+  { level: "chats", title: lx("Bot và đoạn chat văn bản", "The bot and its text chats"), line: lx("Như trên, kèm toàn bộ nội dung trò chuyện, không kèm tệp đính kèm.", "As above, with every conversation's text, without attachments.") },
+  { level: "full", title: lx("Đầy đủ", "Everything"), line: lx("Bot, đoạn chat, tệp đính kèm và thư mục làm việc của bot. Tối đa 10 GB.", "The bot, its chats, their attachments and its working folders. Up to 10 GB.") },
+];
+
+/** How much the chosen bots carry to My Cloud. */
+export function MoveLevelPicker({ value, onChange, disabled }: { value: MoveLevel; onChange(next: MoveLevel): void; disabled?: boolean }) {
+  return <span role="radiogroup" aria-label={lx("Chuyển những gì", "What moves")} className="flex flex-col gap-1.5" data-move-levels="">
+    {LEVELS.map((entry) => <button key={entry.level} type="button" role="radio" aria-checked={value === entry.level} disabled={disabled} data-move-level={entry.level}
+      onClick={() => onChange(entry.level)}
+      className={`flex items-start gap-2.5 rounded-lg border px-3 py-2 text-start ${value === entry.level ? "border-accent bg-raised" : "border-hairline/50 hover:bg-raised"}`}>
+      <span aria-hidden="true" className={`mt-1 inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border ${value === entry.level ? "border-accent" : "border-ink-tertiary"}`}>
+        {value === entry.level && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
+      </span>
+      <span className="min-w-0"><span className="block text-[13px] font-medium text-ink">{entry.title}</span><span className="block text-[12px] leading-[1.4] text-ink-secondary">{entry.line}</span></span>
+    </button>)}
+  </span>;
+}
+
 /** Which bots go to My Cloud: any of them, found by name, or everything with one press. */
-export function MoveChooser({ onClose }: { onClose: () => void }) {
+export function MoveChooser({ onClose, everything = true }: { onClose: () => void; everything?: boolean }) {
   const [bots, setBots] = useState<ReadonlyArray<{ id: string; name: string }> | null>(null);
   useEffect(() => {
     let alive = true;
@@ -28,6 +48,7 @@ export function MoveChooser({ onClose }: { onClose: () => void }) {
   const [chosen, setChosen] = useState<ReadonlySet<string>>(new Set());
   const [shown, setShown] = useState(CHOOSER_PAGE);
   const [busy, setBusy] = useState(false);
+  const [level, setLevel] = useState<MoveLevel>("bot");
   const [error, setError] = useState<string | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const found = useMemo(() => filterBots(bots ?? [], query), [bots, query]);
@@ -60,8 +81,8 @@ export function MoveChooser({ onClose }: { onClose: () => void }) {
       className="ui-modal relative flex max-h-[min(640px,calc(100dvh-32px))] w-[min(440px,calc(100vw-32px))] flex-col border-0 p-5 text-ink">
       <h2 id="move-chooser-title" className="pe-8 text-[17px] font-semibold">{t("cloudSend.choose.title")}</h2>
       <p className="mt-1 text-[14px] leading-5 text-ink-secondary">{t("cloudSend.choose.line")}</p>
-      <button type="button" disabled={busy} data-move-everything="" className={`${PRIMARY_BUTTON} mt-4 w-full justify-center`}
-        onClick={() => go(page?.moveEverything)}>{t("cloudSend.choose.everything")}</button>
+      {everything && <button type="button" disabled={busy} data-move-everything="" className={`${PRIMARY_BUTTON} mt-4 w-full justify-center`}
+        onClick={() => go(page?.moveEverything)}>{t("cloudSend.choose.everything")}</button>}
       <div className="mt-4 flex items-center gap-2">
         <input type="search" value={query} placeholder={t("cloudSend.choose.search")} aria-label={t("cloudSend.choose.search")} data-move-search=""
           onChange={(event) => { setQuery(event.target.value); setShown(CHOOSER_PAGE); }} className="min-w-0 flex-1 rounded-lg border border-hairline/50 bg-inset px-3 py-2 text-[13px] text-ink placeholder:text-ink-secondary focus:border-accent focus:outline-none disabled:opacity-50" />
@@ -85,8 +106,9 @@ export function MoveChooser({ onClose }: { onClose: () => void }) {
         </button></li>}
       </ul>
       <p className="mt-2 text-[12px] text-ink-tertiary">{t("cloudSend.choose.rooms")}</p>
+      <div className="mt-3"><MoveLevelPicker value={level} onChange={setLevel} disabled={busy} /></div>
       {error && <p role="alert" className="mt-2 text-[13px] text-danger">{error}</p>}
-      <button type="button" disabled={busy || !chosen.size} data-move-chosen="" className="ui-button mt-3 w-full justify-center py-1.5 text-[14px]" onClick={() => go(page?.moveBots && (() => page.moveBots!([...chosen])))}>
+      <button type="button" disabled={busy || !chosen.size} data-move-chosen="" className="ui-button mt-3 w-full justify-center py-1.5 text-[14px]" onClick={() => go(page?.moveBots && (() => page.moveBots!([...chosen], level)))}>
         {busy && <Loader2 size={14} aria-hidden="true" className="me-1.5 animate-spin" />}
         {chosen.size === 1 ? t("cloudSend.choose.moveOne") : t("cloudSend.choose.moveSome", { count: chosen.size })}
       </button>
@@ -149,14 +171,16 @@ function blockedHint(blocked: BotMoveState["blocked"]): string {
 export function useMoveToMyCloud() {
   const known = useBotMoveState();
   const [asked, setAsked] = useState<Bot | null>(null);
+  const [choosing, setChoosing] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [level, setLevel] = useState<MoveLevel>("bot");
   const [error, setError] = useState<string | null>(null);
   const confirm = () => {
     const page = bridge();
     if (!asked || !page?.moveBots) return;
     setBusy(true);
     setError(null);
-    void page.moveBots([asked.id]).then(() => setAsked(null), (cause: unknown) => setError(ipcErrorText(cause) ?? t("cloudSend.choose.failed"))).finally(() => setBusy(false));
+    void page.moveBots([asked.id], level).then(() => setAsked(null), (cause: unknown) => setError(ipcErrorText(cause) ?? t("cloudSend.choose.failed"))).finally(() => setBusy(false));
   };
   const names = { bot: asked?.name ?? "" };
   return {
@@ -172,14 +196,16 @@ export function useMoveToMyCloud() {
         disabled: true,
         hint: moving ? lx("Bot này đang được chuyển lên Cloud.", "This bot is moving to Cloud.") : known === null ? lx("Chưa đọc được trạng thái chuyển bot. Mở Cài đặt → Limix Cloud để kiểm tra kết nối.", "Transfer status is unavailable. Check Settings → Limix Cloud.") : blockedHint(known.blocked),
       })];
-      return [item(<Cloud size={16} className="text-ink-secondary" />, t("cloudSend.botMove.menu"), () => { setError(null); setAsked(bot); })];
+      return [item(<Cloud size={16} className="text-ink-secondary" />, t("cloudSend.botMove.menu"), () => { setError(null); setAsked(bot); }),
+        item(<ArrowRightLeft size={16} className="text-ink-secondary" />, lx("Chọn nhiều bot để chuyển lên Cloud…", "Choose bots to move to Cloud…"), () => setChoosing(true))];
     },
-    dialog: <ConfirmDialog open={asked !== null} tone="neutral" icon={<Cloud size={18} />} title={t("cloudSend.botMove.confirmTitle", names)}
+    dialog: <>{choosing && <MoveChooser everything={false} onClose={() => { setChoosing(false); readShared(); }} />}<ConfirmDialog open={asked !== null} tone="neutral" icon={<Cloud size={18} />} title={t("cloudSend.botMove.confirmTitle", names)}
       body={<span className="flex flex-col gap-2" data-bot-move-confirm="">
         <span>{t("cloudSend.botMove.confirmBody", names)}</span>
+        <MoveLevelPicker value={level} onChange={setLevel} disabled={busy} />
         {error && <span role="alert" className="text-danger">{error}</span>}
       </span>}
-      confirmLabel={t("cloudSend.botMove.confirm")} pending={busy} onCancel={() => setAsked(null)} onConfirm={confirm} />,
+      confirmLabel={t("cloudSend.botMove.confirm")} pending={busy} onCancel={() => setAsked(null)} onConfirm={confirm} /></>,
   };
 }
 

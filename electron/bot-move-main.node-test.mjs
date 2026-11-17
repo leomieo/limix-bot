@@ -7,7 +7,7 @@ const reply = (status, body = {}) => ({ ok: status < 400, status, body });
 const bots = (count) => Array.from({ length: count }, (_, i) => ({ id: `b${i}`, name: `Bot ${i}` }));
 
 /** This computer's server (each bot holds or goes on as it is told), the send, My Cloud's session, and the clock's timers. */
-function world({ busy = () => null, checks = [], untouched = [], ready = () => true, lease = null, sleep = async () => {} } = {}) {
+function world({ files = [], busy = () => null, checks = [], untouched = [], ready = () => true, lease = null, sleep = async () => {} } = {}) {
   let journal = null, clock = 1_000;
   const timers = [];
   const w = {
@@ -23,6 +23,7 @@ function world({ busy = () => null, checks = [], untouched = [], ready = () => t
       w.calls.push([method, route, body]);
       if (route === "/api/cloud-send/scope") { w.scopes.push(body.bots); return reply(200, { v: 1, scope: `scope-${w.scopes.length}` }); }
       if (route.startsWith("/api/cloud-send?move=1")) return reply(200, { v: 1, items: w.chosen().filter((id) => !untouched.includes(id)).map((id) => ({ key: `bot:${id}`, kind: "bot", id, parts: {} })) });
+      if (route.startsWith("/api/cloud-send/files")) return reply(200, { v: 1, files });
       if (route === "/api/cloud-connections") return reply(200, { computer: { label: "MacBook Air" } });
       if (route === "/api/bots?messages=0") return reply(200, { bots: w.chosen().map((id) => ({ id, cwd: `/work/${id}` })) });
       const id = /^\/api\/bot-moves\/([\w-]+)$/u.exec(route)?.[1];
@@ -183,4 +184,30 @@ test("it waits its turn at My Cloud behind another computer's move, and lets go 
 
 test("only the bots a person can move are offered: never the helper every place has, an archived one, or one that moved", () => {
   assert.deepEqual(choosable([{ id: "a", name: "A" }, { id: "d", name: "D", defaultBot: { v: 1 } }, { id: "h", name: "H", hidden: true }, { id: "m", name: "M", movedTo: { state: "moved" } }, { id: "bad id", name: "X" }, null]).map((bot) => bot.id), ["a"]);
+});
+
+test("a choice moves at the level chosen, and every pass and check of it carries that level; a move from before the choice carries everything", async () => {
+  const w = world();
+  assert.ok(w.move.start(bots(1), null, "chats"));
+  await settle(w);
+  assert.equal(w.journal.moves[0].level, "chats");
+  assert.ok(w.passes.length && w.passes.every((pass) => pass.level === "chats"), JSON.stringify(w.passes));
+  const old = world();
+  old.journal = { v: 1, moves: [{ bot: { id: "bots-x", name: "Old" }, team: MY_CLOUD, bots: [{ id: "b0", name: "Bot 0" }], phase: "copy", startedAt: 1 }] };
+  await settle(old);
+  assert.ok(old.passes.length && old.passes.every((pass) => pass.level === "full"), JSON.stringify(old.passes));
+});
+
+test("everything at once stops before copying when the bots' files are over 10 GB", async () => {
+  const w = world({ files: [{ path: "task-workspaces/b0/t/big.bin", size: 11 * 1024 ** 3, sha256: "a".repeat(64) }] });
+  assert.ok(w.move.start(bots(1), null, "full"));
+  await settle(w);
+  const move = w.journal.moves[0];
+  assert.equal(move.stopped, true);
+  assert.match(move.error, /11 GB, over the 10 GB/u);
+  assert.equal(w.passes.length, 0, "nothing was copied");
+  const light = world({ files: [{ path: "task-workspaces/b0/t/big.bin", size: 11 * 1024 ** 3, sha256: "a".repeat(64) }] });
+  assert.ok(light.move.start(bots(1), null, "chats"));
+  await settle(light);
+  assert.equal(light.journal.moves[0].phase, "done", "a lighter choice leaves the files here");
 });

@@ -1,3 +1,21 @@
+Limix Bot 0.3.74
+
+## Tiếng Việt
+
+- Chuyển bot lên Cloud có 3 mức để chọn:
+  1. Chỉ bot: bộ nhớ, kỹ năng riêng, chỉ dẫn và cài đặt của bot. Nhanh nhất, là mức mặc định.
+  2. Bot và đoạn chat văn bản: như mức 1, kèm toàn bộ nội dung trò chuyện, không kèm tệp đính kèm.
+  3. Đầy đủ: bot, đoạn chat, tệp đính kèm và thư mục làm việc của bot. Tối đa 10 GB; nếu vượt, lượt chuyển dừng trước khi chép và gợi ý chọn mức nhẹ hơn.
+- Trong menu của bot có thêm "Chọn nhiều bot để chuyển lên Cloud…": tìm theo tên, tick từng bot hoặc "Chọn tất cả", chọn mức rồi chuyển một lần.
+
+## English
+
+- Moving bots to Cloud offers three levels:
+  1. The bot only: its memory, own skills, instructions and settings. Fastest, and the default.
+  2. The bot and its text chats: as above, with every conversation's text, without attachments.
+  3. Everything: the bot, its chats, their attachments and its working folders. Up to 10 GB; past that the move stops before copying and suggests a lighter level.
+- A bot's menu adds "Choose bots to move to Cloud…": find bots by name, tick some or "Select all", pick a level and move them at once.
+
 Limix Bot 0.3.73
 
 ## Tiếng Việt

@@ -125,7 +125,7 @@ export interface CloudSendPageBridge {
   /** The bots of this computer's a person can choose to move, asked on either page. */
   botChoices?(): Promise<{ bots: Array<{ id: string; name: string }> }>;
   /** Moves these bots to My Cloud; the others stay here and go on working. */
-  moveBots?(ids: string[]): Promise<BotMoveState>;
+  moveBots?(ids: string[], level?: MoveLevel): Promise<BotMoveState>;
   /** Moves everything to My Cloud: this computer's one-time move. */
   moveEverything?(): Promise<BotMoveState>;
   botMoveRetry?(): Promise<BotMoveView | null>;
@@ -144,6 +144,9 @@ export interface BotMoveView { bot: { id: string; name: string }; team: { id: st
 export type BotMoveBlock = "signed-out" | "no-cloud" | "setting-up" | "failed" | "ended" | "no-moves" | "busy";
 /** One bot on its way to My Cloud: moving, or failing and trying again by itself at retryAt. */
 export interface BotMoveStatus { id: string; name: string; phase: "moving" | "failed"; step: string; error?: string; retryAt?: number; tries?: number }
+/** How much a chosen bots' move carries: the bot alone, with its text chats, or everything with attachments and files. */
+export type MoveLevel = "bot" | "chats" | "full";
+
 export interface BotMoveState { available: boolean; moving: string[]; moves?: BotMoveStatus[]; blocked?: BotMoveBlock }
 
 /** The switch "Keep this computer's bots on this computer" (one-home-main.mjs). `shown`: this person has a Cloud of their

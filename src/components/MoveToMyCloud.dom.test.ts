@@ -46,8 +46,10 @@ it("moves only the bots ticked, and says how many", async () => {
   await click(q('[data-move-bot="b3"]'));
   expect(q("[data-move-chosen]")!.textContent).toBe("Move 2 bots");
   expect(q('[data-move-bot="b3"]')!.getAttribute("aria-checked")).toBe("true");
+  await click(q('[data-move-level="full"]'));
+  expect(q('[data-move-level="full"]')!.getAttribute("aria-checked")).toBe("true");
   await click(q("[data-move-chosen]"));
-  expect(page.moveBots).toHaveBeenCalledWith(["b1", "b3"]);
+  expect(page.moveBots).toHaveBeenCalledWith(["b1", "b3"], "full");
 });
 
 it("offers the bots main lists, whichever page asks: a page's own bots are never what is moved", async () => {
@@ -91,9 +93,11 @@ const menu = async (bot: Record<string, unknown>) => { await act(async () => roo
 it("a bot's menu offers Move to My Cloud, and it goes after one confirm", async () => {
   await menu({ id: "ada", name: "Ada" });
   await click(q("[data-item]"));
-  expect(q("[data-bot-move-confirm]")!.textContent).toContain("Ada's chats, skills, memory and routines go with it");
+  expect(q("[data-bot-move-confirm]")!.textContent).toContain("Ada moves to My Cloud");
+  expect(q('[data-move-level="bot"]')!.getAttribute("aria-checked")).toBe("true");
+  await click(q('[data-move-level="chats"]'));
   await click(all("button").find((button) => button.textContent === "Move") ?? null);
-  expect(page.moveBots).toHaveBeenCalledWith(["ada"]);
+  expect(page.moveBots).toHaveBeenCalledWith(["ada"], "chats");
 });
 
 it("a bot's menu hides the helper but explains unavailable transfers", async () => {

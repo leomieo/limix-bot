@@ -364,7 +364,7 @@ const BOT_FILE = /^(?:workspaces|task-workspaces)\/([\w-]{1,128})\//u;
  * answering (createPatience). `onStep({ step, done, total, bots, until? })`: which step it is at, how far, and until when
  * it waits for My Cloud. `refuse(answer, message)`: the error a refusal of My Cloud's is.
  */
-export async function moveCheck({ session, kept, persist, localJson, handoff, scoped = (route) => route, now = Date.now, sleep, patience: pace = {}, stopped, takesMove, refuse = null, onStep = () => {} }) {
+export async function moveCheck({ level = "full", session, kept, persist, localJson, handoff, scoped = (route) => route, now = Date.now, sleep, patience: pace = {}, stopped, takesMove, refuse = null, onStep = () => {} }) {
   let bots = 0, at = null;
   const step = (name, done = 0, total = 0) => { at = { step: name, done, total, bots }; onStep(at); };
   const patience = createPatience({ now, ...(sleep ? { sleep } : {}), ...(pace.stallMs !== undefined ? { stallMs: pace.stallMs } : {}), ...(pace.waits ? { waits: pace.waits } : {}), ...(stopped ? { stopped } : {}), onWait: (until) => {
@@ -378,6 +378,9 @@ export async function moveCheck({ session, kept, persist, localJson, handoff, sc
   step("manifest");
   await patience.run(takesMove, { counts: false });
   const here = await localJson(scoped("/api/cloud-send/manifest"), { timeoutMs: LOCAL_LISTING_MS });
+  // A move that leaves files (and, for the bot alone, its chats) behind checks only what it carried.
+  if (record(here) && level !== "full") { here.files = []; here.attachments = []; }
+  if (record(here) && level === "bot") { here.conversations = []; here.rooms = []; }
   const heads = new Map(list(here?.conversations).filter(record).map((head) => [head.threadId, head]));
   const there = (await ask("GET", scoped("/api/cloud-send/manifest?attachments=0&files=0"), listingMs(heads.size * 20 + list(here?.items).length * 300), undefined, false)).body;
   if (!record(here) || !record(there)) throw new Error("My Cloud did not say what it has. Try again.");

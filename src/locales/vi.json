@@ -1428,7 +1428,7 @@
   "cloudSend.choose.unclicked": "Chọn bot nào sẽ chuyển.",
   "cloudSend.botMove.menu": "Chuyển sang My Cloud",
   "cloudSend.botMove.confirmTitle": "Chuyển {bot} sang My Cloud?",
-  "cloudSend.botMove.confirmBody": "Cuộc trò chuyện, kỹ năng, bộ nhớ và tác vụ định kỳ của {bot} sẽ đi cùng nó, và từ đó nó làm việc trên My Cloud. Các bot khác của bạn ở lại máy tính này.",
+  "cloudSend.botMove.confirmBody": "{bot} sẽ chuyển lên My Cloud và làm việc ở đó từ đây. Chọn những gì đi cùng nó; các bot khác của bạn ở lại máy tính này.",
   "cloudSend.botMove.confirm": "Chuyển",
   "cloudSend.botMove.moving": "Đang chuyển {bot} sang My Cloud…",
   "cloudSend.botMove.movingMany": "Đang chuyển {count} bot sang My Cloud…",

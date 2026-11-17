@@ -7320,7 +7320,6 @@
   "cloudSend.choose.unclicked": "Escolha quais bots vão.",
   "cloudSend.botMove.menu": "Levar para o Cloud",
   "cloudSend.botMove.confirmTitle": "Levar {bot} para o Cloud?",
-  "cloudSend.botMove.confirmBody": "As conversas, skills, memória e rotinas de {bot} vão junto, e a partir daí ele trabalha no Cloud. Seus outros bots ficam neste computador.",
   "cloudSend.botMove.confirm": "Levar",
   "cloudSend.botMove.moving": "Levando {bot} para o Cloud…",
   "cloudSend.botMove.movingMany": "Levando {count} bots para o Cloud…",

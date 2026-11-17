@@ -160,7 +160,7 @@ export function installCloudSend({ ipcMain, cloudPage, server, local, home, cook
     handoff: (what) => handoff.request(server(), what),
     /** The one-time move to My Cloud (cloud-send.mjs): a pass that carries everything, `final` the one after this computer
      * stops, and the check of what arrived. */
-    move: (options) => send.send({ reason: "move", final: options?.final === true, ...(options?.scope ? { scope: options.scope } : {}) }),
+    move: (options) => send.send({ reason: "move", final: options?.final === true, ...(options?.scope ? { scope: options.scope } : {}), ...(options?.level ? { level: options.level } : {}) }),
     check: (options) => send.check(options),
     /** Each automation the move carried, and whether it was on here when it went. */
     switches: () => send.switches(),

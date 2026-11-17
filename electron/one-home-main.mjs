@@ -342,14 +342,14 @@ export function installOneHome({ localRequest: anyServer, clean = null, account,
   // Asked on whichever page is open: a person just back from buying My Cloud is looking at My Cloud. The bots come from this
   // computer's own server, never from the page; the page only names which of them.
   sendDeps.ipcMain.handle("cloud-send:bot-choices", onPage("cloud-send:bot-choices", async () => ({ bots: (await botsHere()).map((bot) => ({ id: bot.id, name: bot.name })) })));
-  sendDeps.ipcMain.handle("cloud-send:move-bots", onPage("cloud-send:move-bots", async (ids) => {
+  sendDeps.ipcMain.handle("cloud-send:move-bots", onPage("cloud-send:move-bots", async (ids, level) => {
     if (!botMoveState().available) throw new Error(t("native.cloud.keepNoCloud"));
     const asked = new Set(Array.isArray(ids) ? ids.map(String) : []);
     const bots = (await botsHere()).filter((bot) => asked.has(bot.id)).map((bot) => ({ id: bot.id, name: bot.name }));
     if (!bots.length) throw new Error(t("teamMove.refused.notABot"));
     choice.write({ v: 1, answered: true });
     await home.keep(true);
-    botMove.start(bots, oneHomeCloud(account()?.state())?.account ?? null);
+    botMove.start(bots, oneHomeCloud(account()?.state())?.account ?? null, ["bot", "chats", "full"].includes(level) ? level : "bot");
     return botMoveState();
   }));
   sendDeps.ipcMain.handle("cloud-send:move-everything", onPage("cloud-send:move-everything", () => {

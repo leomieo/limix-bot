@@ -37,6 +37,9 @@ const PICTURE_TYPES = { png: "image/png", jpg: "image/jpeg", gif: "image/gif", w
 const VAULT_ID = /^[\w-]{1,128}$/u;
 /** Whole sends, which carry the chats too; a send of some items (Use this computer's, one login) never does. */
 const CHAT_REASONS = new Set(["button", "my-cloud", "menu", "move"]);
+/** How much a move of chosen bots carries: "bot" (the bot, its memory, skills and instructions), "chats" (and its text
+ * chats), "full" (and the chats' attachments and the bots' files). A whole-team move is always "full". */
+export const MOVE_LEVELS = Object.freeze(["bot", "chats", "full"]);
 /** Bring newer chats' copy of the whole workspace, for a Cloud too old to take chats by row: never a move, which such a
  * Cloud refuses. */
 const OUTDATED_FOR_MOVE = "My Cloud is updating. Your bots move there by themselves when it's done.";
@@ -335,11 +338,11 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
   /** One send at a time; one asked while another runs waits for it, then runs as it was asked. A move (`reason: "move"`)
    * carries everything; its final pass (`final`) carries the sign-ins that refresh themselves too, and this computer lets
    * go of each once My Cloud has it. */
-  async function send({ keys = null, force = [], reason = "button", final = false, scope = null } = {}) {
+  async function send({ keys = null, force = [], reason = "button", final = false, scope = null, level = "full" } = {}) {
     while (running) await running.promise.catch(() => {});
     const origin = cloud.origin();
     if (!origin) throw new CloudSendError("no_cloud", "This computer has no My Cloud yet.");
-    const job = { reason, final: reason === "move" && final === true, scope, promise: null, chats: false };
+    const job = { reason, final: reason === "move" && final === true, scope, level: MOVE_LEVELS.includes(level) ? level : "full", promise: null, chats: false };
     running = job;
     progress = null;
     localScope = scope;
@@ -389,6 +392,8 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
    * app event goes only in the final pass, when this computer lets go of it. */
   async function sendItems(origin, mine, result, { keys, force, job, withChats }) {
     const move = job.reason === "move";
+    // What a chosen bots' move carries (MOVE_LEVELS): the bot alone, with its text chats, or everything with files.
+    const level = move ? job.level ?? "full" : "full";
     const summaryRoute = move ? scoped("/api/cloud-send?move=1") : "/api/cloud-send";
     const opened = await cloud.open(move ? { move: true } : undefined).catch((error) => { throw new CloudSendError("session", sentence(error?.message) ?? "This app could not sign in to My Cloud. Try again.", { cause: error }); });
     const session = move && !team ? patientSession(opened, { ...(sleep ? { sleep } : {}), ...(patience.blips ? { blips: patience.blips } : {}) }) : opened;
@@ -431,23 +436,23 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
       if (move) {
         // Its notes about the person stay with them when a bot moves into a team.
         if (!team) await kinds.moveMemory(ctx, moved);
-        try { await kinds.moveFiles(ctx, moved, computer?.label); }
+        if (level === "full") try { await kinds.moveFiles(ctx, moved, computer?.label); }
         catch (error) { result.failed.push({ key: "files", kind: "files", label: "Files", error: sentence(error?.message) ?? "The files could not be sent." }); }
       }
       const after = parseSendSummary((await session.call("GET", summaryRoute)).body);
       if (after) remember(origin, ctx, after);
       const latest = after ?? theirs;
-      if (withChats && latest.chats) {
+      if (withChats && level !== "bot" && latest.chats) {
         job.chats = true;
         progress = null;
         publish();
         try {
-          await sendChatRows(origin, session, latest, result, { everything: move });
+          await sendChatRows(origin, session, latest, result, { everything: move, attachments: level === "full" });
           if (move) await stampHeld(origin, session, latest);
         } catch (error) { result.failed.push({ key: "chats", kind: "chats", label: "Chats", error: sentence(error?.message) ?? "The chats could not be added." }); }
       }
       if (move) {
-        try { result.conversationSettings = await kinds.moveSettings(ctx); }
+        if (level !== "bot") try { result.conversationSettings = await kinds.moveSettings(ctx); }
         catch (error) { result.failed.push({ key: "conversation-settings", kind: "chats", label: "Chats", error: sentence(error?.message) ?? "The chats' settings could not be added." }); }
         const last = rows.filter((entry) => automations.has(entry.kind));
         for (const row of last) await goRow(row);
@@ -522,7 +527,7 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
    * what My Cloud took, and once My Cloud did not take a page, the conversation's later pages wait for the next send too.
    * The attachments those rows name go first, unless My Cloud has them. `result.chats.left`: the conversations that did
    * not all go (a bot answering in one, or My Cloud not taking a page), for the next send. */
-  async function sendChatRows(origin, session, theirs, result, { everything = false } = {}) {
+  async function sendChatRows(origin, session, theirs, result, { everything = false, attachments = true } = {}) {
     const { dataDir, ready, busy, owner: from } = await chatsWaiting(origin, theirs, { everything });
     const kept = entry(origin);
     const total = ready.length;
@@ -533,7 +538,7 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
     publish();
     const flush = async () => {
       if (!batch.length) return;
-      const names = [...new Set(batch.flatMap((page) => page.attachments))];
+      const names = attachments ? [...new Set(batch.flatMap((page) => page.attachments))] : [];
       for (let i = 0; i < names.length; i += ATTACHMENT_NAMES) {
         const asked = names.slice(i, i + ATTACHMENT_NAMES);
         const checked = await session.call("POST", "/api/cloud-send/chats/attachments", { names: asked });
@@ -914,13 +919,13 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
    * as someone using My Cloud; `snapshot().checking` says how far it is. A check that stood still too long fails as
    * unanswered, saying whether it got anywhere (`progressed`). `scope`: only the bots a move of some of them carries; its
    * credentials are copies this computer goes on using, and are not checked. */
-  async function check({ scope = null, stopped } = {}) {
+  async function check({ scope = null, stopped, level = "full" } = {}) {
     const origin = cloud.origin();
     if (!origin) throw new CloudSendError("no_cloud", "This computer has no My Cloud yet.");
     const session = await cloud.open({ move: true }).catch((error) => { throw new CloudSendError("session", sentence(error?.message) ?? "This app could not sign in to My Cloud. Try again.", { cause: error }); });
     localScope = scope;
     try {
-      return await moveCheck({ session, kept: entry(origin), persist, localJson, handoff: team || scope ? null : handoff, scoped, now, sleep, patience, stopped, takesMove: () => assertTakesMove(session),
+      return await moveCheck({ level, session, kept: entry(origin), persist, localJson, handoff: team || scope ? null : handoff, scoped, now, sleep, patience, stopped, takesMove: () => assertTakesMove(session),
         refuse: (answer, message) => refusedError("unreachable", answer, message), onStep: (value) => { checking = value; publish(); } });
     } catch (error) {
       if (error?.code === "slow") throw Object.assign(new CloudSendError("unreachable", sentence(error.message) ?? "My Cloud did not answer.", { cause: error.cause }), { progressed: error.progressed === true });

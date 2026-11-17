@@ -8,6 +8,11 @@ import { createTeamMove, parseTeamMoves } from "./team-move.mjs";
 import { QUEUE_POLL_MS, switchOn } from "./one-home.mjs";
 
 export const MY_CLOUD = Object.freeze({ id: "my-cloud", name: "My Cloud" });
+/** The most a chosen bots' move carries: past it, the move stops and asks for a lighter choice. */
+export const MOVE_MAX_BYTES = 10 * 1024 ** 3;
+const LEVELS = new Set(["bot", "chats", "full"]);
+/** A move from before the choice carried everything. */
+const levelOf = (move) => (LEVELS.has(move?.level) ? move.level : "full");
 const ID = /^[\w-]{1,128}$/u;
 const record = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const list = (value) => (Array.isArray(value) ? value : []);
@@ -21,7 +26,7 @@ export const choosable = (bots) => list(bots).filter((bot) => record(bot) && ID.
  * @param {{
  *   journal: { read(): unknown, write(value: unknown): void },
  *   local: { call(method: string, route: string, body?: unknown): Promise<{ ok: boolean, status: number, body: any }> },
- *   send: { move(options: { final?: boolean, scope: string }): Promise<unknown>, check(options: { scope: string }): Promise<{ ok: boolean }> },
+ *   send: { move(options: { final?: boolean, scope: string, level?: string }): Promise<unknown>, check(options: { scope: string, level?: string }): Promise<{ ok: boolean }> },
  *   session(): Promise<{ call(method: string, route: string, body?: unknown): Promise<{ ok: boolean, status: number, body: any }> }>,
  *   lease?: { take(): Promise<null | { name: string }>, release(): Promise<void> },
  *   ready(): boolean,
@@ -66,8 +71,8 @@ export function createBotMove({ journal, local, send, session, lease = null, rea
     };
     return {
       engine: {
-        move: async (options) => send.move({ final: options?.final === true, scope: await scope() }),
-        check: async () => send.check({ scope: await scope() }),
+        move: async (options) => send.move({ final: options?.final === true, scope: await scope(), level: levelOf(current()) }),
+        check: async () => send.check({ scope: await scope(), level: levelOf(current()) }),
       },
       /** A hold, or its end, for each bot of the choice; a bot still answering is what the move waits for. */
       myCloud: {
@@ -89,6 +94,13 @@ export function createBotMove({ journal, local, send, session, lease = null, rea
         const carried = new Set(list(listed.body?.items).filter((item) => item?.kind === "bot").map((item) => item.id));
         const bots = list(current().bots).filter((bot) => carried.has(bot.id));
         if (!bots.length) throw Object.assign(new Error("These bots have nothing to move yet."), { final: true });
+        if (levelOf(current()) === "full") {
+          const ids = new Set(bots.map((bot) => bot.id));
+          const files = await local.call("GET", `/api/cloud-send/files?scope=${await scope()}`).catch(() => null);
+          const bytes = list(files?.body?.files).filter((file) => ids.has(/^(?:workspaces|task-workspaces)\/([\w-]{1,128})\//u.exec(file?.path ?? "")?.[1]))
+            .reduce((sum, file) => sum + (Number.isSafeInteger(file.size) ? file.size : 0), 0);
+          if (bytes > MOVE_MAX_BYTES) throw Object.assign(new Error(`These bots' files are ${Math.ceil(bytes / 1024 ** 3)} GB, over the 10 GB a move carries. Move them with their chats only, or clear some files first.`), { final: true });
+        }
         return { bots };
       },
       team: {
@@ -128,12 +140,12 @@ export function createBotMove({ journal, local, send, session, lease = null, rea
   return {
     kick: () => engine.kick().finally(lendWaiting),
     /** Moves this choice of bots for this account; bots already on their way are left out. Null when none is left to move. */
-    start(bots, account = null) {
+    start(bots, account = null, level = "bot") {
       const moving = new Set(moves().filter((move) => move.phase !== "done" && !move.stopped).flatMap((move) => list(move.bots).map((bot) => bot.id)));
       const fresh = bots.filter((bot) => !moving.has(bot.id));
       if (!fresh.length) return null;
       const id = `bots-${randomUUID()}`;
-      void engine.start({ bot: { id, name: fresh[0].name }, team: MY_CLOUD, bots: fresh, account }).finally(lendWaiting).catch((error) => log(`bot move: ${error?.message ?? error}`));
+      void engine.start({ bot: { id, name: fresh[0].name }, team: MY_CLOUD, bots: fresh, account, level: LEVELS.has(level) ? level : "bot" }).finally(lendWaiting).catch((error) => log(`bot move: ${error?.message ?? error}`));
       return id;
     },
     view: () => engine.view(),

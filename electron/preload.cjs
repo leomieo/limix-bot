@@ -547,8 +547,8 @@ const bridge = {
     // Which of this computer's bots move to My Cloud: asked on either page, and only from the person's click on My Cloud's.
     botMoveState: () => ipcRenderer.invoke("cloud-send:bot-move-state"),
     botChoices: () => ipcRenderer.invoke("cloud-send:bot-choices"),
-    moveBots: ids => isLocalPage || navigator.userActivation?.isActive === true
-      ? ipcRenderer.invoke("cloud-send:move-bots", Array.isArray(ids) ? ids.map(String) : []) : Promise.reject(new Error("Choose which bots move.")),
+    moveBots: (ids, level) => isLocalPage || navigator.userActivation?.isActive === true
+      ? ipcRenderer.invoke("cloud-send:move-bots", Array.isArray(ids) ? ids.map(String) : [], ["bot", "chats", "full"].includes(level) ? level : "bot") : Promise.reject(new Error("Choose which bots move.")),
     moveEverything: () => isLocalPage || navigator.userActivation?.isActive === true
       ? ipcRenderer.invoke("cloud-send:move-everything") : Promise.reject(new Error("Choose which bots move.")),
     botMoveRetry: () => ipcRenderer.invoke("cloud-send:bot-move-retry"),

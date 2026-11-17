@@ -1429,7 +1429,7 @@
   "cloudSend.choose.unclicked": "Choose which bots move.",
   "cloudSend.botMove.menu": "Move to My Cloud",
   "cloudSend.botMove.confirmTitle": "Move {bot} to My Cloud?",
-  "cloudSend.botMove.confirmBody": "{bot}'s chats, skills, memory and routines go with it, and it works on My Cloud from then on. Your other bots stay on this computer.",
+  "cloudSend.botMove.confirmBody": "{bot} moves to My Cloud and works there from then on. Choose what goes with it; your other bots stay on this computer.",
   "cloudSend.botMove.confirm": "Move",
   "cloudSend.botMove.moving": "Moving {bot} to My Cloud…",
   "cloudSend.botMove.movingMany": "Moving {count} bots to My Cloud…",
