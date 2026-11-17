@@ -51,6 +51,20 @@ export async function managedHostAssignments(request: Request, env: Env & HostBi
     return json({ ok: true });
   }
   if (request.method !== "GET") throw new HTTPError(405, "method_not_allowed");
+  const query = new URL(request.url).searchParams;
+  if (query.has("cpus") || query.has("memoryGb") || query.has("capacity")) {
+    const cpus = Number(query.get("cpus"));
+    const memoryGb = Number(query.get("memoryGb"));
+    const capacity = Number(query.get("capacity"));
+    if (!Number.isInteger(cpus) || cpus < 1 || cpus > 65536 ||
+        !Number.isFinite(memoryGb) || memoryGb < 1 || memoryGb > 1048576 ||
+        !Number.isInteger(capacity) || capacity < 1 || capacity > 1000) {
+      throw new HTTPError(400, "invalid_host_resources");
+    }
+    await env.DB.prepare(
+      "INSERT INTO limix_cloud_host_resources(id,cpus,memory_gb,capacity,reported_at) VALUES (1,?,?,?,?) ON CONFLICT(id) DO UPDATE SET cpus=excluded.cpus,memory_gb=excluded.memory_gb,capacity=excluded.capacity,reported_at=excluded.reported_at",
+    ).bind(cpus, memoryGb, capacity, Date.now()).run();
+  }
   const { results } = await env.DB.prepare(
     "SELECT workspace_id AS id, power_desired, power_since, power_revision, next_due_at, sleep_enabled, sleep_blocked, runtime_state FROM managed_cloud_beta WHERE workspace_id IS NOT NULL ORDER BY requested_at, workspace_id LIMIT 1001",
   ).all<PowerRow>();

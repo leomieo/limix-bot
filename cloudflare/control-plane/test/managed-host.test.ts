@@ -29,6 +29,12 @@ it("limits assignment reads and runtime reports to the configured beta host", as
     expect((await call(token, { id, state: "invented" })).status).toBe(400);
     expect((await call(token, { id: crypto.randomUUID(), state: "running" })).status).toBe(404);
     expect((await call(token, { id, state: "running" })).status).toBe(200);
+    const report = await worker.fetch(new Request(
+      "https://auth.openmausbot.test/v1/managed-cloud/host/assignments?cpus=50&memoryGb=51.9&capacity=8",
+      {headers:{authorization:"Bearer "+token}}
+    ), bindings, createExecutionContext());
+    expect(report.status).toBe(200);
+    expect(await env.DB.prepare("SELECT cpus,memory_gb,capacity FROM limix_cloud_host_resources WHERE id=1").first()).toEqual({cpus:50,memory_gb:51.9,capacity:8});
     expect(await env.DB.prepare("SELECT runtime_state FROM managed_cloud_beta WHERE workspace_id = ?").bind(id).first("runtime_state")).toBe("running");
   } finally {
     await env.DB.prepare("DELETE FROM managed_cloud_beta").run();

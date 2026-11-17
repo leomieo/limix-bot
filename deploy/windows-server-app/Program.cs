@@ -92,7 +92,7 @@ sealed class SetupWindow : Form
     public SetupWindow(bool previewOnly=false)
     {
         Icon=Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-        Text="Limix Cloud Server 0.3.3 beta";
+        Text="Limix Cloud Server 0.3.4 beta";
         Size=new Size(1120,860);MinimumSize=new Size(1000,760);StartPosition=FormStartPosition.CenterScreen;
         Font=new Font("Segoe UI",11);BackColor=ServerTheme.Window;ForeColor=Color.White;
         var header=new Panel {Dock=DockStyle.Top,Height=76,Padding=new Padding(24,18,22,8)};

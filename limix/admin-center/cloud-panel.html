@@ -1,15 +1,42 @@
 <section class="section" id="tab-cloud">
 <div class="lm-heading"><div><div class="lm-eyebrow">HẠ TẦNG KHÁCH HÀNG</div><h2>Máy Cloud</h2><p>Duyệt quyền sử dụng, theo dõi máy và đặt tài nguyên riêng cho từng tài khoản.</p></div><button class="lm-button" onclick="loadCloudRequests()">Làm mới</button></div>
+<div id="cloud-resource-summary" class="lm-grid"></div>
 <div id="cloud-summary" class="lm-grid"></div>
 <div class="lm-toolbar"><input class="lm-search" id="cloud-search" placeholder="Tìm tài khoản hoặc mã máy" oninput="renderCloudRows()"><select class="lm-select" id="cloud-filter" onchange="renderCloudRows()"><option value="all">Tất cả trạng thái</option><option value="pending">Chờ duyệt</option><option value="running">Đang chạy</option><option value="waiting_capacity">Chờ tài nguyên</option></select></div>
 <p id="cloud-status" role="status" class="lm-muted"></p><div id="cloud-requests"></div>
-<div class="lm-note">CPU/RAM là cấu hình riêng, không phụ thuộc gói. Cần Cloud host phiên bản hỗ trợ; host cũ chưa áp dụng được. Thay đổi có thể tạo lại container và gián đoạn bot trong thời gian ngắn, dữ liệu volume được giữ. Dung lượng ổ đĩa chưa có cơ chế quota riêng nên không hiển thị nút chỉnh giả.</div>
+<div class="lm-note">CPU và RAM được phân bổ riêng cho từng tài khoản. Thay đổi có thể khởi động lại máy Cloud trong thời gian ngắn. Tài nguyên còn lại tính theo hạn mức đã lưu, chưa trừ RAM của Linux và dịch vụ nền.</div>
 </section>
 <script>
-let cloudRows=[],cloudOverrides={};
+let cloudRows=[],cloudOverrides={},cloudResourceReport={};
 async function cloudAdminApi(route,body){const r=await fetch('/api/admin/cloud/'+route,{method:body?'POST':'GET',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});const d=await r.json();if(!r.ok)throw new Error(r.status===401?'Phiên đăng nhập hết hạn. Hãy đăng nhập lại.':'Không thực hiện được yêu cầu Cloud. Kiểm tra máy chủ rồi thử lại.');return d}
-async function loadCloudRequests(){const status=document.getElementById('cloud-status');status.textContent='Đang tải...';try{const [d,r]=await Promise.all([cloudAdminApi('requests'),cloudAdminApi('resources')]);cloudRows=d.requests;cloudOverrides=Object.fromEntries(r.overrides.map(x=>[x.principal,x]));renderCloudRows();status.textContent=cloudRows.length+' tài khoản có yêu cầu Cloud.'}catch(e){status.textContent=e.message}}
+async function loadCloudRequests(){const status=document.getElementById('cloud-status');status.textContent='Đang tải...';try{const [d,r]=await Promise.all([cloudAdminApi('requests'),cloudAdminApi('resources')]);cloudResourceReport=r;cloudRows=d.requests;cloudOverrides=Object.fromEntries(r.overrides.map(x=>[x.principal,x]));renderCloudRows();status.textContent=cloudRows.length+' tài khoản có yêu cầu Cloud.'}catch(e){status.textContent=e.message}}
+function renderCloudResources(){
+ const area=document.getElementById('cloud-resource-summary');
+ area.replaceChildren();
+ const host=cloudResourceReport.host,used=cloudResourceReport.allocated;
+ if(!host||!used){
+  const note=document.createElement('p');note.className='lm-muted';
+  note.textContent='Máy chủ chưa gửi tổng CPU và RAM. Cập nhật dịch vụ Cloud Server để xem tài nguyên còn lại.';
+  area.append(note);return;
+ }
+ const stale=Date.now()-host.reported_at>120000;
+ for(const [label,cpu,ram] of [
+  ['Tổng máy Cloud Server',host.cpus,host.memory_gb],
+  ['Đã phân bổ',used.cpus,used.memory_gb],
+  ['Còn lại theo cấu hình',host.cpus-used.cpus,host.memory_gb-used.memory_gb]
+ ]){
+  const card=document.createElement('div');card.className='lm-stat';
+  const title=document.createElement('span');title.textContent=label;
+  const value=document.createElement('strong');
+  value.textContent=Number(cpu).toLocaleString('vi-VN',{maximumFractionDigits:1})+' vCPU · '+Number(ram).toLocaleString('vi-VN',{maximumFractionDigits:1})+' GB';
+  card.append(title,value);area.append(card);
+ }
+ const note=document.createElement('p');note.className='lm-muted';
+ note.textContent='Phân bổ theo hạn mức đã lưu, gồm cả máy đang tắt. RAM thực tế còn dùng cho Linux và dịch vụ nền. '+(stale?'Số liệu tổng máy chủ chưa được cập nhật trong 2 phút.':'Tổng máy chủ vừa được cập nhật.');
+ area.append(note);
+}
 function renderCloudRows(){
+ renderCloudResources();
  const summary=document.getElementById('cloud-summary');summary.replaceChildren();
  for(const [label,value] of [['Yêu cầu Cloud',cloudRows.length],['Chờ duyệt',cloudRows.filter(x=>!x.decision).length],['Đang chạy',cloudRows.filter(x=>x.runtime_state==='running').length],['Chờ tài nguyên',cloudRows.filter(x=>x.runtime_state==='waiting_capacity').length]]){const c=document.createElement('div');c.className='lm-stat';const l=document.createElement('span');l.textContent=label;const n=document.createElement('strong');n.textContent=value;c.append(l,n);summary.append(c)}
  const list=document.getElementById('cloud-requests'),query=document.getElementById('cloud-search').value.toLowerCase(),filter=document.getElementById('cloud-filter').value;
@@ -29,6 +56,6 @@ function editCloudResources(row){
  const current=cloudOverrides[row.principal]||{cpus:2,memory_gb:4};const modal=document.createElement('dialog');modal.style.cssText='background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:14px;max-width:480px;padding:24px';
  const title=document.createElement('h3');title.textContent='Cấu hình máy · '+row.principal.replace('limix:','');const note=document.createElement('p');note.className='lm-muted';note.textContent='Có thể khởi động lại container để áp dụng. Đảm bảo máy chủ còn đủ tài nguyên. Không thay đổi gói.';modal.append(title,note);
  const form=document.createElement('form');form.className='lm-form';const inputs={};for(const [key,label,min,max] of [['cpus','CPU',1,16],['memory_gb','RAM (GB)',2,32]]){const field=document.createElement('label');field.className='lm-field';field.textContent=label;const input=document.createElement('input');input.type='number';input.min=min;input.max=max;input.value=current[key];input.required=true;field.append(input);form.append(field);inputs[key]=input}
- const apply=document.createElement('button');apply.className='lm-button primary';apply.textContent='Lưu và áp dụng trên host';const cancel=document.createElement('button');cancel.type='button';cancel.className='lm-button';cancel.textContent='Hủy';cancel.onclick=()=>{modal.close();modal.remove()};form.append(apply,cancel);form.onsubmit=async e=>{e.preventDefault();apply.disabled=true;try{await cloudAdminApi('resources',{principal:row.principal,cpus:Number(inputs.cpus.value),memory_gb:Number(inputs.memory_gb.value)});modal.close();modal.remove();await loadCloudRequests()}catch(err){note.textContent=err.message;apply.disabled=false}};modal.append(form);document.body.append(modal);modal.showModal();
+ const apply=document.createElement('button');apply.className='lm-button primary';apply.textContent='Lưu cấu hình';const cancel=document.createElement('button');cancel.type='button';cancel.className='lm-button';cancel.textContent='Hủy';cancel.onclick=()=>{modal.close();modal.remove()};form.append(apply,cancel);form.onsubmit=async e=>{e.preventDefault();apply.disabled=true;try{await cloudAdminApi('resources',{principal:row.principal,cpus:Number(inputs.cpus.value),memory_gb:Number(inputs.memory_gb.value)});modal.close();modal.remove();await loadCloudRequests()}catch(err){note.textContent=err.message;apply.disabled=false}};modal.append(form);document.body.append(modal);modal.showModal();
 }
 </script>

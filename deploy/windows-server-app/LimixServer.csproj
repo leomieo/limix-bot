@@ -8,7 +8,7 @@
     <ApplicationIcon>server-icon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>LimixServer-Setup</AssemblyName>
-    <Version>0.3.3</Version>
+    <Version>0.3.4</Version>
   </PropertyGroup>
   <ItemGroup><EmbeddedResource Include="payload.zip" /></ItemGroup>
 </Project>

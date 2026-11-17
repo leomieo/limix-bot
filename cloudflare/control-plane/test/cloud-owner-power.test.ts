@@ -13,7 +13,10 @@ it('resource overrides require owner, enrollment and bounded CPU/RAM',async()=>{
     await expect(cloudOwnerRoute(path,request('alice',{principal:'limix:alice',cpus:3,memory_gb:6}),bindings)).rejects.toMatchObject({status:403});
     await expect(cloudOwnerRoute(path,request('leox',{principal:'limix:alice',cpus:1000,memory_gb:6}),bindings)).rejects.toMatchObject({status:400});
     expect((await cloudOwnerRoute(path,request('leox',{principal:'limix:alice',cpus:3,memory_gb:6}),bindings)).status).toBe(200);
-    const list=await (await cloudOwnerRoute(path,request('leox'),bindings)).json() as {overrides:Array<{principal:string;cpus:number;memory_gb:number}>};
+    await env.DB.prepare("INSERT INTO limix_cloud_host_resources(id,cpus,memory_gb,capacity,reported_at) VALUES(1,50,52,8,?) ON CONFLICT(id) DO UPDATE SET cpus=50,memory_gb=52").bind(Date.now()).run();
+    const list=await (await cloudOwnerRoute(path,request('leox'),bindings)).json() as {overrides:Array<{principal:string;cpus:number;memory_gb:number}>;host:unknown;allocated:unknown};
+    expect(list.host).toMatchObject({cpus:50,memory_gb:52});
+    expect(list.allocated).toMatchObject({machines:1,cpus:3,memory_gb:6});
     expect(list.overrides).toContainEqual(expect.objectContaining({principal:'limix:alice',cpus:3,memory_gb:6}));
     expect((await cloudOwnerRoute(path,request('leox',{principal:'limix:alice',reset:true}),bindings)).status).toBe(200);
 });

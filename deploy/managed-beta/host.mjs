@@ -1,3 +1,4 @@
+import { availableParallelism, totalmem } from "node:os";
 import { readFileSync } from "node:fs";
 import { updateStore, checkUpdate, updateHome, recoverHome } from "./updater.mjs";
 import { dockerInvocation } from "./docker-backend.mjs";
@@ -139,7 +140,7 @@ if (import.meta.main) {
         console.log("Tunnel connector:", await ensureTunnel((await call("tunnel")).token));
         tunnelReady = true;
       }
-      const { homes, origins, routing, power, resources } = await call("assignments");
+      const { homes, origins, routing, power, resources } = await call("assignments?"+new URLSearchParams({ cpus:String(availableParallelism()), memoryGb:String(totalmem()/1024**3), capacity:String(capacity) }));
       console.log("Cloud assignments:", homes.length, "routing:", routing);
       if (routing !== "ready") console.warn("Public addresses are still being set up; retrying next round.");
       if (!Array.isArray(homes) || !homes.every(id => typeof id === "string" && uuid.test(id))) throw new Error("Invalid update assignments");
