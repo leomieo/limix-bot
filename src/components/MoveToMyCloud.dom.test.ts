@@ -108,12 +108,14 @@ it("a bot's menu hides the helper but explains unavailable transfers", async () 
   expect((q("[data-item]") as HTMLButtonElement).disabled).toBe(true);
 });
 
-it("however many bots moved, the sidebar keeps one row, which opens My Cloud; a bot moved into a team is not on it", async () => {
+it("the sidebar lists each bot that moved to My Cloud by name with a cloud, and any of them opens My Cloud; a bot moved into a team is not on it", async () => {
   const moved = (id: string, team = "my-cloud") => ({ id, name: id, movedTo: { state: "moved", team: { id: team, name: team } } });
   await act(async () => root.render(createElement(MovedToMyCloudRow, { bots: [moved("a"), moved("b"), moved("c", "team-acme")] as never })));
   const row = q("[data-moved-to-my-cloud]");
-  expect(row!.textContent).toBe("2 bots live on My Cloud");
-  await click(row);
+  expect(row!.getAttribute("data-moved-to-my-cloud")).toBe("2");
+  expect(row!.querySelector("p")!.textContent).toBe("2 bots live on My Cloud");
+  expect([...row!.querySelectorAll("[data-moved-bot]")].map((item) => item.textContent)).toEqual(["a", "b"]);
+  await click(q('[data-moved-bot="b"]'));
   expect(page.openMyCloud).toHaveBeenCalled();
 });
 
