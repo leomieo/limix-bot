@@ -38,3 +38,15 @@ it('reopens password entry after server revocation without retrying the reply',a
  await type('textarea','draft');await unlock();fixture.api.mockRejectedValue(new ApiError('denied',403));
  await act(async()=>send().click());expect(host.querySelector('input')).not.toBeNull();expect(send().disabled).toBe(true);expect(host.querySelector('textarea')!.value).toBe('draft');
 });
+it('shows agent waiting separately and bounds the request without automatic resubmission',async()=>{
+ await type('textarea','draft');await unlock();
+ await act(async()=>{const select=host.querySelector('select')!;select.value='agent';select.dispatchEvent(new Event('change',{bubbles:true}));});
+ let reject!:(error:Error)=>void;fixture.api.mockImplementation(()=>new Promise((_resolve,no)=>{reject=no;}));
+ await act(async()=>send().click());
+ expect(host.textContent).toContain('Waiting for bot');
+ expect(fixture.api).toHaveBeenLastCalledWith('/api/limix/channel-action',expect.objectContaining({timeoutMs:720000}));
+ await act(async()=>reject(new DOMException('Timed out','TimeoutError')));
+ expect(host.textContent).toContain('Check internal chat and the channel before retrying');
+ expect(host.querySelector('textarea')!.value).toBe('draft');
+ expect(fixture.api.mock.calls.filter(([path])=>path==='/api/limix/channel-action')).toHaveLength(1);
+});

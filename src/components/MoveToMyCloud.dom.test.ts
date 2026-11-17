@@ -83,7 +83,7 @@ it("says why when the move could not start, and stays open", async () => {
 
 function Menu({ bot }: { bot: Record<string, unknown> }) {
   const move = useMoveToMyCloud();
-  const item = (_icon: unknown, label: string, onClick?: () => void) => createElement("button", { key: label, "data-item": "", onClick }, label);
+  const item = (_icon: unknown, label: string, onClick?: () => void, opts?: {disabled?: boolean;hint?:string}) => createElement("button", { key: label, "data-item": "", onClick, disabled:opts?.disabled, title:opts?.hint }, label);
   return createElement("div", null, ...move.items(bot as never, item as never), move.dialog);
 }
 const menu = async (bot: Record<string, unknown>) => { await act(async () => root.render(createElement(Menu, { bot }))); await act(async () => {}); };
@@ -96,16 +96,16 @@ it("a bot's menu offers Move to My Cloud, and it goes after one confirm", async 
   expect(page.moveBots).toHaveBeenCalledWith(["ada"]);
 });
 
-it("a bot's menu leaves it out for the helper, a bot on its way, and when My Cloud can't take bots", async () => {
+it("a bot's menu hides the helper but explains unavailable transfers", async () => {
   await menu({ id: "maus", name: "Maus", defaultBot: { v: 1 } });
   expect(q("[data-item]")).toBeNull();
   await menu({ id: "moving-one", name: "Pip" });
-  expect(q("[data-item]")).toBeNull();
+  expect((q("[data-item]") as HTMLButtonElement).disabled).toBe(true);
   page.botMoveState.mockResolvedValueOnce({ available: false, moving: [] });
   await act(async () => root.unmount());
   root = createRoot(container);
   await menu({ id: "ada", name: "Ada" });
-  expect(q("[data-item]")).toBeNull();
+  expect((q("[data-item]") as HTMLButtonElement).disabled).toBe(true);
 });
 
 it("however many bots moved, the sidebar keeps one row, which opens My Cloud; a bot moved into a team is not on it", async () => {

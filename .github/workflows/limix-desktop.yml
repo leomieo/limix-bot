@@ -42,8 +42,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Verify inline channel unlock
-        run: node node_modules/vitest/vitest.mjs run src/components/ChannelReplyComposer.dom.test.ts server/limix-channel-actions.test.ts
+      - name: Verify channel replies and Cloud move menu
+        run: node node_modules/vitest/vitest.mjs run src/components/MoveToMyCloud.dom.test.ts src/components/ChannelReplyComposer.dom.test.ts server/limix-channel-actions.test.ts
       - name: Verify template mascot library
         run: |
           node --experimental-strip-types scripts/gen-template-mascots.ts --check

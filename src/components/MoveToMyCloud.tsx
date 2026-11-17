@@ -7,6 +7,7 @@ import { ArrowRightLeft, Check, Cloud, Loader2, X } from "lucide-react";
 import type { BotMoveState, BotMoveView } from "../../electron/cloud-send.mjs";
 import { botMoveLine, filterBots, ipcErrorText, CHOOSER_PAGE, MY_CLOUD_TEAM } from "@/lib/cloud-send";
 import { t } from "@/lib/i18n";
+import { lx } from "@/lib/limix-text";
 import type { Bot } from "@/state/store";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { NotNowButton, PRIMARY_BUTTON } from "./NoticeCard";
@@ -105,7 +106,8 @@ function useBotMoveState(): BotMoveState | null {
     const read = () => void page.botMoveState!().then((next) => { if (alive) setKnown(next); }, () => { if (alive) setKnown(null); });
     read();
     window.addEventListener("focus", read);
-    return () => { alive = false; window.removeEventListener("focus", read); };
+    const unsubscribe = page.onNotice?.(read);
+    return () => { alive = false; unsubscribe?.(); window.removeEventListener("focus", read); };
   }, []);
   return known;
 }
@@ -126,7 +128,12 @@ export function useMoveToMyCloud() {
   const names = { bot: asked?.name ?? "" };
   return {
     items(bot: Bot, item: MenuItem): ReactNode[] {
-      if (!known?.available || bot.defaultBot || bot.movedTo || known.moving.includes(bot.id)) return [];
+      if (!bridge()?.botMoveState || bot.defaultBot || bot.movedTo) return [];
+      const moving = known?.moving.includes(bot.id);
+      if (!known?.available || moving) return [item(<Cloud size={16} className="text-ink-secondary" />, t("cloudSend.botMove.menu"), undefined, {
+        disabled: true,
+        hint: moving ? lx("Bot này đang được chuyển lên Cloud.", "This bot is moving to Cloud.") : known === null ? lx("Chưa đọc được trạng thái chuyển bot. Mở Cài đặt → Limix Cloud để kiểm tra kết nối.", "Transfer status is unavailable. Check Settings → Limix Cloud.") : lx("Cloud chưa cho phép chuyển bot hoặc đang có đợt chuyển khác. Kiểm tra trạng thái trong Cài đặt → Limix Cloud.", "Cloud is not accepting bot transfers or another transfer is in progress. Check Settings → Limix Cloud."),
+      })];
       return [item(<Cloud size={16} className="text-ink-secondary" />, t("cloudSend.botMove.menu"), () => { setError(null); setAsked(bot); })];
     },
     dialog: <ConfirmDialog open={asked !== null} tone="neutral" icon={<Cloud size={18} />} title={t("cloudSend.botMove.confirmTitle", names)}
