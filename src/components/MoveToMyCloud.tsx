@@ -3,7 +3,7 @@
 // and the one row the bots that moved leave in the sidebar. Main runs the move (electron/bot-move-main.mjs).
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { ArrowRightLeft, Check, Cloud, CloudAlert, Loader2, RotateCw, X } from "lucide-react";
+import { ArrowRightLeft, Check, Cloud, CloudAlert, CloudCheck, CloudOff, CloudUpload, Loader2, RotateCw, X } from "lucide-react";
 import type { BotMoveState, BotMoveStatus, BotMoveView } from "../../electron/cloud-send.mjs";
 import { botMoveLine, filterBots, ipcErrorText, CHOOSER_PAGE, MY_CLOUD_TEAM } from "@/lib/cloud-send";
 import { t } from "@/lib/i18n";
@@ -184,16 +184,25 @@ export function useMoveToMyCloud() {
 }
 
 /** A small cloud beside a bot's name: on its way to My Cloud (pulsing), failing and trying again (warning), or there. */
-export function CloudMark({ bot }: { bot: Pick<Bot, "id" | "movedTo"> }) {
+export function CloudMark({ bot }: { bot: Pick<Bot, "id" | "movedTo" | "defaultBot"> }) {
   const known = useBotMoveState();
   const status = known?.moves?.find((entry) => entry.id === bot.id);
   const moved = bot.movedTo?.team.id === MY_CLOUD_TEAM ? bot.movedTo : undefined;
-  if (!status && !moved) return null;
-  const failed = status?.phase === "failed";
-  const label = status ? moveStatusText(status) : moved!.state === "moving" ? lx("Đang chuyển lên My Cloud", "Moving to My Cloud") : lx("Đã chuyển lên My Cloud, đang chạy trên Cloud", "Moved to My Cloud and running there");
-  const Icon = failed ? CloudAlert : Cloud;
-  return <span title={label} aria-label={label} role="img" data-cloud-mark={failed ? "failed" : status ? "moving" : moved!.state} className={failed ? "inline-flex shrink-0 text-warning" : "inline-flex shrink-0 text-accent-text"}>
-    <Icon size={13} aria-hidden="true" className={!failed && (status || moved?.state === "moving") ? "animate-pulse" : undefined} />
+  // Four looks: done (check), moving (upload, pulsing), failed (alert), not moved yet (dim crossed cloud, shown only while
+  // some bot is on its way so the rest read as "waiting", not as clutter on every bot).
+  const state: "failed" | "moving" | "done" | "waiting" | null = status
+    ? (status.phase === "failed" ? "failed" : "moving")
+    : moved ? (moved.state === "moving" ? "moving" : "done")
+    : !bot.defaultBot && !bot.movedTo && known && (known.moving.length > 0 || (known.moves?.length ?? 0) > 0) ? "waiting" : null;
+  if (!state) return null;
+  const label = status ? moveStatusText(status)
+    : state === "moving" ? lx("Đang chuyển lên My Cloud", "Moving to My Cloud")
+    : state === "done" ? lx("Đã chuyển lên My Cloud, đang chạy trên Cloud", "Moved to My Cloud and running there")
+    : lx("Chưa chuyển lên My Cloud, vẫn chạy trên máy này", "Not moved to My Cloud yet, still runs on this computer");
+  const Icon = state === "failed" ? CloudAlert : state === "moving" ? CloudUpload : state === "done" ? CloudCheck : CloudOff;
+  const tone = state === "failed" ? "text-warning" : state === "waiting" ? "text-ink-tertiary" : "text-accent-text";
+  return <span title={label} aria-label={label} role="img" data-cloud-mark={state} className={`inline-flex shrink-0 ${tone}`}>
+    <Icon size={13} aria-hidden="true" className={state === "moving" ? "animate-pulse" : undefined} />
   </span>;
 }
 
