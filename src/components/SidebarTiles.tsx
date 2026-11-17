@@ -118,7 +118,7 @@ export const SidebarBotTile = memo(function SidebarBotTile({ primary = false, dr
           title={tooltip}
           onCommit={rename}
           onEditingChange={setRenaming}
-          className="min-w-0 line-clamp-2 break-words text-center text-[13px] font-medium leading-4 text-ink"
+          className="min-w-0 break-words text-center text-[13px] font-medium leading-4 text-ink"
           inputClassName="w-full rounded bg-inset px-1 text-center text-[13px] font-medium leading-4"
         />
       </span>
