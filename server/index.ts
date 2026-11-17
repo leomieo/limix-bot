@@ -6596,7 +6596,7 @@ bus.subscribe((event: RuntimeEvent) => {
           requiresExplicitApproval: event.requiresExplicitApproval,
           commandAllowed: Boolean(command && commandAllowlist.matches(asker.id, command)),
           toolAllowed: Boolean(toolAllowKey && asker.alwaysAllow?.includes(toolAllowKey)), ownFilesRead: !guestDriven && readsOwnFiles(DATA_DIR, asker.id, event), // never in a guest's turn: the folder holds its owner's memory
-        }))
+        }), { ownerFull: effectiveApprovalMode === "full" && isLimixOwnerThread(event.threadId) })
         : null;
       // Claude accepts --permission-mode auto for any model but silently starts in Manual where auto is unavailable (Haiku 4.5, Sonnet 4.5, an org that disabled it).
       if (
