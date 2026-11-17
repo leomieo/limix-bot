@@ -158,17 +158,36 @@ export function useMoveToMyCloud() {
   };
 }
 
-/** The one row the bots that moved to My Cloud leave in the sidebar: however many there are, it opens My Cloud. */
+/** A small cloud beside a bot's name: on its way to My Cloud (pulsing) or already there. */
+export function CloudMark({ bot }: { bot: Pick<Bot, "movedTo"> }) {
+  const moved = bot.movedTo;
+  if (!moved || moved.team.id !== MY_CLOUD_TEAM) return null;
+  const label = moved.state === "moving" ? lx("Đang chuyển lên My Cloud", "Moving to My Cloud") : lx("Đã chuyển lên My Cloud, đang chạy trên Cloud", "Moved to My Cloud and running there");
+  return <span title={label} aria-label={label} role="img" data-cloud-mark={moved.state} className="inline-flex shrink-0 text-accent-text">
+    <Cloud size={13} aria-hidden="true" className={moved.state === "moving" ? "animate-pulse" : undefined} />
+  </span>;
+}
+
+/** The bots that moved to My Cloud, each by name with its cloud, under one heading: any of them opens My Cloud. */
 export function MovedToMyCloudRow({ bots }: { bots: readonly Bot[] }) {
   const moved = bots.filter((bot) => bot.movedTo?.state === "moved" && bot.movedTo.team.id === MY_CLOUD_TEAM);
   if (!moved.length) return null;
   const page = bridge();
-  return <div className="flex flex-col px-2 pb-1">
-    <button type="button" data-moved-to-my-cloud={moved.length} disabled={!page?.openMyCloud} onClick={() => { void page?.openMyCloud?.().catch(() => {}); }}
-      className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] text-ink-secondary enabled:hover:bg-menu-hover enabled:hover:text-ink">
-      <ArrowRightLeft size={14} aria-hidden="true" className="shrink-0" />
-      <span className="truncate" dir="auto">{moved.length === 1 ? t("cloudSend.botMove.movedOne", { bot: moved[0]!.name }) : t("cloudSend.botMove.movedMany", { count: moved.length })}</span>
-    </button>
+  const open = () => { void page?.openMyCloud?.().catch(() => {}); };
+  const row = "flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] text-ink-secondary enabled:hover:bg-menu-hover enabled:hover:text-ink";
+  return <div className="flex flex-col px-2 pb-1" data-moved-to-my-cloud={moved.length}>
+    <p className="flex items-center gap-1.5 px-2.5 pb-0.5 pt-1 text-[12px] font-medium text-ink-tertiary">
+      <Cloud size={13} aria-hidden="true" className="text-accent-text" />
+      {moved.length === 1 ? t("cloudSend.botMove.movedOne", { bot: moved[0]!.name }) : t("cloudSend.botMove.movedMany", { count: moved.length })}
+    </p>
+    {moved.slice(0, 12).map((bot) => <button key={bot.id} type="button" data-moved-bot={bot.id} disabled={!page?.openMyCloud} onClick={open} className={row}
+      title={lx(`${bot.name} đang chạy trên My Cloud. Bấm để mở My Cloud.`, `${bot.name} runs on My Cloud. Click to open it.`)}>
+      <Cloud size={14} aria-hidden="true" className="shrink-0 text-accent-text" />
+      <span className="truncate" dir="auto">{bot.name}</span>
+    </button>)}
+    {moved.length > 12 && <button type="button" disabled={!page?.openMyCloud} onClick={open} className={row}>
+      <ArrowRightLeft size={14} aria-hidden="true" className="shrink-0" />{lx(`và ${moved.length - 12} bot khác — mở My Cloud`, `and ${moved.length - 12} more — open My Cloud`)}
+    </button>}
   </div>;
 }
 
