@@ -5,7 +5,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { freezeAnswer, installOneHome } from "./one-home-main.mjs";
+import { freezeAnswer, installOneHome, moveTargetOrigin } from "./one-home-main.mjs";
 import nativeText from "./native-text.cjs";
 
 const json = (value, status = 200) => new Response(JSON.stringify(value), { status });
@@ -219,4 +219,12 @@ test("a whole-team move still copying gives way to moving chosen bots; once froz
     kept = { v: 1, phase: "final", cloud: { origin: CLOUD, account: "acct-1", machine: CLOUD }, startedAt: 1 };
     assert.equal(ask("cloud-send:bot-move-state").blocked, "busy", "a frozen move holds until it is done");
   } finally { main.close(); rmSync(folder, { recursive: true, force: true }); }
+});
+
+test("a whole-team move another account left never decides which Cloud a chosen bot's move pairs with", () => {
+  const now = { origin: "https://mine.example", account: "acct-1" };
+  assert.equal(moveTargetOrigin({ origin: "https://old.example", account: "acct-old" }, now), "https://mine.example");
+  assert.equal(moveTargetOrigin({ origin: "https://moving.example", account: "acct-1" }, now), "https://moving.example", "this account's own move keeps its Cloud");
+  assert.equal(moveTargetOrigin(null, now), "https://mine.example");
+  assert.equal(moveTargetOrigin(null, null), null);
 });

@@ -1,3 +1,13 @@
+Limix Bot 0.3.68
+
+## Tiếng Việt
+
+- Sửa lỗi chuyển bot lên Cloud luôn báo "My Cloud chưa sẵn sàng": app dùng nhầm địa chỉ Cloud của tài khoản đã đăng nhập trước đó trên máy. Nay luôn dùng Cloud của tài khoản đang đăng nhập; các bot đang chờ sẽ tự chuyển ở lần thử lại kế tiếp.
+
+## English
+
+- Fix moving bots to Cloud always failing with "My Cloud is not ready": the app used the Cloud of an account signed in earlier on this computer. It now uses the signed-in account's Cloud; waiting bots move at their next retry.
+
 Limix Bot 0.3.67
 
 ## Tiếng Việt

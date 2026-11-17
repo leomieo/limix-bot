@@ -41,6 +41,12 @@ export function freezeAnswer(got) {
   return { frozen: true };
 }
 
+/** Which Cloud a move pairs with: the whole-team move's while it is this account's, else this account's own Cloud. */
+export function moveTargetOrigin(journalCloud, now) {
+  const mine = journalCloud?.origin && (!now?.account || journalCloud.account === now.account) ? journalCloud.origin : null;
+  return mine ?? now?.origin ?? null;
+}
+
 export function oneHomeCloud(state) {
   const account = state?.account?.id;
   if (typeof account !== "string" || !account) return null;
@@ -195,7 +201,9 @@ export function installOneHome({ localRequest: anyServer, clean = null, account,
     return known;
   };
   const target = () => {
-    const client = account(), origin = cloudOrigin() ?? oneHomeCloud(client?.state())?.origin;
+    // The whole-team move's Cloud only while that move is this account's: a journal another account left (signed in here
+    // before) names a Cloud this account's Admin never pairs, and every chosen bot's move failed as "not ready".
+    const client = account(), origin = moveTargetOrigin(journal.read()?.cloud, oneHomeCloud(client?.state()));
     if (!client || !origin) throw new Error("This computer has no My Cloud yet.");
     return { origin, grant: () => client.pairHome() };
   };
