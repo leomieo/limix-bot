@@ -1,3 +1,15 @@
+Limix Bot 0.3.67
+
+## Tiếng Việt
+
+- Bot đang chuyển lên Cloud có biểu tượng đám mây cạnh tên; bot đã lên My Cloud được liệt kê từng tên kèm đám mây ở thanh bên của máy tính.
+- Sửa lỗi chuyển bot lên Cloud báo "My Cloud chưa sẵn sàng" dù Cloud đang chạy: địa chỉ Cloud bị mất bản ghi DNS. Máy chủ nay tự kiểm tra lại và tạo lại bản ghi.
+
+## English
+
+- Bots on their way to Cloud show a cloud beside their name; bots on My Cloud are listed by name with a cloud in this computer's sidebar.
+- Fix moving bots to Cloud failing with "My Cloud is not ready" while the Cloud runs: its address had lost its DNS record. The server now re-checks and recreates it.
+
 Limix Bot 0.3.66
 
 ## Tiếng Việt
