@@ -117,11 +117,11 @@ function blockedHint(blocked: BotMoveState["blocked"]): string {
   switch (blocked) {
     case "signed-out": return lx("Bạn chưa đăng nhập Limix Cloud. Mở Cài đặt → Limix Cloud để đăng nhập.", "You are not signed in to Limix Cloud. Open Settings → Limix Cloud to sign in.");
     case "no-cloud": return lx("Tài khoản chưa có Cloud (yêu cầu dùng thử chưa được duyệt). Mở Cài đặt → Limix Cloud để gửi yêu cầu hoặc xem trạng thái.", "This account has no Cloud yet (the trial is not approved). Open Settings → Limix Cloud to ask or check.");
-    case "setting-up": return lx("Cloud đang được khởi tạo, chưa sẵn sàng nhận bot. Thử lại sau ít phút.", "Your Cloud is still setting up. Try again in a few minutes.");
-    case "failed": return lx("Cloud đang gặp lỗi khởi động và sẽ tự thử lại. Xem chi tiết trong Cài đặt → Limix Cloud.", "Your Cloud failed to start and will retry. See Settings → Limix Cloud.");
+    case "setting-up": return lx("Cloud đang được khởi tạo, chưa sẵn sàng nhận bot. Thử lại sau ít phút.", "The Cloud is still setting up. Try again in a few minutes.");
+    case "failed": return lx("Cloud đang gặp lỗi khởi động và sẽ tự thử lại. Xem chi tiết trong Cài đặt → Limix Cloud.", "The Cloud failed to start and will retry. See Settings → Limix Cloud.");
     case "ended": return lx("Cloud của tài khoản đã dừng hoặc hết hạn.", "This account's Cloud has stopped or ended.");
     case "busy": return lx("Đang có đợt chuyển cả đội bot lên Cloud. Chờ đợt đó xong rồi thử lại.", "The whole team is moving to Cloud. Wait for it to finish.");
-    default: return lx("Cloud chưa nhận bot. Kiểm tra trạng thái trong Cài đặt → Limix Cloud.", "Your Cloud is not taking bots yet. Check Settings → Limix Cloud.");
+    default: return lx("Cloud chưa nhận bot. Kiểm tra trạng thái trong Cài đặt → Limix Cloud.", "The Cloud is not taking bots yet. Check Settings → Limix Cloud.");
   }
 }
 
