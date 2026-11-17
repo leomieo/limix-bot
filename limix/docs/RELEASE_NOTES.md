@@ -8,8 +8,6 @@ Limix Bot 0.3.70
 
 - The cloud beside a bot now follows its move to My Cloud: a check when it has moved, a pulsing upload arrow while it moves, a warning when it failed, and a dim crossed cloud for a bot not moved yet (shown only while another bot is moving, so they are easy to compare). Hover for details.
 
----
-
 Limix Bot 0.3.69
 
 ## Tiếng Việt
