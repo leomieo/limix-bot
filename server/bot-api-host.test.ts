@@ -411,12 +411,14 @@ describe("the Bot API door on the webhook receiver", () => {
     expect((await h.call("b1", `${key}x`, { message: "Hi" })).status).toBe(401);
   });
 
-  it("sends the final answer only, not the progress notes the bot wrote on the way", async () => {
+  it("sends the latest final answer only, not progress notes or earlier turns stacked together", async () => {
     const h = await harness((fake, _botId, _prompt, opts) => {
       setTimeout(() => {
         fake.store.appendMessage(opts.threadId, { role: "bot", kind: "text", text: "Looking into it…", turnId: "T1" });
         fake.store.appendMessage(opts.threadId, { role: "bot", kind: "text", text: "Found two files.", turnId: "T1" });
-        fake.store.appendMessage(opts.threadId, { role: "bot", kind: "text", text: "Here is the answer.", turnId: "T1", turnTerminal: true });
+        fake.store.appendMessage(opts.threadId, { role: "bot", kind: "text", text: "Asked Lin to check.", turnId: "T1", turnTerminal: true });
+        fake.store.appendMessage(opts.threadId, { role: "bot", kind: "text", text: "Lin is on it.", turnId: "T2" });
+        fake.store.appendMessage(opts.threadId, { role: "bot", kind: "text", text: "Here is the answer.", turnId: "T2", turnTerminal: true });
         opts.onSettled({ ok: true, text: "Here is the answer." });
       }, 30);
     });

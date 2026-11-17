@@ -1,3 +1,13 @@
+Limix Bot 0.3.64
+
+## Tiếng Việt
+
+- Tin trả lời qua Telegram/Zalo chỉ gồm câu trả lời mới nhất của bot. Trước đây khi bot giao việc cho các bot khác và nhận báo cáo, mọi câu trả lời trong lúc đó bị gộp thành một tin dài.
+
+## English
+
+- A Telegram/Zalo reply carries only the bot's latest answer. Before, when the bot delegated and teammates reported back, every answer in between was stacked into one long message.
+
 Limix Bot 0.3.63
 
 ## Tiếng Việt

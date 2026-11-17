@@ -118,7 +118,9 @@ function pendingCard(lines: readonly Message[]): boolean {
 function replyText(lines: readonly Message[]): string {
   const said = lines.filter((line) => line.role === "bot" && line.kind === "text" && typeof line.text === "string" && line.text.trim());
   const final = said.filter((line) => line.turnTerminal === true);
-  const picked = final.length ? final : said.some((line) => line.turnId) ? said.slice(-1) : said;
+  // One answer per call: a Chief whose teammates report back runs more turns in the same thread, and each has its own
+  // terminal text; the caller (a customer's chat) gets the latest one, not every update stacked into one message.
+  const picked = final.length ? final.slice(-1) : said.some((line) => line.turnId) ? said.slice(-1) : said;
   return redactSecretsInText(picked.map((line) => line.text!.trim()).join("\n\n"));
 }
 
