@@ -4,8 +4,7 @@ import { app, autoUpdater as nativeAutoUpdater, BrowserWindow, Tray, WebContents
 import { LIMIX_ACCOUNT_URL, LIMIX_CLOUD_ENABLED, LIMIX_CLOUD_SALES, LIMIX_ORGANIZATION_ENABLED } from "./limix-features.mjs";
 import { limixAccountGate, limixVerifyPassword, limixAccountInfo, limixRemoteCredential, limixSignOut } from "./limix-account.mjs";
 import { limixRuntimeEnv } from "./limix-runtime.mjs";
-import { lxm, setLimixLanguageSource } from "./limix-lang.mjs";
-import { createLimixGateway } from "./limix-gateway.mjs";
+import { setLimixLanguageSource } from "./limix-lang.mjs";
 import { createLimixTools } from "./limix-tools.mjs";
 import { limixPhoneBrowserEnv, limixPhoneBrowserOn, setLimixPhoneBrowser } from "./limix-phone-browser.mjs";
 import { createRequire } from "node:module";
@@ -2868,7 +2867,6 @@ setCuaStateListener((connection) => {
   });
 });
 
-let limixGateway = null;
 const limixOwnerLaneToken = randomBytes(32).toString("base64url");
 let limixLanActive = false;
 app.whenReady().then(async () => {
@@ -2924,8 +2922,6 @@ app.whenReady().then(async () => {
   }
   // Limix Bot: no app until this computer is signed in to a Limix account (closing the sign-in window quits).
   if (!(await limixAccountGate({ app, BrowserWindow, ipcMain, safeStorage, shell, dialog, iconPath: APP_ICON, log: slog, baseUrl: LIMIX_ACCOUNT_URL }))) { app.quit(); return; }
-  limixGateway = createLimixGateway({ app, BrowserWindow, shell, resourcesPath: process.resourcesPath, userData: app.getPath("userData"), iconPath: APP_ICON, log: slog, ownerLaneToken: limixOwnerLaneToken, serverRequest: (route, init) => localServerRequest(route, init) });
-  limixGateway.start();
   limixTools = createLimixTools({ userData: app.getPath("userData"), resourcesPath: process.resourcesPath, serverRequest: (route, init) => localServerRequest(route, init), log: slog });
   hiddenStart = loginItem.startedHidden() || reopenedOutOfSight();
   startupScreen ??= hiddenStart ? null : createStartupScreen({
@@ -3255,8 +3251,6 @@ function releaseDesktopDataDirLease() {
 }
 
 // before-quit is too early (this app defers it); will-quit is Electron's last boundary, and the process hook covers app.exit().
-ipcMain.handle("limix-gateway:open", localOnly("limix-gateway:open", () => limixGateway ? limixGateway.open() : Promise.reject(new Error(lxm("Chương trình kết nối chưa sẵn sàng.", "The connector program is not ready yet.")))));
-app.on("will-quit", () => limixGateway?.stop());
 ipcMain.handle("limix-account:review", localOnly("limix-account:review", async (_event, password) => {
   if (!(await limixVerifyPassword(password))) throw new Error("Mật khẩu không đúng hoặc không kết nối được máy chủ tài khoản.");
   const response = await localServerRequest("/api/limix/channel-review/grant", { method: "POST", headers: { "X-Limix-Owner": limixOwnerLaneToken } });

@@ -12,7 +12,6 @@ import { readLocalSkills } from "../limix-skill-folder.ts";
 import { scanSkillRequirements } from "../limix-skill-requirements.ts";
 import { loadBundledSkills } from "../skill-library.ts";
 import { handleLimixHub } from "../limix-skill-hub.ts";
-import { proxyLimixGateway } from "../limix-gateway-sidecar.ts";
 import { handleLimixSkillStore, LIMIX_CORE_SKILLS, limixSkillText, limixBundledListings, limixBundledSwitch } from "../limix-skill-store.ts";
 import { skillImportSummary } from "../skill-folder.ts";
 import { installLibrarySkill, librarySkillOptOuts, listLibrarySkills, readLibrarySkillFile, readSkillLibraryIndex, setLibrarySkillEveryBot, setLibrarySkillOptOut, setLibrarySkillReviewState, skillsLibraryEnabled, unassignLibrarySkill } from "../skill-library.ts";
@@ -43,7 +42,6 @@ export function createBotSkillsRoutes(deps: BotSkillsRouteDeps): RouteHandler {
       if (!input.success) return json(res, 400, { error: "Choose valid project folders" });
       return json(res, 200, await scanSkillRequirements(store.bots, cfg.mcpServers, input.data.projects));
     }
-    if (path.startsWith("/api/limix/gateway") && proxyLimixGateway(req, res, path)) return;
     if (path.startsWith("/api/limix/bots")) {
       const library = await handleLimixBotLibrary(method, path);
       if (library) return json(res, library.status, library.body);

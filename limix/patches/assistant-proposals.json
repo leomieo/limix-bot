@@ -547,12 +547,6 @@
       "after": "  list_shared_computers: \"activity.tool.team.listSharedComputers\",\n  diagnose_limix: \"activity.tool.team.diagnoseLimix\",\n  list_team_library: \"activity.tool.team.listTeamLibrary\",\n"
     }
   ],
-  "server/limix-gateway-sidecar.ts": [
-    {
-      "before": "  return true;\n}\n",
-      "after": "  return true;\n}\n\n/** The connections the connector reports (secrets are already masked there); null when this server has no connector or it doesn't answer. */\nexport function limixGatewayConnections(): Promise<Array<{ id: string; platform: string; name?: string; status: string; statusDetail?: string; running?: boolean; enabled?: boolean }> | null> {\n  if (!limixGatewaySidecarOn() || !child) return Promise.resolve(null);\n  return new Promise((resolve) => {\n    const upstream = httpRequest({ host: \"127.0.0.1\", port: GATEWAY_PORT, method: \"GET\", path: \"/api/state\", timeout: 5_000,\n      headers: { host: `127.0.0.1:${GATEWAY_PORT}`, \"x-limix-admin\": ADMIN } }, (response) => {\n      const chunks: Buffer[] = [];\n      response.on(\"data\", (chunk: Buffer) => chunks.push(chunk));\n      response.on(\"end\", () => {\n        try { resolve(response.statusCode === 200 ? (JSON.parse(Buffer.concat(chunks).toString(\"utf8\")).connections ?? null) : null); } catch { resolve(null); }\n      });\n    });\n    upstream.on(\"error\", () => resolve(null));\n    upstream.on(\"timeout\", () => { upstream.destroy(); resolve(null); });\n    upstream.end();\n  });\n}\n"
-    }
-  ],
   "src/locales/en.json": [
     {
       "before": "  \"activity.tool.team.listSharedComputers\": \"List shared computers\",\n  \"activity.tool.team.listTeamLibrary\": \"List team library\",\n",

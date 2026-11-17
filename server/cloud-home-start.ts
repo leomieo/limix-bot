@@ -44,8 +44,6 @@ const SERVER_ENV_NAMES = new Set([
   "OMB_BOT_BOX",
   // An ended Cloud started only for its owner's export: the server runs frozen (server/move-freeze.ts).
   "OMB_CLOUD_EXPORT_ONLY",
-  // Limix Bot: the server runs the Telegram / Zalo / Discord connector beside it (server/limix-gateway-sidecar.ts).
-  "LIMIX_GATEWAY_SIDECAR",
 ]);
 export function serverEnvironmentAllowed(name: string): boolean {
   return SERVER_ENV_NAMES.has(name) || name.startsWith("LC_");

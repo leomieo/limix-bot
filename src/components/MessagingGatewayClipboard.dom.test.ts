@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { Window } from "happy-dom";
 import { afterEach, expect, it, vi } from "vitest";
 
-const page = readFileSync(new URL("../../limix/gateway/src/web/ui.html", import.meta.url), "utf8");
+const page = readFileSync(new URL("../../limix/modules/messaging-gateway/src/web/ui.html", import.meta.url), "utf8");
 const script = /<script>([\s\S]*?)<\/script>/.exec(page)![1];
 const windows: Window[] = [];
 afterEach(async () => {

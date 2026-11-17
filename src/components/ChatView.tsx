@@ -1,4 +1,4 @@
-import { ChannelReplyComposer } from "./ChannelReplyComposer";
+import { ChannelConversationNotice } from "./ChannelConversationNotice";
 import { createContext, memo, use, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch } from "react";
 import { useAdvancedMode } from "@/lib/interface-mode";
 import { PHONE_LAYOUT, useMediaQuery } from "@/lib/use-media-query";
@@ -1277,7 +1277,7 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
       )}
       <LiveCallBar bot={bot} />
       {channelConversation ? (
-        <ChannelReplyComposer key={bot.threadId} threadId={bot.threadId} onInternal={() => openBot(dispatch,profile,showThreads)} />
+        <ChannelConversationNotice key={bot.threadId} onInternal={() => openBot(dispatch,profile,showThreads)} />
       ) : canWrite === false ? (
         <NewConversationInstead bot={bot} onNew={() => dispatch({ type: "newTask", botId: bot.id })} />
       ) : (

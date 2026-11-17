@@ -1,3 +1,23 @@
+Limix Bot 0.3.75
+
+## Tiếng Việt
+
+- Chương trình kết nối Telegram, Zalo, Discord và Facebook được tách khỏi app thành mô-đun riêng (Messaging Gateway). App trên máy tính và bản Cloud không còn kèm, không tự chạy chương trình này, và không còn mục "Kết nối Telegram, Zalo, Discord" trong menu tài khoản.
+  - Khi cập nhật, các kênh đang chạy sẽ **dừng nhận tin** cho đến khi bạn chạy mô-đun riêng và cấu hình bằng địa chỉ và khóa Bot API của từng bot (hướng dẫn trong `limix/modules/messaging-gateway/README.md`).
+  - Dữ liệu kết nối cũ và lịch sử hội thoại kênh vẫn giữ nguyên. Lịch sử vẫn chỉ mở được sau khi xác thực mật khẩu tài khoản như trước. App không tự sao chép token, không gửi tin và không hủy webhook.
+  - Cuộc trò chuyện đến từ kênh hoặc ứng dụng bên ngoài giờ chỉ đọc trong app, kèm nút mở chat nội bộ; ô trả lời thẳng vào kênh được bỏ.
+  - Mục Ứng dụng, máy chủ MCP, quyền theo bot và Bot API vẫn hoạt động như cũ.
+- Trả lời qua Bot API không còn gửi nhầm câu bot tự nói trước khi gọi công cụ (thường là tiếng Anh, ví dụ "I'll attach the image now") khi lượt trả lời kết thúc ở bước gọi công cụ.
+
+## English
+
+- The Telegram, Zalo, Discord and Facebook connector moves out of the app into a separate module (Messaging Gateway). The desktop app and the Cloud neither ship nor start it, and the account menu no longer has "Connect Telegram, Zalo, Discord".
+  - After updating, running channels **stop receiving messages** until you run the module and set it up with each bot's Bot API address and key (see `limix/modules/messaging-gateway/README.md`).
+  - Old connection data and channel conversation history stay where they are; history still opens only after the account-password check. The app copies no token, sends no message and removes no webhook.
+  - A conversation that came in from a channel or another app is read-only in the app, with a button to the internal chat; the box that replied straight into the channel is gone.
+  - Apps, MCP servers, per-bot permissions and the Bot API work as before.
+- Bot API replies no longer send what the bot said to itself before a tool call (often in English, such as "I'll attach the image now") when its turn ends on that tool call.
+
 Limix Bot 0.3.74
 
 ## Tiếng Việt

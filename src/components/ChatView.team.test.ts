@@ -92,7 +92,7 @@ it("opens the internal chat from the connected-channel banner without sending a 
     threadId: "zalo", mainThreadId: "main",
     tasks: [{ threadId: "main", title: "Internal", createdAt: 1 }, { threadId: "zalo", title: "Channel", createdAt: 2, botApi: true }],
   }));
-  const banner = container.querySelector('[data-testid="channel-conversation-composer"]');
+  const banner = container.querySelector('[data-testid="channel-conversation-notice"]');
   expect(banner).not.toBeNull();
   const button = banner!.querySelector<HTMLButtonElement>("button")!;
   expect(button.textContent).toBe("Open internal chat");

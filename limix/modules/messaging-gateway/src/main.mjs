@@ -53,7 +53,3 @@ async function shutdown() {
 }
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
-// Started by the desktop app: when the app goes away (closed, crashed, updated), go too. A connector left running
-// would keep the port, so the next app's connector could not start and the old one, holding a stale owner secret,
-// would treat the bot's owner as a guest.
-if (typeof process.send === "function") process.on("disconnect", shutdown);

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { Window } from "happy-dom";
 import { expect, it } from "vitest";
-const page = readFileSync(new URL("../../limix/gateway/src/web/ui.html", import.meta.url), "utf8");
+const page = readFileSync(new URL("../../limix/modules/messaging-gateway/src/web/ui.html", import.meta.url), "utf8");
 const script = /<script>([\s\S]*?)<\/script>/.exec(page)![1];
 it("keeps setup options folded and retains a link code across renders until ownership is verified", async () => {
   const win = new Window({ url: "http://127.0.0.1:8790/" });

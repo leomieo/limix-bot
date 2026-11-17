@@ -1,21 +1,15 @@
-// Limix Bot: the bot's owner may talk to it from Telegram / Zalo / Discord with any AI, not only the ones that can run a
-// confined guest turn. The connector (limix-gateway) sends X-Limix-Owner only for a sender the owner linked with /link,
-// in a private chat; the secret is made per launch by the desktop app and never reaches an engine (deleted below,
-// before any engine is started). An owner thread stays an owner thread: a guest's call can never continue it.
-import { randomBytes, timingSafeEqual } from "node:crypto";
+// Limix Bot: the owner's secret, made per launch by the desktop app and never given to an engine (deleted below, before
+// any engine is started). It unlocks channel conversations for the owner, and marks a Bot API call as the owner's only for a
+// connector the app itself starts and hands this secret; none ships with the app (the messaging gateway is a separate module,
+// limix/modules/messaging-gateway), so no outside key can make a call the owner's. An owner thread stays an owner thread.
+import { timingSafeEqual } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { DATA_DIR } from "./config.ts";
 
-// On a server the connector is this server's own sidecar (limix-gateway-sidecar.ts): the server makes the secret.
-const TOKEN = process.env.LIMIX_OWNER_LANE_TOKEN?.trim() || (process.env.LIMIX_GATEWAY_SIDECAR === "1" ? randomBytes(32).toString("base64url") : "");
+const TOKEN = process.env.LIMIX_OWNER_LANE_TOKEN?.trim() || "";
 delete process.env.LIMIX_OWNER_LANE_TOKEN;
-
-/** The secret, for the sidecar connector only (never for an engine). */
-export const limixOwnerLaneToken = (): string => (process.env.LIMIX_GATEWAY_SIDECAR === "1" ? TOKEN : "");
-
-export const channelOwnerTransportToken = (): string => TOKEN;
 
 export const LIMIX_OWNER_HEADER = "x-limix-owner";
 

@@ -1,4 +1,3 @@
-import { channelActionRoute } from "./limix-channel-actions.ts";
 import { imageConnectorRefusal } from "./limix-image-routing.ts";
 import { channelReviewSensitivePath } from "./limix-channel-review-path.ts";
 import { channelReviewRoute, channelReviewUntil } from "./limix-channel-review.ts";
@@ -605,7 +604,6 @@ import { createGroupOrderRoutes } from "./routes/group-order.ts";
 import { createBotLifecycleRoutes } from "./routes/bot-lifecycle.ts";
 import { createBotSkillsRoutes } from "./routes/bot-skills.ts";
 import { startHubAutoSync } from "./limix-skill-hub.ts";
-import { limixGatewayConnections, startLimixGatewaySidecar } from "./limix-gateway-sidecar.ts";
 import { limixBundledFor, limixSelectBundled, limixSkillDefaultsMigration } from "./limix-skill-store.ts";
 import { createSkillShareRoutes } from "./routes/skill-share.ts";
 import { createTeamContextRoutes } from "./routes/team-context.ts";
@@ -1430,7 +1428,6 @@ const firstEngineRead = holdUntilFirstEngineRead();
 await registry.load(providerConfigs(), decorateHostedProvider);
 const bundledSkills = loadBundledSkills();
 limixSkillDefaultsMigration();
-startLimixGatewaySidecar({ port: PORT, webhookPort: WEBHOOK_PORT });
 const availableSkills = () => mergeSkills(bundledSkills, loadUserSkills(join(DATA_DIR, "skills")));
 /** Every turn the engine can mount it, whatever its words: they pick only the skill's instructions. A Cloud home or a hosted workspace has no USB port. */
 const usbPhoneOffered = (instance: { adapter: { capabilities: { phoneMcp?: boolean } } }, skills: readonly BundledSkill[]) => instance.adapter.capabilities.phoneMcp === true &&
@@ -12781,11 +12778,6 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
     const auth = gate.auth;
     auth.channelReviewUntil = channelReviewUntil(req.headers.cookie);
     if (await channelReviewRoute({ req, res, url, path, method, auth, json, readBody })) return;
-    if (await channelActionRoute({req,res,url,path,method,auth,json,readBody}, {
-      channelThread: id => {const bot=store.botByThread(id);return Boolean(bot && store.taskByThread(bot.id,id)?.botApi);},
-      record: (thread,text) => {store.appendMessage(thread,{role:"bot",kind:"text",text});},
-      context: id => store.messagesFor(id).slice(-8).map(m=>({role:m.role,text:m.text?.slice(0,800)})),
-    })) return;
     if (!auth.channelReviewUntil && channelReviewSensitivePath(path) && store.bots.some(bot => bot.tasks?.some(task => task.botApi))) return json(res, 403, { error: "Unlock channel conversations before accessing archives, search or activity." });
     if (HOSTED_WORKSPACE && auth.kind === "session") {
       const failure = workspaceAccess
@@ -13568,7 +13560,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
         return json(res, 201, proposed);
       }
       if (await dispatchRoutes([createBurstProposalRoutes({ requireActive: requireActiveInternalCapability, readBody: readInternalBody, refusal: () => burstProposalRefusal({ owner: connectorThread(internalSender.id, internalCapability.threadId), outside: outsideWorkStaysHere(internalCapability.threadId), self: selfThreadRefusal({ handoff: Boolean(internalCapability.roomHandoffId), requestLine: store.activePath(internalCapability.threadId).findLast((line) => line.role === "user" && line.kind === "text") }) }), model: () => burst.model(internalSender, internalCapability.threadId), propose: (plan) => burst.propose({ ...plan, botId: internalSender.id, threadId: internalCapability.threadId }) }), createInternalChiefTeamRoutes({ bot: () => store.bot(internalCapability.botId), requireActive: requireActiveInternalCapability,
-        teams: teamSetupTeams, bots: () => store.bots, instances: () => registry.describe(), channels: limixGatewayConnections }), createInternalModelRoutes({ requireActive: requireActiveInternalCapability, menu: (search) => ownThreads.menu(internalCapability.botId, internalCapability.threadId, search) })], { req, res, url, path, method, auth, json, readBody })) return;
+        teams: teamSetupTeams, bots: () => store.bots, instances: () => registry.describe() }), createInternalModelRoutes({ requireActive: requireActiveInternalCapability, menu: (search) => ownThreads.menu(internalCapability.botId, internalCapability.threadId, search) })], { req, res, url, path, method, auth, json, readBody })) return;
       if (method === "POST" && path === "/api/internal/team-setup-requests") {
         const parsed = z.object({ fromBotId: z.string().optional(), fromThreadId: z.string().optional(), plan: z.unknown() }).strict().safeParse(await readInternalBody());
         if (!parsed.success) return json(res, 400, { error: "Invalid team setup request" });

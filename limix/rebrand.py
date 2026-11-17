@@ -2263,3 +2263,34 @@ for rel, edits in json.loads((ROOT / "limix/patches/channel-owner-replies.json")
             raise RuntimeError(f"Channel owner reply patch drift: {rel}")
         current = current.replace(edit["before"], edit["after"], 1)
     target.write_text(current, encoding="utf-8")
+
+# 12. The Telegram / Zalo / Discord gateway is a separate module (limix/modules/messaging-gateway): the desktop app and
+# the server image neither ship nor start it, and the app has no menu, window, IPC, proxy route or reply box for it.
+# Applied last, after the steps above that wire the old built-in gateway; channel data and history stay where they are.
+for rel in ["electron/limix-gateway.mjs", "electron/limix-gateway-clipboard.node-test.mjs", "server/limix-gateway-sidecar.ts",
+            "server/limix-channel-actions.ts", "server/limix-channel-actions.test.ts", "src/components/ChannelReplyComposer.tsx",
+            "src/components/ChannelReplyComposer.dom.test.ts", "src/components/LimixGatewayClipboard.dom.test.ts",
+            "src/components/LimixGatewaySetup.dom.test.ts"]:
+    if (ROOT / rel).exists():
+        (ROOT / rel).unlink()
+        changed.append(rel)
+if (ROOT / "limix/gateway").exists():
+    shutil.rmtree(ROOT / "limix/gateway")
+    changed.append("limix/gateway")
+for rel, edits in json.loads((ROOT / "limix/patches/messaging-module.json").read_text(encoding="utf-8")).items():
+    if rel.startswith("_"):
+        continue
+    target = ROOT / rel
+    current = original = target.read_text(encoding="utf-8")
+    for patch in edits:
+        if patch["before"] in current:
+            current = current.replace(patch["before"], patch["after"], 1)
+    if current != original:
+        target.write_text(current, encoding="utf-8")
+        changed.append(rel)
+for rel, marker in [("electron/main.mjs", "limix-gateway"), ("electron/preload.cjs", "limix-gateway"), ("electron-builder.yml", "limix-gateway"),
+                    ("Dockerfile", "limix-gateway"), ("server/index.ts", "limix-gateway-sidecar"), ("server/index.ts", "channelActionRoute"),
+                    ("server/routes/bot-skills.ts", "limix-gateway-sidecar"), ("server/cloud-home-start.ts", "LIMIX_GATEWAY_SIDECAR"),
+                    ("src/components/ChatView.tsx", "ChannelReplyComposer"), ("src/components/SidebarProfileMenu.tsx", "limixGateway")]:
+    if marker in (ROOT / rel).read_text(encoding="utf-8"):
+        raise RuntimeError(f"Messaging gateway still wired in {rel} ({marker}): update limix/patches/messaging-module.json")

@@ -15,7 +15,6 @@ import {
   Keyboard,
   Laptop,
   LifeBuoy,
-  Link2,
   Loader2,
   RefreshCw,
   Settings as SettingsIcon,
@@ -513,16 +512,12 @@ export function profileMenuItems({
     onSelect: onUsage,
   } : null;
   const support: SidebarMenuItem = { key: "support", label: t("sidebar.menu.support"), icon: <LifeBuoy size={18} />, submenu: help, onSelect: () => {} };
-  const connectItem: SidebarMenuItem | null = typeof window !== "undefined" && window.ogb?.limixGateway ? {
-    key: "connect", label: t("sidebar.menu.connect"), icon: <Link2 size={18} />,
-    onSelect: () => { void window.ogb?.limixGateway?.open().catch((error: unknown) => window.alert(String((error as Error)?.message ?? error).replace(/^Error invoking remote method '[^']*': (Error: )?/, ""))); },
-  } : null;
   const cloudItem: SidebarMenuItem | null = onCloud ? { key: "limix-cloud", label: t("settings.section.cloudAccount"), icon: <Cloud size={18} />, onSelect: onCloud } : null;
   const settings: SidebarMenuItem = { key: "settings", label: t("sidebar.menu.settings"), icon: <SettingsIcon size={18} />, onSelect: onSettings };
   const accountItem: SidebarMenuItem | null = account ? { key: "account", label: account, icon: <CircleUserRound size={18} />, onSelect: onAccount } : null;
   const present = (...items: Array<SidebarMenuItem | null | false>) => items.filter((item): item is SidebarMenuItem => Boolean(item));
   if (!simple) {
-    const rest = [...present(usageItem), ...phone, ...present(connectItem), ...present(cloudItem), support, settings, ...present(update), ...(accountItem ? [{ ...accountItem, separatorBefore: true }] : []), ...accounts.map((item, index) => (index === 0 ? { ...item, separatorBefore: true } : item))];
+    const rest = [...present(usageItem), ...phone, ...present(cloudItem), support, settings, ...present(update), ...(accountItem ? [{ ...accountItem, separatorBefore: true }] : []), ...accounts.map((item, index) => (index === 0 ? { ...item, separatorBefore: true } : item))];
     return [...move, ...rest.map((item, index) => (move.length && index === 0 ? { ...item, separatorBefore: true } : item))];
   }
   const raised: SidebarMenuItem | null = update && updateTop ? {
@@ -537,7 +532,7 @@ export function profileMenuItems({
     present(raised),
     // Places you go first, then the app's own settings, then getting the phone app and help.
     simple.tools,
-    [...present(usageItem), ...present(connectItem), ...present(cloudItem), settings],
+    [...present(usageItem), ...present(cloudItem), settings],
     [...phone, { ...support, submenu: raised ? help : [...help, ...present(update)] }],
     [...simple.places, ...present(accountItem)],
     accounts,

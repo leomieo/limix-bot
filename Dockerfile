@@ -193,10 +193,6 @@ COPY --from=build /src/dist-server ./dist-server
 COPY --from=build /src/dist ./dist
 # The bundled skills (server/skill-library.ts reads ./skills from /app).
 COPY --from=build /src/skills ./skills
-# Limix Bot: the Telegram / Zalo / Discord connector, run by the server as its sidecar (LIMIX_GATEWAY_SIDECAR=1). Root's,
-# like every other file the launcher trusts.
-COPY --from=build /src/limix/gateway/src ./limix-gateway/src
-COPY --from=build /src/limix/gateway/package.json ./limix-gateway/package.json
 RUN export HOME=/tmp/omb-build-home \
  && chmod go-w /app/cloud /app/cloud/Caddyfile /app/cloud/Caddyfile.tls /app/cloud/Caddyfile.tunnel /app/cloud/edge-routes.caddy \
  && caddy version \
@@ -231,9 +227,6 @@ COPY --from=build --chown=maus:maus /src/dist-native/duckdb/target ./duckdb
 COPY --from=build --chown=maus:maus /src/dist-server ./dist-server
 COPY --from=build --chown=maus:maus /src/dist ./dist
 COPY --from=build --chown=maus:maus /src/skills ./skills
-# Limix Bot: the Telegram / Zalo / Discord connector, run by the server as its sidecar (no npm packages).
-COPY --from=build --chown=maus:maus /src/limix/gateway/src ./limix-gateway/src
-COPY --from=build --chown=maus:maus /src/limix/gateway/package.json ./limix-gateway/package.json
 # `docker compose exec omb openmausbot pair`: the commands the CLI prints start the same way.
 RUN printf '#!/bin/sh\nexec node /app/dist-server/openmausbot.js "$@"\n' > /usr/local/bin/openmausbot && chmod 0755 /usr/local/bin/openmausbot
 ENV HOME=/data \

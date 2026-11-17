@@ -1,6 +1,6 @@
 # Chạy Limix Bot trên máy chủ riêng (VPS) 24/7
 
-Tắt máy tính, đóng ứng dụng Limix Bot: bot trên máy chủ vẫn trả lời Telegram, Zalo, Discord và chạy việc định kỳ.
+Tắt máy tính, đóng ứng dụng Limix Bot: bot trên máy chủ vẫn chạy việc định kỳ và trả lời qua Bot API.
 
 **Chọn đường cài:**
 - Máy thuê có IP riêng (VPS) → làm Bước 1–4 bên dưới.
@@ -56,18 +56,13 @@ Khi đang chọn máy chủ, vào phần AI của bot và đăng nhập như tr�
 
 Lưu ý: mỗi người tự đăng nhập tài khoản AI của chính mình. Không dùng chung một tài khoản gói cho nhiều khách.
 
-## Bước 4. Kết nối Telegram / Zalo / Discord trên máy chủ
+## Bước 4. Kết nối Telegram / Zalo / Discord (tùy chọn)
 
-Trên máy chủ, chương trình kết nối luôn chạy cùng Limix Bot. Mở trang của nó bằng trình duyệt (đã đăng nhập máy chủ):
+Từ Limix Bot 0.3.75, bản máy chủ không kèm và không tự chạy chương trình kết nối Telegram/Zalo/Discord. Nếu cần, chạy
+mô-đun riêng `limix/modules/messaging-gateway` (xem README trong thư mục đó) trên một máy luôn bật, rồi nối từng kết nối với
+bot trên máy chủ bằng địa chỉ và khóa **Bot API** của bot đó.
 
-```
-https://bot.tenmien.com/api/limix/gateway/
-```
-
-Thêm kết nối như trên máy tính, chọn bot của máy chủ trong danh sách.
-
-Quan trọng: một bot Telegram/Zalo chỉ nên được kết nối ở **một nơi**. Khi đã kết nối trên máy chủ, hãy xóa kết nối
-đó trong ứng dụng trên máy tính, nếu không hai nơi sẽ tranh nhau tin nhắn.
+Quan trọng: một bot Telegram/Zalo chỉ nên được kết nối ở **một nơi**, nếu không hai nơi sẽ tranh nhau tin nhắn.
 
 ## Máy ở nhà hoặc văn phòng (không có IP tĩnh) — dùng đường hầm Cloudflare
 
@@ -88,14 +83,12 @@ Trình cài bỏ qua bước kiểm tra cổng 80/443 và bản ghi DNS, chạy 
 ## Máy chủ tự lo những gì
 
 - Tự chạy lại khi Limix Bot lỗi hoặc VPS khởi động lại (Docker `restart: unless-stopped`).
-- Chương trình kết nối Telegram/Zalo/Discord tự chạy lại nếu dừng.
 - Mỗi bot giữ bộ nhớ, cấu hình, quyền và việc định kỳ riêng.
 
 ## Giới hạn hiện tại
 
 - Bản máy chủ chưa có "hộp cát" (sandbox) cứng cho từng bot như bản OpenMausBot mới nhất; trình cài sẽ báo. Chỉ
   dùng VPS riêng cho Limix Bot.
-- Trang kết nối Telegram/Zalo/Discord hiện chỉ có tiếng Việt.
 - Không khuyến khích đăng nhập Google Antigravity (gói Google AI) trên máy chủ: Google đã khóa quyền dùng của các
   tài khoản đưa phiên đăng nhập Antigravity vào công cụ bên thứ ba. Trên máy chủ nên dùng API key Gemini (AI Studio
   hoặc Vertex).

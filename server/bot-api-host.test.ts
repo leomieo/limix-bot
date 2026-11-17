@@ -427,6 +427,18 @@ describe("the Bot API door on the webhook receiver", () => {
     expect(first.body).toEqual({ reply: "Here is the answer.", thread: expect.any(String) });
   });
 
+  it("never sends the note a turn wrote before its last tool call as the answer", async () => {
+    const h = await harness((fake, _botId, _prompt, opts) => {
+      setTimeout(() => {
+        fake.store.appendMessage(opts.threadId, { role: "bot", kind: "text", text: "I'll attach the generated image now.", turnId: "T1", turnTerminal: true });
+        fake.store.appendMessage(opts.threadId, { role: "bot", kind: "activity", text: "attach_file", turnId: "T1" });
+        opts.onSettled({ ok: true, text: "" });
+      }, 30);
+    });
+    const key = (await h.app("POST", "/api/bots/b1/bot-api", { enabled: true })).body.key as string;
+    expect((await h.call("b1", key, { message: "Gửi ảnh" })).body).toEqual({ reply: "", thread: expect.any(String) });
+  });
+
   it("never hands a caller what a person and the bot said afterwards in that thread", async () => {
     const h = await harness(replies("For the caller"));
     const key = (await h.app("POST", "/api/bots/b1/bot-api", { enabled: true })).body.key as string;

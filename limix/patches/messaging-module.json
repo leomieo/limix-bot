@@ -1,0 +1,125 @@
+{
+ "_about": "Limix Bot: the Telegram / Zalo / Discord gateway is a separate module (limix/modules/messaging-gateway). rebrand.py applies these last, so earlier steps that wire the old built-in gateway are undone; each edit is skipped once its text is gone.",
+ "electron/main.mjs": [
+  {
+   "before": "import { createLimixGateway } from \"./limix-gateway.mjs\";\n",
+   "after": ""
+  },
+  {
+   "before": "let limixGateway = null;\n",
+   "after": ""
+  },
+  {
+   "before": "  limixGateway = createLimixGateway({ app, BrowserWindow, shell, resourcesPath: process.resourcesPath, userData: app.getPath(\"userData\"), iconPath: APP_ICON, log: slog, ownerLaneToken: limixOwnerLaneToken, serverRequest: (route, init) => localServerRequest(route, init) });\n  limixGateway.start();\n",
+   "after": ""
+  },
+  {
+   "before": "ipcMain.handle(\"limix-gateway:open\", localOnly(\"limix-gateway:open\", () => limixGateway ? limixGateway.open() : Promise.reject(new Error(lxm(\"Chương trình kết nối chưa sẵn sàng.\", \"The connector program is not ready yet.\")))));\napp.on(\"will-quit\", () => limixGateway?.stop());\n",
+   "after": ""
+  },
+  {
+   "before": "import { lxm, setLimixLanguageSource } from \"./limix-lang.mjs\";\n",
+   "after": "import { setLimixLanguageSource } from \"./limix-lang.mjs\";\n"
+  }
+ ],
+ "electron/preload.cjs": [
+  {
+   "before": "  limixGateway: { open: () => ipcRenderer.invoke(\"limix-gateway:open\") },\n",
+   "after": ""
+  }
+ ],
+ "src/types/ogb.d.ts": [
+  {
+   "before": "      /** Limix Bot: opens the Telegram / Zalo / Discord connector window. */\n      limixGateway?: { open(): Promise<void> };\n",
+   "after": ""
+  }
+ ],
+ "src/components/SidebarProfileMenu.tsx": [
+  {
+   "before": "  const connectItem: SidebarMenuItem | null = typeof window !== \"undefined\" && window.ogb?.limixGateway ? {\n    key: \"connect\", label: t(\"sidebar.menu.connect\"), icon: <Link2 size={18} />,\n    onSelect: () => { void window.ogb?.limixGateway?.open().catch((error: unknown) => window.alert(String((error as Error)?.message ?? error).replace(/^Error invoking remote method '[^']*': (Error: )?/, \"\"))); },\n  } : null;\n",
+   "after": ""
+  },
+  {
+   "before": "...phone, ...present(connectItem), ...present(cloudItem)",
+   "after": "...phone, ...present(cloudItem)"
+  },
+  {
+   "before": "[...present(usageItem), ...present(connectItem), ...present(cloudItem), settings]",
+   "after": "[...present(usageItem), ...present(cloudItem), settings]"
+  },
+  {
+   "before": "  Link2,\n",
+   "after": ""
+  }
+ ],
+ "server/index.ts": [
+  {
+   "before": "import { channelActionRoute } from \"./limix-channel-actions.ts\";\n",
+   "after": ""
+  },
+  {
+   "before": "import { limixGatewayConnections, startLimixGatewaySidecar } from \"./limix-gateway-sidecar.ts\";\n",
+   "after": ""
+  },
+  {
+   "before": "startLimixGatewaySidecar({ port: PORT, webhookPort: WEBHOOK_PORT });\n",
+   "after": ""
+  },
+  {
+   "before": "    if (await channelActionRoute({req,res,url,path,method,auth,json,readBody}, {\n      channelThread: id => {const bot=store.botByThread(id);return Boolean(bot && store.taskByThread(bot.id,id)?.botApi);},\n      record: (thread,text) => {store.appendMessage(thread,{role:\"bot\",kind:\"text\",text});},\n      context: id => store.messagesFor(id).slice(-8).map(m=>({role:m.role,text:m.text?.slice(0,800)})),\n    })) return;\n",
+   "after": ""
+  },
+  {
+   "before": "instances: () => registry.describe(), channels: limixGatewayConnections })",
+   "after": "instances: () => registry.describe() })"
+  }
+ ],
+ "server/routes/bot-skills.ts": [
+  {
+   "before": "import { proxyLimixGateway } from \"../limix-gateway-sidecar.ts\";\n",
+   "after": ""
+  },
+  {
+   "before": "    if (path.startsWith(\"/api/limix/gateway\") && proxyLimixGateway(req, res, path)) return;\n",
+   "after": ""
+  }
+ ],
+ "server/cloud-home-start.ts": [
+  {
+   "before": "  // Limix Bot: the server runs the Telegram / Zalo / Discord connector beside it (server/limix-gateway-sidecar.ts).\n  \"LIMIX_GATEWAY_SIDECAR\",\n",
+   "after": ""
+  }
+ ],
+ "src/components/ChatView.tsx": [
+  {
+   "before": "import { ChannelReplyComposer } from \"./ChannelReplyComposer\";\n",
+   "after": "import { ChannelConversationNotice } from \"./ChannelConversationNotice\";\n"
+  },
+  {
+   "before": "        <ChannelReplyComposer key={bot.threadId} threadId={bot.threadId} onInternal={() => openBot(dispatch,profile,showThreads)} />",
+   "after": "        <ChannelConversationNotice key={bot.threadId} onInternal={() => openBot(dispatch,profile,showThreads)} />"
+  }
+ ],
+ "electron-builder.yml": [
+  {
+   "before": "    - from: limix/gateway/src\n      to: limix-gateway/src\n    - from: limix/gateway/package.json\n      to: limix-gateway/package.json\n",
+   "after": ""
+  }
+ ],
+ "Dockerfile": [
+  {
+   "before": "# Limix Bot: the Telegram / Zalo / Discord connector, run by the server as its sidecar (LIMIX_GATEWAY_SIDECAR=1). Root's,\n# like every other file the launcher trusts.\nCOPY --from=build /src/limix/gateway/src ./limix-gateway/src\nCOPY --from=build /src/limix/gateway/package.json ./limix-gateway/package.json\n",
+   "after": ""
+  },
+  {
+   "before": "# Limix Bot: the Telegram / Zalo / Discord connector, run by the server as its sidecar (no npm packages).\nCOPY --from=build --chown=maus:maus /src/limix/gateway/src ./limix-gateway/src\nCOPY --from=build --chown=maus:maus /src/limix/gateway/package.json ./limix-gateway/package.json\n",
+   "after": ""
+  }
+ ],
+ "deploy/managed-beta/compose.yaml": [
+  {
+   "before": "      LIMIX_GATEWAY_SIDECAR: ${LIMIX_HOME_GATEWAY:-1}\n",
+   "after": ""
+  }
+ ]
+}

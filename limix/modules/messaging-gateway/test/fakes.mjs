@@ -84,13 +84,13 @@ export async function fakeZalo({ token = "9876543210:zalosecretzalosecretzalosec
 }
 
 /** An OpenMausBot Bot API stand-in. `respond(message, thread)` decides the answer. */
-export async function fakeOpenMausBot({ key = "bak_testkeytestkeytestkeytestkey123", respond } = {}) {
+export async function fakeOpenMausBot({ key = "bak_testkeytestkeytestkeytestkey123", respond, bot = "bot1" } = {}) {
   const state = { calls: [], threads: new Map(), n: 0 };
   const answer = respond ?? ((message) => ({ reply: `Bot: ${message}` }));
   const { server, base } = await listen(async (req, res) => {
     const url = new URL(req.url, "http://x");
     const json = (code, data) => { res.writeHead(code, { "Content-Type": "application/json" }); res.end(JSON.stringify(data)); };
-    if (!/^\/hooks\/api\/bots\/bot1\/messages$/.test(url.pathname)) return json(403, { error: "off" });
+    if (url.pathname !== `/hooks/api/bots/${bot}/messages`) return json(403, { error: "off" });
     if (req.headers.authorization !== `Bearer ${key}`) return json(401, { error: "Invalid key" });
     if (req.method === "GET") {
       const t = url.searchParams.get("thread");
@@ -112,7 +112,7 @@ export async function fakeOpenMausBot({ key = "bak_testkeytestkeytestkeytestkey1
     state.threads.get(thread).last = out.reply;
     return json(200, { reply: out.reply, thread });
   });
-  return { base, key, state, endpoint: `${base}/hooks/api/bots/bot1/messages`, close: () => server.close() };
+  return { base, key, state, endpoint: `${base}/hooks/api/bots/${bot}/messages`, close: () => server.close() };
 }
 
 export async function until(check, ms = 4000) {

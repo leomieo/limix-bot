@@ -121,6 +121,10 @@ function replyText(lines: readonly Message[]): string {
   // One answer per call: a Chief whose teammates report back runs more turns in the same thread, and each has its own
   // terminal text; the caller (a customer's chat) gets the latest one, not every update stacked into one message.
   const picked = final.length ? final.slice(-1) : said.some((line) => line.turnId) ? said.slice(-1) : said;
+  // A turn that ends on a tool call has, as its last text, what the model said before calling it ("I'll attach the image
+  // now", often in English): a note to itself, never an answer for the person writing in.
+  const last = picked.at(-1);
+  if (last?.turnId && lines.slice(lines.indexOf(last) + 1).some((line) => line.turnId === last.turnId && line.kind === "activity")) return "";
   return redactSecretsInText(picked.map((line) => line.text!.trim()).join("\n\n"));
 }
 

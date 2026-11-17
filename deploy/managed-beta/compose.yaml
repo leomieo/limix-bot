@@ -22,7 +22,6 @@ services:
       OMB_CLOUD_ADMIN_URL: https://cloud.limixmedia.com
       OMB_CLOUD_BOOTSTRAP_SECRET: ${LIMIX_HOME_SECRET:-}
       OMB_PUBLIC_URL: ${LIMIX_HOME_ORIGIN:-}
-      LIMIX_GATEWAY_SIDECAR: ${LIMIX_HOME_GATEWAY:-1}
     volumes:
       # Its own volume: an earlier beta home's `data` volume (another layout) is kept as it was, never reused.
       - cloud:/data

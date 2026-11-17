@@ -1,10 +1,10 @@
 # Limix Bot (Leox ৹ Limix AI): the server image, ghcr.io/leomieo/limix-bot, for running Limix Bot on a VPS 24/7
-# (deploy/install.sh installs it). Each version on main is tagged v<version> and stable. The image runs the Telegram /
-# Zalo / Discord connector beside the server (server/limix-gateway-sidecar.ts) and has the Codex CLI, so a ChatGPT
-# plan can be signed in on the server itself.
+# (deploy/install.sh installs it). Each version on main is tagged v<version> and stable. The image has the Codex CLI, so a
+# ChatGPT plan can be signed in on the server itself. The Telegram / Zalo / Discord gateway is a separate module
+# (limix/modules/messaging-gateway): the image neither ships nor starts it.
 #
-# Before every push the image is started and checked: the server answers /api/health and the connector answers on its
-# loopback port. A push to test-build, or a manual run with push=false, only builds and checks.
+# Before every push the image is started and checked: the server answers /api/health and no gateway runs or is routed.
+# A push to test-build, or a manual run with push=false, only builds and checks.
 name: Limix Bot server image
 
 on:
@@ -56,7 +56,7 @@ jobs:
             --label org.opencontainers.image.description="Limix Bot server: run your AI bots 24/7 on your own server" \
             --label org.opencontainers.image.licenses=Apache-2.0 \
             -t limix-bot:check .
-      - name: check that the server and the connector start
+      - name: check that the server starts without the messaging gateway
         run: |
           set -euo pipefail
           docker run -d --init --shm-size=512m --name limix-check limix-bot:check
@@ -66,17 +66,12 @@ jobs:
             sleep 3
           done
           docker exec limix-check curl -sf http://127.0.0.1:8799/api/health | grep openmausbot >/dev/null
-          for i in $(seq 1 30); do
-            if docker exec limix-check curl -sf -H "Host: 127.0.0.1:8790" http://127.0.0.1:8790/healthz | grep limix-bot >/dev/null; then break; fi
-            sleep 2
-          done
-          docker exec limix-check curl -sf -H "Host: 127.0.0.1:8790" http://127.0.0.1:8790/healthz | grep limix-bot >/dev/null
-          # The connector's page through the server (loopback owner), and its calls with the server's admin token.
-          docker exec limix-check curl -sf http://127.0.0.1:8799/api/limix/gateway/ | grep "<html" >/dev/null
-          docker exec limix-check curl -sf http://127.0.0.1:8799/api/limix/gateway/api/state >/dev/null
-          docker exec limix-check curl -sf http://127.0.0.1:8799/api/limix/gateway/api/app/bots | grep '"inside":true' >/dev/null
+          # The messaging gateway is a separate module: nothing of it is in the image, runs, or is routed.
+          if docker exec limix-check test -e /app/limix-gateway; then echo "the image ships the messaging gateway"; exit 1; fi
+          if docker exec limix-check curl -sf -H "Host: 127.0.0.1:8790" http://127.0.0.1:8790/healthz >/dev/null; then echo "a messaging gateway runs"; exit 1; fi
+          test "$(docker exec limix-check curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8799/api/limix/gateway/)" != 200
           docker exec limix-check sh -c 'command -v codex'
-          echo "server, connector and proxy: ok"
+          echo "server and proxy: ok, no messaging gateway"
       - name: push to ghcr.io
         if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || inputs.push
         env:
