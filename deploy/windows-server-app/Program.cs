@@ -72,7 +72,7 @@ sealed class SetupWindow : Form
     readonly NumericUpDown memory = new() { Minimum=8,Value=12,Width=80 };
     readonly NumericUpDown resizeCpu = new() { Minimum=2, Value=4, Width=80 };
     readonly NumericUpDown resizeMemory = new() { Minimum=8, Value=12, Width=80 };
-    readonly ServerButton applyResources = new() { Text="Lưu CPU và RAM", AutoSize=true, Enabled=false };
+    readonly ServerButton applyResources = new() { Text="Lưu CPU và RAM", AutoSize=true, Enabled=false, Primary=true };
     readonly ServerButton maxResources = new() { Text="Dùng mức tối đa", AutoSize=true, Enabled=false };
     readonly ServerButton maxSetupResources = new() { Text="Dùng mức tối đa", AutoSize=true, Enabled=false };
     readonly ServerLabel resourceStatus = new() { AutoSize=true, MaximumSize=new Size(730,0) };
@@ -81,7 +81,7 @@ sealed class SetupWindow : Form
     readonly TextBox network = new() { Text="Default Switch",Width=170 };
     readonly TextBox storage = new() { Width=600,ReadOnly=true };
     readonly TextBox output = new() { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, Dock = DockStyle.Fill, BackColor = Color.FromArgb(24, 24, 24), ForeColor = Color.White };
-    readonly ServerButton install = new() { Text = "Cài đặt và chuyển Cloud", AutoSize = true };
+    readonly ServerButton install = new() { Text = "Cài đặt và chuyển Cloud", AutoSize = true, Primary = true };
     readonly Panel buttons = new() { Dock = DockStyle.Top, AutoSize = true };
     readonly CheckBox consent = new() { AutoSize = true, Text = "Tôi đã dừng Cloud host cũ; cho phép sao lưu và chuyển các container Cloud." };
     bool busy;
@@ -92,35 +92,46 @@ sealed class SetupWindow : Form
     public SetupWindow(bool previewOnly=false)
     {
         Icon=Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-        Text="Limix Cloud Server 0.3.2 beta";
+        Text="Limix Cloud Server 0.3.3 beta";
         Size=new Size(1120,860);MinimumSize=new Size(1000,760);StartPosition=FormStartPosition.CenterScreen;
-        Font=new Font("Segoe UI",11);BackColor=Color.FromArgb(18,18,18);ForeColor=Color.White;
-        var header=new Panel {Dock=DockStyle.Top,Height=94,Padding=new Padding(22,16,22,8)};
+        Font=new Font("Segoe UI",11);BackColor=ServerTheme.Window;ForeColor=Color.White;
+        var header=new Panel {Dock=DockStyle.Top,Height=76,Padding=new Padding(24,18,22,8)};
         header.Controls.Add(new ServerLabel {Text="Limix Cloud Server",Dock=DockStyle.Top,Height=36,Font=new Font("Segoe UI",22,FontStyle.Bold)});
-        var sidebar=new FlowLayoutPanel {Dock=DockStyle.Left,Width=210,FlowDirection=FlowDirection.TopDown,WrapContents=false,Padding=new Padding(14,12,8,12)};
+        var sidebar=new FlowLayoutPanel {Dock=DockStyle.Left,Width=210,FlowDirection=FlowDirection.TopDown,WrapContents=false,Padding=new Padding(12,16,8,12),BackColor=ServerTheme.Rail};
         buttons.Dock=DockStyle.Fill;buttons.AutoSize=false;
-        var logPanel=new Panel {Dock=DockStyle.Bottom,Height=220,Padding=new Padding(16,8,16,12)};
+        var logPanel=new Panel {Dock=DockStyle.Bottom,Height=200,Padding=new Padding(24,12,24,16),BackColor=ServerTheme.Rail};
         logPanel.Controls.Add(output);
-        logPanel.Controls.Add(new ServerLabel {Text="NHẬT KÝ · Kết quả thao tác",Dock=DockStyle.Top,Height=28});
+        logPanel.Controls.Add(new ServerLabel {Text="Nhật ký hoạt động",Dock=DockStyle.Top,Height=28});
         var pages=new List<FlowLayoutPanel>();
+        var navigation=new List<ServerButton>();
         FlowLayoutPanel Page(string name,string title,string description) {
-            var page=new FlowLayoutPanel {Dock=DockStyle.Fill,AutoScroll=true,FlowDirection=FlowDirection.TopDown,WrapContents=false,Padding=new Padding(18,10,16,10),Visible=false};
+            var page=new FlowLayoutPanel {Dock=DockStyle.Fill,AutoScroll=true,FlowDirection=FlowDirection.TopDown,WrapContents=false,Padding=new Padding(24,18,24,12),Visible=false};
             page.Controls.Add(new ServerLabel {Text=title,AutoSize=true,Font=new Font("Segoe UI",18,FontStyle.Bold),Margin=new Padding(0,0,0,12)});
             page.Controls.Add(new ServerLabel {Text=description,AutoSize=true,MaximumSize=new Size(730,0),Margin=new Padding(0,0,0,16)});
             pages.Add(page);buttons.Controls.Add(page);
-            var nav=new ServerButton {Text=name,Width=185,Height=50};
-            nav.Click+=(_,_)=>{foreach(var item in pages)item.Visible=item==page;page.BringToFront();};sidebar.Controls.Add(nav);
+            var nav=new ServerButton {Text=name,Width=185,Height=44,Navigation=true,Selected=navigation.Count==0};
+            nav.Click+=(_,_)=>{
+                foreach(var item in pages)item.Visible=item==page;
+                foreach(var item in navigation)item.Selected=item==nav;
+                page.BringToFront();
+            };
+            navigation.Add(nav);
+            sidebar.Controls.Add(nav);
             return page;
         }
         void Note(FlowLayoutPanel page,string text) => page.Controls.Add(new ServerLabel {Text=text,AutoSize=true,MaximumSize=new Size(730,0),Margin=new Padding(0,8,0,8)});
         var overview=Page("Tổng quan","Theo dõi máy chủ","Kiểm tra trạng thái trước khi thay đổi. Cài mới chỉ dùng khi chưa có máy Cloud; không cài lại để cập nhật ứng dụng.");
         summary.Text=HasSetup?"Đã có cấu hình Cloud. Bấm Làm mới để kiểm tra máy đang chạy hay đang tắt.":"Chưa có cấu hình Cloud trên tài khoản Windows này. Vào Cài đặt lần đầu để bắt đầu.";
-        overview.Controls.Add(summary);actionPage=overview;
-        AddButton("Làm mới trạng thái",async()=>await Control("Status"));
-        AddButton("Bật máy Cloud",async()=>await ControlTask(true));
-        AddButton("Tắt máy Cloud",async()=>await ControlTask(false));
-        Note(overview,"Tắt máy Cloud cũng tắt tự khởi động. Bấm Bật máy Cloud để bật lại cả hai. Không ảnh hưởng CRM hoặc container khác trên Docker Desktop.");
-        AddButton("Xem nhật ký Linux",async()=>await Control("Logs"));
+        summary.Margin=new Padding(0,8,0,12);
+        overview.Controls.Add(summary);
+        actionPage=overview;
+        AddButton("Làm mới trạng thái",async()=>await Control("Status"),primary:true);
+        var powerActions=new FlowLayoutPanel {AutoSize=true,WrapContents=true,MaximumSize=new Size(730,0),Margin=new Padding(0,4,0,0)};
+        overview.Controls.Add(powerActions);
+        AddButton("Bật máy Cloud",async()=>await ControlTask(true),parent:powerActions);
+        AddButton("Tắt máy Cloud",async()=>await ControlTask(false),parent:powerActions);
+        AddButton("Xem nhật ký Linux",async()=>await Control("Logs"),parent:powerActions);
+        Note(overview,"Tắt máy Cloud cũng tắt chế độ tự khởi động. Bấm Bật máy Cloud để bật lại cả hai.");
         var setup=Page("Cài đặt lần đầu","Chuẩn bị và cài server","Bước 1: kiểm tra Hyper-V và Docker Desktop. Bước 2: chọn tài nguyên và ổ lưu. Bước 3: cài đặt, rồi quay lại Tổng quan để xác nhận sẵn sàng.");
         actionPage=setup;
         AddButton("1 · Kiểm tra Hyper-V và mạng",async()=>await Control("Check"));
@@ -176,11 +187,11 @@ sealed class SetupWindow : Form
         if (!previewOnly) Shown+=async(_,_)=>await LoadResourceLimits();
         FormClosing+=(_,e)=>{if(busy){e.Cancel=true;MessageBox.Show("Đang xử lý. Chờ hoàn tất trước khi đóng.");}};
     }
-    void AddButton(string text, Func<Task> action)
+    void AddButton(string text, Func<Task> action, bool primary=false, Control? parent=null)
     {
-        var button=new ServerButton { Text=text,AutoSize=true };
+        var button=new ServerButton { Text=text,AutoSize=true,Primary=primary };
         button.Click += async (_,_) => { try { await action(); } catch(Exception e) { Log(e.Message); } };
-        actionPage.Controls.Add(button);
+        (parent ?? actionPage).Controls.Add(button);
     }
     void Log(string text) { if(IsDisposed)return; if(InvokeRequired) { BeginInvoke(()=>Log(text));return; } output.AppendText(text+Environment.NewLine);
         if(text.Contains("Hyper-V:")||text.Contains("Máy Cloud đạt")||text.StartsWith("Dịch vụ Cloud đang chạy")||text.Contains("Chưa nhận được")||text.Contains("Đã kích hoạt"))summary.Text=text; }
