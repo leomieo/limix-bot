@@ -1,6 +1,6 @@
-# Limix Bot (Leox ৹ Limix AI): builds the Windows installer on a real Windows runner, checks that the packaged
+# Limix Bot (Leox à§¹ Limix AI): builds the Windows installer on a real Windows runner, checks that the packaged
 # server starts, and publishes a GitHub release whose latest.yml the in-app updater reads.
-# Adapted from OpenMausBot's package-win.yml (Apache-2.0). Run it from Actions → "Limix Bot Windows" → Run workflow,
+# Adapted from OpenMausBot's package-win.yml (Apache-2.0). Run it from Actions â†’ "Limix Bot Windows" â†’ Run workflow,
 # or push to main (the release tag v<version> is created by the publish step).
 name: Limix Bot Windows
 
@@ -40,6 +40,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Verify inline channel unlock
+        run: node node_modules/vitest/vitest.mjs run src/components/ChannelReplyComposer.dom.test.ts server/limix-channel-actions.test.ts
       - name: Verify template mascot library
         run: |
           node --experimental-strip-types scripts/gen-template-mascots.ts --check

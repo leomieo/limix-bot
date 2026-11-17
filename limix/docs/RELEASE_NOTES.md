@@ -1,15 +1,15 @@
-# Limix Bot 0.3.59
+# Limix Bot 0.3.60
 
 ## Tiếng Việt
 
-- Bổ sung kho 300 biểu tượng linh vật: 10 hình dáng, 10 màu và 3 biểu cảm.
-- Tự phối biểu tượng cho mẫu bot mới và các mẫu đang dùng chung biểu tượng mặc định.
-- Giữ biểu tượng ổn định khi cập nhật kho mẫu; bot tạo từ mẫu giữ đúng màu, hình dáng và biểu cảm đã xem.
-- Giữ nguyên diện mạo của bot đã tạo và biểu tượng được thiết kế riêng.
+- Thêm ô nhập mật khẩu ngay trong khung trả lời cuộc trò chuyện Telegram, Zalo và các kênh đã kết nối.
+- Mở khóa trả lời trong 5 phút mà không tải lại trang, giữ nguyên nội dung đang soạn.
+- Yêu cầu xác thực lại khi phiên mở khóa hết hạn hoặc quyền trả lời bị thu hồi.
+- Hiển thị hướng dẫn mở khóa theo ngôn ngữ ứng dụng. Tin nhắn chỉ được gửi khi bạn bấm Gửi.
 
 ## English
 
-- Add a library of 300 mascot icons with 10 shapes, 10 colors and 3 expressions.
-- Automatically assign icons to new templates and templates sharing the default icon.
-- Keep template icons stable across catalog updates and carry their color, shape and expression into newly created bots.
-- Preserve existing bots and explicitly authored template appearances.
+- Add inline password verification to replies in Telegram, Zalo and other connected-channel conversations.
+- Unlock replies for five minutes without reloading the page or losing the draft.
+- Request verification again when access expires or is revoked.
+- Show unlock guidance in the app language. Messages are sent only when you select Send.
