@@ -16,8 +16,7 @@ async function addTemplateSkills(botId: string, names: string[] | undefined): Pr
   }
 }
 import { api, useStore, type Bot } from "@/state/store";
-import type { MascotBodyId } from "../../shared/mascot-bodies";
-import type { MausColor } from "../../shared/wire";
+import type { TemplateMascotLook } from "../../shared/template-mascot";
 import { lx } from "@/lib/limix-text";
 
 /** Templates > Khám phá > Bot dựng sẵn, read from github.com/leomieo/limix-bot-templates: the page loads only the light list,
@@ -40,7 +39,7 @@ interface Card {
   category: ReadyBotCategory;
   description: string;
   try: string;
-  look: { color: MausColor; mascotBody: MascotBodyId };
+  look: TemplateMascotLook;
   apps: string[];
   routines: number;
   /** From the app itself (offline): opened by id, nothing to download. */
@@ -144,7 +143,7 @@ export function LimixBotGallery({ search, onDialog, onAdded, revision = 0 }: {
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
       {visible.map((card) => <article key={card.id} data-ready-bot={card.id} className="flex flex-col rounded-2xl border border-hairline/40 bg-card p-4">
         <div className="flex items-center gap-3">
-          <MausAvatar color={card.look.color} bodyId={card.look.mascotBody} size={40} animated={false} label={card.name} />
+          <MausAvatar color={card.look.color} bodyId={card.look.mascotBody} state={card.look.mascotExpression ?? "idle"} size={40} animated={false} label={card.name} />
           <div className="min-w-0 flex-1">
             <h4 className="truncate text-[14px] font-medium text-ink">{card.name}</h4>
             <p className="truncate text-[12px] text-ink-secondary">{card.title} · {t(CATEGORY_KEYS[card.category])}</p>

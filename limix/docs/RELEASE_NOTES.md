@@ -1,23 +1,15 @@
-# Limix Bot 0.3.58
+# Limix Bot 0.3.59
 
 ## Tiếng Việt
 
-- Thêm ô trả lời trong cuộc trò chuyện Telegram, Zalo, Discord và Facebook đã kết nối.
-- Chọn Trả lời khách để gửi trực tiếp tin nhắn bạn viết vào cuộc trò chuyện đó.
-- Chọn Nhờ bot trả lời để bot soạn câu trả lời trong cuộc trò chuyện riêng của chủ bot rồi gửi cho khách.
-- Chủ bot mở khóa cuộc trò chuyện bằng mật khẩu. Quyền của khách khi nhắn qua kênh kết nối vẫn giữ nguyên.
-
-### Lưu ý
-- Bản này hỗ trợ trả lời bằng văn bản, tùy theo quyền và giới hạn của từng nền tảng.
-- Ứng dụng báo đã gửi khi nền tảng xác nhận. Nếu chưa có xác nhận, hãy kiểm tra cuộc trò chuyện trên nền tảng trước khi gửi lại để tránh trùng tin.
+- Bổ sung kho 300 biểu tượng linh vật: 10 hình dáng, 10 màu và 3 biểu cảm.
+- Tự phối biểu tượng cho mẫu bot mới và các mẫu đang dùng chung biểu tượng mặc định.
+- Giữ biểu tượng ổn định khi cập nhật kho mẫu; bot tạo từ mẫu giữ đúng màu, hình dáng và biểu cảm đã xem.
+- Giữ nguyên diện mạo của bot đã tạo và biểu tượng được thiết kế riêng.
 
 ## English
 
-- Add replies to connected Telegram, Zalo, Discord and Facebook conversations.
-- Choose Reply to customer to send your message directly to that conversation.
-- Choose Ask bot to reply to process instructions in a separate owner conversation and send the result to the customer.
-- Require password verification to unlock conversations; messages from customers keep their existing permissions.
-
-### Notes
-- This update supports text replies subject to platform permissions and limits.
-- Delivery is confirmed only after the connector succeeds. Check the channel before retrying an unconfirmed send to avoid duplicates.
+- Add a library of 300 mascot icons with 10 shapes, 10 colors and 3 expressions.
+- Automatically assign icons to new templates and templates sharing the default icon.
+- Keep template icons stable across catalog updates and carry their color, shape and expression into newly created bots.
+- Preserve existing bots and explicitly authored template appearances.

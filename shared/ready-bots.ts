@@ -1,6 +1,5 @@
 import type { BotRoutineTemplate, NewBotDefaults } from "./new-bot-defaults.ts";
-import type { MascotBodyId } from "./mascot-bodies.ts";
-import type { MausColor } from "./wire.ts";
+import type { TemplateMascotLook } from "./template-mascot.ts";
 
 export type ReadyBotCategory = "everyday" | "work" | "writing" | "design" | "sales" | "personal";
 
@@ -13,7 +12,7 @@ export interface ReadyBot {
   title: string;
   description: string;
   soul: string;
-  look: { color: MausColor; mascotBody: MascotBodyId };
+  look: TemplateMascotLook;
   tryAsking: string[];
   /** Connected apps the bot works best with; suggested, never connected for the person. */
   apps: string[];
@@ -339,6 +338,7 @@ export function readyBotTemplate(defaults: NewBotDefaults, bot: ReadyBot): NewBo
     soul: bot.soul,
     color: bot.look.color,
     mascotBody: bot.look.mascotBody,
+    mascotExpression: bot.look.mascotExpression ?? null,
   };
   for (const [path, text] of Object.entries(bot.notes ?? {})) {
     const own = template.memory[path]?.trimEnd();

@@ -5,6 +5,7 @@
 import { MASCOT_BODY_IDS } from "../shared/mascot-bodies.ts";
 import { MAUS_COLOR_NAMES } from "../shared/wire.ts";
 import { lxs } from "./limix-lang.ts";
+import { templateMascot, templateMascotById, TEMPLATE_MASCOT_EXPRESSIONS, type TemplateMascotLook } from "../shared/template-mascot.ts";
 
 const BOT_LIBRARY_RAW_ROOT = "https://raw.githubusercontent.com/leomieo/limix-bot-templates/main";
 
@@ -23,7 +24,7 @@ export interface LibraryBotListing {
   category: (typeof CATEGORIES)[number];
   description: string;
   try: string;
-  look: { color: string; mascotBody: string };
+  look: TemplateMascotLook;
   apps: string[];
   routines: number;
 }
@@ -35,7 +36,7 @@ export interface LibraryBot {
   title: string;
   description: string;
   soul: string;
-  look: { color: string; mascotBody: string };
+  look: TemplateMascotLook;
   tryAsking: string[];
   apps: string[];
   notes?: Record<string, string>;
@@ -53,13 +54,22 @@ function text(value: unknown, field: string, max: number, allowEmpty = false): s
   return trimmed;
 }
 
-function look(value: unknown, field: string): { color: string; mascotBody: string } {
+function look(value: unknown, field: string, id: string): TemplateMascotLook {
+  if (isRecord(value) && value.iconId !== undefined) {
+    const selected = typeof value.iconId === "string" ? templateMascotById(value.iconId) : undefined;
+    if (!selected) throw new Error(`${field}.iconId is not a known mascot`);
+    return selected;
+  }
+  if (value === undefined || (isRecord(value) && value.mode === "auto")) return templateMascot(id);
   if (!isRecord(value)) throw new Error(`${field} is invalid`);
   const color = text(value.color, `${field}.color`, 20);
   const mascotBody = text(value.mascotBody, `${field}.mascotBody`, 20);
   if (!(MAUS_COLOR_NAMES as readonly string[]).includes(color)) throw new Error(`${field}.color is not a known colour`);
   if (!(MASCOT_BODY_IDS as readonly string[]).includes(mascotBody)) throw new Error(`${field}.mascotBody is not a known shape`);
-  return { color, mascotBody };
+  if (color === "cyan" && mascotBody === "hexagon" && value.mode !== "fixed" && value.mascotExpression === undefined) return templateMascot(id);
+  const mascotExpression = TEMPLATE_MASCOT_EXPRESSIONS.find(expression => expression === value.mascotExpression);
+  if (value.mascotExpression !== undefined && !mascotExpression) throw new Error(`${field}.mascotExpression is invalid`);
+  return { color: color as TemplateMascotLook["color"], mascotBody: mascotBody as TemplateMascotLook["mascotBody"], ...(mascotExpression ? { mascotExpression } : {}) };
 }
 
 function category(value: unknown, field: string): (typeof CATEGORIES)[number] {
@@ -94,7 +104,7 @@ export function parseBotListing(value: unknown): LibraryBotListing[] {
       out.push({
         id, name: text(raw.name, `${field}.name`, 40), title: text(raw.title, `${field}.title`, 80),
         category: category(raw.category, `${field}.category`), description: text(raw.description, `${field}.description`, 300),
-        try: text(raw.try, `${field}.try`, 200), look: look(raw.look, `${field}.look`), apps: apps(raw.apps, `${field}.apps`), routines,
+        try: text(raw.try, `${field}.try`, 200), look: look(raw.look, `${field}.look`, id), apps: apps(raw.apps, `${field}.apps`), routines,
       });
       seen.add(id);
     } catch {
@@ -111,7 +121,7 @@ export function parseLibraryBot(value: unknown, expectedId: string): LibraryBot 
   if (!Array.isArray(value.tryAsking) || value.tryAsking.length === 0 || value.tryAsking.length > 6) throw new Error("tryAsking is invalid");
   const bot: LibraryBot = {
     id, category: category(value.category, "category"), name: text(value.name, "name", 40), title: text(value.title, "title", 80),
-    description: text(value.description, "description", 300), soul: text(value.soul, "soul", 8_000), look: look(value.look, "look"),
+    description: text(value.description, "description", 300), soul: text(value.soul, "soul", 8_000), look: look(value.look, "look", id),
     tryAsking: value.tryAsking.map((line, index) => text(line, `tryAsking[${index}]`, 200)), apps: apps(value.apps, "apps"),
   };
   if (value.notes !== undefined) {

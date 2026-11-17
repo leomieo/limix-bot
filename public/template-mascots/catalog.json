@@ -1,0 +1,2106 @@
+{
+  "version": 1,
+  "count": 300,
+  "icons": [
+    {
+      "id": "limix-cursor-green-idle",
+      "color": "green",
+      "mascotBody": "cursor",
+      "mascotExpression": "idle",
+      "file": "limix-cursor-green-idle.svg"
+    },
+    {
+      "id": "limix-cursor-green-happy",
+      "color": "green",
+      "mascotBody": "cursor",
+      "mascotExpression": "happy",
+      "file": "limix-cursor-green-happy.svg"
+    },
+    {
+      "id": "limix-cursor-green-curious",
+      "color": "green",
+      "mascotBody": "cursor",
+      "mascotExpression": "curious",
+      "file": "limix-cursor-green-curious.svg"
+    },
+    {
+      "id": "limix-cursor-blue-idle",
+      "color": "blue",
+      "mascotBody": "cursor",
+      "mascotExpression": "idle",
+      "file": "limix-cursor-blue-idle.svg"
+    },
+    {
+      "id": "limix-cursor-blue-happy",
+      "color": "blue",
+      "mascotBody": "cursor",
+      "mascotExpression": "happy",
+      "file": "limix-cursor-blue-happy.svg"
+    },
+    {
+      "id": "limix-cursor-blue-curious",
+      "color": "blue",
+      "mascotBody": "cursor",
+      "mascotExpression": "curious",
+      "file": "limix-cursor-blue-curious.svg"
+    },
+    {
+      "id": "limix-cursor-red-idle",
+      "color": "red",
+      "mascotBody": "cursor",
+      "mascotExpression": "idle",
+      "file": "limix-cursor-red-idle.svg"
+    },
+    {
+      "id": "limix-cursor-red-happy",
+      "color": "red",
+      "mascotBody": "cursor",
+      "mascotExpression": "happy",
+      "file": "limix-cursor-red-happy.svg"
+    },
+    {
+      "id": "limix-cursor-red-curious",
+      "color": "red",
+      "mascotBody": "cursor",
+      "mascotExpression": "curious",
+      "file": "limix-cursor-red-curious.svg"
+    },
+    {
+      "id": "limix-cursor-orange-idle",
+      "color": "orange",
+      "mascotBody": "cursor",
+      "mascotExpression": "idle",
+      "file": "limix-cursor-orange-idle.svg"
+    },
+    {
+      "id": "limix-cursor-orange-happy",
+      "color": "orange",
+      "mascotBody": "cursor",
+      "mascotExpression": "happy",
+      "file": "limix-cursor-orange-happy.svg"
+    },
+    {
+      "id": "limix-cursor-orange-curious",
+      "color": "orange",
+      "mascotBody": "cursor",
+      "mascotExpression": "curious",
+      "file": "limix-cursor-orange-curious.svg"
+    },
+    {
+      "id": "limix-cursor-purple-idle",
+      "color": "purple",
+      "mascotBody": "cursor",
+      "mascotExpression": "idle",
+      "file": "limix-cursor-purple-idle.svg"
+    },
+    {
+      "id": "limix-cursor-purple-happy",
+      "color": "purple",
+      "mascotBody": "cursor",
+      "mascotExpression": "happy",
+      "file": "limix-cursor-purple-happy.svg"
+    },
+    {
+      "id": "limix-cursor-purple-curious",
+      "color": "purple",
+      "mascotBody": "cursor",
+      "mascotExpression": "curious",
+      "file": "limix-cursor-purple-curious.svg"
+    },
+    {
+      "id": "limix-cursor-cyan-idle",
+      "color": "cyan",
+      "mascotBody": "cursor",
+      "mascotExpression": "idle",
+      "file": "limix-cursor-cyan-idle.svg"
+    },
+    {
+      "id": "limix-cursor-cyan-happy",
+      "color": "cyan",
+      "mascotBody": "cursor",
+      "mascotExpression": "happy",
+      "file": "limix-cursor-cyan-happy.svg"
+    },
+    {
+      "id": "limix-cursor-cyan-curious",
+      "color": "cyan",
+      "mascotBody": "cursor",
+      "mascotExpression": "curious",
+      "file": "limix-cursor-cyan-curious.svg"
+    },
+    {
+      "id": "limix-cursor-pink-idle",
+      "color": "pink",
+      "mascotBody": "cursor",
+      "mascotExpression": "idle",
+      "file": "limix-cursor-pink-idle.svg"
+    },
+    {
+      "id": "limix-cursor-pink-happy",
+      "color": "pink",
+      "mascotBody": "cursor",
+      "mascotExpression": "happy",
+      "file": "limix-cursor-pink-happy.svg"
+    },
+    {
+      "id": "limix-cursor-pink-curious",
+      "color": "pink",
+      "mascotBody": "cursor",
+      "mascotExpression": "curious",
+      "file": "limix-cursor-pink-curious.svg"
+    },
+    {
+      "id": "limix-cursor-yellow-idle",
+      "color": "yellow",
+      "mascotBody": "cursor",
+      "mascotExpression": "idle",
+      "file": "limix-cursor-yellow-idle.svg"
+    },
+    {
+      "id": "limix-cursor-yellow-happy",
+      "color": "yellow",
+      "mascotBody": "cursor",
+      "mascotExpression": "happy",
+      "file": "limix-cursor-yellow-happy.svg"
+    },
+    {
+      "id": "limix-cursor-yellow-curious",
+      "color": "yellow",
+      "mascotBody": "cursor",
+      "mascotExpression": "curious",
+      "file": "limix-cursor-yellow-curious.svg"
+    },
+    {
+      "id": "limix-cursor-teal-idle",
+      "color": "teal",
+      "mascotBody": "cursor",
+      "mascotExpression": "idle",
+      "file": "limix-cursor-teal-idle.svg"
+    },
+    {
+      "id": "limix-cursor-teal-happy",
+      "color": "teal",
+      "mascotBody": "cursor",
+      "mascotExpression": "happy",
+      "file": "limix-cursor-teal-happy.svg"
+    },
+    {
+      "id": "limix-cursor-teal-curious",
+      "color": "teal",
+      "mascotBody": "cursor",
+      "mascotExpression": "curious",
+      "file": "limix-cursor-teal-curious.svg"
+    },
+    {
+      "id": "limix-cursor-coral-idle",
+      "color": "coral",
+      "mascotBody": "cursor",
+      "mascotExpression": "idle",
+      "file": "limix-cursor-coral-idle.svg"
+    },
+    {
+      "id": "limix-cursor-coral-happy",
+      "color": "coral",
+      "mascotBody": "cursor",
+      "mascotExpression": "happy",
+      "file": "limix-cursor-coral-happy.svg"
+    },
+    {
+      "id": "limix-cursor-coral-curious",
+      "color": "coral",
+      "mascotBody": "cursor",
+      "mascotExpression": "curious",
+      "file": "limix-cursor-coral-curious.svg"
+    },
+    {
+      "id": "limix-blob-green-idle",
+      "color": "green",
+      "mascotBody": "blob",
+      "mascotExpression": "idle",
+      "file": "limix-blob-green-idle.svg"
+    },
+    {
+      "id": "limix-blob-green-happy",
+      "color": "green",
+      "mascotBody": "blob",
+      "mascotExpression": "happy",
+      "file": "limix-blob-green-happy.svg"
+    },
+    {
+      "id": "limix-blob-green-curious",
+      "color": "green",
+      "mascotBody": "blob",
+      "mascotExpression": "curious",
+      "file": "limix-blob-green-curious.svg"
+    },
+    {
+      "id": "limix-blob-blue-idle",
+      "color": "blue",
+      "mascotBody": "blob",
+      "mascotExpression": "idle",
+      "file": "limix-blob-blue-idle.svg"
+    },
+    {
+      "id": "limix-blob-blue-happy",
+      "color": "blue",
+      "mascotBody": "blob",
+      "mascotExpression": "happy",
+      "file": "limix-blob-blue-happy.svg"
+    },
+    {
+      "id": "limix-blob-blue-curious",
+      "color": "blue",
+      "mascotBody": "blob",
+      "mascotExpression": "curious",
+      "file": "limix-blob-blue-curious.svg"
+    },
+    {
+      "id": "limix-blob-red-idle",
+      "color": "red",
+      "mascotBody": "blob",
+      "mascotExpression": "idle",
+      "file": "limix-blob-red-idle.svg"
+    },
+    {
+      "id": "limix-blob-red-happy",
+      "color": "red",
+      "mascotBody": "blob",
+      "mascotExpression": "happy",
+      "file": "limix-blob-red-happy.svg"
+    },
+    {
+      "id": "limix-blob-red-curious",
+      "color": "red",
+      "mascotBody": "blob",
+      "mascotExpression": "curious",
+      "file": "limix-blob-red-curious.svg"
+    },
+    {
+      "id": "limix-blob-orange-idle",
+      "color": "orange",
+      "mascotBody": "blob",
+      "mascotExpression": "idle",
+      "file": "limix-blob-orange-idle.svg"
+    },
+    {
+      "id": "limix-blob-orange-happy",
+      "color": "orange",
+      "mascotBody": "blob",
+      "mascotExpression": "happy",
+      "file": "limix-blob-orange-happy.svg"
+    },
+    {
+      "id": "limix-blob-orange-curious",
+      "color": "orange",
+      "mascotBody": "blob",
+      "mascotExpression": "curious",
+      "file": "limix-blob-orange-curious.svg"
+    },
+    {
+      "id": "limix-blob-purple-idle",
+      "color": "purple",
+      "mascotBody": "blob",
+      "mascotExpression": "idle",
+      "file": "limix-blob-purple-idle.svg"
+    },
+    {
+      "id": "limix-blob-purple-happy",
+      "color": "purple",
+      "mascotBody": "blob",
+      "mascotExpression": "happy",
+      "file": "limix-blob-purple-happy.svg"
+    },
+    {
+      "id": "limix-blob-purple-curious",
+      "color": "purple",
+      "mascotBody": "blob",
+      "mascotExpression": "curious",
+      "file": "limix-blob-purple-curious.svg"
+    },
+    {
+      "id": "limix-blob-cyan-idle",
+      "color": "cyan",
+      "mascotBody": "blob",
+      "mascotExpression": "idle",
+      "file": "limix-blob-cyan-idle.svg"
+    },
+    {
+      "id": "limix-blob-cyan-happy",
+      "color": "cyan",
+      "mascotBody": "blob",
+      "mascotExpression": "happy",
+      "file": "limix-blob-cyan-happy.svg"
+    },
+    {
+      "id": "limix-blob-cyan-curious",
+      "color": "cyan",
+      "mascotBody": "blob",
+      "mascotExpression": "curious",
+      "file": "limix-blob-cyan-curious.svg"
+    },
+    {
+      "id": "limix-blob-pink-idle",
+      "color": "pink",
+      "mascotBody": "blob",
+      "mascotExpression": "idle",
+      "file": "limix-blob-pink-idle.svg"
+    },
+    {
+      "id": "limix-blob-pink-happy",
+      "color": "pink",
+      "mascotBody": "blob",
+      "mascotExpression": "happy",
+      "file": "limix-blob-pink-happy.svg"
+    },
+    {
+      "id": "limix-blob-pink-curious",
+      "color": "pink",
+      "mascotBody": "blob",
+      "mascotExpression": "curious",
+      "file": "limix-blob-pink-curious.svg"
+    },
+    {
+      "id": "limix-blob-yellow-idle",
+      "color": "yellow",
+      "mascotBody": "blob",
+      "mascotExpression": "idle",
+      "file": "limix-blob-yellow-idle.svg"
+    },
+    {
+      "id": "limix-blob-yellow-happy",
+      "color": "yellow",
+      "mascotBody": "blob",
+      "mascotExpression": "happy",
+      "file": "limix-blob-yellow-happy.svg"
+    },
+    {
+      "id": "limix-blob-yellow-curious",
+      "color": "yellow",
+      "mascotBody": "blob",
+      "mascotExpression": "curious",
+      "file": "limix-blob-yellow-curious.svg"
+    },
+    {
+      "id": "limix-blob-teal-idle",
+      "color": "teal",
+      "mascotBody": "blob",
+      "mascotExpression": "idle",
+      "file": "limix-blob-teal-idle.svg"
+    },
+    {
+      "id": "limix-blob-teal-happy",
+      "color": "teal",
+      "mascotBody": "blob",
+      "mascotExpression": "happy",
+      "file": "limix-blob-teal-happy.svg"
+    },
+    {
+      "id": "limix-blob-teal-curious",
+      "color": "teal",
+      "mascotBody": "blob",
+      "mascotExpression": "curious",
+      "file": "limix-blob-teal-curious.svg"
+    },
+    {
+      "id": "limix-blob-coral-idle",
+      "color": "coral",
+      "mascotBody": "blob",
+      "mascotExpression": "idle",
+      "file": "limix-blob-coral-idle.svg"
+    },
+    {
+      "id": "limix-blob-coral-happy",
+      "color": "coral",
+      "mascotBody": "blob",
+      "mascotExpression": "happy",
+      "file": "limix-blob-coral-happy.svg"
+    },
+    {
+      "id": "limix-blob-coral-curious",
+      "color": "coral",
+      "mascotBody": "blob",
+      "mascotExpression": "curious",
+      "file": "limix-blob-coral-curious.svg"
+    },
+    {
+      "id": "limix-circle-green-idle",
+      "color": "green",
+      "mascotBody": "circle",
+      "mascotExpression": "idle",
+      "file": "limix-circle-green-idle.svg"
+    },
+    {
+      "id": "limix-circle-green-happy",
+      "color": "green",
+      "mascotBody": "circle",
+      "mascotExpression": "happy",
+      "file": "limix-circle-green-happy.svg"
+    },
+    {
+      "id": "limix-circle-green-curious",
+      "color": "green",
+      "mascotBody": "circle",
+      "mascotExpression": "curious",
+      "file": "limix-circle-green-curious.svg"
+    },
+    {
+      "id": "limix-circle-blue-idle",
+      "color": "blue",
+      "mascotBody": "circle",
+      "mascotExpression": "idle",
+      "file": "limix-circle-blue-idle.svg"
+    },
+    {
+      "id": "limix-circle-blue-happy",
+      "color": "blue",
+      "mascotBody": "circle",
+      "mascotExpression": "happy",
+      "file": "limix-circle-blue-happy.svg"
+    },
+    {
+      "id": "limix-circle-blue-curious",
+      "color": "blue",
+      "mascotBody": "circle",
+      "mascotExpression": "curious",
+      "file": "limix-circle-blue-curious.svg"
+    },
+    {
+      "id": "limix-circle-red-idle",
+      "color": "red",
+      "mascotBody": "circle",
+      "mascotExpression": "idle",
+      "file": "limix-circle-red-idle.svg"
+    },
+    {
+      "id": "limix-circle-red-happy",
+      "color": "red",
+      "mascotBody": "circle",
+      "mascotExpression": "happy",
+      "file": "limix-circle-red-happy.svg"
+    },
+    {
+      "id": "limix-circle-red-curious",
+      "color": "red",
+      "mascotBody": "circle",
+      "mascotExpression": "curious",
+      "file": "limix-circle-red-curious.svg"
+    },
+    {
+      "id": "limix-circle-orange-idle",
+      "color": "orange",
+      "mascotBody": "circle",
+      "mascotExpression": "idle",
+      "file": "limix-circle-orange-idle.svg"
+    },
+    {
+      "id": "limix-circle-orange-happy",
+      "color": "orange",
+      "mascotBody": "circle",
+      "mascotExpression": "happy",
+      "file": "limix-circle-orange-happy.svg"
+    },
+    {
+      "id": "limix-circle-orange-curious",
+      "color": "orange",
+      "mascotBody": "circle",
+      "mascotExpression": "curious",
+      "file": "limix-circle-orange-curious.svg"
+    },
+    {
+      "id": "limix-circle-purple-idle",
+      "color": "purple",
+      "mascotBody": "circle",
+      "mascotExpression": "idle",
+      "file": "limix-circle-purple-idle.svg"
+    },
+    {
+      "id": "limix-circle-purple-happy",
+      "color": "purple",
+      "mascotBody": "circle",
+      "mascotExpression": "happy",
+      "file": "limix-circle-purple-happy.svg"
+    },
+    {
+      "id": "limix-circle-purple-curious",
+      "color": "purple",
+      "mascotBody": "circle",
+      "mascotExpression": "curious",
+      "file": "limix-circle-purple-curious.svg"
+    },
+    {
+      "id": "limix-circle-cyan-idle",
+      "color": "cyan",
+      "mascotBody": "circle",
+      "mascotExpression": "idle",
+      "file": "limix-circle-cyan-idle.svg"
+    },
+    {
+      "id": "limix-circle-cyan-happy",
+      "color": "cyan",
+      "mascotBody": "circle",
+      "mascotExpression": "happy",
+      "file": "limix-circle-cyan-happy.svg"
+    },
+    {
+      "id": "limix-circle-cyan-curious",
+      "color": "cyan",
+      "mascotBody": "circle",
+      "mascotExpression": "curious",
+      "file": "limix-circle-cyan-curious.svg"
+    },
+    {
+      "id": "limix-circle-pink-idle",
+      "color": "pink",
+      "mascotBody": "circle",
+      "mascotExpression": "idle",
+      "file": "limix-circle-pink-idle.svg"
+    },
+    {
+      "id": "limix-circle-pink-happy",
+      "color": "pink",
+      "mascotBody": "circle",
+      "mascotExpression": "happy",
+      "file": "limix-circle-pink-happy.svg"
+    },
+    {
+      "id": "limix-circle-pink-curious",
+      "color": "pink",
+      "mascotBody": "circle",
+      "mascotExpression": "curious",
+      "file": "limix-circle-pink-curious.svg"
+    },
+    {
+      "id": "limix-circle-yellow-idle",
+      "color": "yellow",
+      "mascotBody": "circle",
+      "mascotExpression": "idle",
+      "file": "limix-circle-yellow-idle.svg"
+    },
+    {
+      "id": "limix-circle-yellow-happy",
+      "color": "yellow",
+      "mascotBody": "circle",
+      "mascotExpression": "happy",
+      "file": "limix-circle-yellow-happy.svg"
+    },
+    {
+      "id": "limix-circle-yellow-curious",
+      "color": "yellow",
+      "mascotBody": "circle",
+      "mascotExpression": "curious",
+      "file": "limix-circle-yellow-curious.svg"
+    },
+    {
+      "id": "limix-circle-teal-idle",
+      "color": "teal",
+      "mascotBody": "circle",
+      "mascotExpression": "idle",
+      "file": "limix-circle-teal-idle.svg"
+    },
+    {
+      "id": "limix-circle-teal-happy",
+      "color": "teal",
+      "mascotBody": "circle",
+      "mascotExpression": "happy",
+      "file": "limix-circle-teal-happy.svg"
+    },
+    {
+      "id": "limix-circle-teal-curious",
+      "color": "teal",
+      "mascotBody": "circle",
+      "mascotExpression": "curious",
+      "file": "limix-circle-teal-curious.svg"
+    },
+    {
+      "id": "limix-circle-coral-idle",
+      "color": "coral",
+      "mascotBody": "circle",
+      "mascotExpression": "idle",
+      "file": "limix-circle-coral-idle.svg"
+    },
+    {
+      "id": "limix-circle-coral-happy",
+      "color": "coral",
+      "mascotBody": "circle",
+      "mascotExpression": "happy",
+      "file": "limix-circle-coral-happy.svg"
+    },
+    {
+      "id": "limix-circle-coral-curious",
+      "color": "coral",
+      "mascotBody": "circle",
+      "mascotExpression": "curious",
+      "file": "limix-circle-coral-curious.svg"
+    },
+    {
+      "id": "limix-squircle-green-idle",
+      "color": "green",
+      "mascotBody": "squircle",
+      "mascotExpression": "idle",
+      "file": "limix-squircle-green-idle.svg"
+    },
+    {
+      "id": "limix-squircle-green-happy",
+      "color": "green",
+      "mascotBody": "squircle",
+      "mascotExpression": "happy",
+      "file": "limix-squircle-green-happy.svg"
+    },
+    {
+      "id": "limix-squircle-green-curious",
+      "color": "green",
+      "mascotBody": "squircle",
+      "mascotExpression": "curious",
+      "file": "limix-squircle-green-curious.svg"
+    },
+    {
+      "id": "limix-squircle-blue-idle",
+      "color": "blue",
+      "mascotBody": "squircle",
+      "mascotExpression": "idle",
+      "file": "limix-squircle-blue-idle.svg"
+    },
+    {
+      "id": "limix-squircle-blue-happy",
+      "color": "blue",
+      "mascotBody": "squircle",
+      "mascotExpression": "happy",
+      "file": "limix-squircle-blue-happy.svg"
+    },
+    {
+      "id": "limix-squircle-blue-curious",
+      "color": "blue",
+      "mascotBody": "squircle",
+      "mascotExpression": "curious",
+      "file": "limix-squircle-blue-curious.svg"
+    },
+    {
+      "id": "limix-squircle-red-idle",
+      "color": "red",
+      "mascotBody": "squircle",
+      "mascotExpression": "idle",
+      "file": "limix-squircle-red-idle.svg"
+    },
+    {
+      "id": "limix-squircle-red-happy",
+      "color": "red",
+      "mascotBody": "squircle",
+      "mascotExpression": "happy",
+      "file": "limix-squircle-red-happy.svg"
+    },
+    {
+      "id": "limix-squircle-red-curious",
+      "color": "red",
+      "mascotBody": "squircle",
+      "mascotExpression": "curious",
+      "file": "limix-squircle-red-curious.svg"
+    },
+    {
+      "id": "limix-squircle-orange-idle",
+      "color": "orange",
+      "mascotBody": "squircle",
+      "mascotExpression": "idle",
+      "file": "limix-squircle-orange-idle.svg"
+    },
+    {
+      "id": "limix-squircle-orange-happy",
+      "color": "orange",
+      "mascotBody": "squircle",
+      "mascotExpression": "happy",
+      "file": "limix-squircle-orange-happy.svg"
+    },
+    {
+      "id": "limix-squircle-orange-curious",
+      "color": "orange",
+      "mascotBody": "squircle",
+      "mascotExpression": "curious",
+      "file": "limix-squircle-orange-curious.svg"
+    },
+    {
+      "id": "limix-squircle-purple-idle",
+      "color": "purple",
+      "mascotBody": "squircle",
+      "mascotExpression": "idle",
+      "file": "limix-squircle-purple-idle.svg"
+    },
+    {
+      "id": "limix-squircle-purple-happy",
+      "color": "purple",
+      "mascotBody": "squircle",
+      "mascotExpression": "happy",
+      "file": "limix-squircle-purple-happy.svg"
+    },
+    {
+      "id": "limix-squircle-purple-curious",
+      "color": "purple",
+      "mascotBody": "squircle",
+      "mascotExpression": "curious",
+      "file": "limix-squircle-purple-curious.svg"
+    },
+    {
+      "id": "limix-squircle-cyan-idle",
+      "color": "cyan",
+      "mascotBody": "squircle",
+      "mascotExpression": "idle",
+      "file": "limix-squircle-cyan-idle.svg"
+    },
+    {
+      "id": "limix-squircle-cyan-happy",
+      "color": "cyan",
+      "mascotBody": "squircle",
+      "mascotExpression": "happy",
+      "file": "limix-squircle-cyan-happy.svg"
+    },
+    {
+      "id": "limix-squircle-cyan-curious",
+      "color": "cyan",
+      "mascotBody": "squircle",
+      "mascotExpression": "curious",
+      "file": "limix-squircle-cyan-curious.svg"
+    },
+    {
+      "id": "limix-squircle-pink-idle",
+      "color": "pink",
+      "mascotBody": "squircle",
+      "mascotExpression": "idle",
+      "file": "limix-squircle-pink-idle.svg"
+    },
+    {
+      "id": "limix-squircle-pink-happy",
+      "color": "pink",
+      "mascotBody": "squircle",
+      "mascotExpression": "happy",
+      "file": "limix-squircle-pink-happy.svg"
+    },
+    {
+      "id": "limix-squircle-pink-curious",
+      "color": "pink",
+      "mascotBody": "squircle",
+      "mascotExpression": "curious",
+      "file": "limix-squircle-pink-curious.svg"
+    },
+    {
+      "id": "limix-squircle-yellow-idle",
+      "color": "yellow",
+      "mascotBody": "squircle",
+      "mascotExpression": "idle",
+      "file": "limix-squircle-yellow-idle.svg"
+    },
+    {
+      "id": "limix-squircle-yellow-happy",
+      "color": "yellow",
+      "mascotBody": "squircle",
+      "mascotExpression": "happy",
+      "file": "limix-squircle-yellow-happy.svg"
+    },
+    {
+      "id": "limix-squircle-yellow-curious",
+      "color": "yellow",
+      "mascotBody": "squircle",
+      "mascotExpression": "curious",
+      "file": "limix-squircle-yellow-curious.svg"
+    },
+    {
+      "id": "limix-squircle-teal-idle",
+      "color": "teal",
+      "mascotBody": "squircle",
+      "mascotExpression": "idle",
+      "file": "limix-squircle-teal-idle.svg"
+    },
+    {
+      "id": "limix-squircle-teal-happy",
+      "color": "teal",
+      "mascotBody": "squircle",
+      "mascotExpression": "happy",
+      "file": "limix-squircle-teal-happy.svg"
+    },
+    {
+      "id": "limix-squircle-teal-curious",
+      "color": "teal",
+      "mascotBody": "squircle",
+      "mascotExpression": "curious",
+      "file": "limix-squircle-teal-curious.svg"
+    },
+    {
+      "id": "limix-squircle-coral-idle",
+      "color": "coral",
+      "mascotBody": "squircle",
+      "mascotExpression": "idle",
+      "file": "limix-squircle-coral-idle.svg"
+    },
+    {
+      "id": "limix-squircle-coral-happy",
+      "color": "coral",
+      "mascotBody": "squircle",
+      "mascotExpression": "happy",
+      "file": "limix-squircle-coral-happy.svg"
+    },
+    {
+      "id": "limix-squircle-coral-curious",
+      "color": "coral",
+      "mascotBody": "squircle",
+      "mascotExpression": "curious",
+      "file": "limix-squircle-coral-curious.svg"
+    },
+    {
+      "id": "limix-capsule-green-idle",
+      "color": "green",
+      "mascotBody": "capsule",
+      "mascotExpression": "idle",
+      "file": "limix-capsule-green-idle.svg"
+    },
+    {
+      "id": "limix-capsule-green-happy",
+      "color": "green",
+      "mascotBody": "capsule",
+      "mascotExpression": "happy",
+      "file": "limix-capsule-green-happy.svg"
+    },
+    {
+      "id": "limix-capsule-green-curious",
+      "color": "green",
+      "mascotBody": "capsule",
+      "mascotExpression": "curious",
+      "file": "limix-capsule-green-curious.svg"
+    },
+    {
+      "id": "limix-capsule-blue-idle",
+      "color": "blue",
+      "mascotBody": "capsule",
+      "mascotExpression": "idle",
+      "file": "limix-capsule-blue-idle.svg"
+    },
+    {
+      "id": "limix-capsule-blue-happy",
+      "color": "blue",
+      "mascotBody": "capsule",
+      "mascotExpression": "happy",
+      "file": "limix-capsule-blue-happy.svg"
+    },
+    {
+      "id": "limix-capsule-blue-curious",
+      "color": "blue",
+      "mascotBody": "capsule",
+      "mascotExpression": "curious",
+      "file": "limix-capsule-blue-curious.svg"
+    },
+    {
+      "id": "limix-capsule-red-idle",
+      "color": "red",
+      "mascotBody": "capsule",
+      "mascotExpression": "idle",
+      "file": "limix-capsule-red-idle.svg"
+    },
+    {
+      "id": "limix-capsule-red-happy",
+      "color": "red",
+      "mascotBody": "capsule",
+      "mascotExpression": "happy",
+      "file": "limix-capsule-red-happy.svg"
+    },
+    {
+      "id": "limix-capsule-red-curious",
+      "color": "red",
+      "mascotBody": "capsule",
+      "mascotExpression": "curious",
+      "file": "limix-capsule-red-curious.svg"
+    },
+    {
+      "id": "limix-capsule-orange-idle",
+      "color": "orange",
+      "mascotBody": "capsule",
+      "mascotExpression": "idle",
+      "file": "limix-capsule-orange-idle.svg"
+    },
+    {
+      "id": "limix-capsule-orange-happy",
+      "color": "orange",
+      "mascotBody": "capsule",
+      "mascotExpression": "happy",
+      "file": "limix-capsule-orange-happy.svg"
+    },
+    {
+      "id": "limix-capsule-orange-curious",
+      "color": "orange",
+      "mascotBody": "capsule",
+      "mascotExpression": "curious",
+      "file": "limix-capsule-orange-curious.svg"
+    },
+    {
+      "id": "limix-capsule-purple-idle",
+      "color": "purple",
+      "mascotBody": "capsule",
+      "mascotExpression": "idle",
+      "file": "limix-capsule-purple-idle.svg"
+    },
+    {
+      "id": "limix-capsule-purple-happy",
+      "color": "purple",
+      "mascotBody": "capsule",
+      "mascotExpression": "happy",
+      "file": "limix-capsule-purple-happy.svg"
+    },
+    {
+      "id": "limix-capsule-purple-curious",
+      "color": "purple",
+      "mascotBody": "capsule",
+      "mascotExpression": "curious",
+      "file": "limix-capsule-purple-curious.svg"
+    },
+    {
+      "id": "limix-capsule-cyan-idle",
+      "color": "cyan",
+      "mascotBody": "capsule",
+      "mascotExpression": "idle",
+      "file": "limix-capsule-cyan-idle.svg"
+    },
+    {
+      "id": "limix-capsule-cyan-happy",
+      "color": "cyan",
+      "mascotBody": "capsule",
+      "mascotExpression": "happy",
+      "file": "limix-capsule-cyan-happy.svg"
+    },
+    {
+      "id": "limix-capsule-cyan-curious",
+      "color": "cyan",
+      "mascotBody": "capsule",
+      "mascotExpression": "curious",
+      "file": "limix-capsule-cyan-curious.svg"
+    },
+    {
+      "id": "limix-capsule-pink-idle",
+      "color": "pink",
+      "mascotBody": "capsule",
+      "mascotExpression": "idle",
+      "file": "limix-capsule-pink-idle.svg"
+    },
+    {
+      "id": "limix-capsule-pink-happy",
+      "color": "pink",
+      "mascotBody": "capsule",
+      "mascotExpression": "happy",
+      "file": "limix-capsule-pink-happy.svg"
+    },
+    {
+      "id": "limix-capsule-pink-curious",
+      "color": "pink",
+      "mascotBody": "capsule",
+      "mascotExpression": "curious",
+      "file": "limix-capsule-pink-curious.svg"
+    },
+    {
+      "id": "limix-capsule-yellow-idle",
+      "color": "yellow",
+      "mascotBody": "capsule",
+      "mascotExpression": "idle",
+      "file": "limix-capsule-yellow-idle.svg"
+    },
+    {
+      "id": "limix-capsule-yellow-happy",
+      "color": "yellow",
+      "mascotBody": "capsule",
+      "mascotExpression": "happy",
+      "file": "limix-capsule-yellow-happy.svg"
+    },
+    {
+      "id": "limix-capsule-yellow-curious",
+      "color": "yellow",
+      "mascotBody": "capsule",
+      "mascotExpression": "curious",
+      "file": "limix-capsule-yellow-curious.svg"
+    },
+    {
+      "id": "limix-capsule-teal-idle",
+      "color": "teal",
+      "mascotBody": "capsule",
+      "mascotExpression": "idle",
+      "file": "limix-capsule-teal-idle.svg"
+    },
+    {
+      "id": "limix-capsule-teal-happy",
+      "color": "teal",
+      "mascotBody": "capsule",
+      "mascotExpression": "happy",
+      "file": "limix-capsule-teal-happy.svg"
+    },
+    {
+      "id": "limix-capsule-teal-curious",
+      "color": "teal",
+      "mascotBody": "capsule",
+      "mascotExpression": "curious",
+      "file": "limix-capsule-teal-curious.svg"
+    },
+    {
+      "id": "limix-capsule-coral-idle",
+      "color": "coral",
+      "mascotBody": "capsule",
+      "mascotExpression": "idle",
+      "file": "limix-capsule-coral-idle.svg"
+    },
+    {
+      "id": "limix-capsule-coral-happy",
+      "color": "coral",
+      "mascotBody": "capsule",
+      "mascotExpression": "happy",
+      "file": "limix-capsule-coral-happy.svg"
+    },
+    {
+      "id": "limix-capsule-coral-curious",
+      "color": "coral",
+      "mascotBody": "capsule",
+      "mascotExpression": "curious",
+      "file": "limix-capsule-coral-curious.svg"
+    },
+    {
+      "id": "limix-drop-green-idle",
+      "color": "green",
+      "mascotBody": "drop",
+      "mascotExpression": "idle",
+      "file": "limix-drop-green-idle.svg"
+    },
+    {
+      "id": "limix-drop-green-happy",
+      "color": "green",
+      "mascotBody": "drop",
+      "mascotExpression": "happy",
+      "file": "limix-drop-green-happy.svg"
+    },
+    {
+      "id": "limix-drop-green-curious",
+      "color": "green",
+      "mascotBody": "drop",
+      "mascotExpression": "curious",
+      "file": "limix-drop-green-curious.svg"
+    },
+    {
+      "id": "limix-drop-blue-idle",
+      "color": "blue",
+      "mascotBody": "drop",
+      "mascotExpression": "idle",
+      "file": "limix-drop-blue-idle.svg"
+    },
+    {
+      "id": "limix-drop-blue-happy",
+      "color": "blue",
+      "mascotBody": "drop",
+      "mascotExpression": "happy",
+      "file": "limix-drop-blue-happy.svg"
+    },
+    {
+      "id": "limix-drop-blue-curious",
+      "color": "blue",
+      "mascotBody": "drop",
+      "mascotExpression": "curious",
+      "file": "limix-drop-blue-curious.svg"
+    },
+    {
+      "id": "limix-drop-red-idle",
+      "color": "red",
+      "mascotBody": "drop",
+      "mascotExpression": "idle",
+      "file": "limix-drop-red-idle.svg"
+    },
+    {
+      "id": "limix-drop-red-happy",
+      "color": "red",
+      "mascotBody": "drop",
+      "mascotExpression": "happy",
+      "file": "limix-drop-red-happy.svg"
+    },
+    {
+      "id": "limix-drop-red-curious",
+      "color": "red",
+      "mascotBody": "drop",
+      "mascotExpression": "curious",
+      "file": "limix-drop-red-curious.svg"
+    },
+    {
+      "id": "limix-drop-orange-idle",
+      "color": "orange",
+      "mascotBody": "drop",
+      "mascotExpression": "idle",
+      "file": "limix-drop-orange-idle.svg"
+    },
+    {
+      "id": "limix-drop-orange-happy",
+      "color": "orange",
+      "mascotBody": "drop",
+      "mascotExpression": "happy",
+      "file": "limix-drop-orange-happy.svg"
+    },
+    {
+      "id": "limix-drop-orange-curious",
+      "color": "orange",
+      "mascotBody": "drop",
+      "mascotExpression": "curious",
+      "file": "limix-drop-orange-curious.svg"
+    },
+    {
+      "id": "limix-drop-purple-idle",
+      "color": "purple",
+      "mascotBody": "drop",
+      "mascotExpression": "idle",
+      "file": "limix-drop-purple-idle.svg"
+    },
+    {
+      "id": "limix-drop-purple-happy",
+      "color": "purple",
+      "mascotBody": "drop",
+      "mascotExpression": "happy",
+      "file": "limix-drop-purple-happy.svg"
+    },
+    {
+      "id": "limix-drop-purple-curious",
+      "color": "purple",
+      "mascotBody": "drop",
+      "mascotExpression": "curious",
+      "file": "limix-drop-purple-curious.svg"
+    },
+    {
+      "id": "limix-drop-cyan-idle",
+      "color": "cyan",
+      "mascotBody": "drop",
+      "mascotExpression": "idle",
+      "file": "limix-drop-cyan-idle.svg"
+    },
+    {
+      "id": "limix-drop-cyan-happy",
+      "color": "cyan",
+      "mascotBody": "drop",
+      "mascotExpression": "happy",
+      "file": "limix-drop-cyan-happy.svg"
+    },
+    {
+      "id": "limix-drop-cyan-curious",
+      "color": "cyan",
+      "mascotBody": "drop",
+      "mascotExpression": "curious",
+      "file": "limix-drop-cyan-curious.svg"
+    },
+    {
+      "id": "limix-drop-pink-idle",
+      "color": "pink",
+      "mascotBody": "drop",
+      "mascotExpression": "idle",
+      "file": "limix-drop-pink-idle.svg"
+    },
+    {
+      "id": "limix-drop-pink-happy",
+      "color": "pink",
+      "mascotBody": "drop",
+      "mascotExpression": "happy",
+      "file": "limix-drop-pink-happy.svg"
+    },
+    {
+      "id": "limix-drop-pink-curious",
+      "color": "pink",
+      "mascotBody": "drop",
+      "mascotExpression": "curious",
+      "file": "limix-drop-pink-curious.svg"
+    },
+    {
+      "id": "limix-drop-yellow-idle",
+      "color": "yellow",
+      "mascotBody": "drop",
+      "mascotExpression": "idle",
+      "file": "limix-drop-yellow-idle.svg"
+    },
+    {
+      "id": "limix-drop-yellow-happy",
+      "color": "yellow",
+      "mascotBody": "drop",
+      "mascotExpression": "happy",
+      "file": "limix-drop-yellow-happy.svg"
+    },
+    {
+      "id": "limix-drop-yellow-curious",
+      "color": "yellow",
+      "mascotBody": "drop",
+      "mascotExpression": "curious",
+      "file": "limix-drop-yellow-curious.svg"
+    },
+    {
+      "id": "limix-drop-teal-idle",
+      "color": "teal",
+      "mascotBody": "drop",
+      "mascotExpression": "idle",
+      "file": "limix-drop-teal-idle.svg"
+    },
+    {
+      "id": "limix-drop-teal-happy",
+      "color": "teal",
+      "mascotBody": "drop",
+      "mascotExpression": "happy",
+      "file": "limix-drop-teal-happy.svg"
+    },
+    {
+      "id": "limix-drop-teal-curious",
+      "color": "teal",
+      "mascotBody": "drop",
+      "mascotExpression": "curious",
+      "file": "limix-drop-teal-curious.svg"
+    },
+    {
+      "id": "limix-drop-coral-idle",
+      "color": "coral",
+      "mascotBody": "drop",
+      "mascotExpression": "idle",
+      "file": "limix-drop-coral-idle.svg"
+    },
+    {
+      "id": "limix-drop-coral-happy",
+      "color": "coral",
+      "mascotBody": "drop",
+      "mascotExpression": "happy",
+      "file": "limix-drop-coral-happy.svg"
+    },
+    {
+      "id": "limix-drop-coral-curious",
+      "color": "coral",
+      "mascotBody": "drop",
+      "mascotExpression": "curious",
+      "file": "limix-drop-coral-curious.svg"
+    },
+    {
+      "id": "limix-shield-green-idle",
+      "color": "green",
+      "mascotBody": "shield",
+      "mascotExpression": "idle",
+      "file": "limix-shield-green-idle.svg"
+    },
+    {
+      "id": "limix-shield-green-happy",
+      "color": "green",
+      "mascotBody": "shield",
+      "mascotExpression": "happy",
+      "file": "limix-shield-green-happy.svg"
+    },
+    {
+      "id": "limix-shield-green-curious",
+      "color": "green",
+      "mascotBody": "shield",
+      "mascotExpression": "curious",
+      "file": "limix-shield-green-curious.svg"
+    },
+    {
+      "id": "limix-shield-blue-idle",
+      "color": "blue",
+      "mascotBody": "shield",
+      "mascotExpression": "idle",
+      "file": "limix-shield-blue-idle.svg"
+    },
+    {
+      "id": "limix-shield-blue-happy",
+      "color": "blue",
+      "mascotBody": "shield",
+      "mascotExpression": "happy",
+      "file": "limix-shield-blue-happy.svg"
+    },
+    {
+      "id": "limix-shield-blue-curious",
+      "color": "blue",
+      "mascotBody": "shield",
+      "mascotExpression": "curious",
+      "file": "limix-shield-blue-curious.svg"
+    },
+    {
+      "id": "limix-shield-red-idle",
+      "color": "red",
+      "mascotBody": "shield",
+      "mascotExpression": "idle",
+      "file": "limix-shield-red-idle.svg"
+    },
+    {
+      "id": "limix-shield-red-happy",
+      "color": "red",
+      "mascotBody": "shield",
+      "mascotExpression": "happy",
+      "file": "limix-shield-red-happy.svg"
+    },
+    {
+      "id": "limix-shield-red-curious",
+      "color": "red",
+      "mascotBody": "shield",
+      "mascotExpression": "curious",
+      "file": "limix-shield-red-curious.svg"
+    },
+    {
+      "id": "limix-shield-orange-idle",
+      "color": "orange",
+      "mascotBody": "shield",
+      "mascotExpression": "idle",
+      "file": "limix-shield-orange-idle.svg"
+    },
+    {
+      "id": "limix-shield-orange-happy",
+      "color": "orange",
+      "mascotBody": "shield",
+      "mascotExpression": "happy",
+      "file": "limix-shield-orange-happy.svg"
+    },
+    {
+      "id": "limix-shield-orange-curious",
+      "color": "orange",
+      "mascotBody": "shield",
+      "mascotExpression": "curious",
+      "file": "limix-shield-orange-curious.svg"
+    },
+    {
+      "id": "limix-shield-purple-idle",
+      "color": "purple",
+      "mascotBody": "shield",
+      "mascotExpression": "idle",
+      "file": "limix-shield-purple-idle.svg"
+    },
+    {
+      "id": "limix-shield-purple-happy",
+      "color": "purple",
+      "mascotBody": "shield",
+      "mascotExpression": "happy",
+      "file": "limix-shield-purple-happy.svg"
+    },
+    {
+      "id": "limix-shield-purple-curious",
+      "color": "purple",
+      "mascotBody": "shield",
+      "mascotExpression": "curious",
+      "file": "limix-shield-purple-curious.svg"
+    },
+    {
+      "id": "limix-shield-cyan-idle",
+      "color": "cyan",
+      "mascotBody": "shield",
+      "mascotExpression": "idle",
+      "file": "limix-shield-cyan-idle.svg"
+    },
+    {
+      "id": "limix-shield-cyan-happy",
+      "color": "cyan",
+      "mascotBody": "shield",
+      "mascotExpression": "happy",
+      "file": "limix-shield-cyan-happy.svg"
+    },
+    {
+      "id": "limix-shield-cyan-curious",
+      "color": "cyan",
+      "mascotBody": "shield",
+      "mascotExpression": "curious",
+      "file": "limix-shield-cyan-curious.svg"
+    },
+    {
+      "id": "limix-shield-pink-idle",
+      "color": "pink",
+      "mascotBody": "shield",
+      "mascotExpression": "idle",
+      "file": "limix-shield-pink-idle.svg"
+    },
+    {
+      "id": "limix-shield-pink-happy",
+      "color": "pink",
+      "mascotBody": "shield",
+      "mascotExpression": "happy",
+      "file": "limix-shield-pink-happy.svg"
+    },
+    {
+      "id": "limix-shield-pink-curious",
+      "color": "pink",
+      "mascotBody": "shield",
+      "mascotExpression": "curious",
+      "file": "limix-shield-pink-curious.svg"
+    },
+    {
+      "id": "limix-shield-yellow-idle",
+      "color": "yellow",
+      "mascotBody": "shield",
+      "mascotExpression": "idle",
+      "file": "limix-shield-yellow-idle.svg"
+    },
+    {
+      "id": "limix-shield-yellow-happy",
+      "color": "yellow",
+      "mascotBody": "shield",
+      "mascotExpression": "happy",
+      "file": "limix-shield-yellow-happy.svg"
+    },
+    {
+      "id": "limix-shield-yellow-curious",
+      "color": "yellow",
+      "mascotBody": "shield",
+      "mascotExpression": "curious",
+      "file": "limix-shield-yellow-curious.svg"
+    },
+    {
+      "id": "limix-shield-teal-idle",
+      "color": "teal",
+      "mascotBody": "shield",
+      "mascotExpression": "idle",
+      "file": "limix-shield-teal-idle.svg"
+    },
+    {
+      "id": "limix-shield-teal-happy",
+      "color": "teal",
+      "mascotBody": "shield",
+      "mascotExpression": "happy",
+      "file": "limix-shield-teal-happy.svg"
+    },
+    {
+      "id": "limix-shield-teal-curious",
+      "color": "teal",
+      "mascotBody": "shield",
+      "mascotExpression": "curious",
+      "file": "limix-shield-teal-curious.svg"
+    },
+    {
+      "id": "limix-shield-coral-idle",
+      "color": "coral",
+      "mascotBody": "shield",
+      "mascotExpression": "idle",
+      "file": "limix-shield-coral-idle.svg"
+    },
+    {
+      "id": "limix-shield-coral-happy",
+      "color": "coral",
+      "mascotBody": "shield",
+      "mascotExpression": "happy",
+      "file": "limix-shield-coral-happy.svg"
+    },
+    {
+      "id": "limix-shield-coral-curious",
+      "color": "coral",
+      "mascotBody": "shield",
+      "mascotExpression": "curious",
+      "file": "limix-shield-coral-curious.svg"
+    },
+    {
+      "id": "limix-hexagon-green-idle",
+      "color": "green",
+      "mascotBody": "hexagon",
+      "mascotExpression": "idle",
+      "file": "limix-hexagon-green-idle.svg"
+    },
+    {
+      "id": "limix-hexagon-green-happy",
+      "color": "green",
+      "mascotBody": "hexagon",
+      "mascotExpression": "happy",
+      "file": "limix-hexagon-green-happy.svg"
+    },
+    {
+      "id": "limix-hexagon-green-curious",
+      "color": "green",
+      "mascotBody": "hexagon",
+      "mascotExpression": "curious",
+      "file": "limix-hexagon-green-curious.svg"
+    },
+    {
+      "id": "limix-hexagon-blue-idle",
+      "color": "blue",
+      "mascotBody": "hexagon",
+      "mascotExpression": "idle",
+      "file": "limix-hexagon-blue-idle.svg"
+    },
+    {
+      "id": "limix-hexagon-blue-happy",
+      "color": "blue",
+      "mascotBody": "hexagon",
+      "mascotExpression": "happy",
+      "file": "limix-hexagon-blue-happy.svg"
+    },
+    {
+      "id": "limix-hexagon-blue-curious",
+      "color": "blue",
+      "mascotBody": "hexagon",
+      "mascotExpression": "curious",
+      "file": "limix-hexagon-blue-curious.svg"
+    },
+    {
+      "id": "limix-hexagon-red-idle",
+      "color": "red",
+      "mascotBody": "hexagon",
+      "mascotExpression": "idle",
+      "file": "limix-hexagon-red-idle.svg"
+    },
+    {
+      "id": "limix-hexagon-red-happy",
+      "color": "red",
+      "mascotBody": "hexagon",
+      "mascotExpression": "happy",
+      "file": "limix-hexagon-red-happy.svg"
+    },
+    {
+      "id": "limix-hexagon-red-curious",
+      "color": "red",
+      "mascotBody": "hexagon",
+      "mascotExpression": "curious",
+      "file": "limix-hexagon-red-curious.svg"
+    },
+    {
+      "id": "limix-hexagon-orange-idle",
+      "color": "orange",
+      "mascotBody": "hexagon",
+      "mascotExpression": "idle",
+      "file": "limix-hexagon-orange-idle.svg"
+    },
+    {
+      "id": "limix-hexagon-orange-happy",
+      "color": "orange",
+      "mascotBody": "hexagon",
+      "mascotExpression": "happy",
+      "file": "limix-hexagon-orange-happy.svg"
+    },
+    {
+      "id": "limix-hexagon-orange-curious",
+      "color": "orange",
+      "mascotBody": "hexagon",
+      "mascotExpression": "curious",
+      "file": "limix-hexagon-orange-curious.svg"
+    },
+    {
+      "id": "limix-hexagon-purple-idle",
+      "color": "purple",
+      "mascotBody": "hexagon",
+      "mascotExpression": "idle",
+      "file": "limix-hexagon-purple-idle.svg"
+    },
+    {
+      "id": "limix-hexagon-purple-happy",
+      "color": "purple",
+      "mascotBody": "hexagon",
+      "mascotExpression": "happy",
+      "file": "limix-hexagon-purple-happy.svg"
+    },
+    {
+      "id": "limix-hexagon-purple-curious",
+      "color": "purple",
+      "mascotBody": "hexagon",
+      "mascotExpression": "curious",
+      "file": "limix-hexagon-purple-curious.svg"
+    },
+    {
+      "id": "limix-hexagon-cyan-idle",
+      "color": "cyan",
+      "mascotBody": "hexagon",
+      "mascotExpression": "idle",
+      "file": "limix-hexagon-cyan-idle.svg"
+    },
+    {
+      "id": "limix-hexagon-cyan-happy",
+      "color": "cyan",
+      "mascotBody": "hexagon",
+      "mascotExpression": "happy",
+      "file": "limix-hexagon-cyan-happy.svg"
+    },
+    {
+      "id": "limix-hexagon-cyan-curious",
+      "color": "cyan",
+      "mascotBody": "hexagon",
+      "mascotExpression": "curious",
+      "file": "limix-hexagon-cyan-curious.svg"
+    },
+    {
+      "id": "limix-hexagon-pink-idle",
+      "color": "pink",
+      "mascotBody": "hexagon",
+      "mascotExpression": "idle",
+      "file": "limix-hexagon-pink-idle.svg"
+    },
+    {
+      "id": "limix-hexagon-pink-happy",
+      "color": "pink",
+      "mascotBody": "hexagon",
+      "mascotExpression": "happy",
+      "file": "limix-hexagon-pink-happy.svg"
+    },
+    {
+      "id": "limix-hexagon-pink-curious",
+      "color": "pink",
+      "mascotBody": "hexagon",
+      "mascotExpression": "curious",
+      "file": "limix-hexagon-pink-curious.svg"
+    },
+    {
+      "id": "limix-hexagon-yellow-idle",
+      "color": "yellow",
+      "mascotBody": "hexagon",
+      "mascotExpression": "idle",
+      "file": "limix-hexagon-yellow-idle.svg"
+    },
+    {
+      "id": "limix-hexagon-yellow-happy",
+      "color": "yellow",
+      "mascotBody": "hexagon",
+      "mascotExpression": "happy",
+      "file": "limix-hexagon-yellow-happy.svg"
+    },
+    {
+      "id": "limix-hexagon-yellow-curious",
+      "color": "yellow",
+      "mascotBody": "hexagon",
+      "mascotExpression": "curious",
+      "file": "limix-hexagon-yellow-curious.svg"
+    },
+    {
+      "id": "limix-hexagon-teal-idle",
+      "color": "teal",
+      "mascotBody": "hexagon",
+      "mascotExpression": "idle",
+      "file": "limix-hexagon-teal-idle.svg"
+    },
+    {
+      "id": "limix-hexagon-teal-happy",
+      "color": "teal",
+      "mascotBody": "hexagon",
+      "mascotExpression": "happy",
+      "file": "limix-hexagon-teal-happy.svg"
+    },
+    {
+      "id": "limix-hexagon-teal-curious",
+      "color": "teal",
+      "mascotBody": "hexagon",
+      "mascotExpression": "curious",
+      "file": "limix-hexagon-teal-curious.svg"
+    },
+    {
+      "id": "limix-hexagon-coral-idle",
+      "color": "coral",
+      "mascotBody": "hexagon",
+      "mascotExpression": "idle",
+      "file": "limix-hexagon-coral-idle.svg"
+    },
+    {
+      "id": "limix-hexagon-coral-happy",
+      "color": "coral",
+      "mascotBody": "hexagon",
+      "mascotExpression": "happy",
+      "file": "limix-hexagon-coral-happy.svg"
+    },
+    {
+      "id": "limix-hexagon-coral-curious",
+      "color": "coral",
+      "mascotBody": "hexagon",
+      "mascotExpression": "curious",
+      "file": "limix-hexagon-coral-curious.svg"
+    },
+    {
+      "id": "limix-diamond-green-idle",
+      "color": "green",
+      "mascotBody": "diamond",
+      "mascotExpression": "idle",
+      "file": "limix-diamond-green-idle.svg"
+    },
+    {
+      "id": "limix-diamond-green-happy",
+      "color": "green",
+      "mascotBody": "diamond",
+      "mascotExpression": "happy",
+      "file": "limix-diamond-green-happy.svg"
+    },
+    {
+      "id": "limix-diamond-green-curious",
+      "color": "green",
+      "mascotBody": "diamond",
+      "mascotExpression": "curious",
+      "file": "limix-diamond-green-curious.svg"
+    },
+    {
+      "id": "limix-diamond-blue-idle",
+      "color": "blue",
+      "mascotBody": "diamond",
+      "mascotExpression": "idle",
+      "file": "limix-diamond-blue-idle.svg"
+    },
+    {
+      "id": "limix-diamond-blue-happy",
+      "color": "blue",
+      "mascotBody": "diamond",
+      "mascotExpression": "happy",
+      "file": "limix-diamond-blue-happy.svg"
+    },
+    {
+      "id": "limix-diamond-blue-curious",
+      "color": "blue",
+      "mascotBody": "diamond",
+      "mascotExpression": "curious",
+      "file": "limix-diamond-blue-curious.svg"
+    },
+    {
+      "id": "limix-diamond-red-idle",
+      "color": "red",
+      "mascotBody": "diamond",
+      "mascotExpression": "idle",
+      "file": "limix-diamond-red-idle.svg"
+    },
+    {
+      "id": "limix-diamond-red-happy",
+      "color": "red",
+      "mascotBody": "diamond",
+      "mascotExpression": "happy",
+      "file": "limix-diamond-red-happy.svg"
+    },
+    {
+      "id": "limix-diamond-red-curious",
+      "color": "red",
+      "mascotBody": "diamond",
+      "mascotExpression": "curious",
+      "file": "limix-diamond-red-curious.svg"
+    },
+    {
+      "id": "limix-diamond-orange-idle",
+      "color": "orange",
+      "mascotBody": "diamond",
+      "mascotExpression": "idle",
+      "file": "limix-diamond-orange-idle.svg"
+    },
+    {
+      "id": "limix-diamond-orange-happy",
+      "color": "orange",
+      "mascotBody": "diamond",
+      "mascotExpression": "happy",
+      "file": "limix-diamond-orange-happy.svg"
+    },
+    {
+      "id": "limix-diamond-orange-curious",
+      "color": "orange",
+      "mascotBody": "diamond",
+      "mascotExpression": "curious",
+      "file": "limix-diamond-orange-curious.svg"
+    },
+    {
+      "id": "limix-diamond-purple-idle",
+      "color": "purple",
+      "mascotBody": "diamond",
+      "mascotExpression": "idle",
+      "file": "limix-diamond-purple-idle.svg"
+    },
+    {
+      "id": "limix-diamond-purple-happy",
+      "color": "purple",
+      "mascotBody": "diamond",
+      "mascotExpression": "happy",
+      "file": "limix-diamond-purple-happy.svg"
+    },
+    {
+      "id": "limix-diamond-purple-curious",
+      "color": "purple",
+      "mascotBody": "diamond",
+      "mascotExpression": "curious",
+      "file": "limix-diamond-purple-curious.svg"
+    },
+    {
+      "id": "limix-diamond-cyan-idle",
+      "color": "cyan",
+      "mascotBody": "diamond",
+      "mascotExpression": "idle",
+      "file": "limix-diamond-cyan-idle.svg"
+    },
+    {
+      "id": "limix-diamond-cyan-happy",
+      "color": "cyan",
+      "mascotBody": "diamond",
+      "mascotExpression": "happy",
+      "file": "limix-diamond-cyan-happy.svg"
+    },
+    {
+      "id": "limix-diamond-cyan-curious",
+      "color": "cyan",
+      "mascotBody": "diamond",
+      "mascotExpression": "curious",
+      "file": "limix-diamond-cyan-curious.svg"
+    },
+    {
+      "id": "limix-diamond-pink-idle",
+      "color": "pink",
+      "mascotBody": "diamond",
+      "mascotExpression": "idle",
+      "file": "limix-diamond-pink-idle.svg"
+    },
+    {
+      "id": "limix-diamond-pink-happy",
+      "color": "pink",
+      "mascotBody": "diamond",
+      "mascotExpression": "happy",
+      "file": "limix-diamond-pink-happy.svg"
+    },
+    {
+      "id": "limix-diamond-pink-curious",
+      "color": "pink",
+      "mascotBody": "diamond",
+      "mascotExpression": "curious",
+      "file": "limix-diamond-pink-curious.svg"
+    },
+    {
+      "id": "limix-diamond-yellow-idle",
+      "color": "yellow",
+      "mascotBody": "diamond",
+      "mascotExpression": "idle",
+      "file": "limix-diamond-yellow-idle.svg"
+    },
+    {
+      "id": "limix-diamond-yellow-happy",
+      "color": "yellow",
+      "mascotBody": "diamond",
+      "mascotExpression": "happy",
+      "file": "limix-diamond-yellow-happy.svg"
+    },
+    {
+      "id": "limix-diamond-yellow-curious",
+      "color": "yellow",
+      "mascotBody": "diamond",
+      "mascotExpression": "curious",
+      "file": "limix-diamond-yellow-curious.svg"
+    },
+    {
+      "id": "limix-diamond-teal-idle",
+      "color": "teal",
+      "mascotBody": "diamond",
+      "mascotExpression": "idle",
+      "file": "limix-diamond-teal-idle.svg"
+    },
+    {
+      "id": "limix-diamond-teal-happy",
+      "color": "teal",
+      "mascotBody": "diamond",
+      "mascotExpression": "happy",
+      "file": "limix-diamond-teal-happy.svg"
+    },
+    {
+      "id": "limix-diamond-teal-curious",
+      "color": "teal",
+      "mascotBody": "diamond",
+      "mascotExpression": "curious",
+      "file": "limix-diamond-teal-curious.svg"
+    },
+    {
+      "id": "limix-diamond-coral-idle",
+      "color": "coral",
+      "mascotBody": "diamond",
+      "mascotExpression": "idle",
+      "file": "limix-diamond-coral-idle.svg"
+    },
+    {
+      "id": "limix-diamond-coral-happy",
+      "color": "coral",
+      "mascotBody": "diamond",
+      "mascotExpression": "happy",
+      "file": "limix-diamond-coral-happy.svg"
+    },
+    {
+      "id": "limix-diamond-coral-curious",
+      "color": "coral",
+      "mascotBody": "diamond",
+      "mascotExpression": "curious",
+      "file": "limix-diamond-coral-curious.svg"
+    },
+    {
+      "id": "limix-star-green-idle",
+      "color": "green",
+      "mascotBody": "star",
+      "mascotExpression": "idle",
+      "file": "limix-star-green-idle.svg"
+    },
+    {
+      "id": "limix-star-green-happy",
+      "color": "green",
+      "mascotBody": "star",
+      "mascotExpression": "happy",
+      "file": "limix-star-green-happy.svg"
+    },
+    {
+      "id": "limix-star-green-curious",
+      "color": "green",
+      "mascotBody": "star",
+      "mascotExpression": "curious",
+      "file": "limix-star-green-curious.svg"
+    },
+    {
+      "id": "limix-star-blue-idle",
+      "color": "blue",
+      "mascotBody": "star",
+      "mascotExpression": "idle",
+      "file": "limix-star-blue-idle.svg"
+    },
+    {
+      "id": "limix-star-blue-happy",
+      "color": "blue",
+      "mascotBody": "star",
+      "mascotExpression": "happy",
+      "file": "limix-star-blue-happy.svg"
+    },
+    {
+      "id": "limix-star-blue-curious",
+      "color": "blue",
+      "mascotBody": "star",
+      "mascotExpression": "curious",
+      "file": "limix-star-blue-curious.svg"
+    },
+    {
+      "id": "limix-star-red-idle",
+      "color": "red",
+      "mascotBody": "star",
+      "mascotExpression": "idle",
+      "file": "limix-star-red-idle.svg"
+    },
+    {
+      "id": "limix-star-red-happy",
+      "color": "red",
+      "mascotBody": "star",
+      "mascotExpression": "happy",
+      "file": "limix-star-red-happy.svg"
+    },
+    {
+      "id": "limix-star-red-curious",
+      "color": "red",
+      "mascotBody": "star",
+      "mascotExpression": "curious",
+      "file": "limix-star-red-curious.svg"
+    },
+    {
+      "id": "limix-star-orange-idle",
+      "color": "orange",
+      "mascotBody": "star",
+      "mascotExpression": "idle",
+      "file": "limix-star-orange-idle.svg"
+    },
+    {
+      "id": "limix-star-orange-happy",
+      "color": "orange",
+      "mascotBody": "star",
+      "mascotExpression": "happy",
+      "file": "limix-star-orange-happy.svg"
+    },
+    {
+      "id": "limix-star-orange-curious",
+      "color": "orange",
+      "mascotBody": "star",
+      "mascotExpression": "curious",
+      "file": "limix-star-orange-curious.svg"
+    },
+    {
+      "id": "limix-star-purple-idle",
+      "color": "purple",
+      "mascotBody": "star",
+      "mascotExpression": "idle",
+      "file": "limix-star-purple-idle.svg"
+    },
+    {
+      "id": "limix-star-purple-happy",
+      "color": "purple",
+      "mascotBody": "star",
+      "mascotExpression": "happy",
+      "file": "limix-star-purple-happy.svg"
+    },
+    {
+      "id": "limix-star-purple-curious",
+      "color": "purple",
+      "mascotBody": "star",
+      "mascotExpression": "curious",
+      "file": "limix-star-purple-curious.svg"
+    },
+    {
+      "id": "limix-star-cyan-idle",
+      "color": "cyan",
+      "mascotBody": "star",
+      "mascotExpression": "idle",
+      "file": "limix-star-cyan-idle.svg"
+    },
+    {
+      "id": "limix-star-cyan-happy",
+      "color": "cyan",
+      "mascotBody": "star",
+      "mascotExpression": "happy",
+      "file": "limix-star-cyan-happy.svg"
+    },
+    {
+      "id": "limix-star-cyan-curious",
+      "color": "cyan",
+      "mascotBody": "star",
+      "mascotExpression": "curious",
+      "file": "limix-star-cyan-curious.svg"
+    },
+    {
+      "id": "limix-star-pink-idle",
+      "color": "pink",
+      "mascotBody": "star",
+      "mascotExpression": "idle",
+      "file": "limix-star-pink-idle.svg"
+    },
+    {
+      "id": "limix-star-pink-happy",
+      "color": "pink",
+      "mascotBody": "star",
+      "mascotExpression": "happy",
+      "file": "limix-star-pink-happy.svg"
+    },
+    {
+      "id": "limix-star-pink-curious",
+      "color": "pink",
+      "mascotBody": "star",
+      "mascotExpression": "curious",
+      "file": "limix-star-pink-curious.svg"
+    },
+    {
+      "id": "limix-star-yellow-idle",
+      "color": "yellow",
+      "mascotBody": "star",
+      "mascotExpression": "idle",
+      "file": "limix-star-yellow-idle.svg"
+    },
+    {
+      "id": "limix-star-yellow-happy",
+      "color": "yellow",
+      "mascotBody": "star",
+      "mascotExpression": "happy",
+      "file": "limix-star-yellow-happy.svg"
+    },
+    {
+      "id": "limix-star-yellow-curious",
+      "color": "yellow",
+      "mascotBody": "star",
+      "mascotExpression": "curious",
+      "file": "limix-star-yellow-curious.svg"
+    },
+    {
+      "id": "limix-star-teal-idle",
+      "color": "teal",
+      "mascotBody": "star",
+      "mascotExpression": "idle",
+      "file": "limix-star-teal-idle.svg"
+    },
+    {
+      "id": "limix-star-teal-happy",
+      "color": "teal",
+      "mascotBody": "star",
+      "mascotExpression": "happy",
+      "file": "limix-star-teal-happy.svg"
+    },
+    {
+      "id": "limix-star-teal-curious",
+      "color": "teal",
+      "mascotBody": "star",
+      "mascotExpression": "curious",
+      "file": "limix-star-teal-curious.svg"
+    },
+    {
+      "id": "limix-star-coral-idle",
+      "color": "coral",
+      "mascotBody": "star",
+      "mascotExpression": "idle",
+      "file": "limix-star-coral-idle.svg"
+    },
+    {
+      "id": "limix-star-coral-happy",
+      "color": "coral",
+      "mascotBody": "star",
+      "mascotExpression": "happy",
+      "file": "limix-star-coral-happy.svg"
+    },
+    {
+      "id": "limix-star-coral-curious",
+      "color": "coral",
+      "mascotBody": "star",
+      "mascotExpression": "curious",
+      "file": "limix-star-coral-curious.svg"
+    }
+  ]
+}
