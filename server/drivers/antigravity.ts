@@ -33,6 +33,7 @@ import { augmentedPath } from "../env-path.ts";
 import { agyCliFor, releaseAgyCli } from "../limix-agy-cli.ts";
 import { bundledEngineCatalog } from "../model-manifest/bundled.ts";
 import { currentEngineCatalog } from "../model-manifest/manifest.ts";
+import { discoverAcpModels } from "./acp/custom-model-catalog.ts";
 
 export const STATIC_ANTIGRAVITY_MODELS: ModelCatalog = bundledEngineCatalog("antigravity");
 
@@ -120,7 +121,10 @@ const support: AcpSupport = {
   },
 
   resolveModels: async (env, config, instanceId) => {
-    if (agyCliFor(instanceId, env)) return currentEngineCatalog("antigravity");
+    // Limix: the person's own `agy` CLI is signed in to their Google account (Pro, Ultra…), whose models differ; read
+    // them from the CLI itself instead of the fixed list, which only ever showed one plan's models.
+    const agyCli = agyCliFor(instanceId, env);
+    if (agyCli) return discoverAcpModels(env, agyCli, ["acp"], { default: currentEngineCatalog("antigravity").default, exitGraceMs: 2_000 });
     const runtime = await resolveAntigravityRuntime(config.cli, env);
     const profile = await prepareAntigravityProfile({ instanceId, runtime, baseEnv: env });
     if (!(await antigravityProfileAuthenticated(profile))) throw new Error(support.loginNote);

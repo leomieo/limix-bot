@@ -142,7 +142,9 @@ export interface BotMoveView { bot: { id: string; name: string }; team: { id: st
 /** Why bots cannot move now, when they cannot: signed out of Limix Cloud, no Cloud yet (not approved), the Cloud still
  * setting up, failed, ended, not taking bots, or this computer's whole team is on its way. */
 export type BotMoveBlock = "signed-out" | "no-cloud" | "setting-up" | "failed" | "ended" | "no-moves" | "busy";
-export interface BotMoveState { available: boolean; moving: string[]; blocked?: BotMoveBlock }
+/** One bot on its way to My Cloud: moving, or failing and trying again by itself at retryAt. */
+export interface BotMoveStatus { id: string; name: string; phase: "moving" | "failed"; step: string; error?: string; retryAt?: number; tries?: number }
+export interface BotMoveState { available: boolean; moving: string[]; moves?: BotMoveStatus[]; blocked?: BotMoveBlock }
 
 /** The switch "Keep this computer's bots on this computer" (one-home-main.mjs). `shown`: this person has a Cloud of their
  * own the move applies to; `moved`: this computer's bots live on My Cloud, so turning it on brings them home; `coming`:

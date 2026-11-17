@@ -211,7 +211,7 @@ test("a whole-team move still copying gives way to moving chosen bots; once froz
   });
   const ask = (channel, ...args) => handlers.get(channel)({ page: "local" }, ...args);
   try {
-    assert.deepEqual(ask("cloud-send:bot-move-state"), { available: true, moving: [] }, "a copy that froze nothing does not hold the menu");
+    assert.deepEqual(ask("cloud-send:bot-move-state"), { available: true, moving: [], moves: [] }, "a copy that froze nothing does not hold the menu");
     await ask("cloud-send:move-bots", ["b1"]).catch(() => {});
     assert.equal(kept, null, "moving chosen bots drops the whole-team move before any bot leaves");
     assert.equal(keepChoice?.on, true);

@@ -336,7 +336,7 @@ export function installOneHome({ localRequest: anyServer, clean = null, account,
     const moving = parseJournal(journal.read());
     const available = cloudTakesBots() && !blocksBotMoves(moving);
     const blocked = available ? null : moveBlock(moving) ?? "no-moves";
-    return { available, moving: botMove.moving(), ...(blocked ? { blocked } : {}) };
+    return { available, moving: botMove.moving(), moves: botMove.status?.() ?? [], ...(blocked ? { blocked } : {}) };
   };
   sendDeps.ipcMain.handle("cloud-send:bot-move-state", localPage("cloud-send:bot-move-state", botMoveState));
   // Asked on whichever page is open: a person just back from buying My Cloud is looking at My Cloud. The bots come from this

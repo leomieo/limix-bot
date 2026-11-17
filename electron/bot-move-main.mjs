@@ -139,6 +139,13 @@ export function createBotMove({ journal, local, send, session, lease = null, rea
     view: () => engine.view(),
     seen: () => engine.seen(),
     retry: () => engine.retry(),
+    /** Each bot on its way now: moving or failing (it tries again by itself at retryAt), with the last error. */
+    status: () => moves().filter((move) => move.phase !== "done").flatMap((move) => list(move.bots).map((bot) => ({
+      id: bot.id, name: bot.name, phase: move.failing ? "failed" : "moving", step: move.phase,
+      ...(typeof move.error === "string" && move.error ? { error: move.error.slice(0, 300) } : {}),
+      ...(Number.isSafeInteger(move.retryAt) ? { retryAt: move.retryAt } : {}),
+      ...(Number.isSafeInteger(move.tries) ? { tries: move.tries } : {}),
+    }))),
     /** The bots on their way now, by id. */
     moving: () => moves().filter((move) => move.phase !== "done").flatMap((move) => list(move.bots).map((bot) => bot.id)),
     /** Everything is moving now instead: a choice still on its way stops, and its bots go on here until that move takes them.

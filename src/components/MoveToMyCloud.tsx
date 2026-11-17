@@ -3,8 +3,8 @@
 // and the one row the bots that moved leave in the sidebar. Main runs the move (electron/bot-move-main.mjs).
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { ArrowRightLeft, Check, Cloud, Loader2, X } from "lucide-react";
-import type { BotMoveState, BotMoveView } from "../../electron/cloud-send.mjs";
+import { ArrowRightLeft, Check, Cloud, CloudAlert, Loader2, RotateCw, X } from "lucide-react";
+import type { BotMoveState, BotMoveStatus, BotMoveView } from "../../electron/cloud-send.mjs";
 import { botMoveLine, filterBots, ipcErrorText, CHOOSER_PAGE, MY_CLOUD_TEAM } from "@/lib/cloud-send";
 import { t } from "@/lib/i18n";
 import { lx } from "@/lib/limix-text";
@@ -96,20 +96,40 @@ export function MoveChooser({ onClose }: { onClose: () => void }) {
   </div>, document.body);
 }
 
-/** Whether this computer's bots can move to My Cloud now, read again each time the window is back in front. */
+/** Whether this computer's bots can move to My Cloud now, and how each bot on its way is going: one shared read for every
+ * sidebar row and menu, again each time the window is back in front and whenever main tells of a change. */
+let shared: BotMoveState | null = null;
+const listeners = new Set<(next: BotMoveState | null) => void>();
+let stopShared: (() => void) | null = null;
+function readShared() {
+  const page = bridge();
+  void page?.botMoveState?.().then((next) => { shared = next; for (const listener of listeners) listener(next); }, () => { shared = null; for (const listener of listeners) listener(null); });
+}
 function useBotMoveState(): BotMoveState | null {
-  const [known, setKnown] = useState<BotMoveState | null>(null);
+  const [known, setKnown] = useState<BotMoveState | null>(shared);
   useEffect(() => {
     const page = bridge();
     if (!page?.botMoveState) return;
-    let alive = true;
-    const read = () => void page.botMoveState!().then((next) => { if (alive) setKnown(next); }, () => { if (alive) setKnown(null); });
-    read();
-    window.addEventListener("focus", read);
-    const unsubscribe = page.onNotice?.(read);
-    return () => { alive = false; unsubscribe?.(); window.removeEventListener("focus", read); };
+    listeners.add(setKnown);
+    if (!stopShared) {
+      window.addEventListener("focus", readShared);
+      const unsubscribe = page.onNotice?.(readShared);
+      const timer = window.setInterval(readShared, 15_000);
+      stopShared = () => { unsubscribe?.(); window.removeEventListener("focus", readShared); window.clearInterval(timer); };
+    }
+    readShared();
+    return () => { listeners.delete(setKnown); if (!listeners.size) { stopShared?.(); stopShared = null; } };
   }, []);
   return known;
+}
+
+const clock = (at: number) => new Date(at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+/** In words, for a bot on its way: moving now, or why it failed and when it tries again. */
+function moveStatusText(status: BotMoveStatus): string {
+  if (status.phase === "moving") return lx(`Đang chuyển ${status.name} lên My Cloud…`, `Moving ${status.name} to My Cloud…`);
+  const again = status.retryAt && status.retryAt > Date.now() ? lx(` Tự thử lại lúc ${clock(status.retryAt)}.`, ` Tries again at ${clock(status.retryAt)}.`) : lx(" Đang thử lại.", " Trying again.");
+  return lx(`${status.name} chưa chuyển được lên My Cloud (đã thử ${status.tries ?? 1} lần): ${status.error ?? "lỗi chưa rõ"}.${again}`,
+    `${status.name} has not moved to My Cloud yet (${status.tries ?? 1} tries): ${status.error ?? "unknown error"}.${again}`);
 }
 
 /** The one reason the menu item is greyed out, so the person knows what to do next instead of a catch-all. */
@@ -143,6 +163,11 @@ export function useMoveToMyCloud() {
     items(bot: Bot, item: MenuItem): ReactNode[] {
       if (!bridge()?.botMoveState || bot.defaultBot || bot.movedTo) return [];
       const moving = known?.moving.includes(bot.id);
+      const status = known?.moves?.find((entry) => entry.id === bot.id);
+      if (status) return [
+        item(<Cloud size={16} className="text-ink-secondary" />, t("cloudSend.botMove.menu"), undefined, { disabled: true, hint: moveStatusText(status) }),
+        ...(status.phase === "failed" && bridge()?.botMoveRetry ? [item(<RotateCw size={16} className="text-ink-secondary" />, lx("Thử chuyển lên Cloud lại ngay", "Retry the move to Cloud now"), () => { void bridge()!.botMoveRetry!().then(readShared, readShared); })] : []),
+      ];
       if (!known?.available || moving) return [item(<Cloud size={16} className="text-ink-secondary" />, t("cloudSend.botMove.menu"), undefined, {
         disabled: true,
         hint: moving ? lx("Bot này đang được chuyển lên Cloud.", "This bot is moving to Cloud.") : known === null ? lx("Chưa đọc được trạng thái chuyển bot. Mở Cài đặt → Limix Cloud để kiểm tra kết nối.", "Transfer status is unavailable. Check Settings → Limix Cloud.") : blockedHint(known.blocked),
@@ -158,13 +183,17 @@ export function useMoveToMyCloud() {
   };
 }
 
-/** A small cloud beside a bot's name: on its way to My Cloud (pulsing) or already there. */
-export function CloudMark({ bot }: { bot: Pick<Bot, "movedTo"> }) {
-  const moved = bot.movedTo;
-  if (!moved || moved.team.id !== MY_CLOUD_TEAM) return null;
-  const label = moved.state === "moving" ? lx("Đang chuyển lên My Cloud", "Moving to My Cloud") : lx("Đã chuyển lên My Cloud, đang chạy trên Cloud", "Moved to My Cloud and running there");
-  return <span title={label} aria-label={label} role="img" data-cloud-mark={moved.state} className="inline-flex shrink-0 text-accent-text">
-    <Cloud size={13} aria-hidden="true" className={moved.state === "moving" ? "animate-pulse" : undefined} />
+/** A small cloud beside a bot's name: on its way to My Cloud (pulsing), failing and trying again (warning), or there. */
+export function CloudMark({ bot }: { bot: Pick<Bot, "id" | "movedTo"> }) {
+  const known = useBotMoveState();
+  const status = known?.moves?.find((entry) => entry.id === bot.id);
+  const moved = bot.movedTo?.team.id === MY_CLOUD_TEAM ? bot.movedTo : undefined;
+  if (!status && !moved) return null;
+  const failed = status?.phase === "failed";
+  const label = status ? moveStatusText(status) : moved!.state === "moving" ? lx("Đang chuyển lên My Cloud", "Moving to My Cloud") : lx("Đã chuyển lên My Cloud, đang chạy trên Cloud", "Moved to My Cloud and running there");
+  const Icon = failed ? CloudAlert : Cloud;
+  return <span title={label} aria-label={label} role="img" data-cloud-mark={failed ? "failed" : status ? "moving" : moved!.state} className={failed ? "inline-flex shrink-0 text-warning" : "inline-flex shrink-0 text-accent-text"}>
+    <Icon size={13} aria-hidden="true" className={!failed && (status || moved?.state === "moving") ? "animate-pulse" : undefined} />
   </span>;
 }
 

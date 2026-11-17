@@ -31,6 +31,9 @@ import { acpTurnSteering, advertisedCommands, type AcpSteerSupport } from "./ste
 import { pickSessionModel, SessionModelControls, type AcpModelSelection } from "./session-model-controls.ts";
 import { notThisCli, versionFromProbe } from "./version-probe.ts"; import { engineHomes } from "../../engine-homes/engine-homes.ts";
 
+/** How old a discovered model list may get before a snapshot reads it again. */
+const MODEL_LIST_MAX_AGE_MS = 15 * 60_000;
+
 export function skipSubscriptionAuthForLocalInject(model: string | undefined): boolean {
   return Boolean(decodeInjectId(model));
 }
@@ -1528,7 +1531,19 @@ export function createAcpDriver(support: AcpSupport): ProviderDriver<AcpConfig> 
         return startupAck ?? { turnId };
       };
 
-      const snapshot = async (): Promise<ProviderSnapshot> => {
+      // Limix: a model list follows the account. When the signed-in account changes (a Pro login swapped for Ultra, in
+      // the app or in the engine's own CLI), or the list is older than MODEL_LIST_MAX_AGE_MS, a snapshot reads it again.
+      let modelsReadAt = Date.now(), modelsAccount: string | undefined;
+      const followAccount = (taken: ProviderSnapshot): ProviderSnapshot => {
+        if (!support.resolveModels || taken.state !== "available" || taken.authenticated === false) return taken;
+        const account = taken.account ? [taken.account.email ?? "", taken.account.organization ?? "", taken.account.method ?? ""].join("\0") : undefined;
+        const switched = account !== undefined && modelsAccount !== undefined && account !== modelsAccount;
+        if (account !== undefined) modelsAccount = account;
+        if (switched || Date.now() - modelsReadAt > MODEL_LIST_MAX_AGE_MS) { modelsReadAt = Date.now(); void refreshModels(true).catch(() => {}); }
+        return taken;
+      };
+      const snapshot = async (): Promise<ProviderSnapshot> => followAccount(await takeSnapshot());
+      const takeSnapshot = async (): Promise<ProviderSnapshot> => {
         const env = childEnv();
         if (support.snapshot) return support.snapshot(env, config, instanceId);
         const probe = await new Promise<{ version?: string; reason?: string; other?: true }>((resolve) => {

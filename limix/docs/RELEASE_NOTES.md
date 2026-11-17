@@ -1,3 +1,15 @@
+Limix Bot 0.3.69
+
+## Tiếng Việt
+
+- Chuyển bot lên Cloud hiện rõ tiến độ: bot đang chuyển có đám mây nhấp nháy cạnh tên; bot chuyển lỗi có đám mây cảnh báo, rê chuột vào để xem lỗi, số lần đã thử và giờ tự thử lại. Trong menu của bot có "Thử chuyển lên Cloud lại ngay".
+- Danh sách mô hình tự cập nhật theo tài khoản: Google Gemini (Antigravity) dùng CLI `agy` của bạn nay đọc đúng các mô hình của gói đang đăng nhập (ví dụ Ultra có Gemini 4). Với mọi nhà cung cấp tự liệt kê mô hình, danh sách được đọc lại khi đổi tài khoản và tối đa 15 phút một lần.
+
+## English
+
+- Moving bots to Cloud shows its progress: a pulsing cloud beside a bot on its way; a warning cloud when it failed, whose tooltip gives the error, tries and next retry. The bot's menu offers "Retry the move to Cloud now".
+- Model lists follow the account: Google Gemini (Antigravity) with your own `agy` CLI now reads the models of the signed-in plan (Ultra lists Gemini 4). For every provider that lists its own models, the list is read again when the account changes and at most every 15 minutes.
+
 Limix Bot 0.3.68
 
 ## Tiếng Việt
