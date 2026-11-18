@@ -37,5 +37,6 @@ try {
   child.kill('SIGTERM');
   const hardStop = setTimeout(() => child.kill('SIGKILL'), 10000);
   await closed; clearTimeout(hardStop);
-  rmSync(fixture, { recursive: true, force: true });
+  // A file the stopping server still flushes can make the first removal see a non-empty folder; try again briefly.
+  rmSync(fixture, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
 }
