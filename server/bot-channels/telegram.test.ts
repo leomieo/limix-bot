@@ -3,8 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 
-import { createLimixTelegram, telegramChunks } from "./limix-telegram.ts";
-import { PASS } from "./routes/table.ts";
+import { PASS } from "../routes/table.ts";
+import { chunkText, createBotChannels } from "./engine.ts";
+import { telegramAdapter } from "./telegram.ts";
 
 const TOKEN = "123456789:AAH_fake_token_fake_token_fake_tok";
 const cleanups: Array<() => void> = [];
@@ -29,16 +30,18 @@ function fakeTelegram() {
     }
     return Response.json({ ok: false }, { status: 404 });
   });
-  const say = (from: number, text: string, name = "Ana") => queue.push({ message_id: Date.now(), chat: { id: from, type: "private" }, from: { id: from, is_bot: false, first_name: name }, text });
-  return { fetch, sent, say };
+  let messageId = 0;
+  const say = (from: number, text: string, name = "Ana") => queue.push({ message_id: ++messageId, chat: { id: from, type: "private" }, from: { id: from, is_bot: false, first_name: name }, text });
+  const sayInGroup = (from: number, text: string, name = "Ana") => queue.push({ message_id: ++messageId, chat: { id: -100, type: "group" }, from: { id: from, is_bot: false, first_name: name }, text });
+  return { fetch, sent, say, sayInGroup };
 }
 
 function setup() {
   const dir = mkdtempSync(join(tmpdir(), "limix-tg-"));
   const tg = fakeTelegram();
   const asks: Array<{ botId: string; text: string; threadId?: string; owner: boolean }> = [];
-  const telegram = createLimixTelegram({
-    dataDir: dir, apiBase: "https://telegram.test", fetch: tg.fetch as unknown as typeof fetch,
+  const telegram = createBotChannels({
+    dataDir: dir, adapters: [telegramAdapter({ apiBase: "https://telegram.test", fetch: tg.fetch as unknown as typeof fetch })],
     botExists: (id) => id === "b1", manageRefusal: (auth) => (auth.scopes.includes("admin") ? null : "no"),
     ask: async (botId, input) => { asks.push({ botId, text: input.text, ...(input.threadId ? { threadId: input.threadId } : {}), owner: input.owner }); return { threadId: input.threadId ?? `t${asks.length}`, reply: `Đã nhận: ${input.text}` }; },
   });
@@ -97,7 +100,7 @@ it("answers other people only when the owner allows everyone, as a confined call
 
 it("splits a long reply at paragraph and word boundaries to fit Telegram", () => {
   const long = `${"a ".repeat(3000)}\n\n${"b ".repeat(1000)}`;
-  const parts = telegramChunks(long);
+  const parts = chunkText(long, 4096);
   expect(parts.every((part) => part.length <= 4096)).toBe(true);
   expect(parts.join(" ").replace(/\s+/g, " ")).toBe(long.trim().replace(/\s+/g, " "));
 });

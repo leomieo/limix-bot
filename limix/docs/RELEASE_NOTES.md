@@ -1,3 +1,17 @@
+Limix Bot 0.3.81
+
+## Tiếng Việt
+
+- Cài đặt của bot có thêm thẻ **Kênh chat**: cho bot trả lời trên **Telegram**, **Discord**, **Zalo** và **Facebook Page**. Telegram, Discord và Facebook Page dán token; Zalo đăng nhập bằng cách quét mã QR (nên dùng tài khoản Zalo phụ vì đây là cách đăng nhập không chính thức).
+- Mỗi kênh có mã liên kết riêng: bạn gửi `/link MÃ` từ tài khoản của mình là được nhắn với bot như trong app, toàn quyền. Người khác và các nhóm chỉ được trả lời khi bạn bật **Trả lời cả người khác**, và luôn ở chế độ an toàn. Trong nhóm, bot chỉ trả lời khi được gọi tên.
+- Tin trả lời dài tự chia đoạn, tin trùng không trả lời hai lần, gửi lỗi tạm thời thì tự thử lại; Zalo gửi giãn nhịp để giảm rủi ro bị khoá. Với Zalo và Facebook Page, khi chưa bật trả lời người khác thì bot im lặng với người lạ.
+
+## English
+
+- A bot's settings get a **Chat channels** card: the bot can answer on **Telegram**, **Discord**, **Zalo** and a **Facebook Page**. Telegram, Discord and Facebook Page take a pasted token; Zalo signs in by scanning a QR code (use a spare Zalo account, since this sign-in is unofficial).
+- Each channel has its own link code: send `/link CODE` from your own account to talk to the bot as in the app, with full access. Other people and groups are answered only when you turn on **Answer other people too**, always in safe mode. In a group the bot answers only when called by name.
+- Long replies are split, repeated messages are answered once, and temporary send failures are retried; Zalo sends are paced to lower the risk of a lock. On Zalo and a Facebook Page the bot stays silent to strangers until you let it answer other people.
+
 Limix Bot 0.3.80
 
 ## Tiếng Việt

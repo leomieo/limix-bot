@@ -205,7 +205,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     return { status: 200, body: { reply: replyText(after()), thread: threadId } };
   }
 
-  /** Limix: a message from a chat channel this server itself reads (limix-telegram.ts), never from an outside caller. The
+  /** Limix: a message from a chat channel this server itself reads (server/bot-channels), never from an outside caller. The
    * bot's verified owner talks to it as from the app, in a conversation of its own at Full access; anyone else is a
    * Bot API caller, confined. Waits for the answer up to `waitMs`. */
   async function askFromChannel(botId: string, input: { text: string; threadId?: string; title: string; owner: boolean; waitMs?: number }): Promise<{ threadId: string; reply: string; status?: "needs_approval" | "working" }> {

@@ -109,3 +109,11 @@ Teams' display-name rule. Copyright 2025-2026 Vexa.ai Inc. and the Vexa
 contributors, used under the Apache License, Version 2.0
 (third_party/vexa/LICENSE). The adapted parts were rewritten in our own code;
 no Vexa file is included unmodified.
+
+A bot's chat channels (server/bot-channels/) follow the channel adapter
+contract, duplicate filter, retry with backoff and per-account send pacing of
+ChannelHub, https://github.com/TheOwlOps/ChannelHub, Copyright (c) 2026
+TheOwlOps, used under the MIT License (third_party/channelhub/LICENSE). The
+adapted parts were rewritten in our own code; no ChannelHub file is included.
+Zalo sign-in and messaging use zca-js, https://github.com/RFS-ADRENO/zca-js,
+used under the MIT License.
