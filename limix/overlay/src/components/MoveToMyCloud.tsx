@@ -279,7 +279,7 @@ export function MovedToMyCloudRow({ bots }: { bots: readonly Bot[] }) {
           </span>
         </span>
         <span className="flex min-w-0 flex-col">
-          <span className="truncate text-[14px] font-medium text-ink" dir="auto">{bot.name}</span>
+          <span className="truncate text-[14px] font-medium text-ink" dir="auto" data-moved-bot-name="">{bot.name}</span>
           <span className="truncate text-[12px] text-ink-tertiary">{lx("Đang chạy trên My Cloud", "Running on My Cloud")}</span>
         </span>
       </button>

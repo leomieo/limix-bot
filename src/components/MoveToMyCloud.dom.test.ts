@@ -118,7 +118,8 @@ it("the sidebar lists each bot that moved to My Cloud by name with a cloud, and 
   const row = q("[data-moved-to-my-cloud]");
   expect(row!.getAttribute("data-moved-to-my-cloud")).toBe("2");
   expect(row!.querySelector("p")!.textContent).toBe("2 bots live on My Cloud");
-  expect([...row!.querySelectorAll("[data-moved-bot]")].map((item) => item.textContent)).toEqual(["a", "b"]);
+  expect([...row!.querySelectorAll("[data-moved-bot-name]")].map((item) => item.textContent)).toEqual(["a", "b"]);
+  expect(row!.querySelectorAll("[data-moved-bot] [data-cloud-badge]")).toHaveLength(2);
   await click(q('[data-moved-bot="b"]'));
   expect(page.openMyCloud).toHaveBeenCalled();
 });
