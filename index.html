@@ -1,8 +1,22 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="workspace-page">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <style>
+      html.workspace-page { background-color: var(--color-app, light-dark(#fcfcfc, #121212)); color-scheme: var(--code-color-scheme, light dark); }
+    </style>
+    <script>
+      try {
+        const skin = localStorage.getItem("omb-skin");
+        if (skin && skin !== "system") {
+          document.documentElement.dataset.skin = skin;
+          document.documentElement.style.colorScheme = ["atelier", "lagoon", "linen", "daylight", "meadow", "pop"].includes(skin) ? "light" : "dark";
+          document.addEventListener("DOMContentLoaded", () => document.documentElement.style.removeProperty("color-scheme"), { once: true });
+        }
+      } catch {}
+    </script>
     <meta name="theme-color" content="#070707" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />

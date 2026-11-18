@@ -556,15 +556,19 @@ it("ships an edge and a Fly template that keep the server private", () => {
   for (const config of [edgeFile("Caddyfile"), edgeFile("Caddyfile.tls")]) expect(config.match(/^\s*(?:trusted_proxies|client_ip_headers)\b/gm)).toHaveLength(2);
   expect(caddy).not.toMatch(/trusted_proxies|client_ip_headers/);
   const upstreams = [...caddy.matchAll(/reverse_proxy (\S+)/g)].map(match => match[1]);
-  expect(new Set(upstreams)).toEqual(new Set(["127.0.0.1:8799", "127.0.0.1:8800"]));
+  const desktop = "{$OMB_LIMIX_DESKTOP_STREAM:127.0.0.1:1}";
+  expect(new Set(upstreams)).toEqual(new Set(["127.0.0.1:8799", "127.0.0.1:8800", desktop]));
   expect(caddy).toMatch(/handle \/hooks\/\* \{\s*reverse_proxy 127\.0\.0\.1:8800 \{/);
   expect(caddy.match(/127\.0\.0\.1:8800/g)).toHaveLength(1);
   const homeStart = caddy.indexOf("handle @home {");
   let homeEnd = homeStart + "handle @home {".length;
   for (let depth = 1; depth > 0; homeEnd++) depth += caddy[homeEnd] === "{" ? 1 : caddy[homeEnd] === "}" ? -1 : 0;
   expect(caddy.slice(homeStart, homeEnd)).toContain("handle /hooks/* {");
-  expect(caddy.match(/header_up X-Forwarded-For \{client_ip\}/g)).toHaveLength(upstreams.length);
-  expect(caddy.match(/lb_try_interval 50ms/g)).toHaveLength(upstreams.length);
+  expect(caddy.slice(homeStart, homeEnd)).toContain("handle /limix-desktop/* {");
+  expect(caddy).toContain(`reverse_proxy ${desktop} {\n\t\t\theader_up -Cookie\n\t\t\theader_up -Authorization`);
+  const appRoutes = upstreams.filter(upstream => upstream !== desktop);
+  expect(caddy.match(/header_up X-Forwarded-For \{client_ip\}/g)).toHaveLength(appRoutes.length);
+  expect(caddy.match(/lb_try_interval 50ms/g)).toHaveLength(appRoutes.length);
   // The root supervisor's code is root's, maus owns only the volume; the image's last step refuses to build otherwise.
   const dockerfile = readFileSync(join(import.meta.dirname, "../Dockerfile"), "utf8");
   const image = dockerfile.slice(dockerfile.indexOf("FROM runtime AS cloud-home"), dockerfile.indexOf("FROM runtime AS server"));

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { ensureTunnel, homeBootstrapSecret, reconcile, TUNNEL_CONTAINER } from "./host.mjs";
+import { desktopToken, ensureTunnel, homeBootstrapSecret, reconcile, TUNNEL_CONTAINER } from "./host.mjs";
 
 test("applies per-account CPU and RAM independently of plan", async () => {
   const id = randomUUID(), envs=[];
@@ -44,7 +44,7 @@ test("gives each home only its own address and its own bootstrap secret", async 
     if (args[0] === "compose" && args.includes("up")) envs.set(args[args.indexOf("-p") + 1], env);
     return args[0] === "inspect" ? "healthy" : args.includes("-q") ? "fixture" : "";
   }, { origins, hostToken });
-  assert.deepEqual(envs.get("limix-home-" + a), { LIMIX_HOME_ID: a, LIMIX_HOME_ORIGIN: origins[a], LIMIX_HOME_SECRET: homeBootstrapSecret(hostToken, a), LIMIX_HOME_GATEWAY: "1" });
+  assert.deepEqual(envs.get("limix-home-" + a), { LIMIX_HOME_ID: a, LIMIX_HOME_ORIGIN: origins[a], LIMIX_DESKTOP_TOKEN: desktopToken(hostToken, a), LIMIX_HOME_SECRET: homeBootstrapSecret(hostToken, a), LIMIX_HOME_GATEWAY: "1" });
   assert(!envs.has("limix-home-" + b), "a home whose address names another workspace waits");
   assert.deepEqual(reports, [[a, "running"], [b, "starting"]]);
 });

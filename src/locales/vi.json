@@ -2659,6 +2659,7 @@
   "error.plain.busy": "Dịch vụ hiện đang bận. Hãy thử lại sau giây lát.",
   "error.plain.connection": "Kết nối bị gián đoạn. Hãy thử lại.",
   "error.plain.timeout": "Quá trình này mất quá nhiều thời gian. Hãy thử lại.",
+  "error.plain.clientNotAllowed": "Nhà cung cấp chỉ nhận yêu cầu từ một số ứng dụng. Trong Cài đặt → AI, hãy chọn tác nhân lập trình mà nhà cung cấp hỗ trợ.",
   "error.plain.access": "Quyền truy cập bị từ chối. Hãy kiểm tra đăng nhập rồi thử lại.",
   "error.plain.permission": "Máy tính này không cho phép thực hiện điều đó. Hãy kiểm tra quyền của tệp hoặc thư mục rồi thử lại.",
   "error.plain.notFound": "Không tìm thấy mục đó. Có thể mục này đã bị gỡ bỏ.",

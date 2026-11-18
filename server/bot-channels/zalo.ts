@@ -3,10 +3,12 @@
 // so opening Zalo Web elsewhere ends this one (close code 3000).
 import { ChannelError, type ChannelAdapter, type ChannelLogin, type ChannelMessage } from "./engine.ts";
 
+import { receiveZaloMedia, zaloUpload } from "./zalo-media.ts";
+
 const USER = 0, GROUP = 1;
 
 export interface ZaloListener {
-  on(event: "message", listener: (message: { type: number; threadId: string; isSelf: boolean; data: { msgId: string; uidFrom: string; dName?: string; content: unknown; mentions?: Array<{ uid: string; pos: number; len: number }> } }) => void): unknown;
+  on(event: "message", listener: (message: { type: number; threadId: string; isSelf: boolean; data: { msgType?: string; msgId: string; uidFrom: string; dName?: string; content: unknown; mentions?: Array<{ uid: string; pos: number; len: number }> } }) => void): unknown;
   on(event: "connected", listener: () => void): unknown;
   on(event: "closed", listener: (code: number, reason: string) => void): unknown;
   on(event: "error", listener: (error: unknown) => void): unknown;
@@ -17,7 +19,7 @@ export interface ZaloApi {
   listener: ZaloListener;
   getOwnId(): string;
   fetchAccountInfo(): Promise<{ profile?: { displayName?: string; zaloName?: string; username?: string } }>;
-  sendMessage(message: { msg: string }, threadId: string, type: number): Promise<unknown>;
+  sendMessage(message: { msg: string; attachments?: Awaited<ReturnType<typeof zaloUpload>> }, threadId: string, type: number): Promise<unknown>;
   sendTypingEvent(threadId: string, type: number): Promise<unknown>;
 }
 export interface ZaloClient {
@@ -72,11 +74,15 @@ export function zaloAdapter(load: ZaloLoader = loadZcaJs): ChannelAdapter {
           const tag = (event.data.mentions ?? []).find((mention) => mention.uid === self);
           if (!direct && !tag) return;
           const content = event.data.content;
+          const data = content && typeof content === "object" ? content as Record<string, unknown> : {};
+          const photo = event.data.msgType === "chat.photo";
+          const attachmentUrl = (photo || event.data.msgType === "chat.video.msg") && typeof data.href === "string" ? data.href : undefined;
           const said = typeof content !== "string" ? "" : tag && !direct ? content.slice(0, tag.pos) + content.slice(tag.pos + tag.len) : content;
           const message: ChannelMessage = {
             id: String(event.data.msgId), chatId: `${direct ? "u" : "g"}:${event.threadId}`, direct,
             from: { id: String(event.data.uidFrom), name: event.data.dName || String(event.data.uidFrom) },
-            text: said.trim(),
+            text: said.trim() || (attachmentUrl && typeof data.title === "string" ? data.title : ""),
+            ...(attachmentUrl ? { loadMedia: () => receiveZaloMedia(attachmentUrl, photo) } : {}),
             ...(typeof content === "string" ? {} : { media: true }),
           };
           io.deliver(message);
@@ -88,6 +94,10 @@ export function zaloAdapter(load: ZaloLoader = loadZcaJs): ChannelAdapter {
         send: async (chatId, text) => {
           const target = thread(chatId);
           await api.sendMessage({ msg: text }, target.id, target.type).catch((error: unknown) => { throw new ChannelError("retry", `Zalo: ${error instanceof Error ? error.message : String(error)}`); });
+        },
+        sendMedia: async (chatId, file) => {
+          const target = thread(chatId);
+          await api.sendMessage({ msg: "", attachments: await zaloUpload(file) }, target.id, target.type);
         },
         typing: async (chatId) => { const target = thread(chatId); await api.sendTypingEvent(target.id, target.type); },
       };

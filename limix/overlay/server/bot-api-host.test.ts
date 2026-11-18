@@ -393,6 +393,21 @@ describe("the Bot API door on the webhook receiver", () => {
     expect(first.body).toEqual({ reply: "Here is the answer.", thread: expect.any(String) });
   });
 
+  it.each([true, false])("returns only the current channel reply's media (owner=%s)", async owner => {
+    const photo = { kind: "image" as const, path: "photo.png", mime: "image/png" };
+    const clip = { kind: "file" as const, path: "clip.mp4", mime: "video/mp4", name: "clip.mp4" };
+    const h = await harness((fake, _id, prompt, opts) => {
+      expect(prompt).toContain('<attached-image path="photo.png" />');
+      expect(opts.userMessage.attachments).toEqual([photo]);
+      fake.store.appendMessage(opts.threadId, { role: "bot", kind: "text", text: "Video", attachments: [clip, { ...photo, fromTool: true }] });
+      fake.store.appendMessage(opts.threadId, { role: "user", kind: "text", text: "another request" });
+      fake.store.appendMessage(opts.threadId, { role: "bot", kind: "text", text: "another reply", attachments: [photo] });
+      opts.onSettled({ ok: true, text: "" });
+    });
+    const result = await h.host.askFromChannel("b1", { owner, text: "video please", title: "Fixture", attachment: photo });
+    expect(result).toMatchObject({ reply: "Video", attachments: [clip] });
+  });
+
   it("a channel this server reads gives the owner their own Full-access conversation, and anyone else the confined door", async () => {
     const h = await harness((fake, _botId, prompt, opts) => {
       setTimeout(() => {

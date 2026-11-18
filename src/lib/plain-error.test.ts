@@ -6,8 +6,8 @@ import { requestTooLargeMessage } from "../../shared/request-too-large";
 
 describe("plainErrorLine", () => {
   it.each([
-    ["Failed to fetch", "Couldn't reach MausBot. Check that it's running, then try again."],
-    ["NetworkError when attempting to fetch resource.", "Couldn't reach MausBot. Check that it's running, then try again."],
+    ["Failed to fetch", "Couldn't reach Limix Bot. Check that it's running, then try again."],
+    ["NetworkError when attempting to fetch resource.", "Couldn't reach Limix Bot. Check that it's running, then try again."],
     ["The operation was aborted due to timeout", "That took too long. Try again."],
     ["502 Bad Gateway", "Something went wrong on the other end. Try again."],
     ["500 Internal Server Error", "Something went wrong on the other end. Try again."],
@@ -20,6 +20,7 @@ describe("plainErrorLine", () => {
     ["OpenRouter HTTP 404: model qwen-9 not found", "model qwen-9 not found"],
     ["HTTP 503", "The service is busy right now. Try again in a moment."],
     ["HTTP 502 Bad Gateway", "Something went wrong on the other end. Try again."],
+    ["upstream HTTP 403: 仅支持编程客户端 Codex, Claude Code (client_not_allowed)", "This provider only accepts requests from supported apps. Select a supported coding agent in AI settings."],
     ["upstream HTTP 503 Service Unavailable", "The service is busy right now. Try again in a moment."],
     ["EACCES: permission denied, open '/Users/sam/notes.md'", "This computer didn't allow that. Check the file or folder permissions, then try again."],
     ["upstream HTTP 401: {\"error\":{\"message\":\"invalid x-api-key\"}}", "Access was refused. Check the sign-in, then try again."],

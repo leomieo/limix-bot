@@ -30,6 +30,11 @@ export function homeBootstrapSecret(hostToken, workspaceId) {
   return createHmac("sha256", hostToken).update("limix-cloud-bootstrap-v1:" + workspaceId).digest("base64url");
 }
 
+export function desktopToken(hostToken, workspaceId) {
+  return "box_omb_" + createHmac("sha256", hostToken).update("limix-desktop-v1:" + workspaceId).digest("base64url");
+}
+
+
 function originFor(id, origins) {
   const origin = origins?.[id];
   if (typeof origin !== "string" || !new RegExp(`^https://lc-${id.replace(/-/g, "")}\\.[a-z0-9.-]+$`).test(origin)) return null;
@@ -80,9 +85,9 @@ export async function reconcile(homes, capacity, report, command = docker, { ori
       const origin = originFor(id, origins);
       if (!origin || !hostToken) state = "starting";
       else try {
-        const env = { ...(images[id] ? { LIMIX_HOME_IMAGE: images[id] } : {}), LIMIX_HOME_ID: id, LIMIX_HOME_ORIGIN: origin, LIMIX_HOME_SECRET: homeBootstrapSecret(hostToken, id), LIMIX_HOME_GATEWAY: gateway, ...(resources[id] ? { LIMIX_HOME_CPUS: String(resources[id].cpus), LIMIX_HOME_MEMORY_GB: String(resources[id].memoryGb) } : {}) };
+        const env = { ...(images[id] ? { LIMIX_HOME_IMAGE: images[id] } : {}), LIMIX_HOME_ID: id, LIMIX_HOME_ORIGIN: origin, LIMIX_DESKTOP_TOKEN: desktopToken(hostToken, id), LIMIX_HOME_SECRET: homeBootstrapSecret(hostToken, id), LIMIX_HOME_GATEWAY: gateway, ...(resources[id] ? { LIMIX_HOME_CPUS: String(resources[id].cpus), LIMIX_HOME_MEMORY_GB: String(resources[id].memoryGb) } : {}) };
         // --remove-orphans: a home from the earlier beta still has its separate edge container.
-        await compose(id, ["up", "-d", "--no-build", "--remove-orphans", "home"], env);
+        await compose(id, ["up", "-d", "--no-build", "--remove-orphans", "home", "desktop"], env);
         const container = await compose(id, ["ps", "-q", "home"], env);
         const health = container && await command(["inspect", "--format", "{{.State.Health.Status}}", container]);
         state = health === "healthy" ? "running" : health === "starting" ? "starting" : "failed";
@@ -152,7 +157,7 @@ if (import.meta.main) {
         const limit = resources?.[id];
         return docker(["compose", "-f", composeFile, "-p", prefix + id, ...args], {
           LIMIX_HOME_IMAGE: image || updates.state.homes[id]?.image || process.env.LIMIX_HOME_IMAGE,
-          LIMIX_HOME_ID: id, LIMIX_HOME_ORIGIN: originFor(id, origins), LIMIX_HOME_SECRET: homeBootstrapSecret(token, id),
+          LIMIX_HOME_ID: id, LIMIX_HOME_ORIGIN: originFor(id, origins), LIMIX_DESKTOP_TOKEN: desktopToken(token, id), LIMIX_HOME_SECRET: homeBootstrapSecret(token, id),
           LIMIX_HOME_GATEWAY: process.env.LIMIX_HOME_GATEWAY ?? "1",
           ...(limit ? { LIMIX_HOME_CPUS: String(limit.cpus), LIMIX_HOME_MEMORY_GB: String(limit.memoryGb) } : {}),
         });

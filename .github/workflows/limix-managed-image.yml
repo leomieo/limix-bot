@@ -24,7 +24,11 @@ jobs:
           docker build --target cloud-home --build-arg 'CLOUD_HOME_ENGINES=@anthropic-ai/claude-code @openai/codex' -t limix-cloud-home:beta .
           v=$(node -p "require('./package.json').version")
           docker build -f deploy/managed-beta/Dockerfile --label com.limix.managed-update=1 --label org.opencontainers.image.version="$v" --label org.opencontainers.image.source=https://github.com/leomieo/limix-bot -t limix-managed-home:beta .
+      - name: Build shared desktop
+        run: docker build -t limix-desktop:fixture deploy/managed-beta/desktop
       - name: Verify image and isolated homes
+        env:
+          LIMIX_DESKTOP_IMAGE: limix-desktop:fixture
         run: |
           node --test deploy/managed-beta/host.test.mjs deploy/managed-beta/updater.test.mjs
           LIMIX_HOME_IMAGE=limix-managed-home:beta node deploy/managed-beta/smoke.mjs
@@ -36,4 +40,6 @@ jobs:
           echo "$TOKEN" | docker login ghcr.io -u '${{ github.actor }}' --password-stdin
           v=$(node -p "require('./package.json').version")
           docker tag limix-managed-home:beta "ghcr.io/leomieo/limix-bot:managed-v$v"
+          docker tag limix-desktop:fixture "ghcr.io/leomieo/limix-bot:desktop-v$v"
+          docker push "ghcr.io/leomieo/limix-bot:desktop-v$v"
           docker push "ghcr.io/leomieo/limix-bot:managed-v$v"

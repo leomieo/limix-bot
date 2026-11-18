@@ -3,6 +3,21 @@
 # pipe. The Limix Cloud Admin (cloud.limixmedia.com) signs pairing requests with that secret. The host's tunnel reaches
 # the edge on :8080 by the alias home-<workspace id>; the edge answers only for the home's own address.
 services:
+  desktop:
+    image: ${LIMIX_DESKTOP_IMAGE:-ghcr.io/leomieo/limix-bot:desktop-v0.3.86}
+    shm_size: 512m
+    mem_limit: 2g
+    pids_limit: 512
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      LIMIX_DESKTOP_TOKEN: ${LIMIX_DESKTOP_TOKEN:-}
+      LIMIX_DESKTOP_ORIGIN: ${LIMIX_HOME_ORIGIN:-}
+    volumes:
+      - desktop-home:/home/cua
+      - desktop-state:/var/lib/limix-desktop
+    networks: [desktop]
   home:
     image: ${LIMIX_HOME_IMAGE:?Set the operator-built Limix Cloud home image}
     pull_policy: never
@@ -18,6 +33,9 @@ services:
       com.limix.managed-home: "beta-xeon"
     environment:
       OMB_CLOUD_ROLE: home
+      OMB_CLOUD_BOAT_URL: http://desktop:7000/v1
+      OMB_CLOUD_BOAT_TOKEN: ${LIMIX_DESKTOP_TOKEN:-}
+      OMB_LIMIX_DESKTOP_STREAM: desktop:7001
       OMB_CLOUD_MACHINE_ID: ${LIMIX_HOME_ID:-fixture}
       OMB_CLOUD_ADMIN_URL: https://cloud.limixmedia.com
       OMB_CLOUD_BOOTSTRAP_SECRET: ${LIMIX_HOME_SECRET:-}
@@ -26,11 +44,15 @@ services:
       # Its own volume: an earlier beta home's `data` volume (another layout) is kept as it was, never reused.
       - cloud:/data
     networks:
+      desktop: {}
       edge:
         aliases: ["home-${LIMIX_HOME_ID:-fixture}"]
 networks:
+  desktop: {}
   edge:
     external: true
     name: limix-managed-edge
 volumes:
   cloud: {}
+  desktop-home: {}
+  desktop-state: {}

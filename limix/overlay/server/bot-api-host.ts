@@ -2,6 +2,7 @@
 // message in, the bot's reply out; the turn it starts is outside work (the "api" trigger), so it never acts for the
 // person, is told the message came from outside, and anything that needs an approval waits for the person in the thread.
 // Inside: the app's routes to switch it on, mint a key and switch it off, open only to whoever may edit the bot.
+import type { ChannelMedia } from "./bot-channels/zalo-media.ts";
 import { z } from "zod";
 
 import { redactSecretsInText } from "../shared/redact.ts";
@@ -120,6 +121,13 @@ function replyText(lines: readonly Message[]): string {
   return redactSecretsInText(picked.map((line) => line.text!.trim()).join("\n\n"));
 }
 
+function messagesAfter(lines: Message[], id: string) {
+  const start = lines.findIndex(line => line.id === id);
+  if (start < 0) return [];
+  const end = lines.findIndex((line, index) => index > start && line.role === "user");
+  return lines.slice(start + 1, end < 0 ? undefined : end);
+}
+
 export function createBotApiHost(deps: BotApiHostDeps) {
   const manager = deps.manager ?? new BotApiManager();
   const waitMs = deps.waitMs ?? BOT_API_DEFAULT_WAIT_MS;
@@ -152,7 +160,18 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     return { reply: replyText(after), thread: threadId };
   }
 
-  async function runCall(botId: string, call: z.output<typeof callSchema>, turnStarted: () => void): Promise<{ status: number; body: BotApiReply }> {
+  function mediaPrompt(text: string, file?: ChannelMedia) {
+    if (!file) return text;
+    const path = file.path.replaceAll("&", "&amp;").replaceAll('"', "&quot;");
+    return text + '\n\n<attached-' + file.kind + ' path="' + path + '" />';
+  }
+
+  function replyMedia(lines: Message[]) {
+    const reply = lines.findLast(line => line.role === "bot" && line.kind === "text");
+    return reply?.attachments?.filter((file): file is ChannelMedia => (file.kind === "image" && !file.fromTool) || (file.kind === "file" && file.mime === "video/mp4")) ?? [];
+  }
+
+  async function runCall(botId: string, call: z.output<typeof callSchema>, turnStarted: () => void, channel?: { attachment?: ChannelMedia; collect(files: ChannelMedia[]): void }): Promise<{ status: number; body: BotApiReply }> {
     const store = deps.store;
     let threadId = call.thread;
     if (threadId !== undefined) {
@@ -174,13 +193,13 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       store.patchTask(botId, threadId, { botApi: true, outside: true });
     }
     const receivedAt = Date.now();
-    const userMessage = store.appendMessage(threadId, { role: "user", kind: "text", text: message, via: "api" });
-    const after = () => { const all = store.messagesFor(threadId!); return all.slice(all.findIndex((line) => line.id === userMessage.id) + 1); };
+    const userMessage = store.appendMessage(threadId, { role: "user", kind: "text", text: message, via: "api", ...(channel?.attachment ? { attachments: [channel.attachment] } : {}) });
+    const after = () => messagesAfter(store.messagesFor(threadId!), userMessage.id);
     let settled: TurnOutcome | undefined;
     let dispatchError: string | undefined;
     markRunning(botId, threadId, true);
     try {
-      await deps.startTurn(botId, botApiPrompt(message, receivedAt), {
+      await deps.startTurn(botId, mediaPrompt(botApiPrompt(message, receivedAt), channel?.attachment), {
         threadId, automationSource: "api", unattended: true, userMessage,
         onSettled: (outcome) => { settled = outcome; markRunning(botId, threadId!, false); },
         onDispatchError: (message) => { dispatchError = message; markRunning(botId, threadId!, false); },
@@ -202,19 +221,21 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     }
     if (pendingCard(after())) return { status: 202, body: { thread: threadId, status: "needs_approval" } };
     if (!settled.ok) fail(502, COULD_NOT_ANSWER, settled.text);
+    channel?.collect(replyMedia(after()));
     return { status: 200, body: { reply: replyText(after()), thread: threadId } };
   }
 
   /** Limix: a message from a chat channel this server itself reads (server/bot-channels), never from an outside caller. The
    * bot's verified owner talks to it as from the app, in a conversation of its own at Full access; anyone else is a
    * Bot API caller, confined. Waits for the answer up to `waitMs`. */
-  async function askFromChannel(botId: string, input: { text: string; threadId?: string; title: string; owner: boolean; waitMs?: number }): Promise<{ threadId: string; reply: string; status?: "needs_approval" | "working" }> {
+  async function askFromChannel(botId: string, input: { text: string; attachment?: ChannelMedia; threadId?: string; title: string; owner: boolean; waitMs?: number }): Promise<{ threadId: string; reply: string; attachments?: ChannelMedia[]; status?: "needs_approval" | "working" }> {
     const store = deps.store;
     if (!input.owner) {
       if (!deps.canConfine(botId)) fail(403, CANNOT_CONFINE);
-      const answer = await runCall(botId, { message: input.text, ...(input.threadId ? { thread: input.threadId } : {}), wait: Math.round((input.waitMs ?? 600_000) / 1000) } as z.output<typeof callSchema>, () => {});
+      let attachments: ChannelMedia[] = [];
+      const answer = await runCall(botId, { message: input.text, ...(input.threadId ? { thread: input.threadId } : {}), wait: Math.round((input.waitMs ?? 600_000) / 1000) } as z.output<typeof callSchema>, () => {}, { attachment: input.attachment, collect(files) { attachments = files; } });
       const body = answer.body as { reply?: string; thread: string; status?: "needs_approval" | "working" };
-      return { threadId: body.thread, reply: body.reply ?? "", ...(body.status ? { status: body.status } : {}) };
+      return { threadId: body.thread, ...(attachments.length ? { attachments } : {}), reply: body.reply ?? "", ...(body.status ? { status: body.status } : {}) };
     }
     let threadId = input.threadId;
     const known = threadId ? store.taskByThread(botId, threadId) : undefined;
@@ -226,13 +247,13 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       if (!task) fail(404, "no such bot");
       threadId = task.threadId;
     }
-    const userMessage = store.appendMessage(threadId, { role: "user", kind: "text", text: input.text });
-    const after = () => { const all = store.messagesFor(threadId!); return all.slice(all.findIndex((line) => line.id === userMessage.id) + 1); };
+    const userMessage = store.appendMessage(threadId, { role: "user", kind: "text", text: input.text, ...(input.attachment ? { attachments: [input.attachment] } : {}) });
+    const after = () => messagesAfter(store.messagesFor(threadId!), userMessage.id);
     let settled: TurnOutcome | undefined;
     let dispatchError: string | undefined;
     markRunning(botId, threadId, true);
     try {
-      await deps.startTurn(botId, input.text, {
+      await deps.startTurn(botId, mediaPrompt(input.text, input.attachment), {
         threadId, unattended: true, userMessage,
         onSettled: (outcome) => { settled = outcome; markRunning(botId, threadId!, false); },
         onDispatchError: (message) => { dispatchError = message; markRunning(botId, threadId!, false); },
@@ -250,7 +271,8 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       await new Promise((resolve) => setTimeout(resolve, POLL_MS));
     }
     if (!settled.ok) fail(502, COULD_NOT_ANSWER, settled.text);
-    return { threadId, reply: replyText(after()) };
+    const attachments = replyMedia(after());
+    return { threadId, reply: replyText(after()), ...(attachments.length ? { attachments } : {}) };
   }
 
   const door: IngressDoor = async (req, res, url) => {

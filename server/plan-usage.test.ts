@@ -599,11 +599,13 @@ describe("plan usage fetcher", () => {
     const accounts = planAccountsFromInstances({
       codex: { driver: "codex" },
       chatgpt: { driver: "codex", displayName: "ChatGPT plan", config: { authMode: "chatgpt-plan" } },
+      direct: { driver: "codex", config: { endpoint: { models: ["example"], url: "https://api.example.test/v1" } } },
     });
     // Still listed, so a refusal-based hold names it properly.
     expect(accounts).toEqual([
       { id: "codex", name: "Codex", driver: "codex", environment: {} },
       { id: "chatgpt", name: "ChatGPT plan", driver: "codex", environment: {}, noUsage: true },
+      { id: "direct", name: "Codex", driver: "codex", environment: {}, noUsage: true },
     ]);
     const fetchImpl = vi.fn<PlanFetch>(async () => jsonResponse({ rate_limit: { primary_window: { used_percent: 100 } } }));
     const report = await fetchPlanUsage(accounts, {

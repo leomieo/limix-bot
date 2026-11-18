@@ -250,6 +250,7 @@ export function cloudHomeChildEnvironments(config: CloudHomeConfig, env: NodeJS.
     PATH: env.PATH ?? "/usr/local/bin:/usr/bin:/bin", HOME: "/tmp/omb-edge",
     XDG_DATA_HOME: "/tmp/omb-edge/data", XDG_CONFIG_HOME: "/tmp/omb-edge/config",
     OMB_CLOUD_PUBLIC_HOST: cloudHomeHost(config),
+    ...(env.OMB_LIMIX_DESKTOP_STREAM === "desktop:7001" ? { OMB_LIMIX_DESKTOP_STREAM: "desktop:7001" } : {}),
     // A plan whose home sleeps: requests wait this long for the server while it starts (deploy/fly/Caddyfile). Unset: 0s.
     OMB_CLOUD_EDGE_HOLD: edgeHold(env.OMB_CLOUD_EDGE_HOLD),
     ...edgeClientAddress(env),

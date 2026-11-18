@@ -9,3 +9,10 @@ test("WSL maps Windows compose paths and passes secrets through environment only
  assert.equal(r.env.LIMIX_BETA_HOST_TOKEN,undefined);assert(!r.env.WSLENV.includes("LIMIX_BETA_HOST_TOKEN"));
 });
 test("WSL distro cannot inject command arguments",()=>assert.throws(()=>dockerInvocation([],{LIMIX_DOCKER_WSL_DISTRO:"bad --exec"})));
+test("WSL forwards the desktop image and credential without placing the credential in arguments", () => {
+  const env = { LIMIX_DOCKER_WSL_DISTRO: "Fixture", LIMIX_DESKTOP_IMAGE: "desktop:fixture", LIMIX_DESKTOP_TOKEN: "fixture-desktop" };
+  const invocation = dockerInvocation(["compose", "up", "-d", "home", "desktop"], env);
+  assert(invocation.env.WSLENV.split(":").includes("LIMIX_DESKTOP_TOKEN/u"));
+  assert(invocation.env.WSLENV.split(":").includes("LIMIX_DESKTOP_IMAGE/u"));
+  assert(!invocation.args.includes(env.LIMIX_DESKTOP_TOKEN));
+});

@@ -59,7 +59,8 @@ function leaveRailRoom() {
   if (!railBeside) { railRoom?.remove(); railRoom = null; return; }
   railRoom ??= document.createElement("style");
   const room = `${Math.round((railBeside / zoom) * 100) / 100}px`;
-  railRoom.textContent = `html { box-sizing: border-box !important; padding-left: ${room} !important; --rail-beside: ${room}; }`;
+  const css = `html { box-sizing: border-box !important; padding-left: ${room} !important; --rail-beside: ${room}; }`;
+  if (railRoom.textContent !== css) railRoom.textContent = css;
   if (!railRoom.isConnected) (document.head ?? document.documentElement).append(railRoom);
 }
 const railState = (state) => ({ available: state?.available === true, hidden: state?.hidden === true });

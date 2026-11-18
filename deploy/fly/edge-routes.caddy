@@ -15,6 +15,12 @@ handle /api/health {
 # Everything else answers only for this machine's own public name.
 @home host {$OMB_CLOUD_PUBLIC_HOST}
 handle @home {
+	handle /limix-desktop/* {
+		reverse_proxy {$OMB_LIMIX_DESKTOP_STREAM:127.0.0.1:1} {
+			header_up -Cookie
+			header_up -Authorization
+		}
+	}
 	# Webhook ingress has its own per-hook secrets.
 	handle /hooks/* {
 		reverse_proxy 127.0.0.1:8800 {

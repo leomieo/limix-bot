@@ -1,3 +1,19 @@
+Limix Bot 0.3.86
+
+## Tiếng Việt
+
+- Các bot trong cùng một My Cloud có thể dùng chung màn hình Linux để mở trang web, gõ chữ, bấm chuột và chụp màn hình khi máy chủ đã cập nhật.
+- Kênh Zalo cá nhân hỗ trợ nhận và trả lời bằng ảnh JPG, PNG, WebP (tối đa 10 MB) và video MP4 (tối đa 32 MB).
+- Khi dùng tài khoản API riêng, Limix Bot hiển thị lỗi truy cập của nhà cung cấp và tránh hiển thị hạn mức của gói ChatGPT đã đăng xuất.
+- Khi chuyển giữa máy này và My Cloud, cửa sổ dùng màu nền của giao diện đã chọn ngay khi bắt đầu tải.
+
+## English
+
+- Bots in the same My Cloud can share a Linux desktop to open web pages, type, click and take screenshots once the host is updated.
+- Personal Zalo chats support incoming and outgoing JPG, PNG and WebP images (up to 10 MB) and MP4 videos (up to 32 MB).
+- When you use a separate API account, Limix Bot reports provider access errors and omits usage limits from a signed-out ChatGPT subscription.
+- Switching between this computer and My Cloud now uses your selected theme's background as the window loads.
+
 Limix Bot 0.3.85
 
 ## Tiếng Việt

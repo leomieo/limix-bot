@@ -10,6 +10,7 @@ import { mkdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { z } from "zod";
 
+import type { ChannelMedia } from "./zalo-media.ts";
 import { writeFileAtomic } from "../atomic.ts";
 import type { RequestAuth } from "../request-auth.ts";
 import { PASS, type RouteHandler } from "../routes/table.ts";
@@ -26,6 +27,7 @@ export interface ChannelMessage {
   direct: boolean;
   /** Carried a photo, file or sticker this server cannot read yet. */
   media?: boolean;
+  loadMedia?(): Promise<ChannelMedia>;
 }
 
 /** Why a connection or a send failed: "auth" stops the channel until a new secret, "conflict" and "retry" try again. */
@@ -47,6 +49,7 @@ export interface ChannelIo {
 
 export interface ChannelSession {
   send(chatId: string, text: string): Promise<void>;
+  sendMedia?(chatId: string, file: ChannelMedia): Promise<void>;
   typing?(chatId: string): Promise<void>;
   /** Settles when the connection ends for good; rejects with a ChannelError. */
   done: Promise<void>;
@@ -68,7 +71,7 @@ export interface ChannelAdapter {
 }
 
 export interface ChannelAsk {
-  (botId: string, input: { text: string; threadId?: string; title: string; owner: boolean }): Promise<{ threadId: string; reply: string; status?: "needs_approval" | "working" }>;
+  (botId: string, input: { text: string; attachment?: ChannelMedia; threadId?: string; title: string; owner: boolean }): Promise<{ threadId: string; reply: string; attachments?: ChannelMedia[]; status?: "needs_approval" | "working" }>;
 }
 
 export interface BotChannelsDeps {
@@ -252,7 +255,7 @@ export function createBotChannels(deps: BotChannelsDeps) {
     const entry = read(kind).bots[botId];
     if (!entry) return;
     const send = (body: string) => reply(adapter, botId, session, message.chatId, body);
-    const command = /^\/(\w+)(?:@\w+)?(?:\s+(.*))?$/s.exec(message.text.trim());
+    const command = message.media ? null : /^\/(\w+)(?:@\w+)?(?:\s+(.*))?$/s.exec(message.text.trim());
     if (command?.[1] === "start" && !command[2]) return void await send(say.start);
     if (command?.[1] === "link") {
       if (adapter.guestsOnly) return;
@@ -270,16 +273,22 @@ export function createBotChannels(deps: BotChannelsDeps) {
       patch(kind, botId, (current) => { const chats = { ...current.chats }; delete chats[conversation]; return { ...current, chats }; });
       return void await send(say.fresh);
     }
-    if (!message.text.trim()) return void await send(say.textOnly);
+    if (!message.text.trim() && !message.loadMedia) return void await send(say.textOnly);
     const pulse = () => void session.typing?.(message.chatId).catch(() => {});
     pulse();
     const typing = setInterval(pulse, 4_000);
     try {
       const known = read(kind).bots[botId]?.chats[conversation];
-      const answer = await deps.ask(botId, { text: message.text, ...(known ? { threadId: known } : {}), title: `${adapter.label} · ${message.from.name}`, owner });
+      let attachment: ChannelMedia | undefined;
+      try { attachment = await message.loadMedia?.(); }
+      catch { return void await send("Bot chưa đọc được tệp này. Bạn hãy gửi lại ảnh JPG, PNG, WebP (tối đa 10 MB) hoặc video MP4 (tối đa 32 MB)."); }
+      const answer = await deps.ask(botId, { text: message.text || (attachment?.kind === "image" ? "Ảnh gửi qua Zalo" : "Video gửi qua Zalo"), ...(attachment ? { attachment } : {}), ...(known ? { threadId: known } : {}), title: `${adapter.label} · ${message.from.name}`, owner });
       patch(kind, botId, (current) => ({ ...current, chats: { ...current.chats, [conversation]: answer.threadId } }));
       clearInterval(typing);
-      await send(answer.reply.trim() || (answer.status === "needs_approval" ? say.approval : answer.status === "working" ? say.working : say.empty));
+      const sendMedia = session.sendMedia;
+      const media = sendMedia ? answer.attachments ?? [] : [];
+      if (sendMedia) for (const file of media) await paced(adapter, botId, () => sendMedia(message.chatId, file));
+      if (answer.reply.trim() || !media.length) await send(answer.reply.trim() || (answer.status === "needs_approval" ? say.approval : answer.status === "working" ? say.working : say.empty));
     } catch (error) {
       log(`${kind}: ${failure(error)}`);
       await send(say.failed);

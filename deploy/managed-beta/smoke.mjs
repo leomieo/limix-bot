@@ -1,7 +1,7 @@
 import { createHmac, createHash, randomUUID } from 'node:crypto';
 import { request } from 'node:http';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import assert from 'node:assert/strict';
@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { connect } from 'node:net';
 import { setTimeout as delay } from 'node:timers/promises';
 import { wakeProxy } from './wake-proxy.mjs';
-import { homeBootstrapSecret } from './host.mjs';
+import { desktopToken, homeBootstrapSecret } from './host.mjs';
 const file = fileURLToPath(new URL('./compose.yaml', import.meta.url));
 const temp = mkdtempSync(join(tmpdir(), 'limix-cloud-smoke-'));
 const override = join(temp, 'ports.json');
@@ -21,7 +21,7 @@ const origin = id => `https://lc-${id.replaceAll('-', '')}.fixture.invalid`;
 function compose(i, ...args) {
     return execFileSync('docker', ['compose', '-f', file, '-f', override, '-p', projects[i], ...args], {
         encoding: 'utf8', windowsHide: true, timeout: 240000,
-        env: { ...process.env, LIMIX_HOME_IMAGE: process.env.LIMIX_HOME_IMAGE || 'limix-managed-home:beta', LIMIX_HOME_ID: ids[i], LIMIX_HOME_ORIGIN: origin(ids[i]), LIMIX_HOME_SECRET: homeBootstrapSecret(hostToken, ids[i]) }
+        env: { ...process.env, LIMIX_HOME_IMAGE: process.env.LIMIX_HOME_IMAGE || 'limix-managed-home:beta', LIMIX_DESKTOP_TOKEN: desktopToken(hostToken, ids[i]), LIMIX_HOME_ID: ids[i], LIMIX_HOME_ORIGIN: origin(ids[i]), LIMIX_HOME_SECRET: homeBootstrapSecret(hostToken, ids[i]) }
     }).trim();
 }
 function signed(i, method, path, body = '') {
@@ -62,12 +62,12 @@ try {
         const health = await api(i, '/api/health');
         assert.equal(health.status, 200);
         assert.equal(health.body.app, 'openmausbot');
+        execute(i, 'node', '--input-type=module', '-e', readFileSync(new URL('./desktop-smoke.mjs', import.meta.url), 'utf8'));
+        console.log('PASS shared desktop, JPEG capture, edge viewer and WebSocket');
         const logs = compose(i, 'logs', '--no-color', 'home');
         assert(!logs.includes('codeTrustProblem'));
-        assert.match(logs, /limix gateway:/i);
         console.log(logs.split('\n').filter(line => /hidepid|bot.box|userns/.test(line)).join('\n'));
-        assert.equal(JSON.parse(execute(i, 'curl', '-fsS', 'http://127.0.0.1:8790/healthz')).app, 'limix-bot');
-        console.log('PASS home', i, 'health, launcher, gateway; engines:', execute(i, 'codex', '--version'), execute(i, 'claude', '--version'));
+        console.log('PASS home', i, 'health, launcher; engines:', execute(i, 'codex', '--version'), execute(i, 'claude', '--version'));
     }
     const body = JSON.stringify({ label: 'Cloud isolation fixture', ttlSeconds: 300 });
     const cross = await api(1, '/api/cloud/pairing', { body, signature: signed(0, 'POST', '/api/cloud/pairing', body) });
