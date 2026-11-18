@@ -1430,6 +1430,7 @@
   "cloudSend.botMove.menu": "Move to My Cloud",
   "cloudSend.botMove.confirmTitle": "Move {bot} to My Cloud?",
   "cloudSend.botMove.confirmBody": "{bot} moves to My Cloud and works there from then on. Choose what goes with it; your other bots stay on this computer.",
+  "cloudSend.botMove.levelLate": "This move is already past copying, so what it carries can no longer change.",
   "cloudSend.botMove.confirm": "Move",
   "cloudSend.botMove.moving": "Moving {bot} to My Cloud…",
   "cloudSend.botMove.movingMany": "Moving {count} bots to My Cloud…",

@@ -129,6 +129,8 @@ export interface CloudSendPageBridge {
   /** Moves everything to My Cloud: this computer's one-time move. */
   moveEverything?(): Promise<BotMoveState>;
   botMoveRetry?(): Promise<BotMoveView | null>;
+  /** A move still copying carries this much from its next pass; refused once past copying. */
+  botMoveLevel?(ids: string[], level: MoveLevel): Promise<BotMoveState>;
   /** Shows My Cloud in this window. */
   openMyCloud?(): Promise<void>;
   /** The switch "Keep this computer's bots on this computer"; absent from an older desktop. */
@@ -143,7 +145,7 @@ export interface BotMoveView { bot: { id: string; name: string }; team: { id: st
  * setting up, failed, ended, not taking bots, or this computer's whole team is on its way. */
 export type BotMoveBlock = "signed-out" | "no-cloud" | "setting-up" | "failed" | "ended" | "no-moves" | "busy";
 /** One bot on its way to My Cloud: moving, or failing and trying again by itself at retryAt. */
-export interface BotMoveStatus { id: string; name: string; phase: "moving" | "failed"; step: string; error?: string; retryAt?: number; tries?: number }
+export interface BotMoveStatus { id: string; name: string; phase: "moving" | "failed"; step: string; level?: MoveLevel; error?: string; retryAt?: number; tries?: number }
 /** How much a chosen bots' move carries: the bot alone, with its text chats, or everything with attachments and files. */
 export type MoveLevel = "bot" | "chats" | "full";
 

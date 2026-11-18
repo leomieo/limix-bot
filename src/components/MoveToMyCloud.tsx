@@ -171,6 +171,8 @@ function blockedHint(blocked: BotMoveState["blocked"]): string {
 export function useMoveToMyCloud() {
   const known = useBotMoveState();
   const [asked, setAsked] = useState<Bot | null>(null);
+  // A bot already on its way, asked to carry another amount: its move's next pass carries the new level.
+  const [releveling, setReleveling] = useState(false);
   const [choosing, setChoosing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [level, setLevel] = useState<MoveLevel>("bot");
@@ -180,7 +182,8 @@ export function useMoveToMyCloud() {
     if (!asked || !page?.moveBots) return;
     setBusy(true);
     setError(null);
-    void page.moveBots([asked.id], level).then(() => setAsked(null), (cause: unknown) => setError(ipcErrorText(cause) ?? t("cloudSend.choose.failed"))).finally(() => setBusy(false));
+    const done = releveling && page.botMoveLevel ? page.botMoveLevel([asked.id], level).then(readShared) : page.moveBots([asked.id], level);
+    void done.then(() => setAsked(null), (cause: unknown) => setError(ipcErrorText(cause) ?? t("cloudSend.choose.failed"))).finally(() => setBusy(false));
   };
   const names = { bot: asked?.name ?? "" };
   return {
@@ -191,21 +194,25 @@ export function useMoveToMyCloud() {
       if (status) return [
         item(<Cloud size={16} className="text-ink-secondary" />, t("cloudSend.botMove.menu"), undefined, { disabled: true, hint: moveStatusText(status) }),
         ...(status.phase === "failed" && bridge()?.botMoveRetry ? [item(<RotateCw size={16} className="text-ink-secondary" />, lx("Thử chuyển lên Cloud lại ngay", "Retry the move to Cloud now"), () => { void bridge()!.botMoveRetry!().then(readShared, readShared); })] : []),
+        ...(status.step === "copy" && bridge()?.botMoveLevel ? [item(<ArrowRightLeft size={16} className="text-ink-secondary" />, lx("Đổi dữ liệu chuyển lên Cloud…", "Change what moves to Cloud…"), () => {
+          setError(null); setLevel(status.level ?? "full"); setReleveling(true); setAsked(bot);
+        })] : []),
       ];
       if (!known?.available || moving) return [item(<Cloud size={16} className="text-ink-secondary" />, t("cloudSend.botMove.menu"), undefined, {
         disabled: true,
         hint: moving ? lx("Bot này đang được chuyển lên Cloud.", "This bot is moving to Cloud.") : known === null ? lx("Chưa đọc được trạng thái chuyển bot. Mở Cài đặt → Limix Cloud để kiểm tra kết nối.", "Transfer status is unavailable. Check Settings → Limix Cloud.") : blockedHint(known.blocked),
       })];
-      return [item(<Cloud size={16} className="text-ink-secondary" />, t("cloudSend.botMove.menu"), () => { setError(null); setAsked(bot); }),
+      return [item(<Cloud size={16} className="text-ink-secondary" />, t("cloudSend.botMove.menu"), () => { setError(null); setReleveling(false); setAsked(bot); }),
         item(<ArrowRightLeft size={16} className="text-ink-secondary" />, lx("Chọn nhiều bot để chuyển lên Cloud…", "Choose bots to move to Cloud…"), () => setChoosing(true))];
     },
-    dialog: <>{choosing && <MoveChooser everything={false} onClose={() => { setChoosing(false); readShared(); }} />}<ConfirmDialog open={asked !== null} tone="neutral" icon={<Cloud size={18} />} title={t("cloudSend.botMove.confirmTitle", names)}
+    dialog: <>{choosing && <MoveChooser everything={false} onClose={() => { setChoosing(false); readShared(); }} />}<ConfirmDialog open={asked !== null} tone="neutral" icon={<Cloud size={18} />}
+      title={releveling ? lx(`Đổi dữ liệu chuyển của ${names.bot}`, `Change what ${names.bot} carries`) : t("cloudSend.botMove.confirmTitle", names)}
       body={<span className="flex flex-col gap-2" data-bot-move-confirm="">
-        <span>{t("cloudSend.botMove.confirmBody", names)}</span>
+        <span>{releveling ? lx("Lượt chuyển đang chạy sẽ mang theo mức bạn chọn từ lần chép tiếp theo. Mức nhẹ hơn bỏ qua phần còn lại chưa chép.", "The move under way carries the level you pick from its next copy. A lighter level skips what is not copied yet.") : t("cloudSend.botMove.confirmBody", names)}</span>
         <MoveLevelPicker value={level} onChange={setLevel} disabled={busy} />
         {error && <span role="alert" className="text-danger">{error}</span>}
       </span>}
-      confirmLabel={t("cloudSend.botMove.confirm")} pending={busy} onCancel={() => setAsked(null)} onConfirm={confirm} /></>,
+      confirmLabel={releveling ? lx("Đổi", "Change") : t("cloudSend.botMove.confirm")} pending={busy} onCancel={() => setAsked(null)} onConfirm={confirm} /></>,
   };
 }
 

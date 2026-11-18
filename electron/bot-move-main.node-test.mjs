@@ -211,3 +211,18 @@ test("everything at once stops before copying when the bots' files are over 10 G
   await settle(light);
   assert.equal(light.journal.moves[0].phase, "done", "a lighter choice leaves the files here");
 });
+
+test("a move still copying can carry another level from its next pass; one past copying keeps what it carries", async () => {
+  const w = world({ files: [{ path: "task-workspaces/b0/t/big.bin", size: 11 * 1024 ** 3, sha256: "a".repeat(64) }] });
+  w.journal = { v: 1, moves: [{ bot: { id: "bots-x", name: "Old" }, team: MY_CLOUD, bots: [{ id: "b0", name: "Bot 0" }], phase: "copy", startedAt: 1, tries: 7, failing: true, error: "Some of Old did not reach My Cloud." }] };
+  assert.equal(w.move.status()[0].level, "full", "a move from before the choice carries everything");
+  assert.equal(w.move.relevel(["b0"], "nonsense"), false);
+  assert.equal(w.move.relevel(["b0"], "chats"), true);
+  await settle(w);
+  assert.equal(w.journal.moves[0].level, "chats");
+  assert.equal(w.journal.moves[0].phase, "done", "the lighter level leaves the big files here and the move finishes");
+  assert.ok(w.passes.every((pass) => pass.level === "chats"));
+  const late = world();
+  late.journal = { v: 1, moves: [{ bot: { id: "bots-y", name: "Late" }, team: MY_CLOUD, bots: [{ id: "b0", name: "Bot 0" }], phase: "switch", startedAt: 1 }] };
+  assert.equal(late.move.relevel(["b0"], "bot"), false);
+});

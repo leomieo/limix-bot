@@ -1429,6 +1429,7 @@
   "cloudSend.botMove.menu": "Chuyển sang My Cloud",
   "cloudSend.botMove.confirmTitle": "Chuyển {bot} sang My Cloud?",
   "cloudSend.botMove.confirmBody": "{bot} sẽ chuyển lên My Cloud và làm việc ở đó từ đây. Chọn những gì đi cùng nó; các bot khác của bạn ở lại máy tính này.",
+  "cloudSend.botMove.levelLate": "Lượt chuyển này đã qua bước chép dữ liệu nên không đổi được nữa.",
   "cloudSend.botMove.confirm": "Chuyển",
   "cloudSend.botMove.moving": "Đang chuyển {bot} sang My Cloud…",
   "cloudSend.botMove.movingMany": "Đang chuyển {count} bot sang My Cloud…",

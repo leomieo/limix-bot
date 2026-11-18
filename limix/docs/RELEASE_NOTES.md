@@ -1,3 +1,15 @@
+Limix Bot 0.3.77
+
+## Tiếng Việt
+
+- Bot đang chuyển lên Cloud (kể cả lượt bắt đầu trước khi có tùy chọn) có thêm mục "Đổi dữ liệu chuyển lên Cloud…" trong menu của bot. Chọn lại một trong 3 mức (chỉ bot; bot và đoạn chat văn bản; đầy đủ) và lượt chuyển dùng mức mới ngay từ lần chép tiếp theo. Mức nhẹ hơn bỏ qua phần chưa chép, nên bot có thư mục làm việc rất lớn chuyển xong nhanh hơn nhiều.
+- Lượt chuyển đã qua bước chép dữ liệu thì giữ nguyên mức cũ và báo rõ lý do.
+
+## English
+
+- A bot moving to Cloud (including a move that started before the choice existed) gets "Change what moves to Cloud…" in its menu. Pick one of the 3 levels again (the bot only; the bot and its text chats; everything) and the move uses it from its next copy. A lighter level skips what is not copied yet, so a bot with a very large working folder finishes much sooner.
+- A move already past copying keeps its level and says why.
+
 Limix Bot 0.3.76
 
 ## Tiếng Việt

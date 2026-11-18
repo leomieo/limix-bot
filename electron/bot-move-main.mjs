@@ -151,9 +151,19 @@ export function createBotMove({ journal, local, send, session, lease = null, rea
     view: () => engine.view(),
     seen: () => engine.seen(),
     retry: () => engine.retry(),
+    /** A move still copying carries `level` from now on (its next pass, at once); one past copying keeps what it carries.
+     * True when a move changed. */
+    relevel(ids, level) {
+      if (!LEVELS.has(level)) return false;
+      const asked = new Set(ids);
+      const changing = moves().filter((move) => move.phase === "copy" && !move.stopped && list(move.bots).some((bot) => asked.has(bot.id)));
+      for (const move of changing) note(move.bot.id, { level, tries: 0, failing: false, error: "" });
+      if (changing.length) void engine.retry();
+      return changing.length > 0;
+    },
     /** Each bot on its way now: moving or failing (it tries again by itself at retryAt), with the last error. */
     status: () => moves().filter((move) => move.phase !== "done").flatMap((move) => list(move.bots).map((bot) => ({
-      id: bot.id, name: bot.name, phase: move.failing ? "failed" : "moving", step: move.phase,
+      id: bot.id, name: bot.name, phase: move.failing ? "failed" : "moving", step: move.phase, level: levelOf(move),
       ...(typeof move.error === "string" && move.error ? { error: move.error.slice(0, 300) } : {}),
       ...(Number.isSafeInteger(move.retryAt) ? { retryAt: move.retryAt } : {}),
       ...(Number.isSafeInteger(move.tries) ? { tries: move.tries } : {}),

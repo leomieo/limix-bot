@@ -551,6 +551,8 @@ const bridge = {
     moveEverything: () => isLocalPage || navigator.userActivation?.isActive === true
       ? ipcRenderer.invoke("cloud-send:move-everything") : Promise.reject(new Error("Choose which bots move.")),
     botMoveRetry: () => ipcRenderer.invoke("cloud-send:bot-move-retry"),
+    botMoveLevel: (ids, level) => isLocalPage || navigator.userActivation?.isActive === true
+      ? ipcRenderer.invoke("cloud-send:bot-move-level", Array.isArray(ids) ? ids.map(String) : [], ["bot", "chats", "full"].includes(level) ? level : "bot") : Promise.reject(new Error("Choose what moves.")),
     openMyCloud: () => ipcRenderer.invoke("cloud-send:open-my-cloud"),
     // Settings → MausBot Cloud, Advanced: "Keep this computer's bots on this computer".
     keepHere: () => ipcRenderer.invoke("one-home:keep"),
