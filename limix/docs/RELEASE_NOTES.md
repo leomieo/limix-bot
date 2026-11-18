@@ -1,3 +1,23 @@
+Limix Bot 0.3.76
+
+## Tiếng Việt
+
+- Gỡ hẳn phần kết nối bot Telegram, Zalo, Discord còn sót lại. Muốn bot dùng Telegram hay ứng dụng khác, kết nối trong mục Ứng dụng.
+  - Bỏ ô mở khóa lịch sử chat kênh bằng mật khẩu (trong Cài đặt → AI và danh sách hội thoại), khung báo "chat từ kênh" và nút ẩn/hiện chat khách Telegram/Zalo.
+  - Bot API chỉ còn nhận và trả tin nhắn chữ: bỏ thông tin kênh, tệp đính kèm kèm theo kênh và đường riêng của chủ bot qua kênh.
+  - Bỏ mô-đun Messaging Gateway khỏi mã nguồn.
+  - Các cuộc trò chuyện cũ đến từ kênh vẫn nằm trong app, hiện như mọi cuộc trò chuyện Bot API khác và không cần mở khóa nữa. Dữ liệu cũ trên máy không bị xóa.
+- Mục Ứng dụng vẫn có Telegram như trước.
+
+## English
+
+- The leftover Telegram, Zalo and Discord bot connector is gone for good. To let a bot use Telegram or another app, connect it in Apps.
+  - Removed the password unlock for channel chat history (Settings → AI and the conversation list), the "chat from a channel" notice and the button that hides Telegram/Zalo guest chats.
+  - The Bot API takes and returns text only: no channel details, channel attachments or owner path through a channel.
+  - The Messaging Gateway module is removed from the source.
+  - Earlier conversations that came from a channel stay in the app and show like any other Bot API conversation, with no unlock. Old data on disk is not deleted.
+- Apps still lists Telegram, as before.
+
 Limix Bot 0.3.75
 
 ## Tiếng Việt

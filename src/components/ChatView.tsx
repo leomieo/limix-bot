@@ -1,4 +1,3 @@
-import { ChannelConversationNotice } from "./ChannelConversationNotice";
 import { createContext, memo, use, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch } from "react";
 import { useAdvancedMode } from "@/lib/interface-mode";
 import { PHONE_LAYOUT, useMediaQuery } from "@/lib/use-media-query";
@@ -825,7 +824,6 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
   const phoneMenu = phone && !remoteClient;
   const simpleHead = !advanced && !remoteClient;
   const canWrite = useCanWriteIn(bot.threadId, bot.yourAccess);
-  const channelConversation = profile.tasks?.some((task) => task.threadId === bot.threadId && task.botApi === true) === true;
 
   const computerStarting = computerStartLine(state.computerStarts[bot.id], bot.name); useScreensWhile(Boolean(computerStarting));
   const mascotMotion = state.mascotMotion?.botId === bot.id ? state.mascotMotion : null;
@@ -1276,9 +1274,7 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
         </div>
       )}
       <LiveCallBar bot={bot} />
-      {channelConversation ? (
-        <ChannelConversationNotice key={bot.threadId} onInternal={() => openBot(dispatch,profile,showThreads)} />
-      ) : canWrite === false ? (
+      {canWrite === false ? (
         <NewConversationInstead bot={bot} onNew={() => dispatch({ type: "newTask", botId: bot.id })} />
       ) : (
       <Composer
@@ -1293,7 +1289,7 @@ export function ChatView({ bot: profile }: { bot: Bot }) {
           : undefined}
       />
       )}
-      {canWrite !== false && !channelConversation && (
+      {canWrite !== false && (
       <CitationSelectionToolbar
         key={`${bot.id}:${bot.threadId}`}
         viewportRef={scrollRef}

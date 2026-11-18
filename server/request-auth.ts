@@ -15,11 +15,11 @@ export type LoopbackTrust = "owner" | "service";
 
 export type RequestAuth =
   | {
-    kind: "loopback"; channelReviewUntil?: number; scopes: readonly Scope[]; trust?: "service";
+    kind: "loopback"; scopes: readonly Scope[]; trust?: "service";
     /** Set only on the verified companion-token path: the sidecar's id for the phone that authenticated. */
     companionDevice?: string;
   }
-  | { kind: "session"; channelReviewUntil?: number; session: SessionRecord; via: "bearer" | "cookie" | "ticket"; scopes: readonly Scope[] };
+  | { kind: "session"; session: SessionRecord; via: "bearer" | "cookie" | "ticket"; scopes: readonly Scope[] };
 
 export interface RequestAuthResult {
   auth: RequestAuth | null;

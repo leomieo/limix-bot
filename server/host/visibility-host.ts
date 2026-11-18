@@ -1,4 +1,3 @@
-import { channelReviewActive } from "../limix-channel-review.ts";
 // Who sees what on this server (bot-visibility.ts): each session's viewer and its VisibleSet (cached until the next bot,
 // room or conversation change), the one check every request naming a bot, conversation, room, routine or file passes, and
 // the per-conversation filter a list uses. On a Team Cloud an admin is a viewer with a person too: every bot and room, but
@@ -25,7 +24,7 @@ export function createVisibilityHost(deps: VisibilityHostDeps) {
   const store = { get bots() { return deps.store().bots; }, get groups() { return deps.store().groups; }, bot: (id: string) => deps.store().bot(id),
     group: (id: string) => deps.store().group(id), botByThread: (id: string) => deps.store().botByThread(id), groupByThread: (id: string) => deps.store().groupByThread(id) };
   function viewerFor(auth: RequestAuth): Viewer {
-    if (auth.kind === "loopback" || (auth.scopes.includes("admin") && !deps.team)) return { ...SEES_EVERYTHING, channelReviewUntil: auth.channelReviewUntil };
+    if (auth.kind === "loopback" || (auth.scopes.includes("admin") && !deps.team)) return SEES_EVERYTHING;
     if (auth.scopes.includes("admin")) return { kind: "all", email: auth.session.email ?? "" };
     return { kind: "member", ...(auth.session.email ? { email: auth.session.email } : {}) };
   }
@@ -44,7 +43,6 @@ export function createVisibilityHost(deps: VisibilityHostDeps) {
     return owner ?? undefined;
   }
   function visibleTo(viewer: Viewer): VisibleSet {
-    if (viewer.channelReviewUntil) return new VisibleSet(store.bots, store.groups, { ...viewer, channelReviewUntil: channelReviewActive(viewer.channelReviewUntil) ? viewer.channelReviewUntil : 0 }, threadOwner, deps.audiencesFor(viewer));
     const key = viewer.kind === "all" ? (viewer.email === undefined ? "*" : `admin:${viewer.email.trim().toLowerCase()}`) : `member:${viewer.email?.trim().toLowerCase() ?? ""}`;
     let set = visibleSets.get(key);
     if (!set) {

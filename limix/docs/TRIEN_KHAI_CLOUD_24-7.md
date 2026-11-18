@@ -56,13 +56,10 @@ Khi đang chọn máy chủ, vào phần AI của bot và đăng nhập như tr�
 
 Lưu ý: mỗi người tự đăng nhập tài khoản AI của chính mình. Không dùng chung một tài khoản gói cho nhiều khách.
 
-## Bước 4. Kết nối Telegram / Zalo / Discord (tùy chọn)
+## Bước 4. Telegram và các ứng dụng khác
 
-Từ Limix Bot 0.3.75, bản máy chủ không kèm và không tự chạy chương trình kết nối Telegram/Zalo/Discord. Nếu cần, chạy
-mô-đun riêng `limix/modules/messaging-gateway` (xem README trong thư mục đó) trên một máy luôn bật, rồi nối từng kết nối với
-bot trên máy chủ bằng địa chỉ và khóa **Bot API** của bot đó.
-
-Quan trọng: một bot Telegram/Zalo chỉ nên được kết nối ở **một nơi**, nếu không hai nơi sẽ tranh nhau tin nhắn.
+Limix Bot không còn chương trình kết nối bot Telegram/Zalo/Discord riêng. Muốn bot dùng Telegram hay ứng dụng khác, kết nối
+trong mục **Ứng dụng** của Limix Bot rồi chọn bot nào được dùng.
 
 ## Máy ở nhà hoặc văn phòng (không có IP tĩnh) — dùng đường hầm Cloudflare
 

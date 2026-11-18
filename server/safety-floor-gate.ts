@@ -94,11 +94,8 @@ type PermissionRequest = Pick<Extract<RuntimeEvent, { type: "request.opened" }>,
 /** Never the display summary: cut at 200 characters, a path can read as the directory above it. */
 const commandLineOf = (event: PermissionRequest): string | undefined => event.commandLine ?? event.command?.command;
 
-/** An automatic allow for a command the floor could not read becomes no answer, so a person decides on a card. Limix: the
- * bot's verified owner, writing from Telegram/Zalo at Full access, gave the bot the whole computer and is not at the app to
- * press a card, so a command the floor could not read goes ahead for them; the never-list still denies (denyAtSafetyFloor). */
-export function heldAtSafetyFloor(event: PermissionRequest, verdict: AutoVerdict, scope: { ownerFull?: boolean } = {}): AutoVerdict {
-  if (scope.ownerFull && verdict.approve) return verdict;
+/** An automatic allow for a command the floor could not read becomes no answer, so a person decides on a card. */
+export function heldAtSafetyFloor(event: PermissionRequest, verdict: AutoVerdict): AutoVerdict {
   return verdict.approve && finding(commandLineOf(event)).state === "unreadable" ? { approve: null, source: "safety-floor" } : verdict;
 }
 

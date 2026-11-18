@@ -3,7 +3,6 @@
 // admin still sees only their own private chats, never another person's: audience.ts). A member sees a room
 // only when they can see every bot in it, and bots reach each other only with the same audience (sameAudience): a room
 // transcript or a delegation would otherwise carry a restricted bot's words to people who cannot see it.
-import { isLimixOwnerThread } from "./limix-owner-lane.ts";
 import { z } from "zod";
 
 import { accessFromVisibility, entryMatches, higherLevel, sharedLevel, type BotAccess, type BotAccessLevel } from "../shared/bot-access.ts";
@@ -29,7 +28,7 @@ export type RoutineRef = { botId?: unknown; groupId?: unknown; name?: unknown; s
 
 /** `all`: every bot and room. On a Team Cloud an admin session is `all` with its address, and still sees only the
  * conversations its person may (audience.ts): its own private chats, never another person's. */
-export type Viewer = { kind: "all"; email?: string; channelReviewUntil?: number } | { kind: "member"; email?: string; channelReviewUntil?: number };
+export type Viewer = { kind: "all"; email?: string } | { kind: "member"; email?: string };
 
 export const SEES_EVERYTHING: Viewer = { kind: "all" };
 
@@ -168,7 +167,7 @@ export interface VisibilityBot extends AccessBot {
   threadId: string;
   section?: string;
   avatarUrl?: string | null;
-  tasks?: ReadonlyArray<{ threadId: string; botApi?: true }>;
+  tasks?: ReadonlyArray<{ threadId: string }>;
 }
 
 export interface VisibilityGroup {
@@ -203,7 +202,7 @@ export class VisibleSet {
     this.viewer = viewer;
     this.audiences = audiences ?? null;
     // On a Team Cloud nobody's view is everything, an admin's included: each conversation has its own audience.
-    this.everything = !bots.some(bot => bot.tasks?.some(task => task.botApi)) && this.audiences === null && (viewer.kind === "all" ||
+    this.everything = this.audiences === null && (viewer.kind === "all" ||
       (!bots.some((bot) => isRestricted(bot.visibility)) && !groups.some((group) => isRestricted(group.audienceFloor))));
     this.ownerOf = ownerOf ?? ((threadId) => this.indexedOwner(threadId));
     if (this.everything) return;
@@ -259,7 +258,7 @@ export class VisibleSet {
 
   /** Conversations have audiences of their own (a Team Cloud): a bot's tasks are then filtered one by one. */
   get filtersThreads(): boolean {
-    return this.audiences !== null || [...this.bots.values()].some(bot => bot.tasks?.some(task => task.botApi));
+    return this.audiences !== null;
   }
 
   /** An unknown thread is not visible to a member; on a Team Cloud another person's conversation is visible to nobody,
@@ -280,10 +279,6 @@ export class VisibleSet {
   }
 
   private audienceShows(threadId: string): boolean {
-    const holder = this.ownerOf(threadId);
-    const task = holder?.bot ? this.bots.get(holder.bot)?.tasks?.find(task => task.threadId === threadId) : undefined;
-    // Limix: the bot owner's own Telegram / Zalo chat stays listed; other people's wait for the password unlock.
-    if (task?.botApi && !isLimixOwnerThread(threadId) && (this.viewer.channelReviewUntil ?? 0) <= Date.now()) return false;
     const audience = this.audiences?.of(threadId);
     return audience === undefined || audienceIncludes(audience, { admin: this.viewer.kind === "all", person: this.audiences!.person, seesRoom: (groupId) => this.group(groupId) });
   }

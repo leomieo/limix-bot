@@ -776,22 +776,3 @@ describe("the way back to the bot's own conversation", () => {
 });
 
 
-describe("connected-channel conversation composer", () => {
-  it("keeps the transcript visible and reads only, with the internal-chat entry in place of a composer", () => {
-    const channelBot: Bot = { ...bot, tasks: bot.tasks!.map((task) => ({ ...task, botApi: true })), messages: [{ id: "external", role: "user", kind: "text", at: 1, text: "Customer request", via: "api" }] };
-    const markup = renderToStaticMarkup(createElement(ChatView, { bot: channelBot }));
-    expect(markup).toContain("Customer request");
-    expect(markup).toContain('data-testid="channel-conversation-notice"');
-    expect(markup).toContain("Open internal chat");
-    expect(markup).not.toContain("<textarea");
-    expect(markup).not.toContain("/api/limix/channel-action");
-    expect(markup).not.toContain('data-testid="citation-toolbar"');
-  });
-
-  it("keeps the normal composer on a separate internal chat even when the bot has channel chats", () => {
-    const internalBot: Bot = { ...bot, tasks: [...bot.tasks!, { threadId: "zalo", title: "Zalo", createdAt: 2, botApi: true }] };
-    const markup = renderToStaticMarkup(createElement(ChatView, { bot: internalBot }));
-    expect(markup).not.toContain('data-testid="channel-conversation-notice"');
-    expect(markup).toContain("<textarea");
-  });
-});

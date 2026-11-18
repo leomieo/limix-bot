@@ -1,4 +1,3 @@
-import { BOT_API_INTERNAL_CHAT_REQUIRED } from "../../shared/bot-api.ts";
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { z } from "zod";
@@ -238,7 +237,6 @@ export function createBotMessageRoutes(deps: BotMessageRouteDeps): RouteHandler 
       if ((pressed || fromAnApp) && store.groupByThread(threadId)) return json(res, 409, { error: ROOM_VIEW_ONLY });
       const notYours = cloudGuestSendRefusal(auth, threadId);
       if (notYours) return json(res, 403, { error: notYours });
-      if (store.taskByThread(bot.id, threadId)?.botApi) return json(res, 409, { error: BOT_API_INTERNAL_CHAT_REQUIRED, code: "channel_thread" });
       if (body.mode !== undefined && body.mode !== "chat" && body.mode !== "goal") return json(res, 400, { error: "mode must be chat or goal" });
       if (body.mode === "goal") {
         if (guarded || pressed || fromAnApp || pointing) return json(res, 400, { error: "a goal is a plain typed message" });

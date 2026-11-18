@@ -20,7 +20,6 @@ export function botApiCurl(endpoint: string, key: string = BOT_API_KEY_PLACEHOLD
 
 /** A Bot API answer: `reply` once the bot answered; otherwise what the caller should do next. */
 export type BotApiReply =
-  | { reply: string; thread: string; attachments?: Array<{ name: string; mime: string; data: string; size: number; kind: "image" | "video" | "audio" | "file" }>; mediaError?: boolean }
+  | { reply: string; thread: string }
   | { thread: string; status: "working" | "needs_approval" };
 
-export const BOT_API_INTERNAL_CHAT_REQUIRED = "This conversation belongs to a connected channel. Open the bot internal chat to configure it; channel messages must arrive through its Bot API.";

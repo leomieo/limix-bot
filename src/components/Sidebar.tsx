@@ -486,7 +486,7 @@ export function BotThreadList({ bot, selected, query, pendingQueued, reveal, loc
   const bulk = useBulkSelect();
   const { own: ownTasks, helpers } = bulk.active ? { own: tasks, helpers: [] } : partitionHelperThreads(tasks, bot.threadId, query, projects);
   // Limix: a bot set to hide guest Telegram / Zalo chats leaves them out here too; the owner's chat and the open one stay.
-  const listedTasks = bot.hideChannelGuests ? ownTasks.filter((task) => !task.botApi || task.channelOwner || task.threadId === bot.threadId) : ownTasks;
+  const listedTasks = ownTasks;
   const visibleTasks = orderedThreadList(visibleSidebarThreads(listedTasks, bot.threadId, query, projects, showAll || bulk.active));
   const visibleProjectIndex = (projectId: string) => visibleTasks.findIndex((task) => task.projectId === projectId);
   const folderRank = (projectId: string) => {

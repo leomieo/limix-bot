@@ -42,12 +42,12 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Verify the messaging gateway module
+      - name: Verify the app carries no messaging gateway
         run: |
-          node --test electron/limix-docker-mac.node-test.mjs electron/messaging-module.node-test.mjs limix/modules/messaging-gateway/test/*.test.mjs
-          node node_modules/vitest/vitest.mjs run src/components/MessagingGatewayClipboard.dom.test.ts src/components/MessagingGatewaySetup.dom.test.ts src/lib/copy-text.test.ts src/lib/copy-text.guard.test.ts
-      - name: Verify channel isolation and privacy
-        run: node node_modules/vitest/vitest.mjs run server/limix-channel-review.test.ts server/limix-channel-identity.test.ts server/bot-api-host.test.ts src/state/thread-navigation.test.ts
+          node --test electron/limix-docker-mac.node-test.mjs electron/messaging-module.node-test.mjs
+          node node_modules/vitest/vitest.mjs run src/lib/copy-text.test.ts src/lib/copy-text.guard.test.ts
+      - name: Verify Bot API threads and navigation
+        run: node node_modules/vitest/vitest.mjs run server/bot-api-host.test.ts src/state/thread-navigation.test.ts
       - name: Verify Responses image generation
         run: node node_modules/vitest/vitest.mjs run server/limix-image-routing.test.ts server/limix-image-routing.e2e.test.ts server/image-generation.test.ts server/limix-image-connections.test.ts server/routes/image-settings.test.ts server/routes/image-tools.test.ts src/components/ImageGenerationSettings.test.ts
       - name: Verify transfer and skill changes

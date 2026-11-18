@@ -2,7 +2,7 @@ import { waitForInstalledUi } from "./limix-install-ready.mjs";
 import { createLimixSignOutHandler } from "./limix-sign-out.mjs";
 import { app, autoUpdater as nativeAutoUpdater, BrowserWindow, Tray, WebContentsView, clipboard, desktopCapturer, dialog, globalShortcut, ipcMain, Menu, nativeImage, Notification, net, powerMonitor, powerSaveBlocker, safeStorage, screen, session, shell, systemPreferences, utilityProcess, nativeTheme } from "electron";
 import { LIMIX_ACCOUNT_URL, LIMIX_CLOUD_ENABLED, LIMIX_CLOUD_SALES, LIMIX_ORGANIZATION_ENABLED } from "./limix-features.mjs";
-import { limixAccountGate, limixVerifyPassword, limixAccountInfo, limixRemoteCredential, limixSignOut } from "./limix-account.mjs";
+import { limixAccountGate, limixAccountInfo, limixRemoteCredential, limixSignOut } from "./limix-account.mjs";
 import { limixRuntimeEnv } from "./limix-runtime.mjs";
 import { setLimixLanguageSource } from "./limix-lang.mjs";
 import { createLimixTools } from "./limix-tools.mjs";
@@ -1153,7 +1153,6 @@ async function startServerOn(port, dataDir = runningDataDir ?? startupEnvironmen
     OMB_UI_LANGUAGE: nativeText.prefs?.language() ?? "",
     // Fail-closed until this process sends the private connection; never a descriptor inherited from the shell.
     OMB_DESKTOP_PARENT: "1",
-    LIMIX_OWNER_LANE_TOKEN: limixOwnerLaneToken,
     OMB_DESKTOP_LAUNCH_ID: desktopLaunchId,
     OMB_STATIC_DIR: path.join(process.resourcesPath, "ui"),
     OMB_RESOURCES_PATH: process.resourcesPath,
@@ -2867,7 +2866,6 @@ setCuaStateListener((connection) => {
   });
 });
 
-const limixOwnerLaneToken = randomBytes(32).toString("base64url");
 let limixLanActive = false;
 app.whenReady().then(async () => {
   // Limix Bot: a damaged install (no UI files, e.g. after an interrupted update) explains itself instead of showing
@@ -3251,12 +3249,6 @@ function releaseDesktopDataDirLease() {
 }
 
 // before-quit is too early (this app defers it); will-quit is Electron's last boundary, and the process hook covers app.exit().
-ipcMain.handle("limix-account:review", localOnly("limix-account:review", async (_event, password) => {
-  if (!(await limixVerifyPassword(password))) throw new Error("Mật khẩu không đúng hoặc không kết nối được máy chủ tài khoản.");
-  const response = await localServerRequest("/api/limix/channel-review/grant", { method: "POST", headers: { "X-Limix-Owner": limixOwnerLaneToken } });
-  if (!response.ok) throw new Error("Không mở được lịch sử chat.");
-  return response.json();
-}));
 ipcMain.handle("limix-account:info", localOnly("limix-account:info", () => limixAccountInfo()));
 const confirmLimixSignOut = createLimixSignOutHandler({ info: limixAccountInfo, signOut: limixSignOut, relaunch: () => { app.relaunch(); app.quit(); } });
 ipcMain.handle("limix-account:sign-out", localOnly("limix-account:sign-out", (_event, username) => confirmLimixSignOut(username)));

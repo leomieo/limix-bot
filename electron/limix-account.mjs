@@ -144,16 +144,6 @@ let remoteCredential = () => null;
 let accountStore = null, accountClient = null;
 
 /** Who this computer is signed in as, for the sign-out item in the app's account menu; null when the gate is off. */
-let reviewAttempt = 0;
-export async function limixVerifyPassword(password) {
-  if (!accountClient || typeof password !== "string" || !password || password.length > 1024 || Date.now() - reviewAttempt < 3000) return false;
-  reviewAttempt = Date.now();
-  const before = limixAccountInfo();
-  if (!before?.username) return false;
-  const result = await accountClient.machines(before.username, password);
-  const after = limixAccountInfo();
-  return result.ok === true && after?.username === before.username;
-}
 export function limixAccountInfo() {
   if (!accountStore) return null;
   const saved = accountStore.read() ?? {};

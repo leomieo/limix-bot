@@ -1,6 +1,3 @@
-import { channelConversationSchema, parseChannelHeader, type ChannelIdentityRegistry } from "./limix-channel-identity.ts";
-import { CHANNEL_MEDIA_MAX_BYTES, channelAttachmentSchema, channelReplyAttachments, saveChannelAttachments } from "./limix-channel-media.ts";
-import { deleteAttachment } from "./attachments.ts";
 // The Bot API's two sides. Outside: `POST /hooks/api/bots/<id>/messages` on the webhook receiver, a bearer key, a
 // message in, the bot's reply out; the turn it starts is outside work (the "api" trigger), so it never acts for the
 // person, is told the message came from outside, and anything that needs an approval waits for the person in the thread.
@@ -17,7 +14,6 @@ import { PASS, type RouteHandler } from "./routes/table.ts";
 import { parseJson, schemaIssue } from "./schema.ts";
 import type { Message, Store } from "./store.ts";
 import { bearerSecret, header, json, readRawBody, type IngressDoor } from "./webhook-ingress.ts";
-import { isLimixOwnerThread, LIMIX_OWNER_HEADER, limixOwnerCall, markLimixOwnerThread } from "./limix-owner-lane.ts";
 
 /** How long a call waits by default before answering "working" with its thread id. Under the 60 s that Fly's proxy is reported
  * (community.fly.io, staff replies, 2022-2024) to allow a connection with no bytes: a dropped answer would lose the thread id. */
@@ -29,10 +25,7 @@ const APP_PATH = /^\/api\/bots\/([\w-]{1,128})\/bot-api(?:\/(new-key))?$/;
 
 const callSchema = z.object({
   message: z.string().min(1).max(BOT_API_MAX_MESSAGE_CHARS),
-  attachments: z.array(channelAttachmentSchema).max(1000).optional(),
   thread: z.string().regex(/^[\w-]{1,128}$/).optional(),
-  conversation: channelConversationSchema.optional(),
-  channel: z.enum(["telegram", "zalo", "discord", "facebook"]).optional(),
   /** Seconds to wait for the reply, for a caller that knows nothing in its path drops a quiet connection. */
   wait: z.number().min(0).max(BOT_API_MAX_WAIT_MS / 1000).optional(),
 });
@@ -50,7 +43,6 @@ export interface BotApiTurnOptions {
 }
 
 export interface BotApiHostDeps {
-  channelIdentities?: ChannelIdentityRegistry;
   store: Pick<Store, "bot" | "taskByThread" | "createTask" | "patchTask" | "appendMessage" | "messagesFor" | "onChange">;
   startTurn(botId: string, text: string, opts: BotApiTurnOptions): Promise<unknown>;
   threadBusy(botId: string, threadId: string): boolean;
@@ -93,7 +85,6 @@ function failBeforeAcceptance(code: "thread_busy" | "capacity_busy"): never {
   throw Object.assign(new Error(BUSY), { status: 409, forCaller: true, code, retryable: true });
 }
 const retryableBusySchema = z.object({ forCaller: z.literal(true), retryable: z.literal(true), code: z.enum(["thread_busy", "capacity_busy"]) });
-const CHANNEL_NAMES = { telegram: "Telegram", zalo: "Zalo", discord: "Discord", facebook: "Facebook" } as const;
 const CANNOT_CONFINE = "This bot's AI can't take Bot API calls. Choose another AI for this bot.";
 
 function detailOf(error: unknown): string {
@@ -113,9 +104,19 @@ function pendingCard(lines: readonly Message[]): boolean {
   return lines.some((line) => line.card?.requestId !== undefined && !line.card.answered && !line.card.dismissed);
 }
 
+/** The answer, not the progress notes before it: a turn's last text is marked terminal, and its earlier texts ("I'm looking
+ * into it") are updates the caller never asked for. Texts with no turn at all (older rows) are all kept. */
 function replyText(lines: readonly Message[]): string {
-  return redactSecretsInText(lines.filter((line) => line.role === "bot" && line.kind === "text" && typeof line.text === "string" && line.text.trim())
-    .map((line) => line.text!.trim()).join("\n\n"));
+  const said = lines.filter((line) => line.role === "bot" && line.kind === "text" && typeof line.text === "string" && line.text.trim());
+  const final = said.filter((line) => line.turnTerminal === true);
+  // One answer per call: a Chief whose teammates report back runs more turns in the same thread, and each has its own
+  // terminal text; the caller (a customer's chat) gets the latest one, not every update stacked into one message.
+  const picked = final.length ? final.slice(-1) : said.some((line) => line.turnId) ? said.slice(-1) : said;
+  // A turn that ends on a tool call has, as its last text, what the model said before calling it ("I'll attach the image
+  // now", often in English): a note to itself, never an answer for the person writing in.
+  const last = picked.at(-1);
+  if (last?.turnId && lines.slice(lines.indexOf(last) + 1).some((line) => line.turnId === last.turnId && line.kind === "activity")) return "";
+  return redactSecretsInText(picked.map((line) => line.text!.trim()).join("\n\n"));
 }
 
 export function createBotApiHost(deps: BotApiHostDeps) {
@@ -147,16 +148,16 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     const after = next === -1 ? rest : rest.slice(0, next);
     if (pendingCard(after)) return { thread: threadId, status: "needs_approval" };
     if (deps.threadBusy(botId, threadId)) return { thread: threadId, status: "working" };
-    return { reply: replyText(after), thread: threadId, ...channelReplyAttachments(after) };
+    return { reply: replyText(after), thread: threadId };
   }
 
-  async function runCall(botId: string, call: z.output<typeof callSchema>, turnStarted: () => void, owner = false): Promise<{ status: number; body: BotApiReply }> {
+  async function runCall(botId: string, call: z.output<typeof callSchema>, turnStarted: () => void): Promise<{ status: number; body: BotApiReply }> {
     const store = deps.store;
     let threadId = call.thread;
     if (threadId !== undefined) {
       const task = store.taskByThread(botId, threadId);
       // Only a thread this API opened: the caller never writes into the person's own conversations.
-      if (!task || task.botApi !== true || isLimixOwnerThread(threadId) !== owner || (deps.channelIdentities && !deps.channelIdentities.matches(threadId, call.conversation, owner))) fail(404, "no such thread");
+      if (!task || task.botApi !== true) fail(404, "no such thread");
       if (deps.threadBusy(botId, threadId)) failBeforeAcceptance("thread_busy");
     }
     if (!deps.canStart(botId, threadId ?? "")) failBeforeAcceptance("capacity_busy");
@@ -165,30 +166,27 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     let opened = false;
     if (threadId === undefined) {
       // Asks from the start, with none of the bot's saved allowances: nothing may answer an approval for an outside caller.
-      const task = store.createTask(botId, `${call.channel ? CHANNEL_NAMES[call.channel] + " · " : ""}${call.conversation ? call.conversation.senderId + " · " : ""}${message.slice(0, 80)}`, false, undefined, undefined, "ask", undefined, undefined, (created) => deps.opened?.(created.threadId));
+      const task = store.createTask(botId, message.slice(0, 80), false, undefined, undefined, "ask", undefined, undefined, (created) => deps.opened?.(created.threadId));
       if (!task) fail(404, "no such bot");
       threadId = task.threadId;
       opened = true;
       store.patchTask(botId, threadId, { botApi: true, outside: true });
-      if (owner) markLimixOwnerThread(threadId);
-      if (call.conversation) deps.channelIdentities?.bind(threadId, call.conversation, owner);
     }
-    const media = await saveChannelAttachments(call.attachments ?? []);
     const receivedAt = Date.now();
-    const userMessage = store.appendMessage(threadId, { role: "user", kind: "text", text: [message, media.tags].filter(Boolean).join("\n\n"), ...(media.saved.length ? { attachments: media.saved } : {}), via: "api" });
+    const userMessage = store.appendMessage(threadId, { role: "user", kind: "text", text: message, via: "api" });
     const after = () => { const all = store.messagesFor(threadId!); return all.slice(all.findIndex((line) => line.id === userMessage.id) + 1); };
     let settled: TurnOutcome | undefined;
     let dispatchError: string | undefined;
     markRunning(botId, threadId, true);
     try {
-      await deps.startTurn(botId, [botApiPrompt(message, receivedAt), media.tags].filter(Boolean).join("\n\n"), {
+      await deps.startTurn(botId, botApiPrompt(message, receivedAt), {
         threadId, automationSource: "api", unattended: true, userMessage,
         onSettled: (outcome) => { settled = outcome; markRunning(botId, threadId!, false); },
         onDispatchError: (message) => { dispatchError = message; markRunning(botId, threadId!, false); },
       });
     } catch (error) {
       markRunning(botId, threadId, false);
-      if (opened) { deps.discard?.(botId, threadId); for (const item of media.saved) deleteAttachment(item.path); }
+      if (opened) deps.discard?.(botId, threadId);
       const busy = z.object({ code: z.enum(["thread_busy", "thread_limit"]) }).safeParse(error).success;
       fail(busy ? 409 : 502, busy ? BUSY : COULD_NOT_ANSWER, error instanceof Error ? error.message : String(error));
     }
@@ -203,7 +201,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     }
     if (pendingCard(after())) return { status: 202, body: { thread: threadId, status: "needs_approval" } };
     if (!settled.ok) fail(502, COULD_NOT_ANSWER, settled.text);
-    return { status: 200, body: { reply: replyText(after()), thread: threadId, ...channelReplyAttachments(after()) } };
+    return { status: 200, body: { reply: replyText(after()), thread: threadId } };
   }
 
   const door: IngressDoor = async (req, res, url) => {
@@ -236,8 +234,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
         json(res, 403, { error: BOT_API_UPGRADE });
         return true;
       }
-      const limixOwner = limixOwnerCall(req.headers[LIMIX_OWNER_HEADER]);
-      if (!limixOwner && !deps.canConfine(botId)) {
+      if (!deps.canConfine(botId)) {
         manager.recordRefused(botId, 403, CANNOT_CONFINE);
         json(res, 403, { error: CANNOT_CONFINE });
         return true;
@@ -245,15 +242,14 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       if (req.method === "GET") {
         const threadId = url.searchParams.get("thread") ?? "";
         const task = /^[\w-]{1,128}$/.test(threadId) ? deps.store.taskByThread(botId, threadId) : undefined;
-        if (!task || task.botApi !== true || isLimixOwnerThread(threadId) !== limixOwner || (deps.channelIdentities && !deps.channelIdentities.matches(threadId, parseChannelHeader(req.headers["x-limix-conversation"]), limixOwner))) { json(res, 404, { error: "no such thread" }); return true; }
+        if (!task || task.botApi !== true) { json(res, 404, { error: "no such thread" }); return true; }
         const state = threadState(botId, threadId);
         json(res, "reply" in state ? 200 : 202, state);
         return true;
       }
       let call: z.output<typeof callSchema>;
       try {
-        // Room for CHANNEL_MEDIA_MAX_BYTES of files as base64, plus the message.
-        const raw = await readRawBody(req, Math.ceil(CHANNEL_MEDIA_MAX_BYTES / 3) * 4 + 1024 * 1024);
+        const raw = await readRawBody(req, BOT_API_MAX_MESSAGE_CHARS * 4 + 16 * 1024);
         const contentType = header(req, "content-type")?.toLowerCase() ?? "";
         if (!contentType.includes("json")) fail(415, "Send JSON: Content-Type: application/json");
         const input = parseJson(raw);
@@ -274,16 +270,14 @@ export function createBotApiHost(deps: BotApiHostDeps) {
         return true;
       }
       try {
-        const answer = await runCall(botId, call, release, limixOwner);
+        const answer = await runCall(botId, call, release);
         manager.record(botId, { outcome: "accepted", statusCode: answer.status, threadId: answer.body.thread, preview: call.message,
           reason: "reply" in answer.body ? "Replied" : answer.body.status === "needs_approval" ? "Stopped at an approval" : "Still working" });
         json(res, answer.status, answer.body);
       } catch (error) {
         manager.record(botId, { outcome: "rejected", statusCode: statusOf(error), reason: detailOf(error), preview: call.message });
         const busy = retryableBusySchema.safeParse(error);
-        // Limix: the bot's own owner (linked in a private chat) is told why a turn could not run; other callers are not.
-        const ownerDetail = limixOwner && statusOf(error) === 502 ? detailOf(error).slice(0, 300) : "";
-        json(res, statusOf(error), { error: callerWords(error), ...(busy.success ? { code: busy.data.code, retryable: true } : {}), ...(ownerDetail ? { detail: ownerDetail } : {}) });
+        json(res, statusOf(error), { error: callerWords(error), ...(busy.success ? { code: busy.data.code, retryable: true } : {}) });
       }
       return true;
     } finally {
