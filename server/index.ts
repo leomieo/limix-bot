@@ -1,4 +1,5 @@
 import { imageConnectorRefusal } from "./limix-image-routing.ts";
+import { createLimixTelegram } from "./limix-telegram.ts";
 // Import first: it reads a Cloud home's secrets off the launcher's pipe before any module can start a process.
 import { BOOT_CLOUD_SECRETS } from "./cloud-secrets-boot.ts";
 import { startFailureText } from "./start-failure-text.ts";
@@ -9590,6 +9591,10 @@ const webhookIngressStatus = () => ({
   ...(webhookIngressError ? { error: webhookIngressError } : {}),
 });
 ROUTES.push(createWebhookRoutes({ webhooks, ingress: webhookIngressStatus, visible: (auth) => visibleTo(viewerFor(auth)) }), botApi.routes);
+// Limix Bot: a bot answers on Telegram once its owner pastes a @BotFather token in its settings (server/limix-telegram.ts).
+const limixTelegram = createLimixTelegram({ dataDir: DATA_DIR, ask: botApi.askFromChannel, botExists: (botId) => Boolean(store.bot(botId)), log: (line) => console.log(line),
+  manageRefusal: (auth, botId) => auth.scopes.includes("admin") || (CLOUD_TEAM && levelOf(auth, botId) === "edit") ? null : refusalFor(store.bot(botId)?.name ?? "this bot", "edit").error });
+ROUTES.push(limixTelegram.routes); limixTelegram.start();
 
 const RUNTIME_KEEP_MS = 30 * 24 * 60 * 60_000;
 let runtimePrunedAt = 0;

@@ -18,6 +18,7 @@ import { useDesktopCapabilities } from "../DesktopCapabilities";
 import { DefaultBotHideRow } from "../DefaultBotControls";
 import { SoulField } from "../SoulField";
 import { BotApiCard } from "../bot-settings/BotApiCard";
+import { TelegramCard } from "../bot-settings/TelegramCard";
 import { PackageProvenance } from "../bot-settings/PackageProvenance";
 import { REPLY_STYLE_LABELS } from "../bot-settings/ReplyStyleField";
 import { useChoosesVisibility, visibilityLabel } from "../bot-settings/VisibilitySection";
@@ -281,6 +282,7 @@ export function SettingsPage({ bot, derived, onOpen, editingInstructions = false
         )}
       </Card>
 
+      {bot.yourAccess !== "view" && !bot.defaultBot && <TelegramCard bot={bot} className="mt-3.5" />}
       <BotApiCard bot={bot} webhooksLink className="mt-3.5" />
 
       <DefaultBotHideRow bot={bot} />

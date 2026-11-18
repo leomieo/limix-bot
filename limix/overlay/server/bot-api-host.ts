@@ -35,7 +35,8 @@ type TurnOutcome = { ok: boolean; text: string; cards?: unknown };
 
 export interface BotApiTurnOptions {
   threadId: string;
-  automationSource: "api";
+  /** "api" for an outside caller; absent for the owner writing from a channel this server reads (as from the app). */
+  automationSource?: "api";
   unattended: true;
   userMessage: Message;
   onSettled: (outcome: TurnOutcome) => void;
@@ -204,6 +205,54 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     return { status: 200, body: { reply: replyText(after()), thread: threadId } };
   }
 
+  /** Limix: a message from a chat channel this server itself reads (limix-telegram.ts), never from an outside caller. The
+   * bot's verified owner talks to it as from the app, in a conversation of its own at Full access; anyone else is a
+   * Bot API caller, confined. Waits for the answer up to `waitMs`. */
+  async function askFromChannel(botId: string, input: { text: string; threadId?: string; title: string; owner: boolean; waitMs?: number }): Promise<{ threadId: string; reply: string; status?: "needs_approval" | "working" }> {
+    const store = deps.store;
+    if (!input.owner) {
+      if (!deps.canConfine(botId)) fail(403, CANNOT_CONFINE);
+      const answer = await runCall(botId, { message: input.text, ...(input.threadId ? { thread: input.threadId } : {}), wait: Math.round((input.waitMs ?? 600_000) / 1000) } as z.output<typeof callSchema>, () => {});
+      const body = answer.body as { reply?: string; thread: string; status?: "needs_approval" | "working" };
+      return { threadId: body.thread, reply: body.reply ?? "", ...(body.status ? { status: body.status } : {}) };
+    }
+    let threadId = input.threadId;
+    const known = threadId ? store.taskByThread(botId, threadId) : undefined;
+    if (!known || known.botApi) threadId = undefined;
+    if (threadId && deps.threadBusy(botId, threadId)) failBeforeAcceptance("thread_busy");
+    if (!deps.canStart(botId, threadId ?? "")) failBeforeAcceptance("capacity_busy");
+    if (threadId === undefined) {
+      const task = store.createTask(botId, input.title.slice(0, 80), false, undefined, undefined, "full", undefined, undefined, (created) => deps.opened?.(created.threadId));
+      if (!task) fail(404, "no such bot");
+      threadId = task.threadId;
+    }
+    const userMessage = store.appendMessage(threadId, { role: "user", kind: "text", text: input.text });
+    const after = () => { const all = store.messagesFor(threadId!); return all.slice(all.findIndex((line) => line.id === userMessage.id) + 1); };
+    let settled: TurnOutcome | undefined;
+    let dispatchError: string | undefined;
+    markRunning(botId, threadId, true);
+    try {
+      await deps.startTurn(botId, input.text, {
+        threadId, unattended: true, userMessage,
+        onSettled: (outcome) => { settled = outcome; markRunning(botId, threadId!, false); },
+        onDispatchError: (message) => { dispatchError = message; markRunning(botId, threadId!, false); },
+      });
+    } catch (error) {
+      markRunning(botId, threadId, false);
+      fail(502, COULD_NOT_ANSWER, error instanceof Error ? error.message : String(error));
+    }
+    const deadline = Date.now() + (input.waitMs ?? 1_800_000);
+    for (;;) {
+      if (dispatchError !== undefined) fail(502, COULD_NOT_ANSWER, dispatchError);
+      if (settled) break;
+      if (pendingCard(after())) return { threadId, reply: "", status: "needs_approval" };
+      if (Date.now() >= deadline) return { threadId, reply: "", status: "working" };
+      await new Promise((resolve) => setTimeout(resolve, POLL_MS));
+    }
+    if (!settled.ok) fail(502, COULD_NOT_ANSWER, settled.text);
+    return { threadId, reply: replyText(after()) };
+  }
+
   const door: IngressDoor = async (req, res, url) => {
     const match = PUBLIC_PATH.exec(url.pathname);
     if (!match) return false;
@@ -327,5 +376,5 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     }
   };
 
-  return { manager, door, routes };
+  return { manager, door, routes, askFromChannel };
 }

@@ -1,0 +1,23 @@
+{
+ "_about": "Limix Bot: a bot answers on Telegram from its own settings (server/limix-telegram.ts, TelegramCard.tsx). Applied after messaging-module.json; each edit is skipped once its text is gone.",
+ "server/index.ts": [
+  {
+   "before": "import { imageConnectorRefusal } from \"./limix-image-routing.ts\";\n// Import first: it reads a Cloud home's secrets off the launcher's pipe before any module can start a process.\n",
+   "after": "import { imageConnectorRefusal } from \"./limix-image-routing.ts\";\nimport { createLimixTelegram } from \"./limix-telegram.ts\";\n// Import first: it reads a Cloud home's secrets off the launcher's pipe before any module can start a process.\n"
+  },
+  {
+   "before": "ROUTES.push(createWebhookRoutes({ webhooks, ingress: webhookIngressStatus, visible: (auth) => visibleTo(viewerFor(auth)) }), botApi.routes);\n\n",
+   "after": "ROUTES.push(createWebhookRoutes({ webhooks, ingress: webhookIngressStatus, visible: (auth) => visibleTo(viewerFor(auth)) }), botApi.routes);\n// Limix Bot: a bot answers on Telegram once its owner pastes a @BotFather token in its settings (server/limix-telegram.ts).\nconst limixTelegram = createLimixTelegram({ dataDir: DATA_DIR, ask: botApi.askFromChannel, botExists: (botId) => Boolean(store.bot(botId)), log: (line) => console.log(line),\n  manageRefusal: (auth, botId) => auth.scopes.includes(\"admin\") || (CLOUD_TEAM && levelOf(auth, botId) === \"edit\") ? null : refusalFor(store.bot(botId)?.name ?? \"this bot\", \"edit\").error });\nROUTES.push(limixTelegram.routes); limixTelegram.start();\n\n"
+  }
+ ],
+ "src/components/bot-panel/SettingsPage.tsx": [
+  {
+   "before": "import { BotApiCard } from \"../bot-settings/BotApiCard\";\nimport { PackageProvenance } from \"../bot-settings/PackageProvenance\";\n",
+   "after": "import { BotApiCard } from \"../bot-settings/BotApiCard\";\nimport { TelegramCard } from \"../bot-settings/TelegramCard\";\nimport { PackageProvenance } from \"../bot-settings/PackageProvenance\";\n"
+  },
+  {
+   "before": "      </Card>\n\n      <BotApiCard bot={bot} webhooksLink className=\"mt-3.5\" />\n\n",
+   "after": "      </Card>\n\n      {bot.yourAccess !== \"view\" && !bot.defaultBot && <TelegramCard bot={bot} className=\"mt-3.5\" />}\n      <BotApiCard bot={bot} webhooksLink className=\"mt-3.5\" />\n\n"
+  }
+ ]
+}

@@ -393,6 +393,30 @@ describe("the Bot API door on the webhook receiver", () => {
     expect(first.body).toEqual({ reply: "Here is the answer.", thread: expect.any(String) });
   });
 
+  it("a channel this server reads gives the owner their own Full-access conversation, and anyone else the confined door", async () => {
+    const h = await harness((fake, _botId, prompt, opts) => {
+      setTimeout(() => {
+        fake.store.appendMessage(opts.threadId, { role: "bot", kind: "text", text: `Reply to ${prompt}`, turnId: "T", turnTerminal: true });
+        opts.onSettled({ ok: true, text: "" });
+      }, 20);
+    });
+    const first = await h.host.askFromChannel("b1", { text: "make the report", title: "Telegram · Ana", owner: true });
+    expect(first.reply).toBe("Reply to make the report");
+    const task = h.fake.bots.get("b1")!.tasks.find((candidate) => candidate.threadId === first.threadId)!;
+    expect(task.botApi).toBeUndefined();
+    expect(h.turns[0]!.prompt).toBe("make the report");
+    expect(h.turns[0]!.opts.automationSource).toBeUndefined();
+    const again = await h.host.askFromChannel("b1", { text: "add a chart", threadId: first.threadId, title: "x", owner: true });
+    expect(again.threadId).toBe(first.threadId);
+    const guest = await h.host.askFromChannel("b1", { text: "price?", title: "Telegram · Binh", owner: false });
+    expect(guest.threadId).not.toBe(first.threadId);
+    expect(h.fake.bots.get("b1")!.tasks.find((candidate) => candidate.threadId === guest.threadId)!.botApi).toBe(true);
+    expect(h.turns[2]!.opts.automationSource).toBe("api");
+    // A guest never continues the owner's conversation: it gets one of its own.
+    const sneak = await h.host.askFromChannel("b1", { text: "hi", threadId: first.threadId, title: "x", owner: false }).catch((error: Error) => error.message);
+    expect(sneak).toMatch(/no such thread/);
+  });
+
   it("never sends the note a turn wrote before its last tool call as the answer", async () => {
     const h = await harness((fake, _botId, _prompt, opts) => {
       setTimeout(() => {

@@ -2292,6 +2292,17 @@ for rel, edits in json.loads((ROOT / "limix/patches/messaging-module.json").read
     if current != original:
         target.write_text(current, encoding="utf-8")
         changed.append(rel)
+for rel, edits in json.loads((ROOT / "limix/patches/telegram-native.json").read_text(encoding="utf-8")).items():
+    if rel.startswith("_"):
+        continue
+    target = ROOT / rel
+    current = original = target.read_text(encoding="utf-8")
+    for patch in edits:
+        if patch["before"] in current:
+            current = current.replace(patch["before"], patch["after"], 1)
+    if current != original:
+        target.write_text(current, encoding="utf-8")
+        changed.append(rel)
 for rel, marker in [("electron/main.mjs", "limix-gateway"), ("electron/preload.cjs", "limix-gateway"), ("electron-builder.yml", "limix-gateway"),
                     ("Dockerfile", "limix-gateway"), ("server/index.ts", "limix-gateway-sidecar"), ("server/index.ts", "channelActionRoute"),
                     ("server/routes/bot-skills.ts", "limix-gateway-sidecar"), ("server/cloud-home-start.ts", "LIMIX_GATEWAY_SIDECAR"),

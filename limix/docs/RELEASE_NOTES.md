@@ -1,3 +1,23 @@
+Limix Bot 0.3.78
+
+## Tiếng Việt
+
+- Bot trả lời trên Telegram chỉ với vài bước thiết lập trong cài đặt của bot (mục **Telegram**):
+  1. Tạo bot với @BotFather (lệnh `/newbot`), dán token vào ô và bấm **Kết nối**.
+  2. Bấm **Tạo mã liên kết**, rồi nhắn `/link MÃ` cho bot trên Telegram. Từ đó bạn nhắn với bot trên Telegram như nhắn trong app, toàn quyền, trong một cuộc trò chuyện riêng hiện trong app.
+  3. Muốn bot trả lời cả người khác, bật **Trả lời cả người khác**. Người khác được trả lời ở chế độ an toàn: không dùng công cụ, không thấy cuộc trò chuyện của bạn.
+- Không cần cài thêm chương trình hay mở cửa sổ riêng: app tự nhận tin từ Telegram khi đang mở (trên máy chủ Cloud thì chạy liên tục). Token được mã hóa trên máy. Lệnh `/new` trong Telegram bắt đầu cuộc trò chuyện mới.
+- Mỗi bot Telegram chỉ nên kết nối ở một nơi; nếu nơi khác đang nhận tin của cùng bot, app báo rõ để bạn tắt bớt.
+
+## English
+
+- A bot answers on Telegram after a few steps in its settings (**Telegram** card):
+  1. Make a bot with @BotFather (`/newbot`), paste its token and press **Connect**.
+  2. Press **Make a link code** and send `/link CODE` to the bot on Telegram. From then on you write to the bot on Telegram as in the app, with full access, in a conversation of its own that shows in the app.
+  3. To let it answer other people too, turn on **Answer other people too**. Others are answered in safe mode: no tools, none of your conversations.
+- Nothing else to install and no extra window: the app reads Telegram itself while it is open (on a Cloud server, all the time). The token is encrypted on the machine. `/new` in Telegram starts a new conversation.
+- Connect each Telegram bot in one place only; if another place already reads the same bot, the app says so.
+
 Limix Bot 0.3.77
 
 ## Tiếng Việt
