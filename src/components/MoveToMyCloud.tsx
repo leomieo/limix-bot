@@ -196,6 +196,9 @@ export function useMoveToMyCloud() {
       if (status) return [
         item(<Cloud size={16} className="text-ink-secondary" />, t("cloudSend.botMove.menu"), undefined, { disabled: true, hint: moveStatusText(status) }),
         ...(status.phase === "failed" && bridge()?.botMoveRetry ? [item(<RotateCw size={16} className="text-ink-secondary" />, lx("Thử chuyển lên Cloud lại ngay", "Retry the move to Cloud now"), () => { void bridge()!.botMoveRetry!().then(readShared, readShared); })] : []),
+        ...(status.step !== "switch" && bridge()?.botMoveCancel ? [item(<X size={16} className="text-ink-secondary" />, lx("Dừng chuyển lên Cloud", "Stop moving to Cloud"), () => {
+          void bridge()!.botMoveCancel!([bot.id]).then(readShared, readShared);
+        })] : []),
         ...(status.step === "copy" && bridge()?.botMoveLevel ? [item(<ArrowRightLeft size={16} className="text-ink-secondary" />, lx("Đổi dữ liệu chuyển lên Cloud…", "Change what moves to Cloud…"), () => {
           setError(null); setLevel(status.level ?? "full"); setReleveling(true); setAsked(bot);
         })] : []),

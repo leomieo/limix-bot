@@ -133,6 +133,8 @@ export interface CloudSendPageBridge {
   botMoveLevel?(ids: string[], level: MoveLevel): Promise<BotMoveState>;
   /** Brings bots on My Cloud back to this computer: My Cloud pauses its copy, this computer runs the bot again. */
   botBringBack?(ids: string[]): Promise<BotMoveState>;
+  /** Stops these bots' move before its switch: they stay on this computer. */
+  botMoveCancel?(ids: string[]): Promise<BotMoveState>;
   /** Shows My Cloud in this window. */
   openMyCloud?(): Promise<void>;
   /** The switch "Keep this computer's bots on this computer"; absent from an older desktop. */

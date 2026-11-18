@@ -551,6 +551,8 @@ const bridge = {
     moveEverything: () => isLocalPage || navigator.userActivation?.isActive === true
       ? ipcRenderer.invoke("cloud-send:move-everything") : Promise.reject(new Error("Choose which bots move.")),
     botMoveRetry: () => ipcRenderer.invoke("cloud-send:bot-move-retry"),
+    botMoveCancel: ids => isLocalPage || navigator.userActivation?.isActive === true
+      ? ipcRenderer.invoke("cloud-send:bot-move-cancel", Array.isArray(ids) ? ids.map(String) : []) : Promise.reject(new Error("Choose which move stops.")),
     botBringBack: ids => isLocalPage || navigator.userActivation?.isActive === true
       ? ipcRenderer.invoke("cloud-send:bot-bring-back", Array.isArray(ids) ? ids.map(String) : []) : Promise.reject(new Error("Choose which bot comes back.")),
     botMoveLevel: (ids, level) => isLocalPage || navigator.userActivation?.isActive === true

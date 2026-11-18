@@ -181,6 +181,27 @@ export function createBotMove({ journal, local, send, session, lease = null, rea
       }
       onChange();
     },
+    /** The person stops these bots' move: each runs on here as before, and can move again later with the choice they
+     * make then. A move at its switch is past turning back and finishes (see drop). True when a bot stopped moving. */
+    async cancel(ids) {
+      const asked = new Set(ids);
+      let stopped = false;
+      for (const move of moves().filter((entry) => entry.phase !== "done" && entry.phase !== "switch" && list(entry.bots).some((bot) => asked.has(bot.id)))) {
+        for (const bot of list(move.bots).filter((entry) => asked.has(entry.id))) {
+          await local.call("DELETE", `/api/bot-moves/${bot.id}`).catch(() => null);
+          const left = parseTeamMoves(journal.read());
+          journal.write({ ...left, moves: left.moves.flatMap((entry) => {
+            if (entry.bot.id !== move.bot.id) return [entry];
+            const rest = list(entry.bots).filter((one) => one.id !== bot.id);
+            return rest.length ? [{ ...entry, bots: rest }] : [];
+          }) });
+          log(`bot move: ${bot.name} stays on this computer`);
+          stopped = true;
+        }
+      }
+      onChange();
+      return stopped;
+    },
     /** The person brings bots that moved to My Cloud back to this computer. My Cloud pauses its copy first (kept, not
      * deleted, with what it said there), so the bot never runs in both places; then this computer runs it again as it was
      * when it went. Throws when My Cloud cannot be reached or refuses, and then nothing changed. */

@@ -1,3 +1,13 @@
+Limix Bot 0.3.80
+
+## Tiếng Việt
+
+- Bot đang chuyển lên Cloud có thêm mục **Dừng chuyển lên Cloud** trong menu của bot. Bot ở lại máy này và chạy như trước; sau đó bạn tự chọn chuyển lại với mức mong muốn (chỉ bot, bot và tin nhắn, hoặc đầy đủ). Lượt chuyển đã tới bước bật bot trên Cloud thì không dừng được nữa và sẽ chạy cho xong.
+
+## English
+
+- A bot moving to Cloud gets **Stop moving to Cloud** in its menu. The bot stays on this computer and runs as before; you can then move it again with the level you choose (the bot only, the bot and its messages, or everything). A move already switching the bot on in Cloud cannot stop and finishes.
+
 Limix Bot 0.3.79
 
 ## Tiếng Việt

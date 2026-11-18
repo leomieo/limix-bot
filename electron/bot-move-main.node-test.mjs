@@ -240,3 +240,18 @@ test("a bot on My Cloud comes back: My Cloud pauses its copy first, then this co
   assert.deepEqual(w.journal.moves, []);
   await assert.rejects(w.move.bringBack(["b1"]), /not on My Cloud/u);
 });
+
+test("the person stops a move before its switch: the bot stays here and leaves the move; one at its switch finishes", async () => {
+  const w = world();
+  w.journal = { v: 1, moves: [
+    { bot: { id: "bots-a", name: "A" }, team: MY_CLOUD, bots: [{ id: "b0", name: "Bot 0" }, { id: "b1", name: "Bot 1" }], phase: "copy", startedAt: 1, failing: true, tries: 8 },
+    { bot: { id: "bots-s", name: "S" }, team: MY_CLOUD, bots: [{ id: "b2", name: "Bot 2" }], phase: "switch", startedAt: 1 },
+  ] };
+  w.holds.set("b0", "moving");
+  assert.equal(await w.move.cancel(["b0"]), true);
+  assert.equal(w.holds.has("b0"), false);
+  assert.deepEqual(w.journal.moves.map((move) => move.bots.map((bot) => bot.id)), [["b1"], ["b2"]]);
+  assert.equal(await w.move.cancel(["b2"]), false, "past its switch it finishes");
+  assert.equal(await w.move.cancel(["b1"]), true);
+  assert.deepEqual(w.journal.moves.map((move) => move.bot.id), ["bots-s"]);
+});

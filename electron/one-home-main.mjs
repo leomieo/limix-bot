@@ -359,6 +359,10 @@ export function installOneHome({ localRequest: anyServer, clean = null, account,
     return botMoveState();
   }));
   sendDeps.ipcMain.handle("cloud-send:bot-move-retry", localPage("cloud-send:bot-move-retry", () => { void botMove.retry(); return botMove.view(); }));
+  sendDeps.ipcMain.handle("cloud-send:bot-move-cancel", onPage("cloud-send:bot-move-cancel", async (ids) => {
+    if (!(await botMove.cancel(Array.isArray(ids) ? ids.map(String) : []))) throw new Error(t("cloudSend.botMove.levelLate"));
+    return botMoveState();
+  }));
   sendDeps.ipcMain.handle("cloud-send:bot-bring-back", onPage("cloud-send:bot-bring-back", async (ids) => {
     await botMove.bringBack(Array.isArray(ids) ? ids.map(String) : []);
     return botMoveState();
