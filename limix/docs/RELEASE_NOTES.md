@@ -1,3 +1,19 @@
+Limix Bot 0.3.88
+
+## Tiếng Việt
+
+- Limix Bot lưu tin nhắn đến từ Telegram, Zalo, Discord, Facebook Page và Messenger. Tin trong cùng cuộc trò chuyện được xử lý theo thứ tự. Các cuộc trò chuyện khác có thể chạy song song khi còn lượt trống. Bot tự gửi kết quả về đúng cuộc trò chuyện, kể cả khi xử lý lâu hơn 30 phút.
+- Cài đặt Limix Cloud hiển thị liên kết riêng cho tài khoản. Liên kết dẫn đến máy Cloud hiện tại và giữ nguyên khi thay máy.
+- Khung Màn hình giải thích khi nào bot mở desktop Linux trong My Cloud.
+- Kho kỹ năng tự làm mới danh mục nếu tệp của một gói đã bị gỡ. Khi danh mục đổi, ứng dụng yêu cầu xem lại gói trước khi cài.
+
+## English
+
+- Limix Bot saves incoming messages from Telegram, Zalo, Discord, Facebook Pages and Messenger. Messages in each chat run in order, while different chats can run in parallel when capacity is available. Replies return to the originating chat, even when processing takes longer than 30 minutes.
+- Limix Cloud settings show an account link that opens the current Cloud workspace and stays the same when the workspace is replaced.
+- The Screen panel explains when a bot opens a Linux desktop in My Cloud.
+- The Skill Hub refreshes its catalog when a package file is no longer available. If the catalog changes, review the package before installing it.
+
 Limix Bot 0.3.87
 
 ## Tiếng Việt

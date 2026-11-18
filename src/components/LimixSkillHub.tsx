@@ -62,7 +62,9 @@ export function LimixSkillHub() {
 
   const run = async (key: string, action: () => Promise<unknown>) => {
     setBusy(key); setError(null);
-    try { await action(); await load(); } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); } finally { setBusy(null); }
+    try { await action(); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+    finally { await load(); setBusy(null); }
   };
 
   const skills = state?.skills ?? [];

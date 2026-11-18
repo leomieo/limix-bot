@@ -77,7 +77,8 @@ export function parseCloudSummary(input) {
   const homecoming = record(input.hold) ? parseHomecoming(input.hold.homecoming) : null;
   const hold = record(input.hold) && moment(input.hold.until) ? { until: input.hold.until, ...(homecoming ? { homecoming } : {}) } : null;
   const formerOrigins = parseFormerOrigins(input.formerOrigins, origin);
-  return { status, ...(origin ? { origin } : {}), ...(formerOrigins.length ? { formerOrigins } : {}), ...(setup ? { setup } : {}), ...(retryAt ? { retryAt } : {}), ...(disk ? { disk } : {}), ...(unreachable ? { unreachable } : {}), ...(power ? { power } : {}),
+  const accountLink = typeof input.accountLink === "string" && /^https:\/\/cloud\.limixmedia\.com\/bot\/[0-9a-f]{24}$/.test(input.accountLink) ? input.accountLink : null;
+  return { status, ...(origin ? { origin } : {}), ...(accountLink ? { accountLink } : {}), ...(formerOrigins.length ? { formerOrigins } : {}), ...(setup ? { setup } : {}), ...(retryAt ? { retryAt } : {}), ...(disk ? { disk } : {}), ...(unreachable ? { unreachable } : {}), ...(power ? { power } : {}),
     ...(input.moves === true ? { moves: true } : {}), ...(hold ? { hold } : {}) };
 }
 

@@ -2,13 +2,14 @@
 // message in, the bot's reply out; the turn it starts is outside work (the "api" trigger), so it never acts for the
 // person, is told the message came from outside, and anything that needs an approval waits for the person in the thread.
 // Inside: the app's routes to switch it on, mint a key and switch it off, open only to whoever may edit the bot.
+import type { ChannelAsk } from "./bot-channels/engine.ts";
 import type { ChannelMedia } from "./bot-channels/channel-media.ts";
 import { z } from "zod";
 
 import { redactSecretsInText } from "../shared/redact.ts";
 import { BOT_API_UPGRADE, botApiEndpoint, type BotApiReply } from "../shared/bot-api.ts";
 import type { AdminActionRow } from "./admin-activity.ts";
-import { BOT_API_MAX_MESSAGE_CHARS, BOT_API_MAX_PENDING, BotApiManager, botApiPrompt, withoutAttachedImages, type BotApiAttempt, type BotApiStatus } from "./bot-api.ts";
+import { BOT_API_MAX_MESSAGE_CHARS, BOT_API_MAX_PENDING, BotApiManager, botApiPrompt, retryableBusySchema, withoutAttachedImages, type BotApiAttempt, type BotApiStatus } from "./bot-api.ts";
 import { personKey } from "./person-key.ts";
 import type { RequestAuth } from "./request-auth.ts";
 import { PASS, type RouteHandler } from "./routes/table.ts";
@@ -86,7 +87,6 @@ const BUSY = "The bot is busy. Try again soon.";
 function failBeforeAcceptance(code: "thread_busy" | "capacity_busy"): never {
   throw Object.assign(new Error(BUSY), { status: 409, forCaller: true, code, retryable: true });
 }
-const retryableBusySchema = z.object({ forCaller: z.literal(true), retryable: z.literal(true), code: z.enum(["thread_busy", "capacity_busy"]) });
 const CANNOT_CONFINE = "This bot's AI can't take Bot API calls. Choose another AI for this bot.";
 
 function detailOf(error: unknown): string {
@@ -171,7 +171,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     return reply?.attachments?.filter((file): file is ChannelMedia => (file.kind === "image" && !file.fromTool) || file.kind === "file") ?? [];
   }
 
-  async function runCall(botId: string, call: z.output<typeof callSchema>, turnStarted: () => void, channel?: { attachment?: ChannelMedia; collect(files: ChannelMedia[]): void }): Promise<{ status: number; body: BotApiReply }> {
+  async function runCall(botId: string, call: z.output<typeof callSchema>, turnStarted: () => void, channel?: { attachment?: ChannelMedia; delivery?: Parameters<ChannelAsk>[1]["delivery"]; collect(files: ChannelMedia[]): void }): Promise<{ status: number; body: BotApiReply }> {
     const store = deps.store;
     let threadId = call.thread;
     if (threadId !== undefined) {
@@ -181,7 +181,10 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       if (deps.threadBusy(botId, threadId)) failBeforeAcceptance("thread_busy");
     }
     if (!deps.canStart(botId, threadId ?? "")) failBeforeAcceptance("capacity_busy");
-    if (!manager.admit(botId)) fail(429, "Too many calls: this key takes 10 a minute");
+    if (!manager.admit(botId)) {
+      if (channel?.delivery) failBeforeAcceptance("capacity_busy");
+      fail(429, "Too many calls: this key takes 10 a minute");
+    }
     const message = withoutAttachedImages(call.message);
     let opened = false;
     if (threadId === undefined) {
@@ -192,6 +195,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       opened = true;
       store.patchTask(botId, threadId, { botApi: true, outside: true });
     }
+    channel?.delivery?.accepted(threadId);
     const receivedAt = Date.now();
     const userMessage = store.appendMessage(threadId, { role: "user", kind: "text", text: message, via: "api", ...(channel?.attachment ? { attachments: [channel.attachment] } : {}) });
     const after = () => messagesAfter(store.messagesFor(threadId!), userMessage.id);
@@ -211,12 +215,18 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       fail(busy ? 409 : 502, busy ? BUSY : COULD_NOT_ANSWER, error instanceof Error ? error.message : String(error));
     }
     turnStarted();
+    let approvalNotified = false;
     const deadline = Date.now() + (call.wait === undefined ? waitMs : call.wait * 1000);
     for (;;) {
       if (dispatchError !== undefined) fail(502, COULD_NOT_ANSWER, dispatchError);
       if (settled) break;
-      if (pendingCard(after())) return { status: 202, body: { thread: threadId, status: "needs_approval" } };
-      if (Date.now() >= deadline) return { status: 202, body: { thread: threadId, status: "working" } };
+      if (channel?.delivery?.signal.aborted) throw Error("Channel stopped");
+      if (!approvalNotified && pendingCard(after())) {
+        if (!channel?.delivery) return { status: 202, body: { thread: threadId, status: "needs_approval" } };
+        approvalNotified = true;
+        channel.delivery.approval();
+      }
+      if (!channel?.delivery && Date.now() >= deadline) return { status: 202, body: { thread: threadId, status: "working" } };
       await new Promise((resolve) => setTimeout(resolve, POLL_MS));
     }
     if (pendingCard(after())) return { status: 202, body: { thread: threadId, status: "needs_approval" } };
@@ -228,12 +238,12 @@ export function createBotApiHost(deps: BotApiHostDeps) {
   /** Limix: a message from a chat channel this server itself reads (server/bot-channels), never from an outside caller. The
    * bot's verified owner talks to it as from the app, in a conversation of its own at Full access; anyone else is a
    * Bot API caller, confined. Waits for the answer up to `waitMs`. */
-  async function askFromChannel(botId: string, input: { text: string; attachment?: ChannelMedia; threadId?: string; title: string; owner: boolean; waitMs?: number }): Promise<{ threadId: string; reply: string; attachments?: ChannelMedia[]; status?: "needs_approval" | "working" }> {
+  async function askFromChannel(botId: string, input: { text: string; attachment?: ChannelMedia; threadId?: string; title: string; owner: boolean; waitMs?: number; delivery?: Parameters<ChannelAsk>[1]["delivery"] }): Promise<{ threadId: string; reply: string; attachments?: ChannelMedia[]; status?: "needs_approval" | "working" }> {
     const store = deps.store;
     if (!input.owner) {
       if (!deps.canConfine(botId)) fail(403, CANNOT_CONFINE);
       let attachments: ChannelMedia[] = [];
-      const answer = await runCall(botId, { message: input.text, ...(input.threadId ? { thread: input.threadId } : {}), wait: Math.round((input.waitMs ?? 600_000) / 1000) } as z.output<typeof callSchema>, () => {}, { attachment: input.attachment, collect(files) { attachments = files; } });
+      const answer = await runCall(botId, { message: input.text, ...(input.threadId ? { thread: input.threadId } : {}), wait: Math.round((input.waitMs ?? 600_000) / 1000) } as z.output<typeof callSchema>, () => {}, { attachment: input.attachment, delivery: input.delivery, collect(files) { attachments = files; } });
       const body = answer.body as { reply?: string; thread: string; status?: "needs_approval" | "working" };
       return { threadId: body.thread, ...(attachments.length ? { attachments } : {}), reply: body.reply ?? "", ...(body.status ? { status: body.status } : {}) };
     }
@@ -247,6 +257,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       if (!task) fail(404, "no such bot");
       threadId = task.threadId;
     }
+    input.delivery?.accepted(threadId);
     const userMessage = store.appendMessage(threadId, { role: "user", kind: "text", text: input.text, ...(input.attachment ? { attachments: [input.attachment] } : {}) });
     const after = () => messagesAfter(store.messagesFor(threadId!), userMessage.id);
     let settled: TurnOutcome | undefined;
@@ -262,12 +273,18 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       markRunning(botId, threadId, false);
       fail(502, COULD_NOT_ANSWER, error instanceof Error ? error.message : String(error));
     }
+    let approvalNotified = false;
     const deadline = Date.now() + (input.waitMs ?? 1_800_000);
     for (;;) {
       if (dispatchError !== undefined) fail(502, COULD_NOT_ANSWER, dispatchError);
       if (settled) break;
-      if (pendingCard(after())) return { threadId, reply: "", status: "needs_approval" };
-      if (Date.now() >= deadline) return { threadId, reply: "", status: "working" };
+      if (input.delivery?.signal.aborted) throw Error("Channel stopped");
+      if (!approvalNotified && pendingCard(after())) {
+        if (!input.delivery) return { threadId, reply: "", status: "needs_approval" };
+        approvalNotified = true;
+        input.delivery.approval();
+      }
+      if (!input.delivery && Date.now() >= deadline) return { threadId, reply: "", status: "working" };
       await new Promise((resolve) => setTimeout(resolve, POLL_MS));
     }
     if (!settled.ok) fail(502, COULD_NOT_ANSWER, settled.text);

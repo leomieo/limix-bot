@@ -66,6 +66,36 @@ const replies = (text: string): Script => (fake, _botId, _prompt, opts) => {
   }, 30);
 };
 
+it.each([false, true])("delivers a channel result after 31 minutes (owner: %s)", async (owner) => {
+  let finish!: () => void;
+  const h = await harness((fake, _botId, _prompt, opts) => {
+    finish = () => {
+      fake.store.appendMessage(opts.threadId, { role: "bot", kind: "text", text: "finished" });
+      opts.onSettled({ ok: true, text: "finished" });
+    };
+  });
+  const clock = Date.now();
+  const now = vi.spyOn(Date, "now").mockReturnValue(clock);
+  try {
+    const accepted = vi.fn();
+    const pending = h.host.askFromChannel("b1", {
+      owner, title: "Fixture", text: "Slow request",
+      delivery: { signal: new AbortController().signal, accepted, approval: vi.fn() },
+    });
+    const received = vi.fn();
+    void pending.then(received);
+    await Promise.resolve();
+    now.mockReturnValue(clock + 31 * 60_000);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(accepted).toHaveBeenCalledOnce();
+    expect(received).not.toHaveBeenCalled();
+    finish();
+    await expect(pending).resolves.toMatchObject({ reply: "finished" });
+  } finally {
+    now.mockRestore();
+  }
+});
+
 async function harness(script: Script, options: { waitMs?: number; full?: boolean; included?: () => boolean; noConfine?: boolean } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "omb-bot-api-host-"));
   dirs.push(dir);

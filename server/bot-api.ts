@@ -17,6 +17,7 @@ const RATE_WINDOW_MS = 60_000;
 /** Turns one bot's API may have running at once before a new call is refused. */
 export const BOT_API_MAX_PENDING = 50;
 export const BOT_API_MAX_MESSAGE_CHARS = 20_000;
+export const retryableBusySchema = z.object({ forCaller: z.literal(true), retryable: z.literal(true), code: z.enum(["thread_busy", "capacity_busy"]) });
 /** Per bot: one bot's callers can't push another's calls out. */
 const MAX_ATTEMPTS = 200;
 const SAVE_AFTER_MS = 1_000;

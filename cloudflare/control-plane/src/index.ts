@@ -1,5 +1,6 @@
 import { managedHostAssignments } from "./managed-host";
 import { managedWorkspace } from "./managed-workspace";
+import { resolveCloudAccountLink } from "./managed-account-link";
 import { managedCloudRoute } from "./managed-routes";
 import { limixCloudAdminRoute } from "./limix-cloud-admin";
 import { z } from "zod";
@@ -81,6 +82,8 @@ async function route(
   const url = new URL(request.url);
   if (request.method === "OPTIONS") return preflight(request, config);
 
+  const accountLink = resolveCloudAccountLink(request, env);
+  if (accountLink) return accountLink;
   const adminRoute = limixCloudAdminRoute(url.pathname, request, env);
   if (adminRoute) return adminRoute;
   const managedRoute = managedCloudRoute(url.pathname, request, env);

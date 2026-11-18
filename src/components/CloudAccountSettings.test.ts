@@ -31,6 +31,13 @@ beforeEach(() => {
 });
 afterEach(() => { vi.unstubAllGlobals(); setLocale("en"); });
 async function ready(state: CloudAccountState = { status: "signed-out" }) { vi.mocked(bridge.state).mockResolvedValueOnce(state); render(); const cleanup = f.effects[0](); await flush(); return cleanup; }
+it("shows the verified My Cloud account link and removes it on sign-out", async () => {
+  const accountLink = "https://cloud.limixmedia.com/bot/" + "a".repeat(24);
+  await ready({ ...free, machine: { status: "ready", origin: "https://home.example.test", accountLink } });
+  expect(render().html).toContain(`href="${accountLink}"`);
+  push({ status: "signed-out" });
+  expect(render().html).not.toContain(accountLink);
+});
 it("loads optional account state without enrollment/network and delegates sign-in without arguments", async () => {
   await ready(); expect(bridge.begin).not.toHaveBeenCalled(); expect(fetch).not.toHaveBeenCalled();
   expect(render().html).toContain("Free local use"); expect(render().html).toContain("separate from organization sign-in");

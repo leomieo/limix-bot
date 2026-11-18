@@ -59,7 +59,7 @@ function fakes() {
 
 afterEach(async () => {
   vi.restoreAllMocks();
-  await env.DB.batch(["managed_cloud_beta", "managed_cloud_host", "limix_cloud_devices", "limix_cloud_requests", "limix_cloud_moves"]
+  await env.DB.batch(["managed_cloud_beta", "managed_cloud_host", "limix_cloud_devices", "limix_cloud_requests", "limix_cloud_moves", "limix_cloud_account_links"]
     .map(table => env.DB.prepare(`DELETE FROM ${table}`)));
 });
 
@@ -96,13 +96,23 @@ it("signs a Limix account in, takes its trial request, and pairs only its own ho
   await env.DB.prepare("INSERT INTO managed_cloud_beta(principal) VALUES ('limix:alice')").run();
   session = await (await as(alice.accessToken, "session")).json() as Record<string, any>;
   expect(session).toMatchObject({ entitlement: { plan: "pro", status: "active" }, limixTrial: "approved", cloud: { state: "setting_up", setup: { step: "reserving" } } });
+  const accountLink = session.cloud.accountLink as string;
+  expect(accountLink).toMatch(/^https:\/\/cloud\.limixmedia\.com\/bot\/[0-9a-f]{24}$/);
+  const followLink = (init?: RequestInit, suffix = "") => worker.fetch(new Request(accountLink + suffix, init), bindings, createExecutionContext());
+  expect((await followLink()).status).toBe(404);
   const assignments = await (await host("assignments")).json() as { homes: string[]; origins: Record<string, string> };
   const [workspace] = assignments.homes;
+  const redirect = await followLink(undefined, "?next=https://elsewhere.test");
+  expect(redirect.status).toBe(302);
+  expect(redirect.headers.get("location")).toBe(assignments.origins[workspace]);
+  expect(redirect.headers.get("cache-control")).toBe("no-store");
+  expect(redirect.headers.has("set-cookie")).toBe(false);
+  expect((await followLink({ method: "POST" })).status).toBe(405);
   expect(session.cloud.origin).toBe(assignments.origins[workspace]);
   expect((await as(alice.accessToken, "pairing", "POST", {})).status).toBe(409);
   await host("assignments", { id: workspace, state: "running" });
   session = await (await as(alice.accessToken, "session")).json() as Record<string, any>;
-  expect(session.cloud).toEqual({ state: "ready", origin: assignments.origins[workspace], pairingAvailable: true, moves: true });
+  expect(session.cloud).toEqual({ state: "ready", origin: assignments.origins[workspace], pairingAvailable: true, moves: true, accountLink });
 
   const paired = await (await as(alice.accessToken, "pairing", "POST", {})).json() as Record<string, unknown>;
   expect(paired).toMatchObject({ cloudContractVersion: 1, origin: assignments.origins[workspace], code: "ABCD-EFGH-JKLM" });
@@ -115,6 +125,15 @@ it("signs a Limix account in, takes its trial request, and pairs only its own ho
   expect(await (await as(alice.accessToken, "moved-to", "POST", { origin: assignments.origins[workspace] })).json()).toEqual({ cloudContractVersion: 1, state: "live" });
   expect((await as(alice.accessToken, "moved", "POST", { installation: "i".repeat(22) })).status).toBe(200);
   expect((await as(alice.accessToken, "export", "POST", {})).status).toBe(409);
+
+  await env.DB.prepare("DELETE FROM managed_cloud_beta WHERE principal = 'limix:alice'").run();
+  expect((await followLink()).status).toBe(404);
+  await env.DB.prepare("INSERT INTO managed_cloud_beta(principal) VALUES ('limix:alice')").run();
+  const replacement = await (await as(alice.accessToken, "session")).json() as Record<string, any>;
+  expect(replacement.cloud.accountLink).toBe(accountLink);
+  expect(replacement.cloud.origin).not.toBe(session.cloud.origin);
+  await host("assignments");
+  expect((await followLink()).headers.get("location")).toBe(replacement.cloud.origin);
 
   expect((await as(alice.accessToken, "session", "DELETE", {})).status).toBe(200);
   expect((await as(alice.accessToken, "session")).status).toBe(401);

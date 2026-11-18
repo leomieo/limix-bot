@@ -1,11 +1,11 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 
 import { PASS } from "../routes/table.ts";
 import { discordAdapter, type SocketLike } from "./discord.ts";
-import { ChannelError, createBotChannels, type ChannelAdapter, type ChannelIo, type ChannelLogin } from "./engine.ts";
+import { ChannelError, createBotChannels, type ChannelAdapter, type ChannelAsk, type ChannelIo, type ChannelLogin } from "./engine.ts";
 import { facebookAdapter } from "./facebook.ts";
 import { zaloAdapter, zaloLogin, type ZaloClient } from "./zalo.ts";
 import { fetchPublicPage } from "../wait-probes.ts";
@@ -21,13 +21,14 @@ const cleanups: Array<() => void> = [];
 afterEach(() => { for (const stop of cleanups.splice(0)) stop(); });
 const until = async (check: () => boolean) => { for (let i = 0; i < 300 && !check(); i++) await new Promise((resolve) => setTimeout(resolve, 10)); expect(check()).toBe(true); };
 
-function host(adapter: ChannelAdapter, logins?: Partial<Record<ChannelAdapter["kind"], ChannelLogin>>) {
+function host(adapter: ChannelAdapter, logins?: Partial<Record<ChannelAdapter["kind"], ChannelLogin>>, beforeAsk?: (input: Parameters<ChannelAsk>[1]) => void | Promise<void>) {
   const dir = mkdtempSync(join(tmpdir(), "limix-ch-"));
   const asks: Array<{ text: string; threadId?: string; owner: boolean }> = [];
   const channels = createBotChannels({
     dataDir: dir, adapters: [adapter], ...(logins ? { logins } : {}), sleep: async () => {},
     botExists: (id) => id === "b1", manageRefusal: () => null,
     ask: async (_botId, input) => {
+      await beforeAsk?.(input);
       asks.push({ text: input.text, ...(input.threadId ? { threadId: input.threadId } : {}), owner: input.owner });
       if (input.attachment) cleanups.push(() => deleteAttachment(input.attachment!.path));
       return { threadId: `t${asks.length}`, reply: `ok: ${input.text}`, ...(input.attachment ? { attachments: [input.attachment] } : {}) };
@@ -41,8 +42,77 @@ function host(adapter: ChannelAdapter, logins?: Partial<Record<ChannelAdapter["k
     const result = await channels.routes({ req: {} as never, res: {} as never, url: new URL(`http://x${path}`), path, method, auth: { scopes: ["admin"] } as never, json, readBody: (async () => body) as never });
     return result === PASS ? null : { status, body: answer };
   };
-  return { asks, route };
+  return { asks, route, channels, dir };
 }
+
+it.each(["telegram", "discord", "zalo", "facebook", "messenger"] as const)("queues busy turns in order without replaying an accepted failure (%s)", async kind => {
+  const fake = fakeChannel();
+  const attempts = new Map<string, number>();
+  const { asks, route } = host({ ...fake.adapter, kind, textMax: 2_000 }, undefined, ({ text }) => {
+    const count = (attempts.get(text) ?? 0) + 1;
+    attempts.set(text, count);
+    if (text === "second" && count < 3) {
+      throw Object.assign(new Error("busy"), { status: 409, forCaller: true, retryable: true, code: count === 1 ? "thread_busy" : "capacity_busy" });
+    }
+    if (text === "failed") throw Object.assign(new Error("already accepted"), { status: 409, code: "thread_busy" });
+  });
+  const path = `/api/bots/b1/${kind}`;
+  await route("POST", path, { token: "good-secret", access: "everyone" });
+  await until(fake.ready);
+  fake.deliver("1", "guest", "first");
+  fake.deliver("2", "guest", "second");
+  fake.deliver("2", "guest", "second");
+  fake.deliver("3", "guest", "failed");
+  fake.deliver("4", "guest", "third");
+  await until(() => fake.sent.some(({ text }) => text === "ok: third"));
+  expect(asks).toEqual([
+    { text: "first", owner: false },
+    { text: "second", threadId: "t1", owner: false },
+    { text: "third", threadId: "t2", owner: false },
+  ]);
+  expect(attempts.get("failed")).toBe(1);
+  expect(fake.sent.filter(({ text }) => !text.startsWith("Đã nhận")).map(({ text }) => text)).toEqual([
+    "ok: first",
+    "ok: second",
+    "Bot chưa trả lời được lúc này. Thử lại sau.",
+    "ok: third",
+  ]);
+});
+
+it.each(["telegram", "discord", "zalo", "facebook", "messenger"] as const)("persists incoming messages and only serializes within the same chat (%s)", async kind => {
+  const fake = fakeChannel();
+  const start: string[] = [];
+  let finishFirst!: () => void;
+  const first = new Promise<void>((resolve) => { finishFirst = resolve; });
+  const { route, dir, channels } = host({ ...fake.adapter, kind, textMax: 2_000 }, undefined, async ({ text, delivery }) => {
+    start.push(text);
+    if (text === "slow") {
+      delivery?.accepted("slow-thread");
+      await first;
+    }
+  });
+  await route("POST", `/api/bots/b1/${kind}`, { token: "good-secret", access: "everyone" });
+  await until(fake.ready);
+  fake.deliver("1", "one", "slow");
+  fake.deliver("2", "one", "next");
+  fake.deliver("2", "one", "next");
+  fake.deliver("1", "two", "parallel");
+  const inbox = () => Object.values(JSON.parse(readFileSync(join(dir, `limix-${kind}.json`), "utf8")).bots.b1.inbox) as Array<{ text: string }>;
+  expect(inbox().map((row) => row.text)).toEqual(["slow", "next", "parallel"]);
+  await until(() => fake.sent.some((message) => message.chatId === "two" && message.text === "ok: parallel"));
+  expect(start).toEqual(["slow", "parallel"]);
+  channels.stop();
+  finishFirst();
+  channels.start();
+  await until(() => fake.sent.some((message) => message.chatId === "one" && message.text === "ok: next"));
+  expect(fake.sent.filter((message) => message.chatId === "one").map((message) => message.text)).toEqual([
+    "Đã nhận tin nhắn. Bot sẽ xử lý khi đến lượt.",
+    expect.stringContaining("Tác vụ bị gián đoạn"),
+    "ok: next",
+  ]);
+  expect(start).toEqual(["slow", "parallel", "next"]);
+  await until(() => inbox().length === 0);
+});
 
 /** A channel whose incoming messages the test hands in and whose sends it records. */
 function fakeChannel(options: { quiet?: boolean; failFirstSends?: number } = {}) {
@@ -236,14 +306,14 @@ it("signs Zalo in by QR, answers direct messages and mentions, and reports a ses
   say("5", "g9", 1, "@Shop Zalo câu hỏi khách", tag, "41");
   say("6", "g9", 1, "@Shop Zalo câu hỏi chủ", tag);
   say("7", "g9", 1, "@Shop Zalo hỏi thêm", tag, "41");
-  await until(() => sends.length === 5);
+  await until(() => sends.some(({ text }) => text === "ok: hỏi thêm"));
   expect(asks).toEqual([
     { text: "chào shop", owner: true },
     { text: "câu hỏi khách", owner: false },
     { text: "câu hỏi chủ", owner: false },
     { text: "hỏi thêm", owner: false, threadId: "t2" },
   ]);
-  expect(sends.slice(1)).toEqual([
+  expect(sends.slice(1).filter(({ text }) => !text.startsWith("Đã nhận"))).toEqual([
     { text: "ok: chào shop", thread: "42", type: 0 },
     { text: "ok: câu hỏi khách", thread: "g9", type: 1 },
     { text: "ok: câu hỏi chủ", thread: "g9", type: 1 },
@@ -252,7 +322,7 @@ it("signs Zalo in by QR, answers direct messages and mentions, and reports a ses
   await route("POST", "/api/bots/b1/zalo", { access: "everyone", groupMentions: false });
   say("8", "g9", 1, "@Shop Zalo đã tắt nhóm", tag, "41");
   say("9", "41", 0, "mở tin riêng", undefined, "41");
-  await until(() => sends.length === 6);
+  await until(() => sends.some(({ text }) => text === "ok: mở tin riêng"));
   expect(asks.slice(4)).toEqual([{ text: "mở tin riêng", owner: false }]);
   handlers.get("closed")!(3000, "duplicate");
   await new Promise((resolve) => setTimeout(resolve, 30));
@@ -280,7 +350,12 @@ it("queues personal Messenger replies for the desktop window and answers everyon
   const messengerUrl = "https://cdn.fbsbx.com/attachment/list.csv";
   mockAttachment(messengerUrl);
   await call("POST", "/api/bots/b1/messenger/inbox", { messages: [{ id: "t1:3", chatId: "t1", fileUrl: messengerUrl, fileName: "list.csv" }] });
-  const upload = (await call("GET", "/api/bots/b1/messenger/outbox")).body.items[0];
-  expect(upload).toEqual({ id: 2, chatId: "t1", text: "", file: { name: "list.csv", base64: Buffer.from("fixture").toString("base64") } });
-  expect((await call("POST", "/api/bots/b1/messenger/sent", { id: 2 })).body).toEqual({ ok: true });
+  let upload = (await call("GET", "/api/bots/b1/messenger/outbox")).body.items[0];
+  if (upload.text.startsWith("Đã nhận")) {
+    expect(upload.chatId).toBe("t1");
+    expect((await call("POST", "/api/bots/b1/messenger/sent", { id: upload.id })).body).toEqual({ ok: true });
+    upload = (await call("GET", "/api/bots/b1/messenger/outbox")).body.items[0];
+  }
+  expect(upload).toMatchObject({ chatId: "t1", text: "", file: { name: "list.csv", base64: Buffer.from("fixture").toString("base64") } });
+  expect((await call("POST", "/api/bots/b1/messenger/sent", { id: upload.id })).body).toEqual({ ok: true });
 });

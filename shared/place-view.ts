@@ -128,6 +128,7 @@ export const PLACE_EN = {
   "place.view.ccSignIn.lineMyCloud": "Sign in to {engine} in the Cloud first. {bot} uses it on its cloud desktop too.",
   "place.view.ccNew.short": "Ready",
   "place.view.ccNew.line": "{bot} gets its own cloud desktop from Boat the first time a task needs one. The first start takes about a minute.",
+  "place.view.ccNew.lineMyCloud": "The bot opens a Linux desktop in My Cloud when a task needs desktop apps or screen controls.",
   "place.view.ccStarting.short": "Starting…",
   "place.view.ccStarting.line": "Starting {bot}'s cloud desktop. The first start takes about a minute.",
   "place.view.ccWaking.short": "Waking…",
@@ -361,6 +362,7 @@ function lineKey(state: PlaceState, params: PlaceParams, server?: ServerKind): P
     return server === "my-cloud" ? "place.view.auto.lineMyCloud" : server === "linux" || server === "remote" ? "place.view.auto.lineLinux" : "place.view.auto.lineDesktop";
   }
   if (state === "cc-sign-in" && server === "my-cloud") return "place.view.ccSignIn.lineMyCloud";
+  if (state === "cc-new" && server === "my-cloud") return "place.view.ccNew.lineMyCloud";
   // A refusal read from a code alone has no numbers or names to give.
   if (state === "cc-no-hours" && (params.hours === undefined || !params.month)) return "place.view.ccNoHours.lineUnknown";
   if (state === "cc-at-once") {

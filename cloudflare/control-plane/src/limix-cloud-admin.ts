@@ -12,6 +12,7 @@ import { cloudOwnerRoute } from "./cloud-owner";
 //   An approved account has an active plan; nothing is sold, so the session never carries an `offer`.
 import { HTTPError, json, readOptionalBoundedJSON, type JSONValue } from "./http";
 import { limixSession } from "./limix-auth";
+import { cloudAccountLink } from "./managed-account-link";
 import { managedHomeHostname, managedHomeOrigin } from "./managed-grant";
 import { managedHostToken } from "./managed-host";
 import { routedHostnames } from "./managed-routing";
@@ -138,7 +139,7 @@ async function session(env: Env, found: Device): Promise<Response> {
   if (row?.workspace_id) {
     const suffix = readConfig(env).cloudflare.companionHostSuffix;
     const routed = (await routedHostnames(env)).has(managedHomeHostname(row.workspace_id, suffix));
-    body.cloud = cloudSummary(row, managedHomeOrigin(row.workspace_id, suffix), routed);
+    body.cloud = { ...cloudSummary(row, managedHomeOrigin(row.workspace_id, suffix), routed), accountLink: await cloudAccountLink(env, found.principal) };
   }
   return json(body);
 }

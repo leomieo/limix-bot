@@ -11,6 +11,7 @@ import { dirname, join } from "node:path";
 import { z } from "zod";
 
 import type { ChannelMedia } from "./channel-media.ts";
+import { retryableBusySchema } from "../bot-api.ts";
 import { writeFileAtomic } from "../atomic.ts";
 import type { RequestAuth } from "../request-auth.ts";
 import { PASS, type RouteHandler } from "../routes/table.ts";
@@ -71,7 +72,7 @@ export interface ChannelAdapter {
 }
 
 export interface ChannelAsk {
-  (botId: string, input: { text: string; attachment?: ChannelMedia; threadId?: string; title: string; owner: boolean }): Promise<{ threadId: string; reply: string; attachments?: ChannelMedia[]; status?: "needs_approval" | "working" }>;
+  (botId: string, input: { text: string; attachment?: ChannelMedia; threadId?: string; title: string; owner: boolean; delivery?: { signal: AbortSignal; accepted(threadId: string): void; approval(): void } }): Promise<{ threadId: string; reply: string; attachments?: ChannelMedia[]; status?: "needs_approval" | "working" }>;
 }
 
 export interface BotChannelsDeps {
@@ -109,8 +110,23 @@ export interface ChannelView {
 const LINK_MS = 15 * 60_000;
 const BACKOFF_MS = [2_000, 5_000, 15_000, 60_000];
 const SEND_RETRIES = 3;
+const BUSY_RETRY_MS = 1_000;
 const SEEN_MS = 10 * 60_000;
 const KEY_FILE = "limix-telegram.key";
+
+const mediaFields = { path: z.string(), mime: z.string() };
+const mediaSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("image"), ...mediaFields, name: z.string().optional() }),
+  z.object({ kind: z.literal("file"), ...mediaFields, name: z.string() }),
+]);
+const inboxSchema = z.object({
+  id: z.string(), chatId: z.string(), from: z.object({ id: z.string(), name: z.string() }),
+  text: z.string(), direct: z.boolean(), media: z.boolean().optional(),
+  downloading: z.boolean().optional(), attachment: mediaSchema.optional(), owner: z.boolean(),
+  started: z.boolean().optional(),
+  result: z.object({ reply: z.string(), attachments: z.array(mediaSchema).optional() }).optional(),
+  sent: z.number().int().min(0).optional(),
+});
 
 const botSchema = z.object({
   sealed: z.string(),
@@ -124,8 +140,11 @@ const botSchema = z.object({
   offset: z.number().default(0),
   chats: z.record(z.string(), z.string()).default({}),
   error: z.string().optional(),
+  inbox: z.record(z.string(), inboxSchema).default({}),
+  recent: z.record(z.string(), z.number()).default({}),
 });
 const fileSchema = z.object({ v: z.literal(1), bots: z.record(z.string(), botSchema) });
+type InboxMessage = z.output<typeof inboxSchema>;
 type Stored = z.output<typeof botSchema>;
 type FileShape = z.output<typeof fileSchema>;
 
@@ -139,6 +158,9 @@ const text = (label: string) => ({
   fresh: "Đã bắt đầu cuộc trò chuyện mới.",
   approval: "Bot đang chờ bạn duyệt một bước trong app Limix.",
   working: "Bot vẫn đang làm việc này. Xem kết quả trong app Limix.",
+  queued: "Đã nhận tin nhắn. Bot sẽ xử lý khi đến lượt.",
+  interrupted: "Tác vụ bị gián đoạn. Kiểm tra cuộc trò chuyện trong Limix trước khi gửi lại.",
+  mediaFailed: "Bot chưa tải được tệp này. Bạn hãy thử gửi lại hoặc gửi tệp nhỏ hơn.",
   failed: "Bot chưa trả lời được lúc này. Thử lại sau.",
   empty: "Bot đã làm xong nhưng không có câu trả lời bằng chữ.",
 });
@@ -164,8 +186,13 @@ const failure = (error: unknown) => (error instanceof Error ? error.message : St
 export function wait(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
     if (signal.aborted) return resolve();
-    const timer = setTimeout(resolve, ms);
-    signal.addEventListener("abort", () => { clearTimeout(timer); resolve(); }, { once: true });
+    const finish = () => {
+      clearTimeout(timer);
+      signal.removeEventListener("abort", finish);
+      resolve();
+    };
+    const timer = setTimeout(finish, ms);
+    signal.addEventListener("abort", finish, { once: true });
   });
 }
 
@@ -177,6 +204,7 @@ export function createBotChannels(deps: BotChannelsDeps) {
   const adapters = new Map(deps.adapters.map((adapter) => [adapter.kind, adapter]));
   const runs = new Map<string, AbortController>();
   const queues = new Map<string, Promise<void>>();
+  const sessions = new Map<string, ChannelSession>();
   const paces = new Map<string, Promise<void>>();
   const seen = new Map<string, number>();
   const logins = new Map<string, { abort: AbortController; state: LoginState & { error?: string } }>();
@@ -252,10 +280,72 @@ export function createBotChannels(deps: BotChannelsDeps) {
     catch (error) { log(`${adapter.kind}: send failed (${failure(error)})`); }
   }
 
-  async function handle(adapter: ChannelAdapter, botId: string, session: ChannelSession, message: ChannelMessage): Promise<void> {
+  async function askWhenReady(botId: string, input: Parameters<ChannelAsk>[1], signal: AbortSignal, onQueue: () => void) {
+    while (!signal.aborted) {
+      try {
+        return await deps.ask(botId, input);
+      } catch (error) {
+        if (!retryableBusySchema.safeParse(error).success) throw error;
+        onQueue();
+        await sleep(BUSY_RETRY_MS, signal);
+      }
+    }
+  }
+
+  function acceptGuest(kind: ChannelKind, entry: Stored, message: ChannelMessage) {
+    return kind === "zalo" && !message.direct ? entry.groupMentions ?? entry.access === "everyone" : entry.access === "everyone";
+  }
+
+  const messageKey = (message: ChannelMessage) => createHash("sha256").update(JSON.stringify([message.chatId, message.id])).digest("hex");
+
+  function updateInbox(kind: ChannelKind, botId: string, id: string, change: (message: InboxMessage) => InboxMessage, signal: AbortSignal) {
+    if (signal.aborted) return;
+    patch(kind, botId, (entry) => {
+      const message = entry.inbox[id];
+      return message ? { ...entry, inbox: { ...entry.inbox, [id]: change(message) } } : entry;
+    });
+  }
+
+  async function deliverResult(adapter: ChannelAdapter, botId: string, id: string, message: InboxMessage, signal: AbortSignal) {
+    const lane = `${adapter.kind}:${botId}`;
+    const result = message.result!;
+    let sent = message.sent ?? 0;
+    while (!signal.aborted) {
+      const session = sessions.get(lane);
+      if (!session) {
+        await sleep(BUSY_RETRY_MS, signal);
+        continue;
+      }
+      const media = session.sendMedia ? result.attachments ?? [] : [];
+      const parts = chunkText(result.reply, adapter.textMax);
+      if (sent >= media.length + parts.length) return;
+      try {
+        const file = media[sent];
+        await paced(adapter, botId, () => {
+          if (signal.aborted || sessions.get(lane) !== session) throw new ChannelError("drop", "Connection changed");
+          return file ? session.sendMedia!(message.chatId, file) : session.send(message.chatId, parts[sent - media.length]!);
+        });
+      } catch (error) {
+        if (signal.aborted) return;
+        if (sessions.get(lane) !== session || error instanceof ChannelError && error.reason === "retry") {
+          await sleep(BACKOFF_MS[0]!, signal);
+          continue;
+        }
+        if (media[sent]) await reply(adapter, botId, session, message.chatId, "Bot chưa gửi được một tệp đính kèm qua kênh này.");
+        else {
+          log(`${adapter.kind}: send failed (${failure(error)})`);
+          return;
+        }
+      }
+      sent++;
+      updateInbox(adapter.kind, botId, id, (row) => ({ ...row, sent }), signal);
+    }
+  }
+
+  async function handle(adapter: ChannelAdapter, botId: string, session: ChannelSession, message: ChannelMessage, signal: AbortSignal, saved?: { id: string; row: InboxMessage; media: Promise<ChannelMedia | Error | undefined>; queued(): void }): Promise<void> {
     const kind = adapter.kind, say = text(adapter.label);
     const entry = read(kind).bots[botId];
-    if (!entry) return;
+    if (signal.aborted || !entry?.enabled) return;
     const send = (body: string) => reply(adapter, botId, session, message.chatId, body);
     const command = message.media ? null : /^\/(\w+)(?:@\w+)?(?:\s+(.*))?$/s.exec(message.text.trim());
     if (command?.[1] === "start" && !command[2]) return void await send(say.start);
@@ -268,54 +358,115 @@ export function createBotChannels(deps: BotChannelsDeps) {
       patch(kind, botId, (current) => { const { link: _used, ...rest } = current; return { ...rest, owner: { id: message.from.id, name: message.from.name } }; });
       return void await send(say.linked);
     }
-    const owner = message.direct && !adapter.guestsOnly && entry.owner?.id === message.from.id;
-    const everyone = entry.access === "everyone";
-    const allowsGuest = kind === "zalo" && !message.direct ? entry.groupMentions ?? everyone : everyone;
+    const isOwner = message.direct && !adapter.guestsOnly && entry.owner?.id === message.from.id;
+    if (saved?.row.owner && !isOwner) return;
+    const owner = isOwner && (saved?.row.owner ?? true);
+    const allowsGuest = acceptGuest(kind, entry, message);
     if (!owner && !allowsGuest) return message.direct && !adapter.quietToStrangers ? void await send(say.ownerOnly) : undefined;
     const conversation = message.direct ? message.chatId : `${message.chatId}:${message.from.id}`;
     if (command?.[1] === "new") {
       patch(kind, botId, (current) => { const chats = { ...current.chats }; delete chats[conversation]; return { ...current, chats }; });
       return void await send(say.fresh);
     }
-    if (!message.text.trim() && !message.loadMedia) return void await send(say.textOnly);
-    const pulse = () => void session.typing?.(message.chatId).catch(() => {});
-    pulse();
-    const typing = setInterval(pulse, 4_000);
-    try {
-      const known = read(kind).bots[botId]?.chats[conversation];
-      let attachment: ChannelMedia | undefined;
-      try { attachment = await message.loadMedia?.(); }
-      catch { return void await send("Bot chưa tải được tệp này. Bạn hãy thử gửi lại hoặc gửi tệp nhỏ hơn."); }
-      const answer = await deps.ask(botId, { text: message.text || (attachment?.kind === "image" ? "Ảnh đính kèm" : "Tệp đính kèm"), ...(attachment ? { attachment } : {}), ...(known ? { threadId: known } : {}), title: `${adapter.label} · ${message.from.name}`, owner });
-      patch(kind, botId, (current) => ({ ...current, chats: { ...current.chats, [conversation]: answer.threadId } }));
-      clearInterval(typing);
-      const sendMedia = session.sendMedia;
-      const media = sendMedia ? answer.attachments ?? [] : [];
-      if (sendMedia) for (const file of media) {
-        try { await paced(adapter, botId, () => sendMedia(message.chatId, file)); }
-        catch { await send("Bot chưa gửi được một tệp đính kèm qua kênh này."); }
-      }
-      if (answer.reply.trim() || !media.length) await send(answer.reply.trim() || (answer.status === "needs_approval" ? say.approval : answer.status === "working" ? say.working : say.empty));
-    } catch (error) {
-      log(`${kind}: ${failure(error)}`);
-      await send(say.failed);
-    } finally {
-      clearInterval(typing);
+    if (!saved) {
+      if (!message.text.trim() && !message.loadMedia) await send(say.textOnly);
+      return;
     }
+    if (saved.row.result) return deliverResult(adapter, botId, saved.id, saved.row, signal);
+    const pulse = () => void sessions.get(`${kind}:${botId}`)?.typing?.(message.chatId).catch(() => {});
+    let result: NonNullable<InboxMessage["result"]>;
+    if (saved.row.started) result = { reply: say.interrupted };
+    else {
+      pulse();
+      const typing = setInterval(pulse, 4_000);
+      try {
+        const known = read(kind).bots[botId]?.chats[conversation];
+        const attachment = await saved.media;
+        if (attachment instanceof Error) throw attachment;
+        const answer = await askWhenReady(botId, {
+          text: message.text || (attachment?.kind === "image" ? "Ảnh đính kèm" : "Tệp đính kèm"),
+          ...(attachment ? { attachment } : {}),
+          ...(known ? { threadId: known } : {}),
+          title: `${adapter.label} · ${message.from.name}`,
+          owner,
+          delivery: {
+            signal,
+            accepted(threadId) {
+              updateInbox(kind, botId, saved.id, (row) => ({ ...row, started: true }), signal);
+              if (!signal.aborted) patch(kind, botId, (current) => ({ ...current, chats: { ...current.chats, [conversation]: threadId } }));
+            },
+            approval() { if (!signal.aborted) void send(say.approval); },
+          },
+        }, signal, saved.queued);
+        if (!answer || signal.aborted) return;
+        patch(kind, botId, (current) => ({ ...current, chats: { ...current.chats, [conversation]: answer.threadId } }));
+        const attachments = answer.attachments;
+        result = { reply: answer.reply.trim() || (answer.status === "needs_approval" ? say.approval : answer.status === "working" ? say.working : attachments?.length && session.sendMedia ? "" : say.empty), attachments };
+      } catch (error) {
+        if (signal.aborted) return;
+        log(`${kind}: ${failure(error)}`);
+        result = { reply: error === mediaUnavailable ? say.mediaFailed : say.failed };
+      } finally {
+        clearInterval(typing);
+      }
+    }
+    updateInbox(kind, botId, saved.id, (row) => ({ ...row, result }), signal);
+    await deliverResult(adapter, botId, saved.id, { ...saved.row, result }, signal);
   }
 
-  /** One chat's messages run one after another; different chats run side by side. */
-  function enqueue(adapter: ChannelAdapter, botId: string, session: ChannelSession, message: ChannelMessage) {
-    if (!firstSight(`${adapter.kind}:${botId}:${message.chatId}:${message.id}`)) return;
-    const chat = `${adapter.kind}:${botId}:${message.chatId}`;
-    const next = (queues.get(chat) ?? Promise.resolve()).then(() => handle(adapter, botId, session, message)).catch(() => {});
+  const mediaUnavailable = new Error("Channel attachment unavailable");
+
+  function enqueue(adapter: ChannelAdapter, botId: string, session: ChannelSession, message: ChannelMessage, signal: AbortSignal, restored?: InboxMessage) {
+    const kind = adapter.kind;
+    const chat = `${kind}:${botId}:${message.chatId}`;
+    const id = messageKey(message);
+    const entry = read(kind).bots[botId];
+    if (!entry?.enabled || signal.aborted) return;
+    if (!restored && (entry.inbox[id] || (entry.recent[id] ?? 0) > now())) return;
+    const link = !message.media && /^\/link(?:@\w+)?(?:\s|$)/.test(message.text.trim());
+    if (link && adapter.guestsOnly) return;
+    const command = link || !message.media && /^\/start(?:@\w+)?$/.test(message.text.trim());
+    const owner = message.direct && !adapter.guestsOnly && entry.owner?.id === message.from.id;
+    const eligible = (owner || acceptGuest(kind, entry, message)) && !command && (message.text.trim() || message.loadMedia);
+    const row = restored ?? (eligible ? inboxSchema.parse({ ...message, owner, downloading: Boolean(message.loadMedia) }) : undefined);
+    if (!row && !firstSight(`${chat}:${id}`)) return;
+    if (row && !restored) patch(kind, botId, (current) => ({ ...current, inbox: { ...current.inbox, [id]: row } }));
+    let notified = Boolean(restored);
+    const queued = () => {
+      if (notified || signal.aborted) return;
+      notified = true;
+      void reply(adapter, botId, session, message.chatId, text(adapter.label).queued);
+    };
+    const previous = queues.get(chat);
+    const media = row && message.loadMedia
+      ? Promise.resolve().then(message.loadMedia).then((attachment) => {
+        updateInbox(kind, botId, id, (current) => ({ ...current, downloading: false, attachment }), signal);
+        return attachment;
+      }).catch(() => mediaUnavailable)
+      : Promise.resolve(row?.downloading ? mediaUnavailable : row?.attachment);
+    const process = async () => {
+      if (signal.aborted) return;
+      await handle(adapter, botId, session, message, signal, row ? {
+        id, row, queued, media,
+      } : undefined);
+      if (row && !signal.aborted) patch(kind, botId, (current) => {
+        const inbox = { ...current.inbox };
+        delete inbox[id];
+        const recent = Object.fromEntries(Object.entries(current.recent).filter(([, expires]) => expires > now()));
+        recent[id] = now() + SEEN_MS;
+        return { ...current, inbox, recent };
+      });
+    };
+    const next = (previous ? previous.then(process) : process()).catch((error) => log(`${kind}: ${failure(error)}`));
     queues.set(chat, next);
+    if (row && previous) queued();
     void next.finally(() => { if (queues.get(chat) === next) queues.delete(chat); });
   }
 
   async function loop(adapter: ChannelAdapter, botId: string, abort: AbortController) {
     const kind = adapter.kind, lane = `${kind}:${botId}`;
     let failures = 0;
+    let restored = false;
     while (!abort.signal.aborted) {
       const entry = read(kind).bots[botId];
       const secret = entry ? unseal(entry.sealed) : null;
@@ -327,11 +478,18 @@ export function createBotChannels(deps: BotChannelsDeps) {
           signal: abort.signal,
           offset: entry.offset,
           saveOffset: (offset) => patch(kind, botId, (current) => ({ ...current, offset })),
-          deliver: (message) => { if (session) enqueue(adapter, botId, session, message); },
+          deliver: (message) => { if (session) enqueue(adapter, botId, session, message, abort.signal); },
           healthy: () => { failures = 0; if (read(kind).bots[botId]?.error) patch(kind, botId, (current) => ({ ...current, error: undefined })); },
         };
         session = await adapter.open(secret, io);
-        await session.done;
+        if (abort.signal.aborted) { await session.done; break; }
+        sessions.set(lane, session);
+        if (!restored && !abort.signal.aborted) {
+          restored = true;
+          for (const row of Object.values(read(kind).bots[botId]?.inbox ?? {})) enqueue(adapter, botId, session, row, abort.signal, row);
+        }
+        try { await session.done; }
+        finally { if (sessions.get(lane) === session) sessions.delete(lane); }
         if (abort.signal.aborted) break;
         throw new ChannelError("retry", `${adapter.label} ngắt kết nối.`);
       } catch (error) {
@@ -381,7 +539,8 @@ export function createBotChannels(deps: BotChannelsDeps) {
     data.bots[botId] = botSchema.parse({
       sealed: seal(secret), username: account.username, name: account.name, enabled: true, access: kept?.access ?? (adapter.guestsOnly ? "everyone" : "owner"),
       groupMentions: kept?.groupMentions,
-      ...(kept?.owner ? { owner: kept.owner } : {}), offset: sameAccount ? kept.offset : 0, chats: sameAccount ? kept.chats : {},
+      ...(sameAccount && kept.owner ? { owner: kept.owner } : {}), offset: sameAccount ? kept.offset : 0, chats: sameAccount ? kept.chats : {},
+      inbox: sameAccount ? kept.inbox : {}, recent: sameAccount ? kept.recent : {},
     });
     write(kind, data);
     ensure(kind, botId);

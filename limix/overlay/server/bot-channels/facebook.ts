@@ -77,9 +77,9 @@ export function facebookAdapter(options: FacebookOptions = {}): ChannelAdapter {
           if (fresh.length) {
             fresh.sort((a, b) => a.at - b.at);
             since = fresh[fresh.length - 1]!.at;
-            io.saveOffset(since);
             lastActive = now();
             for (const { at: _at, ...message } of fresh) io.deliver(message);
+            io.saveOffset(since);
           }
           await sleep(now() - lastActive < BUSY_FOR_MS ? BUSY_MS : IDLE_MS, io.signal);
         }

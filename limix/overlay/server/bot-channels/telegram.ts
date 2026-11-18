@@ -69,8 +69,8 @@ export function telegramAdapter(options: TelegramOptions = {}): ChannelAdapter {
           io.healthy();
           if (!Array.isArray(updates) || !updates.length) continue;
           offset = Math.max(...updates.map((update: any) => Number(update?.update_id) || 0)) + 1;
-          io.saveOffset(offset);
           for (const update of updates) { const message = toMessage(update?.message); if (message) io.deliver(message); }
+          io.saveOffset(offset);
         }
       })();
       return {

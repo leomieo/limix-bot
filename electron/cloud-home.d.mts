@@ -6,6 +6,7 @@ export type CloudUnreachableCause = "host" | "no_answer";
 export interface CloudMachine {
   status: CloudMachineStatus;
   origin?: string;
+  accountLink?: string;
   /** The addresses it answered at before it moved to another provider, when the Admin says: never its `origin`. */
   formerOrigins?: string[];
   /** While setting up, when the Admin says: the step it is at, and whether it is slow. */

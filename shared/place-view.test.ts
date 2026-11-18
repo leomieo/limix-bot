@@ -20,6 +20,15 @@ const facts = (patch: Partial<PlaceFacts> = {}): PlaceFacts => ({
 });
 
 describe("U1: one line and at most one action for every state", () => {
+  it("describes the desktop inside My Cloud before it opens", () => {
+    expect(placeView(facts())).toMatchObject({
+      state: "cc-new",
+      line: "The bot opens a Linux desktop in My Cloud when a task needs desktop apps or screen controls.",
+      action: { id: "start" },
+    });
+    expect(placeView(facts({ server: "mac", boat: "own-key" })).line).toContain("from Boat");
+  });
+
   it("words every state whole, for an Admin and for a User", () => {
     for (const state of PLACE_STATES) {
       for (const role of ["admin", "user"] as const) {

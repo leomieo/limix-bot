@@ -165,7 +165,7 @@ export function hubSkills(): HubSkillWire[] {
   });
 }
 
-export async function installHubSkill(id: string, options: { allowTools?: boolean; allowRisky?: boolean } = {}): Promise<{ ok: true; skipped: string[] } | { error: string }> {
+export async function installHubSkill(id: string, options: { allowTools?: boolean; allowRisky?: boolean } = {}): Promise<{ ok: true; skipped: string[] } | { error: string; missingFile?: string }> {
   if (!isSkillName(id)) return { error: lxs("Tên kỹ năng không hợp lệ", "Invalid skill name") };
   const entry = hubCatalog().find((e) => e.id === id);
   if (!entry) return { error: lxs("Không thấy kỹ năng này trong danh mục Hub. Hãy đồng bộ lại.", "This skill is not in the hub catalog. Sync again.") };
@@ -187,7 +187,10 @@ export async function installHubSkill(id: string, options: { allowTools?: boolea
     } catch (cause) {
       return { error: lxs(`Không tải được ${path}: `, `Couldn't download ${path}: `) + (cause instanceof Error ? cause.message : String(cause)) };
     }
-    if (!response.ok) return { error: lxs(`Không tải được ${path} (${response.status})`, `Couldn't download ${path} (${response.status})`) };
+    if (!response.ok) return {
+      error: lxs(`Không tải được ${path} (${response.status})`, `Couldn't download ${path} (${response.status})`),
+      ...(response.status === 404 ? { missingFile: path } : {}),
+    };
     const bytes = new Uint8Array(await response.arrayBuffer());
     if (bytes.byteLength > FILE_MAX_BYTES) return { error: lxs(`${path} quá lớn`, `${path} is too large`) };
     // Pinned content: a file the hub no longer serves as catalogued is refused, never installed.
@@ -209,7 +212,7 @@ export async function installHubSkill(id: string, options: { allowTools?: boolea
     ...(entry.tags.length ? { tags: entry.tags } : {}),
     warnings: entry.notes,
     skippedFiles: skipped,
-    reviewState: "approved",
+    reviewState: blocked ? "disabled" : "approved",
     ...(files.length ? { files } : {}),
   });
   if ("error" in result) return { error: result.error };
@@ -266,7 +269,15 @@ export async function handleLimixHub(method: string, path: string, body: unknown
   }
   const id = typeof record.id === "string" ? record.id : "";
   if (method === "POST" && (path === "/api/limix/hub/install" || path === "/api/limix/hub/update")) {
+    const expected = hubCatalog().find((entry) => entry.id === id)?.checksum;
     const result = await installHubSkill(id, { allowTools: record.allowTools === true, allowRisky: record.allowRisky === true });
+    if ("error" in result && result.missingFile) {
+      const sync = await syncHub();
+      if (!("error" in sync) && hubCatalog().find((entry) => entry.id === id)?.checksum !== expected) {
+        return { status: 409, body: { error: lxs("Kho kỹ năng vừa cập nhật. Hãy xem lại mục này trước khi cài.", "The skill catalog has changed. Review this skill before installing.") } };
+      }
+      return { status: 422, body: { error: lxs(`Gói kỹ năng đang thiếu tệp ${result.missingFile}. Chưa cài đặt kỹ năng.`, `The skill package is missing ${result.missingFile}. The skill was not installed.`) } };
+    }
     return "error" in result ? { status: 422, body: result } : { status: 200, body: result };
   }
   if (method === "POST" && path === "/api/limix/hub/enable") {

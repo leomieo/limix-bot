@@ -343,6 +343,9 @@ export function CloudAccountSettings({ linkRequest = 0, cloudHome = false, teamH
     {machine && (onTeamPlan
       ? cloudHomeCard({ machine, busy, failed: homeFailed, onConnect: () => { if (team) openTeam(team.id); }, team: { name: team?.name ?? null } })
       : cloudHomeCard({ machine, busy, failed: homeFailed, onConnect: connectHome, trial: Boolean(account?.trial), waking: account?.waking === true, moving }))}
+    {!onTeamPlan && machine?.accountLink && <Card title={t("cloudHome.accountLink")}>
+      <a className="break-all text-[13px] text-accent hover:underline" href={machine.accountLink} target="_blank" rel="noopener noreferrer">{machine.accountLink}</a>
+    </Card>}
     {signed && view.kind === "paid" && !onTeamPlan && cloudPhoneCard({ ready: machine?.status === "ready" && !machine.unreachable, busy, failed: phoneFailed, onUse: openOnPhone })}
     <CloudKeepHere bridge={window.ogb?.cloudSendPage} />
   </>;

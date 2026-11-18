@@ -12,10 +12,11 @@ export async function cloudOwnerRoute(path: string, request: Request, env: Env):
     if (path === '/api/cloud/owner/resources') {
         if (request.method === 'GET') {
             const { results } = await env.DB.prepare('SELECT principal,cpus,memory_gb,updated_at FROM limix_cloud_resource_overrides ORDER BY principal').all<Record<string, JSONValue>>();
-            const host = await env.DB.prepare("SELECT cpus,memory_gb,capacity,reported_at FROM limix_cloud_host_resources WHERE id=1").first();
+            const host = await env.DB.prepare("SELECT cpus,memory_gb,capacity,reported_at FROM limix_cloud_host_resources WHERE id=1")
+                .first<{ cpus: number; memory_gb: number; capacity: number; reported_at: number }>();
             const allocated = await env.DB.prepare(
                 "SELECT COUNT(*) AS machines, COALESCE(SUM(COALESCE(r.cpus,2)),0) AS cpus, COALESCE(SUM(COALESCE(r.memory_gb,4)),0) AS memory_gb FROM managed_cloud_beta b LEFT JOIN limix_cloud_resource_overrides r ON r.principal=b.principal",
-            ).first();
+            ).first<{ machines: number; cpus: number; memory_gb: number }>();
             return json({ overrides: results, host, allocated });
         }
         if (request.method !== 'POST') throw new HTTPError(405, 'method_not_allowed');
