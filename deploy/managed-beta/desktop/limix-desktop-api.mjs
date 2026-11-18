@@ -121,7 +121,11 @@ http
         (req.method === "POST" && ["resume", "stop"].includes(action))
       )
         return reply(res, 200, { sandbox });
-      if (req.method === "POST" && action === "desktop")
+      if (req.method === "POST" && action === "desktop") {
+        const ready = await fetch("http://127.0.0.1:6901/vnc.html", {
+          method: "HEAD", signal: AbortSignal.timeout(1500),
+        }).then(response => response.ok, () => false);
+        if (!ready) return reply(res, 202, { provisioning: true });
         return reply(res, 200, {
           desktopUrl:
             origin +
@@ -129,6 +133,7 @@ http
             "vnc.html?autoconnect=1&path=" +
             encodeURIComponent(prefix.slice(1) + "websockify"),
         });
+      }
       if (req.method === "POST" && action === "commands") {
         const { command, detached } = await payload(req);
         if (detached)
@@ -178,6 +183,9 @@ const contentTypes = {
   ".svg": "image/svg+xml",
   ".json": "application/json",
   ".ogg": "audio/ogg",
+  ".oga": "audio/ogg",
+  ".woff": "font/woff",
+  ".ttf": "font/ttf",
   ".mp3": "audio/mpeg",
   ".ico": "image/x-icon",
 };
