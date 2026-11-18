@@ -1,8 +1,11 @@
+import { useEffect, useState } from "react";
 import { Box, Check, Cloud, Globe, Monitor, Power, Sparkles } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Bot, ConfigStatus } from "@/state/store";
 import type { PlaceView } from "../../shared/place-view";
 import { cn } from "@/lib/cn";
+import { lx } from "@/lib/limix-text";
+import { api } from "@/state/api";
 import { t } from "@/lib/i18n";
 import { pageOnRemoteServer } from "@/lib/local-computer";
 import { placeOffered, type Place } from "@/lib/place";
@@ -48,6 +51,7 @@ export interface WorksOnOption {
 
 export function WorksOnGrid({ options, onSelect }: { options: readonly WorksOnOption[]; onSelect: (mode: WorksOnMode) => void }) {
   return (
+    <>
     <div role="group" aria-label={t("computer.destinationAria")} className="mt-3 grid auto-rows-fr grid-cols-2 gap-2">
       {options.map(({ mode, labelKey, descriptionKey, Icon, selected, managedBy, disabled, unavailableTitle, note, issue, view }) => (
         <button
@@ -77,5 +81,32 @@ export function WorksOnGrid({ options, onSelect }: { options: readonly WorksOnOp
         </button>
       ))}
     </div>
+    <LentComputerLine />
+    </>
+  );
+}
+
+type LentComputer = { name: string; online: boolean; lent?: boolean };
+
+/** Limix Bot: on My Cloud, whether the person's own computer is on for the bot to use (Auto works there first). */
+function LentComputerLine() {
+  const [computers, setComputers] = useState<LentComputer[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    const load = () => void api<{ known?: LentComputer[] }>("/api/shared-computers").then((answer) => { if (live) setComputers(answer.known ?? []); }).catch(() => {});
+    load();
+    const timer = setInterval(load, 30_000);
+    return () => { live = false; clearInterval(timer); };
+  }, []);
+  const own = computers?.filter((computer) => computer.lent !== false) ?? [];
+  if (!own.length) return null;
+  const on = own.find((computer) => computer.online);
+  return (
+    <p className="mt-2 flex items-center gap-1.5 text-[12px] leading-5 text-ink-secondary" data-testid="lent-computer-line">
+      <span className={cn("size-1.5 shrink-0 rounded-full", on ? "bg-success" : "bg-ink-tertiary")} />
+      {on
+        ? lx(`Máy tính của bạn (${on.name}) đang bật: bot dùng máy này khi việc cần file, ứng dụng hoặc màn hình của bạn.`, `Your computer (${on.name}) is on: the bot uses it when a task needs your files, apps or screen.`)
+        : lx(`Máy tính của bạn (${own[0]!.name}) đang tắt: bot làm trên Cloud, việc cần máy của bạn sẽ chờ máy bật.`, `Your computer (${own[0]!.name}) is off: the bot works on Cloud, and tasks that need your computer wait until it is on.`)}
+    </p>
   );
 }

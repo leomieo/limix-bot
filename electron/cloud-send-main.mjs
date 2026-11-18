@@ -53,6 +53,8 @@ export async function openOwnerSession(target, fetchImpl, { label = SESSION_LABE
   };
 }
 
+const SYNC_EVERY_MS = 5 * 60_000;
+
 /**
  * @param {{
  *   ipcMain: { handle(channel: string, handler: (...args: any[]) => unknown): void },
@@ -133,6 +135,13 @@ export function installCloudSend({ ipcMain, cloudPage, server, local, home, cook
     space,
     t,
   });
+  // Limix Bot: the person's own things (apps and keys, MCP servers, logins, secrets, profile, language) follow to My Cloud
+  // by themselves while this app runs and My Cloud is awake, a few minutes after each change here. Bots stay where they are.
+  const syncTimer = setInterval(() => {
+    if (!home() || power.asleep() || send.snapshot().running) return;
+    void send.send({ reason: "sync" }).catch(() => {});
+  }, SYNC_EVERY_MS);
+  syncTimer.unref?.();
   const onPage = (channel, handler) => (event, ...args) => {
     const asking = cloudPage(event);
     if (!asking) throw new Error(`${channel} is only available in this app's window`);

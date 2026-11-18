@@ -210,12 +210,23 @@ function ownComputerSentence(lent: ReadonlyArray<{ name: string; platform: LentP
   return ` ${theirs[0]!.toUpperCase()}${theirs.slice(1)} is reached only through shared_computer, never select_computer: when they ask for something on it, check list_shared_computers, then use shared_computer on it (computer_tools, then computer_call, for its apps and screen), whatever this conversation is pinned to. If list_shared_computers says this conversation can't use it, or that it doesn't lend what you need, say so in one sentence${place ? ` and don't do it on ${place} instead unless they ask` : ""}.`;
 }
 
+/** Limix Bot: on Auto, a bot that lives on My Cloud works on the person's own computer while it is on and lends what the
+ * task needs, and on its cloud places only while it is away. */
+function ownComputerFirst(lent: ReadonlyArray<{ name: string; platform: LentPlatform | null; online?: boolean; scopes?: { screen?: boolean; folders?: number } }>): string {
+  const online = lent.filter((computer) => computer.online === true);
+  if (!online.length) return ` Works on is Auto and ${theirComputer(lent).theirs} is offline now: do screen and desktop work on your cloud places (cloud computer, private desktop or the built-in browser), and say in one sentence when a task needs their own files or apps, which wait until that computer is on.`;
+  const { theirs } = theirComputer(online);
+  const lends = online[0]!.scopes;
+  const what = [lends?.screen ? "its apps and screen" : null, (lends?.folders ?? 0) > 0 ? "its files" : null].filter(Boolean).join(" and ");
+  return ` Works on is Auto and ${theirs} is online${what ? `, lending ${what}` : ""}: for a task that needs a desktop, desktop apps or the person's own files, use it first through shared_computer, without asking. Use your cloud computer, private desktop or the built-in browser instead only when it goes offline, doesn't lend what the task needs, or the person names another place.`;
+}
+
 /** Built from what was actually mounted, never from the setting, so the model is only told about tools it can call.
  * `ownComputer`: on a Cloud home, the person's lent computers (newest first) when this turn has the shared-computer tools. */
 export function surfacePrompt(
   mounted: MountedSurfaces,
-  opts: { pinned?: Surface | null; note?: string; canSelect?: boolean; cloudHome?: boolean; botOpened?: boolean;
-    ownComputer?: ReadonlyArray<{ name: string; platform: LentPlatform | null }> } = {},
+  opts: { pinned?: Surface | null; note?: string; canSelect?: boolean; cloudHome?: boolean; botOpened?: boolean; auto?: boolean;
+    ownComputer?: ReadonlyArray<{ name: string; platform: LentPlatform | null; online?: boolean; scopes?: { screen?: boolean; folders?: number } }> } = {},
 ): string {
   const reportBack = opts.botOpened && !opts.canSelect;
   const computer = mounted.computer ? surfaceLabel(mounted.computer) : null;
@@ -255,6 +266,7 @@ export function surfacePrompt(
     // What this turn's places reach, never every screen: their own computer is reachable too, through shared_computer.
     for (const [nowhere, places] of OWN_COMPUTER_WORDING) text = text.replace(nowhere, places);
     text = text.replace(UNREACHABLE_OWN, `${theirComputer(opts.ownComputer).theirs} is not one of these places`) + ownComputerSentence(opts.ownComputer, computer);
+    if (opts.auto && !opts.pinned) text += ownComputerFirst(opts.ownComputer);
   }
   return text + (opts.note ?? "");
 }

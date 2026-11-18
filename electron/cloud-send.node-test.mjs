@@ -662,3 +662,13 @@ test("closing the move's done line closes the move's own send result with it, so
     assert.equal(after.last.seen, true, "the move's own result is not said again after the done line");
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("Limix Bot: the quiet sync sends the person's settings and never a bot, without a notice of its own", async () => {
+  const profile = { key: itemKey.setting("profile"), kind: "setting", label: "profile", parts: { name: "a" } };
+  const sides = fakeSides({ localItems: [bot("ember", { soul: "s" }), profile] });
+  const send = createCloudSend(sides.deps);
+  await send.send({ reason: "sync" });
+  assert.equal(sides.calls.includes("POST /api/bots"), false, "no bot goes in a sync");
+  assert.ok(sides.calls.some((call) => call.startsWith("PATCH ") || call.startsWith("PUT ")), sides.calls.join(", "));
+  assert.equal(send.snapshot().last, null);
+});

@@ -6549,7 +6549,7 @@
   "place.pinnedNoteSimple": "Cuộc trò chuyện này được ghim vào “{place}”.",
   "place.unpinSimple": "Sử dụng {place}",
   "place.view.auto.short": "Tự động chọn cho bạn",
-  "place.view.auto.lineMyCloud": "Sử dụng trình duyệt tích hợp. Trong cuộc trò chuyện, bot sẽ tự khởi động máy tính đám mây của mình khi nhiệm vụ cần ứng dụng máy tính.",
+  "place.view.auto.lineMyCloud": "Ưu tiên máy tính của bạn khi máy đang bật và cho My Cloud mượn (file, ứng dụng, màn hình). Máy tắt thì bot dùng trình duyệt tích hợp hoặc tự khởi động máy tính đám mây khi nhiệm vụ cần.",
   "place.view.auto.lineDesktop": "Sử dụng trình duyệt tích hợp, không gian desktop riêng hoặc màn hình của máy tính này, tùy theo nhu cầu của nhiệm vụ.",
   "place.view.auto.lineLinux": "Sử dụng trình duyệt tích hợp, hoặc desktop riêng đang chạy khi nhiệm vụ cần đến.",
   "place.view.autoTeam.short": "Dùng chung",

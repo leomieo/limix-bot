@@ -1,3 +1,15 @@
+Limix Bot 0.3.84
+
+## Tiếng Việt
+
+- **Bot trên My Cloud, làm việc trên máy của bạn khi máy bật.** Với nơi làm việc **Tự động**, bot ở My Cloud ưu tiên dùng máy tính của bạn (file, ứng dụng, màn hình) khi máy đang bật và cho My Cloud mượn; máy tắt thì bot làm trên trình duyệt tích hợp hoặc máy tính đám mây, và nói rõ việc nào phải chờ máy bật. Ô **Nơi làm việc** trên My Cloud cho biết máy của bạn đang bật hay tắt.
+- **Cài đặt tự đồng bộ lên My Cloud.** Khi app đang mở và My Cloud đang thức, khoá AI, máy chủ MCP (plugin), ứng dụng đã kết nối, hộp thư, mật khẩu đã lưu, khoá bí mật, hồ sơ và ngôn ngữ trên máy này tự được cập nhật lên My Cloud vài phút một lần khi có thay đổi. Bot không bị sao chép; đăng nhập tự gia hạn (như tài khoản Claude, ChatGPT) vẫn ở nơi bạn đăng nhập.
+
+## English
+
+- **Bots on My Cloud work on your computer while it is on.** With Works on set to **Auto**, a bot on My Cloud uses your computer (files, apps, screen) first while it is on and lent to My Cloud; while it is off the bot works in the built-in browser or its cloud computer and says which tasks wait for your computer. The Works on card on My Cloud shows whether your computer is on.
+- **Settings follow to My Cloud by themselves.** While the app is open and My Cloud is awake, this computer's AI keys, MCP servers (plugins), connected apps, mailboxes, saved logins, secrets, profile and language reach My Cloud a few minutes after each change. Bots are not copied, and sign-ins that refresh themselves (such as Claude or ChatGPT accounts) stay where you signed in.
+
 Limix Bot 0.3.83
 
 ## Tiếng Việt

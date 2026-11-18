@@ -460,3 +460,14 @@ describe("a connected app before any screen", () => {
     expect(surfacePrompt({ computer: null, browser: false })).not.toContain(RULE);
   });
 });
+
+describe("Limix Bot: Auto on My Cloud works on the person's own computer first", () => {
+  const lent = (online: boolean) => [{ name: "LEO-PC", platform: "win32" as const, online, scopes: { screen: true, folders: 2 } }];
+  it("uses their PC while it is online and the cloud places only while it is away", () => {
+    const on = surfacePrompt({ computer: null, browser: true }, { cloudHome: true, auto: true, ownComputer: lent(true) });
+    expect(on).toContain("their PC (LEO-PC) is online, lending its apps and screen and its files: for a task that needs a desktop");
+    const off = surfacePrompt({ computer: null, browser: true }, { cloudHome: true, auto: true, ownComputer: lent(false) });
+    expect(off).toContain("their PC (LEO-PC) is offline now: do screen and desktop work on your cloud places");
+    expect(surfacePrompt({ computer: null, browser: true }, { cloudHome: true, auto: false, ownComputer: lent(true) })).not.toContain("Works on is Auto");
+  });
+});

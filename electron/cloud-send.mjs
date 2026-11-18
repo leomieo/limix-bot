@@ -37,6 +37,8 @@ const PICTURE_TYPES = { png: "image/png", jpg: "image/jpeg", gif: "image/gif", w
 const VAULT_ID = /^[\w-]{1,128}$/u;
 /** Whole sends, which carry the chats too; a send of some items (Use this computer's, one login) never does. */
 const CHAT_REASONS = new Set(["button", "my-cloud", "menu", "move"]);
+/** Limix Bot: what the quiet sync keeps the same on My Cloud: the person's own things, never a bot or its chats. */
+const SYNC_KINDS = new Set(["login", "secret", "1password", "setting"]);
 /** How much a move of chosen bots carries: "bot" (the bot, its memory, skills and instructions), "chats" (and its text
  * chats), "full" (and the chats' attachments and the bots' files). A whole-team move is always "full". */
 export const MOVE_LEVELS = Object.freeze(["bot", "chats", "full"]);
@@ -136,6 +138,7 @@ export function parseSendState(value) {
         created: record(entry.created) ? Object.fromEntries(Object.entries(entry.created).filter(([key, on]) => key.startsWith("bot:") && on === true)) : {},
         creating: record(entry.creating) ? Object.fromEntries(Object.entries(entry.creating).filter(([key, on]) => key.startsWith("bot:") && on === true)) : {},
         release: Array.isArray(entry.release) ? entry.release.filter((held) => record(held) && typeof held.id === "string" && typeof held.digest === "string").slice(0, 200) : [],
+        ...(typeof entry.synced === "string" && /^[0-9a-f]{64}$/u.test(entry.synced) ? { synced: entry.synced } : {}),
         files: record(entry.files) ? Object.fromEntries(Object.entries(entry.files).filter(([path, sha]) => typeof sha === "string" && /^[a-f0-9]{64}$/u.test(sha) && path.length <= 4096)) : {},
         on: record(entry.on) ? Object.fromEntries(Object.entries(entry.on).filter(([key, on]) => /^(?:routine|call|webhook|app-event):[\w-]{1,128}$/u.test(key) && typeof on === "boolean")) : {},
         verified: record(entry.verified) ? Object.fromEntries(Object.entries(entry.verified).filter(([threadId, seen]) => /^[\w-]{1,200}$/u.test(threadId) && record(seen)
@@ -235,7 +238,7 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
     const plan = view.plan;
     return {
       cloud: origin ? view.cloud : "none",
-      running: running ? { reason: running.reason, ...(progress ? { progress } : {}), ...(running.chats ? { phase: "chats" } : {}) } : null,
+      running: running && running.reason !== "sync" ? { reason: running.reason, ...(progress ? { progress } : {}), ...(running.chats ? { phase: "chats" } : {}) } : null,
       rows: plan?.rows ?? [],
       cloudOnly: plan?.cloudOnly ?? [],
       pending: plan ? pendingRows(plan).length : 0,
@@ -373,7 +376,7 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
     const latest = await sendItems(origin, mine, result, { keys, force, job, withChats });
     const outcome = { at: now(), reason, result };
     const kept = entry(origin);
-    kept.last = outcome;
+    if (reason !== "sync") kept.last = outcome;
     if (withChats) kept.whole = outcome;
     kept.arrived = addCounts(kept.arrived, sentCounts(result));
     persist();
@@ -405,6 +408,7 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
       const theirs = before.ok ? parseSendSummary(before.body) : null;
       if (!theirs) throw refusedError("unreachable", before, "My Cloud did not answer. Try again.");
       let computer = team ? { label: team.label } : null;
+      if (job.reason === "sync" && !team) await syncConnections(origin, session, result);
       if (move) {
         await assertTakesMove(session);
         // A bot moving into a team carries nothing of the person's: their apps and keys stay.
@@ -414,7 +418,7 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
       settleCreating(origin, theirs);
       const planned = plan(origin, mine, theirs, force, { everything: move });
       const wanted = keys ? new Set(keys) : null;
-      const rows = pendingRows(planned).filter((row) => !wanted || wanted.has(row.key) || (row.bot && wanted.has(itemKey.bot(row.bot))))
+      const rows = pendingRows(planned).filter((row) => job.reason !== "sync" || SYNC_KINDS.has(row.kind)).filter((row) => !wanted || wanted.has(row.key) || (row.bot && wanted.has(itemKey.bot(row.bot))))
         .filter((row) => row.kind !== "app-event" || job.final);
       const total = rows.length;
       progress = total ? { done: 0, total } : null;
@@ -477,6 +481,18 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
   /** This computer's apps and keys, MCP servers, mailboxes and connected apps, over the move's session. A sign-in that
    * refreshes itself goes only in the final pass; this computer then lets go of its copy once My Cloud has it, and one it
    * could not let go of yet is kept and let go of on the next final pass. */
+  /** The quiet sync's apps and keys: sent again only when they changed here, and a sign-in that refreshes itself stays. */
+  async function syncConnections(origin, session, result) {
+    const kept = entry(origin);
+    let collected;
+    try { collected = await collectConnections(connectionLocal); } catch { return; }
+    const digest = createHash("sha256").update(JSON.stringify(collected)).digest("hex");
+    if (kept.synced === digest) return;
+    const moved = await sendConnections(collected, session, { local: connectionLocal, signIns: false, t, ...(engineWaitMs !== undefined ? { waitMs: engineWaitMs } : {}) });
+    result.connections += moved.moved.length;
+    if (!moved.failed.length) { kept.synced = digest; persist(); }
+  }
+
   async function moveConnections(origin, session, result, final) {
     const kept = entry(origin);
     const failed = (id, label, error, last) => result.failed.push({ key: id, kind: "connection", label, error: sentence(error) ?? t("native.home.itemDidNotMove"), ...(last ? { final: true } : {}) });
