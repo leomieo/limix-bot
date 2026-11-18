@@ -809,7 +809,7 @@ export const BotListItem = memo(function BotListItem(props: BotRowProps) {
                 <title>{t("call.live.badge")}</title>
               </Phone>
             )}
-            {!simpleList && title && !renaming && <SidebarBotRole role={title} />}
+            {!simpleList && title && !renaming && <SidebarBotRole role={title} />}{!renaming && <CloudMark bot={bot} words />}
           </span>
           {last && !renaming && !expanded && (
             <span className={cn(

@@ -226,3 +226,17 @@ test("a move still copying can carry another level from its next pass; one past 
   late.journal = { v: 1, moves: [{ bot: { id: "bots-y", name: "Late" }, team: MY_CLOUD, bots: [{ id: "b0", name: "Bot 0" }], phase: "switch", startedAt: 1 }] };
   assert.equal(late.move.relevel(["b0"], "bot"), false);
 });
+
+test("a bot on My Cloud comes back: My Cloud pauses its copy first, then this computer runs it again, and only that bot leaves the move", async () => {
+  const w = world();
+  w.journal = { v: 1, moves: [{ bot: { id: "bots-x", name: "Pair" }, team: MY_CLOUD, bots: [{ id: "b0", name: "Bot 0" }, { id: "b1", name: "Bot 1" }], phase: "done", startedAt: 1 }] };
+  w.holds.set("b0", "moved"); w.holds.set("b1", "moved");
+  await w.move.bringBack(["b0"]);
+  assert.deepEqual(w.cloud, [["POST", "/api/paused", { kind: "bot", id: "b0", paused: true }]]);
+  assert.equal(w.holds.has("b0"), false);
+  assert.equal(w.holds.get("b1"), "moved");
+  assert.deepEqual(w.journal.moves[0].bots, [{ id: "b1", name: "Bot 1" }]);
+  await w.move.bringBack(["b1"]);
+  assert.deepEqual(w.journal.moves, []);
+  await assert.rejects(w.move.bringBack(["b1"]), /not on My Cloud/u);
+});

@@ -188,9 +188,11 @@ export function useMoveToMyCloud() {
   const names = { bot: asked?.name ?? "" };
   return {
     items(bot: Bot, item: MenuItem): ReactNode[] {
-      if (!bridge()?.botMoveState || bot.defaultBot || bot.movedTo) return [];
+      if (!bridge()?.botMoveState || bot.defaultBot) return [];
       const moving = known?.moving.includes(bot.id);
       const status = known?.moves?.find((entry) => entry.id === bot.id);
+      // A bot on its way already shows as moved (movedTo "moving"): its own move still answers here.
+      if (bot.movedTo && !status) return [];
       if (status) return [
         item(<Cloud size={16} className="text-ink-secondary" />, t("cloudSend.botMove.menu"), undefined, { disabled: true, hint: moveStatusText(status) }),
         ...(status.phase === "failed" && bridge()?.botMoveRetry ? [item(<RotateCw size={16} className="text-ink-secondary" />, lx("Thử chuyển lên Cloud lại ngay", "Retry the move to Cloud now"), () => { void bridge()!.botMoveRetry!().then(readShared, readShared); })] : []),
@@ -217,7 +219,7 @@ export function useMoveToMyCloud() {
 }
 
 /** A small cloud beside a bot's name: on its way to My Cloud (pulsing), failing and trying again (warning), or there. */
-export function CloudMark({ bot }: { bot: Pick<Bot, "id" | "movedTo" | "defaultBot"> }) {
+export function CloudMark({ bot, words = false }: { bot: Pick<Bot, "id" | "movedTo" | "defaultBot">; words?: boolean }) {
   const known = useBotMoveState();
   const status = known?.moves?.find((entry) => entry.id === bot.id);
   const moved = bot.movedTo?.team.id === MY_CLOUD_TEAM ? bot.movedTo : undefined;
@@ -234,6 +236,9 @@ export function CloudMark({ bot }: { bot: Pick<Bot, "id" | "movedTo" | "defaultB
     : lx("Chưa chuyển lên My Cloud, vẫn chạy trên máy này", "Not moved to My Cloud yet, still runs on this computer");
   const Icon = state === "failed" ? CloudAlert : state === "moving" ? CloudUpload : state === "done" ? CloudCheck : CloudOff;
   const tone = state === "failed" ? "text-warning" : state === "waiting" ? "text-ink-tertiary" : "text-accent-text";
+  // Beside a bot's name, a word says what the cloud means: the icon alone was too small to read at a glance.
+  const word = !words ? "" : state === "failed" ? lx("Lỗi chuyển Cloud", "Cloud move failed") : state === "moving" ? lx("Đang chuyển", "Moving") : state === "done" ? lx("Trên Cloud", "On Cloud") : "";
+  if (words) return word ? <span title={label} aria-hidden="true" data-cloud-word={state} className={`shrink-0 whitespace-nowrap text-[11px] font-normal ${tone}`}>{word}</span> : null;
   return <span title={label} aria-label={label} role="img" data-cloud-mark={state} className={`inline-flex shrink-0 ${tone}`}>
     <Icon size={13} aria-hidden="true" className={state === "moving" ? "animate-pulse" : undefined} />
   </span>;
@@ -242,8 +247,16 @@ export function CloudMark({ bot }: { bot: Pick<Bot, "id" | "movedTo" | "defaultB
 /** The bots that moved to My Cloud, each by name with its cloud, under one heading: any of them opens My Cloud. */
 export function MovedToMyCloudRow({ bots }: { bots: readonly Bot[] }) {
   const moved = bots.filter((bot) => bot.movedTo?.state === "moved" && bot.movedTo.team.id === MY_CLOUD_TEAM);
+  const [back, setBack] = useState<Bot | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   if (!moved.length) return null;
   const page = bridge();
+  const bringBack = () => {
+    if (!back || !page?.botBringBack) return;
+    setBusy(true); setError(null);
+    void page.botBringBack([back.id]).then(() => { setBack(null); readShared(); }, (cause: unknown) => setError(ipcErrorText(cause) ?? lx("Chưa chuyển về được. Kiểm tra kết nối My Cloud rồi thử lại.", "Could not bring it back. Check the connection to My Cloud and try again."))).finally(() => setBusy(false));
+  };
   const open = () => { void page?.openMyCloud?.().catch(() => {}); };
   const row = "flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] text-ink-secondary enabled:hover:bg-menu-hover enabled:hover:text-ink";
   return <div className="flex flex-col px-2 pb-1" data-moved-to-my-cloud={moved.length}>
@@ -251,14 +264,28 @@ export function MovedToMyCloudRow({ bots }: { bots: readonly Bot[] }) {
       <Cloud size={13} aria-hidden="true" className="text-accent-text" />
       {moved.length === 1 ? t("cloudSend.botMove.movedOne", { bot: moved[0]!.name }) : t("cloudSend.botMove.movedMany", { count: moved.length })}
     </p>
-    {moved.slice(0, 12).map((bot) => <button key={bot.id} type="button" data-moved-bot={bot.id} disabled={!page?.openMyCloud} onClick={open} className={row}
-      title={lx(`${bot.name} đang chạy trên My Cloud. Bấm để mở My Cloud.`, `${bot.name} runs on My Cloud. Click to open it.`)}>
-      <Cloud size={14} aria-hidden="true" className="shrink-0 text-accent-text" />
-      <span className="truncate" dir="auto">{bot.name}</span>
-    </button>)}
+    {moved.slice(0, 12).map((bot) => <div key={bot.id} className="group flex items-center">
+      <button type="button" data-moved-bot={bot.id} disabled={!page?.openMyCloud} onClick={open} className={row}
+        title={lx(`${bot.name} đang chạy trên My Cloud. Bấm để mở My Cloud.`, `${bot.name} runs on My Cloud. Click to open it.`)}>
+        <Cloud size={14} aria-hidden="true" className="shrink-0 text-accent-text" />
+        <span className="truncate" dir="auto">{bot.name}</span>
+      </button>
+      {page?.botBringBack && <button type="button" data-bring-back={bot.id} onClick={() => { setError(null); setBack(bot); }}
+        className="shrink-0 rounded-md px-2 py-1 text-[12px] text-ink-tertiary hover:bg-menu-hover hover:text-ink" title={lx(`Chuyển ${bot.name} về máy này`, `Bring ${bot.name} back to this computer`)}>
+        {lx("Về máy", "Bring back")}
+      </button>}
+    </div>)}
     {moved.length > 12 && <button type="button" disabled={!page?.openMyCloud} onClick={open} className={row}>
       <ArrowRightLeft size={14} aria-hidden="true" className="shrink-0" />{lx(`và ${moved.length - 12} bot khác — mở My Cloud`, `and ${moved.length - 12} more — open My Cloud`)}
     </button>}
+    <ConfirmDialog open={back !== null} tone="neutral" icon={<Cloud size={18} />}
+      title={lx(`Chuyển ${back?.name ?? ""} về máy này?`, `Bring ${back?.name ?? ""} back to this computer?`)}
+      body={<span className="flex flex-col gap-2" data-bring-back-confirm="">
+        <span>{lx("Bot chạy lại trên máy này với dữ liệu như lúc nó lên Cloud. Trên My Cloud, bản của bot được tạm dừng (không xóa), nên bot không chạy ở hai nơi cùng lúc.", "The bot runs on this computer again with its data from when it went to Cloud. On My Cloud its copy is paused (not deleted), so it never runs in both places.")}</span>
+        <span className="text-ink-secondary">{lx("Những cuộc trò chuyện và việc bot làm trên Cloud vẫn nằm trên My Cloud, chưa được chép về.", "Conversations and work it did on Cloud stay on My Cloud; they are not copied back.")}</span>
+        {error && <span role="alert" className="text-danger">{error}</span>}
+      </span>}
+      confirmLabel={lx("Chuyển về", "Bring back")} pending={busy} onCancel={() => setBack(null)} onConfirm={bringBack} />
   </div>;
 }
 

@@ -131,6 +131,8 @@ export interface CloudSendPageBridge {
   botMoveRetry?(): Promise<BotMoveView | null>;
   /** A move still copying carries this much from its next pass; refused once past copying. */
   botMoveLevel?(ids: string[], level: MoveLevel): Promise<BotMoveState>;
+  /** Brings bots on My Cloud back to this computer: My Cloud pauses its copy, this computer runs the bot again. */
+  botBringBack?(ids: string[]): Promise<BotMoveState>;
   /** Shows My Cloud in this window. */
   openMyCloud?(): Promise<void>;
   /** The switch "Keep this computer's bots on this computer"; absent from an older desktop. */

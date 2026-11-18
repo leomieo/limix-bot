@@ -1,3 +1,17 @@
+Limix Bot 0.3.79
+
+## Tiếng Việt
+
+- Chuyển bot từ Cloud về máy: trong danh sách "bot ở trên My Cloud" ở thanh bên, mỗi bot có nút **Về máy**. Bot chạy lại trên máy này với dữ liệu như lúc nó lên Cloud; bản trên My Cloud được tạm dừng (không xóa) để bot không chạy ở hai nơi. Cuộc trò chuyện và việc bot làm trên Cloud vẫn nằm trên My Cloud, chưa được chép về.
+- Cạnh tên bot có thêm chữ cho biết trạng thái chuyển lên Cloud: "Đang chuyển", "Lỗi chuyển Cloud" hoặc "Trên Cloud", ngoài biểu tượng đám mây. Rê chuột vào để xem chi tiết lỗi và giờ tự thử lại.
+- Bot đang chuyển lên Cloud nay luôn hiện các mục chuyển trong menu (thử lại, đổi dữ liệu chuyển), kể cả khi bot đã được đánh dấu là đang chuyển.
+
+## English
+
+- Bring a bot back from Cloud: in the sidebar's "bots on My Cloud" list each bot has **Bring back**. The bot runs on this computer again with its data from when it went to Cloud; its copy on My Cloud is paused (not deleted) so it never runs in both places. Conversations and work it did on Cloud stay on My Cloud and are not copied back.
+- Beside a bot's name a word now says where its move to Cloud stands: "Moving", "Cloud move failed" or "On Cloud", next to the cloud icon. Hover for the error and the next retry.
+- A bot moving to Cloud always offers its move items in its menu (retry, change what moves), even once it is marked as moving.
+
 Limix Bot 0.3.78
 
 ## Tiếng Việt
