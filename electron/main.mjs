@@ -2672,7 +2672,14 @@ const homeWindow = createHomeWindow({ clean: cleanWorkspace, journal: oneHome.jo
   go: (url, origin, place) => { if (place?.kind === "team" || place?.kind === "own") { activatePlace(place); if (place.kind === "team") { teamProfileSeeds.opened(place.origin); teamLinks.opened(place.id); } } else if (origin) activateCloud(origin); else if (activeEnvironment(environmentsState)) persistEnvironments(withActive(environmentsState, LOCAL_ID)); return navigateMainWindow(url, true); },
   reopen: (place, still) => reopenSavedServer(place, { still, saved: () => environmentsState.environments.filter(handSaved), fetch: (...args) => session.defaultSession.fetch(...args), opened: async (entry) => { homePlaces.remember(null); persistEnvironments(withActive(environmentsState, entry.id)); return navigateMainWindow(activeOrigin(), true); } }),
   showLocal: leaving => { if (!mainWindow || mainWindow.isDestroyed()) return createWindow(); if (!leaving) return; persistEnvironments(withActive(environmentsState, LOCAL_ID)); return navigateMainWindow(rendererOrigin()); } });
-installHomeWindowIpc({ ipcMain, homeWindow, cloudPage: cloudPageAsking });
+installHomeWindowIpc({ ipcMain, homeWindow, cloudPage: cloudPageAsking, openLocal: async () => {
+  await cleanWorkspace.settled();
+  if (cleanWorkspace.marker().frozen && !cleanWorkspace.profile() && !(await cleanWorkspace.open())) return false;
+  homeWindow.chooseLocal();
+  homePlaces.remember(cleanWorkspace.profile() ? { profile: cleanWorkspace.profile() } : null);
+  persistEnvironments(withActive(environmentsState, LOCAL_ID));
+  return navigateMainWindow(rendererOrigin());
+} });
 /** Every path that shows the window: My Cloud once it is the person's home, else as before. */
 function showHome(options) {
   return homeWindow.show(options).catch(error => slog(`home: ${error?.message ?? error}`));

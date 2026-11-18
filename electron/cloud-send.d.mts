@@ -102,6 +102,8 @@ export interface CloudSendCounts {
 
 export interface CloudSendPageBridge {
   notice(): Promise<CloudSendNotice>;
+  botSync?(): Promise<{ enabled: boolean } | null>;
+  setBotSync?(enabled: boolean): Promise<{ enabled: boolean } | null>;
   dismiss(signature: string): Promise<CloudSendNotice>;
   /** The move's Try again, after a day of failing; absent from an older desktop. */
   moveRetry?(): Promise<CloudSendNotice>;
@@ -219,7 +221,7 @@ export function createCloudSend(deps: {
     asleep(): boolean;
     read(route: string): Promise<Response>;
     /** `move`: the move's session, which counts as someone using My Cloud. */
-    open(options?: { move?: boolean }): Promise<CloudSendSession>;
+    open(options?: { move?: boolean; origin?: string }): Promise<CloudSendSession>;
   };
   handoff(what: { kind: string; [key: string]: unknown }): Promise<any>;
   /** Bring newer chats' copy, for a Cloud too old to take chats by row. */
@@ -243,7 +245,7 @@ export function createCloudSend(deps: {
   compare(): Promise<CloudSendSnapshot>;
   /** `reason: "move"`: everything this computer has, apps and keys first; `final`: the pass after this computer stopped,
    * which carries the sign-ins that refresh themselves and lets go of this computer's copies. */
-  send(options?: { keys?: string[] | null; force?: string[]; reason?: string; final?: boolean }): Promise<CloudSendOutcome>;
+  send(options?: { keys?: string[] | null; force?: string[]; reason?: string; final?: boolean; syncBots?: boolean }): Promise<CloudSendOutcome>;
   /** `scope`: only the bots a move of some of them carries. `stopped`: the person stopped the move, so a check waiting for My Cloud ends now. */
   check(options?: { scope?: string; stopped?(): boolean }): Promise<CloudMoveCheck>;
   /** Each automation a move carried ("routine:<id>", "call:<id>", "webhook:<id>", "app-event:<id>") and whether it was

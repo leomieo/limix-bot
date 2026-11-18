@@ -22,6 +22,7 @@ export interface HomeBridge {
   onState(callback: (view: HomeView) => void): () => void;
   /** This computer's screen only: look again now. */
   retry(): Promise<HomeView>;
+  openLocal?(): Promise<boolean>;
   /** This computer's screen only, once the person said yes there: the Cloud it shows leaves their list (absent: an older app). */
   remove?(): Promise<import("./cloud-account.mjs").CloudRemoveOutcome>;
   /** This device's MausBot Cloud sign-in, again; on My Cloud's page only from the person's click. */
@@ -80,6 +81,7 @@ export interface HomeWindow {
   profile(): string | null;
   opensNow(ask: "cloud" | { team: string } | { cloud: string }): boolean | null;
   cancel(): void;
+  chooseLocal(): void;
   stopOpening(): void;
   stay(): void;
   openCloud(open?: "phone" | null): Promise<unknown>;
@@ -148,4 +150,5 @@ export function installHomeWindowIpc(deps: {
   ipcMain: { handle(channel: string, handler: (event: any, ...args: any[]) => unknown): void; on(channel: string, listener: (event: any) => void): void };
   homeWindow: HomeWindow;
   cloudPage(event: unknown): "local" | "cloud" | null;
+  openLocal?(): Promise<boolean>;
 }): void;

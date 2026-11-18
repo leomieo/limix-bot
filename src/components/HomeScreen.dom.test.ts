@@ -64,3 +64,12 @@ it("a checkout that wasn't finished continues where this app keeps its page, els
   await click("[data-home-action='continue']");
   expect([reopen.mock.calls.length, manage.mock.calls.length]).toEqual([2, 1]);
 });
+
+it("opens this computer directly from the Cloud outage screen", async () => {
+  const openLocal = vi.fn(async () => true);
+  await mount({ ...bridgeOf({ screen: "offline" }), openLocal });
+  expect(host.querySelector("[data-home-action='local']")?.textContent).toBe("Use this computer");
+  await click("[data-home-action='local']");
+  expect(openLocal).toHaveBeenCalledOnce();
+  expect(host.querySelector("[role='alert']")).toBeNull();
+});

@@ -152,9 +152,26 @@ export function installOneHome({ localRequest: anyServer, clean = null, account,
   const watched = new WeakSet();
   let teamMove = null;
   let botMove = null;
+  let onlineSyncOrigin = null;
+  const botSyncFile = jsonFile(() => join(dirname(journalFile()), "local-bot-sync.json"));
+  const botSyncKey = () => {
+    const state = account()?.state();
+    if (state?.status !== "connected" || !state.account?.id || teamPlan(state) || (clean && (!clean.ownCopy() || clean.marker().frozen))) return null;
+    return createHash("sha256").update(state.account.id).digest("hex");
+  };
+  const botSyncState = () => {
+    const key = botSyncKey();
+    return key ? { enabled: botSyncFile.read()?.[key] === true } : null;
+  };
   // One owner session for the whole move, every pass and check and the switch: each new one is one of the Admin's codes.
   const moveSession = createMoveSession({ open: (target) => openOwnerSession(target, fetchImpl, { label: MOVE_LABEL, background: false }) });
   const send = installCloudSend({ ...sendDeps, t, local: (route, init) => localRequest(route, { method: init?.method ?? "GET", signal: AbortSignal.timeout(init?.timeoutMs ?? 30_000) }),
+    botSync: { state: botSyncState, set(enabled) {
+      const key = botSyncKey();
+      if (!key) return null;
+      botSyncFile.write({ ...botSyncFile.read(), [key]: enabled });
+      return { enabled };
+    } },
     move: () => (home?.view() === null && other()?.view() ? other() : home), teamMove: () => teamMove, botMove: () => botMove, moveSession });
   teamMove = installTeamMove({ t, ipcMain: sendDeps.ipcMain, cloudPage: sendDeps.cloudPage, pageOrigin: sendDeps.pageOrigin, confirmMove: sendDeps.confirmMove, home: sendDeps.home, account: () => account(), fetch: fetchImpl, openTeam,
     file: () => join(dirname(journalFile()), "team-move-send.json"), journalFile: () => join(dirname(journalFile()), "team-moves.json"), ...(teamJournal ? { journal: teamJournal } : {}),
@@ -384,13 +401,16 @@ export function installOneHome({ localRequest: anyServer, clean = null, account,
       void teamMove.kick();
       void botMove.kick();
       const cloud = oneHomeCloud(account()?.state());
+      const online = cloud?.ready && !account()?.state()?.machine?.unreachable ? cloud.origin : null;
+      if (online && online !== onlineSyncOrigin && botSyncState()?.enabled) void send.sync();
+      onlineSyncOrigin = online;
       if (cloud?.ended) void botMove.back(cloud.account);
       return home.kick();
     },
     /** Home is My Cloud: this computer's own server is frozen for good. */
     away: () => home.away(),
     view: () => home.view(),
-    close: () => { teamMove.close(); botMove.close(); home.close(); report.close(); void moveSession.end(); },
+    close: () => { send.closeSync(); teamMove.close(); botMove.close(); home.close(); report.close(); void moveSession.end(); },
     /** A bot moving from My Cloud into a team (team-move-main.mjs). */
     teamMove,
     oneHome: home,

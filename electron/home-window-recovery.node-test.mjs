@@ -2,9 +2,24 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { HOME_SCREEN_PATH, OPEN_MS } from "./home-window.mjs";
-import { LOCAL, world } from "./fixtures/home-window-world.mjs";
+import { CLOUD, LOCAL, world } from "./fixtures/home-window-world.mjs";
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));
+
+test("choosing the computer during an outage keeps it open until the person chooses My Cloud", async () => {
+  const w = world({ cloud: { down: true } });
+  await w.home.show({ place: "cloud" });
+  assert.equal(w.home.view().screen, "offline");
+  w.home.chooseLocal();
+  w.url = LOCAL;
+  w.cloud.down = false;
+  assert.equal(w.home.failed(CLOUD), false);
+  await w.home.changed();
+  await w.home.retry();
+  assert.equal(w.url, LOCAL);
+  await w.home.show({ place: "cloud" });
+  assert.equal(new URL(w.url).origin, CLOUD);
+});
 
 test("the recovery owns the window until it settles, and a server chosen meanwhile takes it back", async () => {
   const garage = "https://garage.example.test";

@@ -37,8 +37,8 @@ const PICTURE_TYPES = { png: "image/png", jpg: "image/jpeg", gif: "image/gif", w
 const VAULT_ID = /^[\w-]{1,128}$/u;
 /** Whole sends, which carry the chats too; a send of some items (Use this computer's, one login) never does. */
 const CHAT_REASONS = new Set(["button", "my-cloud", "menu", "move"]);
-/** Limix Bot: what the quiet sync keeps the same on My Cloud: the person's own things, never a bot or its chats. */
 const SYNC_KINDS = new Set(["login", "secret", "1password", "setting"]);
+const LOCAL_SYNC_KINDS = new Set(["bot", "skill"]);
 /** How much a move of chosen bots carries: "bot" (the bot, its memory, skills and instructions), "chats" (and its text
  * chats), "full" (and the chats' attachments and the bots' files). A whole-team move is always "full". */
 export const MOVE_LEVELS = Object.freeze(["bot", "chats", "full"]);
@@ -343,11 +343,11 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
   /** One send at a time; one asked while another runs waits for it, then runs as it was asked. A move (`reason: "move"`)
    * carries everything; its final pass (`final`) carries the sign-ins that refresh themselves too, and this computer lets
    * go of each once My Cloud has it. */
-  async function send({ keys = null, force = [], reason = "button", final = false, scope = null, level = "full" } = {}) {
+  async function send({ keys = null, force = [], reason = "button", final = false, scope = null, level = "full", syncBots = false } = {}) {
     while (running) await running.promise.catch(() => {});
     const origin = cloud.origin();
     if (!origin) throw new CloudSendError("no_cloud", "This computer has no My Cloud yet.");
-    const job = { reason, final: reason === "move" && final === true, scope, level: MOVE_LEVELS.includes(level) ? level : "full", promise: null, chats: false };
+    const job = { reason, final: reason === "move" && final === true, scope, level: MOVE_LEVELS.includes(level) ? level : "full", promise: null, chats: false, syncBots: reason === "sync" && !team && syncBots === true };
     running = job;
     progress = null;
     localScope = scope;
@@ -372,12 +372,12 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
     const result = { ...emptyResult(), ...(reason === "move" ? movedResult() : {}) };
     const mine = parseSendSummary(await localJson(reason === "move" ? scoped("/api/cloud-send?move=1") : "/api/cloud-send"));
     if (!mine) throw new CloudSendError("local", "Limix Bot on this computer did not answer. Try again in a moment.");
-    const withChats = !keys && CHAT_REASONS.has(reason);
+    const withChats = !keys && (CHAT_REASONS.has(reason) || job.syncBots);
     const latest = await sendItems(origin, mine, result, { keys, force, job, withChats });
     const outcome = { at: now(), reason, result };
     const kept = entry(origin);
     if (reason !== "sync") kept.last = outcome;
-    if (withChats) kept.whole = outcome;
+    if (withChats && reason !== "sync") kept.whole = outcome;
     kept.arrived = addCounts(kept.arrived, sentCounts(result));
     persist();
     view = { cloud: "ready", plan: plan(origin, mine, latest), local: mine, theirs: latest, chats: await chatsLeft(origin, latest) };
@@ -400,7 +400,7 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
     // What a chosen bots' move carries (MOVE_LEVELS): the bot alone, with its text chats, or everything with files.
     const level = move ? job.level ?? "full" : "full";
     const summaryRoute = move ? scoped("/api/cloud-send?move=1") : "/api/cloud-send";
-    const opened = await cloud.open(move ? { move: true } : undefined).catch((error) => { throw new CloudSendError("session", sentence(error?.message) ?? "This app could not sign in to My Cloud. Try again.", { cause: error }); });
+    const opened = await cloud.open(move ? { move: true } : job.syncBots ? { origin } : undefined).catch((error) => { throw new CloudSendError("session", sentence(error?.message) ?? "This app could not sign in to My Cloud. Try again.", { cause: error }); });
     const session = move && !team ? patientSession(opened, { ...(sleep ? { sleep } : {}), ...(patience.blips ? { blips: patience.blips } : {}) }) : opened;
     try {
       const before = await session.call("GET", summaryRoute);
@@ -418,7 +418,7 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
       settleCreating(origin, theirs);
       const planned = plan(origin, mine, theirs, force, { everything: move });
       const wanted = keys ? new Set(keys) : null;
-      const rows = pendingRows(planned).filter((row) => job.reason !== "sync" || SYNC_KINDS.has(row.kind)).filter((row) => !wanted || wanted.has(row.key) || (row.bot && wanted.has(itemKey.bot(row.bot))))
+      const rows = pendingRows(planned).filter((row) => job.reason !== "sync" || SYNC_KINDS.has(row.kind) || (job.syncBots && LOCAL_SYNC_KINDS.has(row.kind))).filter((row) => !wanted || wanted.has(row.key) || (row.bot && wanted.has(itemKey.bot(row.bot))))
         .filter((row) => row.kind !== "app-event" || job.final);
       const total = rows.length;
       progress = total ? { done: 0, total } : null;
@@ -453,7 +453,8 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
         progress = null;
         publish();
         try {
-          await sendChatRows(origin, session, latest, result, { everything: move, attachments: level === "full" });
+          const botIds = job.syncBots ? new Set(mine.items.filter((item) => item.kind === "bot").map((item) => item.id)) : null;
+          await sendChatRows(origin, session, latest, result, { everything: move, attachments: level === "full", botIds });
           if (move) await stampHeld(origin, session, latest);
         } catch (error) { result.failed.push({ key: "chats", kind: "chats", label: "Chats", error: sentence(error?.message) ?? "The chats could not be added." }); }
       }
@@ -519,7 +520,7 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
   /** The conversations whose newest row My Cloud has not taken, not answered in now: of bots My Cloud has and that are
    * not kept here (`everything`: whatever was kept here), and of rooms, which My Cloud makes once one of their bots is
    * there. A room nobody wrote in yet goes as its active thread with no rows (`empty`), once, so My Cloud makes it too. */
-  async function chatsWaiting(origin, theirs, { everything = false } = {}) {
+  async function chatsWaiting(origin, theirs, { everything = false, botIds = null } = {}) {
     const listed = await localJson(scoped("/api/cloud-send/chats"));
     const kept = entry(origin);
     const cloudBots = new Set(theirs.items.filter((item) => item.kind === "bot" && item.id).map((item) => item.id));
@@ -533,6 +534,7 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
     const conversations = [...(Array.isArray(listed?.conversations) ? listed.conversations : []).filter((head) => record(head)
       && (id(head.bot) !== id(head.room)) && thread(head.threadId) && Number.isSafeInteger(head.last) && typeof head.lastId === "string"), ...empty];
     const waiting = conversations.filter((head) => {
+      if (botIds && !botIds.has(head.bot)) return false;
       const cursor = kept.chats[head.threadId];
       if (cursor === "removed" || (head.bot && (!cloudBots.has(head.bot) || keptHere(head.bot)))) return false;
       return !cursor || cursor.after !== head.last || cursor.id !== head.lastId;
@@ -545,8 +547,8 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
    * what My Cloud took, and once My Cloud did not take a page, the conversation's later pages wait for the next send too.
    * The attachments those rows name go first, unless My Cloud has them. `result.chats.left`: the conversations that did
    * not all go (a bot answering in one, or My Cloud not taking a page), for the next send. */
-  async function sendChatRows(origin, session, theirs, result, { everything = false, attachments = true } = {}) {
-    const { dataDir, ready, busy, owner: from } = await chatsWaiting(origin, theirs, { everything });
+  async function sendChatRows(origin, session, theirs, result, { everything = false, attachments = true, botIds = null } = {}) {
+    const { dataDir, ready, busy, owner: from } = await chatsWaiting(origin, theirs, { everything, botIds });
     const kept = entry(origin);
     const total = ready.length;
     const held = new Set();

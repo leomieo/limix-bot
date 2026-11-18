@@ -1,3 +1,17 @@
+Limix Bot 0.3.89
+
+## Tiếng Việt
+
+- Khi My Cloud mất kết nối, chọn **Dùng máy tính này** để tiếp tục làm việc trong workspace local. Khi Cloud kết nối lại, cửa sổ vẫn ở workspace bạn đang dùng.
+- Bật **Đồng bộ bot và lịch sử chat từ máy này** trong Cài đặt Limix Cloud để gửi bot local và tin nhắn mới lên My Cloud khi kết nối được. Bạn vẫn có thể dùng bản local.
+- Các thư mục đã bật đồng bộ tiếp tục cập nhật khi kết nối trở lại.
+
+## English
+
+- When My Cloud is unreachable, select **Use this computer** to keep working in your local workspace. The window stays in that workspace when My Cloud reconnects.
+- Enable **Sync local bots and chats** in Limix Cloud settings to send local bots and new messages to My Cloud when it is reachable. Your local copies remain available.
+- Shared folders with sync enabled resume updating when the connection returns.
+
 Limix Bot 0.3.88
 
 ## Tiếng Việt

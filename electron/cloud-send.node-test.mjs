@@ -242,7 +242,8 @@ test("the bridge: either page gets only the move's line and the switch that keep
   const local = preload();
   assert.equal(local.bridge.cloudSend, undefined);
   assert.equal(local.bridge.cloudLogins, undefined);
-  assert.deepEqual(Object.keys(local.bridge.cloudSendPage), keys);
+  assert.deepEqual(Object.keys(local.bridge.cloudSendPage).filter((key) => !["botSync", "setBotSync"].includes(key)), keys);
+  assert.equal(typeof local.bridge.cloudSendPage.setBotSync, "function");
   const page = preload({ remote: true });
   assert.equal(page.bridge.cloudSend, undefined);
   assert.equal(page.bridge.cloudLogins, undefined);
@@ -493,6 +494,43 @@ function chatSides({ threads, page = 300, answer = () => "accepted", onPost = ()
 }
 const stored = () => { let value = null; return { read: () => value, write: (next) => { value = structuredClone(next); }, get value() { return value; } }; };
 const fortyOnePages = () => ({ ...Object.fromEntries(Array.from({ length: 39 }, (_, i) => [`t${i}`, 1])), long: 4 });
+
+test("opted-in local history retries after an outage and never resends an acknowledged row", async () => {
+  const { sides, posted } = chatSides({ threads: { local: 1 } });
+  const open = sides.deps.cloud.open;
+  let reachable = true;
+  sides.deps.cloud.open = async (options) => {
+    if (options) assert.equal(options.origin, CLOUD);
+    if (!reachable) throw new Error("My Cloud is offline");
+    return open();
+  };
+  const store = stored();
+  const send = createCloudSend({ ...sides.deps, store });
+  await send.send({ reason: "sync" });
+  assert.equal(posted.length, 0);
+  reachable = false;
+  await assert.rejects(send.send({ reason: "sync", syncBots: true }));
+  assert.equal(posted.length, 0);
+  reachable = true;
+  await send.send({ reason: "sync", syncBots: true });
+  assert.deepEqual(posted, [[{ threadId: "local", rows: ["local-1"], sent: false }]]);
+  const resumed = createCloudSend({ ...sides.deps, store });
+  await resumed.send({ reason: "sync", syncBots: true });
+  assert.equal(posted.length, 1);
+  assert.equal(resumed.snapshot().whole, null);
+});
+
+test("opted-in background sync copies local bots without moving them", async () => {
+  const { sides } = chatSides({ threads: {} });
+  const local = sides.deps.local;
+  sides.deps.local = async (route) => (route === "/api/cloud-send"
+    ? Response.json(summary([bot("ember", { soul: "s2" })])) : local(route));
+  sides.deps.store = { read: () => ({ clouds: { [CLOUD]: { sent: { "bot:ember": { soul: ["s", "s"] } } } } }), write() {} };
+  const result = await createCloudSend(sides.deps).send({ reason: "sync", syncBots: true });
+  assert.equal(sides.calls.includes("PATCH /api/bots/ember"), true);
+  assert.equal(sides.calls.some((call) => /\/api\/move/.test(call)), false);
+  assert.deepEqual(result.result.updatedBots, ["Ember"]);
+});
 
 test("a conversation split over two requests: its later page says it went before, so one removed on My Cloud in between stays removed", async () => {
   const { sides, posted } = chatSides({ threads: fortyOnePages(), page: 2 });

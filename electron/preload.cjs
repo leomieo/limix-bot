@@ -528,6 +528,10 @@ const bridge = {
   // Either page: the one-time move's line.
   cloudSendPage: process.argv.includes("--omb-company-desktop=1") ? {
     notice: () => ipcRenderer.invoke("cloud-send:notice"),
+    ...(isLocalPage ? {
+      botSync: () => ipcRenderer.invoke("cloud-send:bot-sync"),
+      setBotSync: enabled => ipcRenderer.invoke("cloud-send:set-bot-sync", enabled === true),
+    } : {}),
     dismiss: signature => ipcRenderer.invoke("cloud-send:dismiss", String(signature)),
     moveRetry: () => isLocalPage || navigator.userActivation?.isActive === true
       ? ipcRenderer.invoke("cloud-send:move-retry") : Promise.reject(new Error("Choose Try again to move.")),
@@ -684,6 +688,7 @@ const bridge = {
       return () => ipcRenderer.removeListener("home:state-changed", handler);
     },
     retry: () => ipcRenderer.invoke("home:retry"),
+    openLocal: () => ipcRenderer.invoke("home:open-local"),
     remove: () => ipcRenderer.invoke("home:remove"),
     signIn: () => isLocalPage || navigator.userActivation?.isActive === true
       ? ipcRenderer.invoke("home:sign-in") : Promise.reject(new Error("Choose Sign in to sign in again.")),

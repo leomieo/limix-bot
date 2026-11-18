@@ -83,7 +83,7 @@ const SYNC_EVERY_MS = 5 * 60_000;
  * `moveSession`: the one session every pass of the move uses (move-session.mjs); without it each pass opens its own.
  */
 export function installCloudSend({ ipcMain, cloudPage, server, local, home, cookieFetch, reconnect, power, file, window, localOrigin,
-  fetch: fetchImpl = globalThis.fetch, engineWaitMs, patience, space, move = () => null, teamMove = () => null, botMove = () => null, moveSession = null, t }) {
+  fetch: fetchImpl = globalThis.fetch, engineWaitMs, patience, space, move = () => null, teamMove = () => null, botMove = () => null, moveSession = null, botSync = null, t }) {
   const handoff = createLoginHandoffClient();
   const pageOf = () => {
     const win = window();
@@ -119,7 +119,7 @@ export function installCloudSend({ ipcMain, cloudPage, server, local, home, cook
       read,
       open: (options) => {
         const target = home();
-        if (!target) return Promise.reject(new Error("This computer has no My Cloud yet."));
+        if (!target || (options?.origin && options.origin !== target.origin)) return Promise.reject(new Error("This computer's My Cloud is unavailable or has changed."));
         if (options?.move && moveSession) return moveSession.open(target);
         return openOwnerSession(target, fetchImpl, options?.move ? { label: MOVE_LABEL, background: false } : {});
       },
@@ -135,12 +135,15 @@ export function installCloudSend({ ipcMain, cloudPage, server, local, home, cook
     space,
     t,
   });
-  // Limix Bot: the person's own things (apps and keys, MCP servers, logins, secrets, profile, language) follow to My Cloud
-  // by themselves while this app runs and My Cloud is awake, a few minutes after each change here. Bots stay where they are.
-  const syncTimer = setInterval(() => {
-    if (!home() || power.asleep() || send.snapshot().running) return;
-    void send.send({ reason: "sync" }).catch(() => {});
-  }, SYNC_EVERY_MS);
+  let syncing = false;
+  async function sync() {
+    if (syncing || !home() || power.asleep() || send.snapshot().running) return;
+    syncing = true;
+    try { await send.send({ reason: "sync", syncBots: botSync?.state()?.enabled === true }); }
+    catch {}
+    finally { syncing = false; }
+  }
+  const syncTimer = setInterval(() => void sync(), SYNC_EVERY_MS);
   syncTimer.unref?.();
   const onPage = (channel, handler) => (event, ...args) => {
     const asking = cloudPage(event);
@@ -149,6 +152,15 @@ export function installCloudSend({ ipcMain, cloudPage, server, local, home, cook
   };
 
   ipcMain.handle("cloud-send:notice", onPage("cloud-send:notice", () => notice(send.snapshot())));
+  if (botSync) {
+    ipcMain.handle("cloud-send:bot-sync", onPage("cloud-send:bot-sync", (page) => page === "local" ? botSync.state() : null));
+    ipcMain.handle("cloud-send:set-bot-sync", onPage("cloud-send:set-bot-sync", (page, enabled) => {
+      if (page !== "local" || typeof enabled !== "boolean") throw new Error("Choose bot sync on this computer.");
+      const state = botSync.set(enabled);
+      if (state?.enabled) void sync();
+      return state;
+    }));
+  }
   ipcMain.handle("cloud-send:dismiss", onPage("cloud-send:dismiss", (_event, signature) => {
     if (String(signature) === TEAM_MOVE_LINE) { teamMove()?.seen(); return notice(send.snapshot()); }
     if (String(signature) === BOT_MOVE_LINE) { botMove()?.seen(); return notice(send.snapshot()); }
@@ -164,6 +176,8 @@ export function installCloudSend({ ipcMain, cloudPage, server, local, home, cook
   ipcMain.handle("cloud-send:move-retry", onPage("cloud-send:move-retry", async () => { await move()?.retry(); return notice(send.snapshot()); }));
 
   return {
+    sync,
+    closeSync: () => clearInterval(syncTimer),
     receive: handoff.receive,
     /** This computer's server's private port, asked as a send asks it: another move's sends share it. */
     handoff: (what) => handoff.request(server(), what),

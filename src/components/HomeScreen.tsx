@@ -111,8 +111,12 @@ export function HomeScreen({ bridge, manage }: { bridge: HomeBridge; manage?: ()
         {text.reason && <p data-home-reason className="text-[13px] leading-relaxed text-ink-secondary">{text.reason}</p>}
         {text.action === "sign-in" && <button type="button" className="ui-button ui-button-primary mt-2" onClick={() => act(() => bridge.signIn())}>{t("homeScreen.signInButton")}</button>}
         {text.action === "manage" && manage && <button type="button" className="ui-button mt-2" onClick={() => act(manage)}>{t("cloudAccount.manageInBrowser")}</button>}
-        {button && run[button] && <button type="button" data-home-action={button} className={button === "retry" ? "ui-button mt-2" : "ui-button ui-button-primary mt-2"}
-          onClick={() => act(run[button]!)}>{t(BUTTON[button])}</button>}
+        <div className="flex flex-wrap gap-2">
+          {view?.screen === "offline" && bridge.openLocal && <button type="button" data-home-action="local" className="ui-button ui-button-primary mt-2"
+            onClick={() => act(async () => { if (!await bridge.openLocal!()) throw new Error(); })}>{t("homeScreen.useLocal")}</button>}
+          {button && run[button] && <button type="button" data-home-action={button} className={button === "retry" ? "ui-button mt-2" : "ui-button ui-button-primary mt-2"}
+            onClick={() => act(run[button]!)}>{t(BUTTON[button])}</button>}
+        </div>
         {removable && <RemoveFromList name={view.name ?? t("cloudSetup.myCloud")} remove={() => bridge.remove!()} />}
         {failed && <p role="alert" className="text-[13px] text-danger">{t("cloudAccount.actionFailed")}</p>}
       </div>

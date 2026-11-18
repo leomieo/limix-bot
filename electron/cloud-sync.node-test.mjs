@@ -61,6 +61,35 @@ test("shares a folder: registered on My Cloud, copied there, and up to date", as
   assert.deepEqual(state.shared.map(({ id, name, status, files, done }) => ({ id, name, status, files, done })), [{ id: cloudFolder.id, name: "Clients", status: "synced", files: 1, done: 1 }]);
 });
 
+test("a shared folder uploads local changes after the Cloud connection returns", async (t) => {
+  const s = setup(t);
+  await s.service.share(s.project);
+  const id = s.service.state().shared[0].id;
+  const { changes, summary } = s.cloud.client;
+  let online = false, announced = false;
+  s.cloud.client.summary = async () => {
+    if (!online) throw new TypeError("Offline fixture");
+    return summary();
+  };
+  s.cloud.client.changes = async (...args) => {
+    if (!online) throw new TypeError("Offline fixture");
+    if (announced) return changes(...args);
+    announced = true;
+    return { cursor: 2, folderIds: [] };
+  };
+  writeFileSync(join(s.project, "offline.md"), "local work");
+  utimesSync(join(s.project, "offline.md"), new Date(AT), new Date(AT));
+  s.service.start();
+  const waitFor = async (ready) => {
+    for (let tries = 0; tries < 150 && !ready(); tries++) await new Promise((done) => setTimeout(done, 20));
+    assert.equal(ready(), true);
+  };
+  await waitFor(() => s.service.state().phase === "offline");
+  assert.equal(s.cloud.get(id, "offline.md"), undefined);
+  online = true;
+  await waitFor(() => s.cloud.get(id, "offline.md") === "local work");
+});
+
 test("only a folder this computer shared is ever synced: one My Cloud names for it is never read or written", async (t) => {
   const s = setup(t);
   const ssh = join(s.home, ".ssh");
@@ -139,7 +168,7 @@ test("My Cloud's copy gone: the folder is shared again, and another My Cloud get
   assert.equal(s.holder.cloud.get(again.id, "brief.md"), "the brief");
 });
 
-test("bots' work from now on comes to Documents/MausBot/<bot>/<conversation>; older conversations and a switch turned off stay put", async (t) => {
+test("bots' work goes to the Limix Bot folder; older conversations and a switch turned off stay put", async (t) => {
   const s = setup(t);
   s.cloud.setBots({ bots: [{ id: "owl", name: "Owl", tasks: [{ threadId: "t1", title: "Q3: plan?" }, { threadId: "t0", title: "Old" }] }], groups: [] });
   const recent = s.cloud.addFolder({ id: "bot-owl-t1", kind: "bot", botId: "owl", threadId: "t1", cloudPath: "/data/.openmausbot/task-workspaces/owl/t1", newestMs: AT + 120_000 });
@@ -147,7 +176,7 @@ test("bots' work from now on comes to Documents/MausBot/<bot>/<conversation>; ol
   s.cloud.put(recent.id, "plan.md", "the plan");
   s.cloud.put(old.id, "old.md", "old work");
   await s.service.pass();
-  const owl = join(s.home, "Documents", "MausBot", "Owl");
+  const owl = join(s.home, "Documents", "Limix Bot", "Owl");
   assert.deepEqual(readdirSync(owl), ["Q3- plan-"]);
   assert.equal(readFileSync(join(owl, "Q3- plan-", "plan.md"), "utf8"), "the plan");
   assert.equal(s.service.state().outputs.folders, 1);

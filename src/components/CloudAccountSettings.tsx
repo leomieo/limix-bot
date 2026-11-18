@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { CloudAccountState, CloudPlanBridge, CloudPlanSnapshot } from "../../electron/cloud-account.mjs";
+import type { CloudSendPageBridge } from "../../electron/cloud-send.mjs";
 import type { CloudCredit, CloudMachine, CloudTrial } from "../../electron/cloud-home.mjs";
 import { planTeam, teamPlan } from "../../electron/cloud-team-plan.mjs";
 import { cloudFilesBridge } from "@/lib/cloud-files";
@@ -9,7 +10,7 @@ import { buyOfferAllowed, cloudCreditLine, cloudPlanLabel, cloudPlanLine, cloudP
 import { useCloudOffer } from "@/lib/use-cloud-offer";
 import type { LocaleKey } from "@/locales";
 import { AccountsSheet } from "./AccountMenu";
-import { Card } from "./SettingsPrimitives";
+import { Card, Switch } from "./SettingsPrimitives";
 import { CloudCancelPlan, type CloudRenewalActions } from "./CloudCancelPlan";
 import { StagingMark } from "./cloud-buy/parts";
 import { CloudKeepHere } from "./CloudKeepHere";
@@ -198,6 +199,28 @@ export function TeamPeopleCard({ team }: { team: { name: string; cloudPage?: str
   </Card>;
 }
 
+function LocalBotSync({ bridge }: { bridge: CloudSendPageBridge }) {
+  const [state, setState] = useState<{ enabled: boolean } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void bridge.botSync?.().then((next) => { if (active) setState(next); }).catch(() => {});
+    return () => { active = false; };
+  }, [bridge]);
+  if (!state || !bridge.setBotSync) return null;
+  const change = async () => {
+    setBusy(true); setFailed(false);
+    try { setState(await bridge.setBotSync!(!state.enabled)); }
+    catch { setFailed(true); }
+    finally { setBusy(false); }
+  };
+  return <Card title={t("cloudHome.syncLocalBots")} subtitle={t("cloudHome.syncLocalBotsHint")}>
+    <Switch aria-label={t("cloudHome.syncLocalBots")} checked={state.enabled} disabled={busy} onClick={() => void change()} />
+    {failed && <p role="alert" className="mt-2 text-[13px] text-danger">{t("cloudAccount.actionFailed")}</p>}
+  </Card>;
+}
+
 export function CloudAccountSettings({ linkRequest = 0, cloudHome = false, teamHome, onConnectPhone, onAddCloud, onSignIn }: {
   linkRequest?: number; cloudHome?: boolean; teamHome?: { name: string; cloudPage?: string }; onConnectPhone?: () => void; onAddCloud?: () => void; onSignIn?: () => void;
 } = {}) {
@@ -346,6 +369,7 @@ export function CloudAccountSettings({ linkRequest = 0, cloudHome = false, teamH
     {!onTeamPlan && machine?.accountLink && <Card title={t("cloudHome.accountLink")}>
       <a className="break-all text-[13px] text-accent hover:underline" href={machine.accountLink} target="_blank" rel="noopener noreferrer">{machine.accountLink}</a>
     </Card>}
+    {signed && !onTeamPlan && account?.account?.id && window.ogb?.cloudSendPage?.botSync && <LocalBotSync key={account.account.id} bridge={window.ogb.cloudSendPage} />}
     {signed && view.kind === "paid" && !onTeamPlan && cloudPhoneCard({ ready: machine?.status === "ready" && !machine.unreachable, busy, failed: phoneFailed, onUse: openOnPhone })}
     <CloudKeepHere bridge={window.ogb?.cloudSendPage} />
   </>;

@@ -1,6 +1,7 @@
 import type { CloudMoveCheck, CloudSendOutcome, CloudSendSession, CloudSendSnapshot } from "./cloud-send.mjs";
 
 interface CloudTarget { origin: string; grant(): Promise<{ origin: string; code: string }> }
+interface BotSyncState { enabled: boolean }
 
 export function openOwnerSession(target: CloudTarget, fetchImpl: typeof fetch, options?: { label?: string; background?: boolean }): Promise<CloudSendSession>;
 
@@ -23,9 +24,12 @@ export function installCloudSend(deps: {
   space?: { disk(): unknown; grow(sizeGb: number): Promise<unknown> };
   move?: () => { view(): unknown; seen(): unknown; retry(): Promise<unknown> } | null;
   botMove?: () => { view(): unknown; seen(): unknown } | null;
+  botSync?: { state(): BotSyncState | null; set(enabled: boolean): BotSyncState | null };
   /** The one session every pass of the move uses (move-session.mjs). */
   moveSession?: { open(target: CloudTarget): Promise<CloudSendSession> };
 }): {
+  sync(): Promise<void>;
+  closeSync(): void;
   receive(proc: unknown, message: unknown): boolean;
   /** This computer's server's private port, asked as a send asks it: another move's sends share it. */
   handoff(what: { kind: string; [key: string]: unknown }): Promise<any>;

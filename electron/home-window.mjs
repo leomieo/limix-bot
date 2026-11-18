@@ -248,7 +248,7 @@ export function createHomeWindow(deps) {
   let home = { kind: "computer" }, screen = null, status = null, opens = 0, retry = null, tries = 0, loaded = null, newer = false, repairing = null;
   let recovering = null;
   /** The profile (clean-workspace.mjs) the person opened from the rail while My Cloud is home, until they pick a place. */
-  let profileShown = null;
+  let profileShown = null, localChosen = false;
   /** My Cloud asked for before the move made it home (`{ open }`), until its page loads or the person goes elsewhere;
    * `naming`: since when, and how often, a brand-new My Cloud's name was not found. */
   let asked = null, naming = null;
@@ -530,6 +530,8 @@ export function createHomeWindow(deps) {
    * "cloud" for My Cloud, `{ team }` for a team's Cloud, `{ cloud }` for another of the person's own, else the place
    * remembered from last time. */
   async function show({ open = null, place = null } = {}) {
+    if (open || place) localChosen = false;
+    if (localChosen) return;
     if (recovering) { if (!open && !place) return; recovering = null; }
     const token = ++opens;
     if (open || place) profileShown = null;
@@ -667,6 +669,7 @@ export function createHomeWindow(deps) {
      * can't open, and the window shows My Cloud as before. */
     async openProfile(id) {
       if (!clean?.open || (await refresh()).kind !== "cloud") return false;
+      localChosen = false;
       profileShown = id;
       await show();
       return profileShown === id;
@@ -745,6 +748,7 @@ export function createHomeWindow(deps) {
     async changed() {
       const before = home;
       const after = await refresh();
+      if (localChosen) return;
       const next = shown && shows(shown.origin) ? placeOf({ remembered: remembered(), state: state() }) : null;
       const moved = Boolean(next && (next.kind !== shown.kind || (next.origin ?? null) !== (shown.origin ?? null) || (next.id ?? null) !== (shown.id ?? null)));
       if (moved || after.kind !== before.kind || after.origin !== before.origin || after.clean !== before.clean || screen || status) await show();
@@ -788,6 +792,7 @@ export function createHomeWindow(deps) {
     /** The main frame could not load the place, or My Cloud before it is home (Chromium's net error `code`): this
      * computer's screen says so and the window tries again by itself. False for any other server. */
     failed(url, code = 0) {
+      if (localChosen) return false;
       const at = originOf(url), place = placeOrigin(), mine = readyCloudOrigin(state());
       const parkedAt = home.frozenPlace;
       if (!place && parkedAt?.origin && at === parkedAt.origin) {
@@ -819,6 +824,7 @@ export function createHomeWindow(deps) {
     },
     /** Signs the team on screen in again now, without moving the page (the timer's own step; also for tests). */
     renew: () => renew(),
+    chooseLocal() { localChosen = true; asked = null; naming = null; stopOpening(); shown = null; away = false; },
     cancel() { stopOpening(); shown = null; away = false; },
     stopOpening,
     /** The person chose the place on screen again before the one they'd asked for opened: it stays as it is. */
@@ -829,7 +835,7 @@ export function createHomeWindow(deps) {
 
 /** The window's IPC: this computer's screen reads why the place isn't open and asks again; the place's own page, while
  * it is shown, asks for a new session; either asks this device's sign-in again (from the person's click on My Cloud). */
-export function installHomeWindowIpc({ ipcMain, homeWindow, cloudPage }) {
+export function installHomeWindowIpc({ ipcMain, homeWindow, cloudPage, openLocal = null }) {
   const from = (channel, allowed, handler) => (event, ...args) => {
     if (!allowed(event)) throw new Error(`${channel} is only available in this app's window`);
     return handler(...args);
@@ -837,6 +843,7 @@ export function installHomeWindowIpc({ ipcMain, homeWindow, cloudPage }) {
   const screenPage = (event) => homeWindow.screenPage(event);
   ipcMain.handle("home:state", from("home:state", screenPage, () => homeWindow.view()));
   ipcMain.handle("home:retry", from("home:retry", screenPage, () => homeWindow.retry().then(() => homeWindow.view())));
+  if (openLocal) ipcMain.handle("home:open-local", from("home:open-local", screenPage, () => openLocal()));
   ipcMain.handle("home:remove", from("home:remove", screenPage, () => homeWindow.remove()));
   ipcMain.handle("home:sign-in", from("home:sign-in", (event) => screenPage(event) || cloudPage(event) === "cloud" || (homeWindow.homePage(event) && homeWindow.shown()?.kind === "own"), () => homeWindow.signIn()));
   ipcMain.handle("home:repair", from("home:repair", (event) => homeWindow.homePage(event), () => homeWindow.repair()));
