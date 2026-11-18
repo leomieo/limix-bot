@@ -44,5 +44,8 @@ export function panelErrorText(error: Error | string | null): string | null {
   if (error instanceof LocalizedPanelError) {
     return t(error.key, error.fallbackKey ? { problem: localizeComputerProblem(error.problem) ?? t(error.fallbackKey) } : undefined);
   }
-  return localizeComputerProblem(error instanceof Error ? error.message : error);
+  const message = error instanceof Error ? error.message : error;
+  // Limix Bot: a bare status from the server ("503") says nothing to the person.
+  if (typeof message === "string" && /^\s*(?:HTTP\s*)?\d{3}\s*$/iu.test(message)) return t("computer.err.screenUnavailable");
+  return localizeComputerProblem(message);
 }
