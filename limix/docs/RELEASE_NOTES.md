@@ -1,3 +1,15 @@
+Limix Bot 0.3.85
+
+## Tiếng Việt
+
+- Bot đã lên My Cloud vẫn hiện trong danh sách bot của máy này như bot bình thường, có ảnh đại diện, kèm biểu tượng đám mây và dòng "Đang chạy trên My Cloud". Bấm vào để mở My Cloud; rê chuột vào sẽ thấy nút **Về máy**.
+- Khung Màn hình báo "Màn hình hiện không khả dụng" thay cho mã lỗi trơn như "503".
+
+## English
+
+- Bots that moved to My Cloud still show in this computer's bot list like any bot, with their picture, a cloud mark and "Running on My Cloud". Click to open My Cloud; hover to see **Bring back**.
+- The Screen panel says the screen is unavailable instead of a bare error code such as "503".
+
 Limix Bot 0.3.84
 
 ## Tiếng Việt

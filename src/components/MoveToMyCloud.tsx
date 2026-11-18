@@ -9,6 +9,7 @@ import { botMoveLine, filterBots, ipcErrorText, CHOOSER_PAGE, MY_CLOUD_TEAM } fr
 import { t } from "@/lib/i18n";
 import { lx } from "@/lib/limix-text";
 import type { Bot } from "@/state/store";
+import { BotAvatar } from "./Avatar";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { NotNowButton, PRIMARY_BUTTON } from "./NoticeCard";
 
@@ -267,14 +268,23 @@ export function MovedToMyCloudRow({ bots }: { bots: readonly Bot[] }) {
       <Cloud size={13} aria-hidden="true" className="text-accent-text" />
       {moved.length === 1 ? t("cloudSend.botMove.movedOne", { bot: moved[0]!.name }) : t("cloudSend.botMove.movedMany", { count: moved.length })}
     </p>
-    {moved.slice(0, 12).map((bot) => <div key={bot.id} className="group flex items-center">
-      <button type="button" data-moved-bot={bot.id} disabled={!page?.openMyCloud} onClick={open} className={row}
+    {moved.slice(0, 12).map((bot) => <div key={bot.id} className="group relative flex items-center rounded-lg hover:bg-menu-hover">
+      <button type="button" data-moved-bot={bot.id} disabled={!page?.openMyCloud} onClick={open}
+        className="flex min-w-0 flex-1 items-center gap-2.5 px-2.5 py-1.5 text-left"
         title={lx(`${bot.name} đang chạy trên My Cloud. Bấm để mở My Cloud.`, `${bot.name} runs on My Cloud. Click to open it.`)}>
-        <Cloud size={14} aria-hidden="true" className="shrink-0 text-accent-text" />
-        <span className="truncate" dir="auto">{bot.name}</span>
+        <span className="relative shrink-0">
+          <BotAvatar bot={bot} size={36} />
+          <span className="absolute -bottom-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-panel ring-1 ring-hairline/60" data-cloud-badge="">
+            <Cloud size={10} aria-hidden="true" className="text-accent-text" />
+          </span>
+        </span>
+        <span className="flex min-w-0 flex-col">
+          <span className="truncate text-[14px] font-medium text-ink" dir="auto">{bot.name}</span>
+          <span className="truncate text-[12px] text-ink-tertiary">{lx("Đang chạy trên My Cloud", "Running on My Cloud")}</span>
+        </span>
       </button>
       {page?.botBringBack && <button type="button" data-bring-back={bot.id} onClick={() => { setError(null); setBack(bot); }}
-        className="shrink-0 rounded-md px-2 py-1 text-[12px] text-ink-tertiary hover:bg-menu-hover hover:text-ink" title={lx(`Chuyển ${bot.name} về máy này`, `Bring ${bot.name} back to this computer`)}>
+        className="mr-1.5 shrink-0 rounded-md px-2 py-1 text-[12px] text-ink-tertiary opacity-0 hover:bg-raised-hover hover:text-ink focus:opacity-100 group-hover:opacity-100" title={lx(`Chuyển ${bot.name} về máy này`, `Bring ${bot.name} back to this computer`)}>
         {lx("Về máy", "Bring back")}
       </button>}
     </div>)}
