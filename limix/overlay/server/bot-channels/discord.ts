@@ -3,6 +3,7 @@
 import WebSocket from "ws";
 
 import { ChannelError, wait, type ChannelAdapter, type ChannelMessage } from "./engine.ts";
+import { channelFileBlob, fetchChannelMedia, readChannelMedia } from "./channel-media.ts";
 
 const API = "https://discord.com/api/v10";
 const GATEWAY = "wss://gateway.discord.gg/?v=10&encoding=json";
@@ -29,7 +30,8 @@ export function discordAdapter(options: DiscordOptions = {}): ChannelAdapter {
   const sleep = options.sleep ?? wait;
 
   async function rest(token: string, method: string, path: string, body?: unknown) {
-    const response = await call(`${API}${path}`, { method, headers: { authorization: `Bot ${token}`, ...(body ? { "content-type": "application/json" } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) })
+    const multipart = body instanceof FormData;
+    const response = await call(`${API}${path}`, { method, redirect: "error", headers: { authorization: `Bot ${token}`, ...(body && !multipart ? { "content-type": "application/json" } : {}) }, ...(body ? { body: multipart ? body : JSON.stringify(body) } : {}) })
       .catch((error: unknown) => { throw new ChannelError("retry", `Discord: ${error instanceof Error ? error.message : String(error)}`); });
     if (response.ok) return response.status === 204 ? null : response.json().catch(() => null);
     const data = await response.json().catch(() => ({})) as { retry_after?: number; message?: string };
@@ -57,11 +59,13 @@ export function discordAdapter(options: DiscordOptions = {}): ChannelAdapter {
         const direct = !event.guild_id;
         const mentioned = Array.isArray(event.mentions) && event.mentions.some((user: { id?: string }) => user?.id === self);
         if (!direct && !mentioned) return null;
+        const attachment = Array.isArray(event.attachments) ? event.attachments[0] : undefined;
         return {
           id: String(event.id), chatId: String(event.channel_id), direct,
           from: { id: String(event.author.id), name: event.member?.nick ?? event.author.global_name ?? event.author.username ?? String(event.author.id) },
           text: String(event.content ?? "").replace(new RegExp(`<@!?${self}>`, "g"), "").trim(),
-          ...(Array.isArray(event.attachments) && event.attachments.length ? { media: true } : {}),
+          ...(attachment ? { media: true } : {}),
+          ...(typeof attachment?.url === "string" ? { loadMedia: () => fetchChannelMedia(attachment.url, ["cdn.discordapp.com", "media.discordapp.net"], attachment.filename ?? "attachment.bin") } : {}),
         };
       };
 
@@ -120,6 +124,13 @@ export function discordAdapter(options: DiscordOptions = {}): ChannelAdapter {
       return {
         done,
         send: async (chatId, text) => { await rest(token, "POST", `/channels/${chatId}/messages`, { content: text, allowed_mentions: { parse: [] } }); },
+        sendMedia: async (chatId, attachment) => {
+          const file = await readChannelMedia(attachment);
+          const form = new FormData();
+          form.set("payload_json", JSON.stringify({ allowed_mentions: { parse: [] }, attachments: [{ id: 0, filename: file.filename }] }));
+          form.set("files[0]", channelFileBlob(file), file.filename);
+          await rest(token, "POST", `/channels/${chatId}/messages`, form);
+        },
         typing: async (chatId) => { await rest(token, "POST", `/channels/${chatId}/typing`); },
       };
     },

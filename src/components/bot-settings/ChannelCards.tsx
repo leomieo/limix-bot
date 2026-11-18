@@ -17,6 +17,7 @@ export interface ChannelView {
   name?: string;
   enabled?: boolean;
   access?: "owner" | "everyone";
+  groupMentions?: boolean;
   owner?: string;
   linkExpiresAt?: number;
   error?: string;
@@ -157,10 +158,24 @@ function ChannelPanel({ bot, channel, view, onView }: { bot: Bot; channel: (type
           <label className="flex items-center justify-between gap-3 text-ink">
             <span>
               {lx("Trả lời cả người khác", "Answer other people too")}
-              <span className="block text-[12px] text-ink-secondary">{lx("Người khác và nhóm nhắn được bot ở chế độ an toàn: không dùng công cụ, không thấy cuộc trò chuyện của bạn.", "Others and groups can write to the bot in safe mode: no tools, none of your conversations.")}</span>
+              <span className="block text-[12px] text-ink-secondary">{channel.kind === "zalo"
+                ? lx("Người khác có thể nhắn riêng cho bot với quyền khách.", "Other people can message the bot privately as guests.")
+                : lx("Người khác và nhóm nhắn được bot ở chế độ an toàn: không dùng công cụ, không thấy cuộc trò chuyện của bạn.", "Others and groups can write to the bot in safe mode: no tools, none of your conversations.")}</span>
             </span>
-            <Switch aria-label={lx("Trả lời cả người khác", "Answer other people too")} checked={view.access === "everyone"} disabled={busy} onClick={() => void post({ access: view.access === "everyone" ? "owner" : "everyone" })} data-testid={`channel-everyone-${channel.kind}`} />
+            <Switch aria-label={lx("Trả lời cả người khác", "Answer other people too")} checked={view.access === "everyone"} disabled={busy} onClick={() => void post({
+              access: view.access === "everyone" ? "owner" : "everyone",
+              ...(view.groupMentions !== undefined ? { groupMentions: view.groupMentions } : {}),
+            })} data-testid={`channel-everyone-${channel.kind}`} />
           </label>
+          {channel.kind === "zalo" && (
+            <label className="flex items-center justify-between gap-3 text-ink">
+              <span>
+                {lx("Trả lời khi được @gọi trong nhóm", "Reply to @mentions in groups")}
+                <span className="block text-[12px] text-ink-secondary">{lx("Mọi thành viên đều có thể gọi bot. Bot trả lời trong nhóm với quyền khách, kể cả khi chủ bot gọi.", "Anyone in the group can mention the bot. Group replies use guest access, including when the owner mentions it.")}</span>
+              </span>
+              <Switch aria-label={lx("Trả lời khi được @gọi trong nhóm", "Reply to @mentions in groups")} checked={view.groupMentions ?? view.access === "everyone"} disabled={busy} onClick={() => void post({ groupMentions: !(view.groupMentions ?? view.access === "everyone") })} data-testid="channel-zalo-group-mentions" />
+            </label>
+          )}
           <div className="flex justify-end">
             <button type="button" className={buttonCls} disabled={busy} onClick={() => void run(async () => { const gone = await api<ChannelView>(path, { method: "DELETE" }); if (channel.kind === "messenger") await messengerBridge()?.signOut(bot.id); return gone; })} data-testid={`channel-remove-${channel.kind}`}>{lx("Gỡ kết nối", "Disconnect")}</button>
           </div>

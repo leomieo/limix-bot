@@ -77,7 +77,12 @@ export async function discoverAgentEndpointModels(entry: InstanceConfig, fetchIm
       : " Check that the gateway address is reachable from Limix Bot's server.";
     throw failure((timeout ? "The request timed out." : "Limix Bot's server could not reach the gateway.") + localHint);
   }
-  if (!response.ok) await response.body?.cancel().catch(() => {});
+  if (response.status === 403) {
+    const detail = await readCatalog(response, 8_192).catch(() => null);
+    if (detail && /\bclient_not_allowed\b/i.test(detail)) {
+      throw failure("The gateway rejected this model-list client (HTTP 403, client_not_allowed). Enter the exact model ID from your working setup to save without model discovery.");
+    }
+  } else if (!response.ok) await response.body?.cancel().catch(() => {});
   if (response.status === 401 || response.status === 403) {
     throw failure(`The gateway rejected the API key (HTTP ${response.status}). Use the gateway's client API key, not a ChatGPT or Claude login token.`);
   }

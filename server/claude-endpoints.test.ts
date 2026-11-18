@@ -98,6 +98,7 @@ describe("custom Claude endpoint", () => {
     const info = claudeEndpointInfo(instances[instanceId]);
     expect(info).toEqual({
       baseUrl: BASE.baseUrl.replace(/\/$/u, ""),
+      model: "deepseek-chat",
       models: ["deepseek-chat"],
       tokenSaved: true,
       opusModel: "", sonnetModel: "", haikuModel: "", smallFastModel: "",

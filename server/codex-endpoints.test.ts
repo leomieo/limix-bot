@@ -11,7 +11,7 @@ describe("Codex direct API endpoints", () => {
     expect(instances[instanceId]).toMatchObject({ driver: "codex", access: "custom", config: { cli: "/fixture/codex", endpoint: { url: fields.baseUrl, models: ["custom-model"] } }, environment: { OPENMAUSBOT_CODEX_API_KEY: "fixture-secret" } });
     expect(instances[instanceId].environment?.CODEX_HOME).toContain(instanceId);
     const info = withCodexEndpointInfo([{ instanceId }], instances);
-    expect(info).toEqual([{ instanceId, url: fields.baseUrl, codexEndpoint: { baseUrl: fields.baseUrl, models: ["custom-model"], tokenSaved: true } }]);
+    expect(info).toEqual([{ instanceId, url: fields.baseUrl, codexEndpoint: { baseUrl: fields.baseUrl, model: "custom-model", models: ["custom-model"], tokenSaved: true } }]);
     expect(JSON.stringify(info)).not.toContain("fixture-secret");
   });
 

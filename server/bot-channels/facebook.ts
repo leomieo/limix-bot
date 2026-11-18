@@ -2,12 +2,13 @@
 // Page's conversations, so no webhook address is needed; Meta counts each call against the Page's daily rate budget
 // (about 4,800 calls per engaged person per day), which is what sets the poll interval.
 import { ChannelError, wait, type ChannelAdapter, type ChannelMessage } from "./engine.ts";
+import { channelFileBlob, fetchChannelMedia, readChannelMedia } from "./channel-media.ts";
 
 const GRAPH = "https://graph.facebook.com/v23.0";
 const BUSY_MS = 8_000;
 const IDLE_MS = 20_000;
 const BUSY_FOR_MS = 3 * 60_000;
-const FIELDS = "updated_time,messages.limit(5){id,message,from,created_time,attachments}";
+const FIELDS = "updated_time,messages.limit(5){id,message,from,created_time,attachments{name,image_data,file_url,video_data}}";
 
 export interface FacebookOptions { fetch?: typeof fetch; sleep?(ms: number, signal: AbortSignal): Promise<void>; now?(): number }
 
@@ -19,9 +20,10 @@ export function facebookAdapter(options: FacebookOptions = {}): ChannelAdapter {
   async function graph(token: string, method: "GET" | "POST", path: string, body?: unknown, signal?: AbortSignal) {
     const url = new URL(`${GRAPH}${path}`);
     if (method === "GET") url.searchParams.set("access_token", token);
+    const multipart = body instanceof FormData;
     const response = await call(url, {
-      method, ...(signal ? { signal } : {}),
-      ...(method === "POST" ? { headers: { "content-type": "application/json", authorization: `Bearer ${token}` }, body: JSON.stringify(body ?? {}) } : {}),
+      method, redirect: "error", ...(signal ? { signal } : {}),
+      ...(method === "POST" ? { headers: { authorization: `Bearer ${token}`, ...(!multipart ? { "content-type": "application/json" } : {}) }, body: multipart ? body : JSON.stringify(body ?? {}) } : {}),
     }).catch((error: unknown) => { throw new ChannelError("retry", `Facebook: ${(error instanceof Error ? error.message : String(error)).replaceAll(token, "…")}`); });
     const data = await response.json().catch(() => ({})) as { error?: { code?: number; message?: string } } & Record<string, any>;
     if (response.ok && !data.error) return data;
@@ -60,11 +62,15 @@ export function facebookAdapter(options: FacebookOptions = {}): ChannelAdapter {
             for (const message of conversation.messages?.data ?? []) {
               const at = Date.parse(message.created_time);
               if (!(at > since) || !message.from?.id || String(message.from.id) === self) continue;
+              const attachment = message.attachments?.data?.[0];
+              const remoteFile = attachment?.file_url ?? attachment?.image_data?.url ?? attachment?.video_data?.url;
+              const filename = attachment?.name || (attachment?.image_data ? "image.jpg" : attachment?.video_data ? "video.mp4" : "attachment.bin");
               fresh.push({
                 at, id: String(message.id), chatId: String(message.from.id), direct: true,
                 from: { id: String(message.from.id), name: String(message.from.name ?? message.from.id) },
                 text: typeof message.message === "string" ? message.message : "",
                 ...(message.attachments?.data?.length ? { media: true } : {}),
+                ...(typeof remoteFile === "string" ? { loadMedia: () => fetchChannelMedia(remoteFile, ["fbcdn.net", "fbsbx.com", "facebook.com"], filename) } : {}),
               });
             }
           }
@@ -81,6 +87,16 @@ export function facebookAdapter(options: FacebookOptions = {}): ChannelAdapter {
       return {
         done,
         send: async (chatId, text) => { await graph(token, "POST", "/me/messages", { recipient: { id: chatId }, messaging_type: "RESPONSE", message: { text } }); },
+        sendMedia: async (chatId, attachment) => {
+          const file = await readChannelMedia(attachment);
+          const type = attachment.kind === "image" ? "image" : file.mime === "video/mp4" ? "video" : "file";
+          const form = new FormData();
+          form.set("recipient", JSON.stringify({ id: chatId }));
+          form.set("messaging_type", "RESPONSE");
+          form.set("message", JSON.stringify({ attachment: { type, payload: { is_reusable: false } } }));
+          form.set("filedata", channelFileBlob(file), file.filename);
+          await graph(token, "POST", "/me/messages", form, AbortSignal.timeout(60_000));
+        },
         typing: async (chatId) => { await graph(token, "POST", "/me/messages", { recipient: { id: chatId }, sender_action: "typing_on" }); },
       };
     },

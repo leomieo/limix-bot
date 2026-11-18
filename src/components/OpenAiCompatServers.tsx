@@ -7,6 +7,7 @@ import { addedServers } from "@/lib/openai-compat-endpoints";
 import { cn } from "@/lib/cn";
 import { KEY_FIELD } from "./keys/KeyRow";
 import { Select } from "./Select";
+import { CodexEndpoints } from "./ClaudeEndpoints";
 
 export function modelIds(text: string): string[] {
   return [...new Set(text.split(/[,，、\s]+/).map((id) => id.trim()).filter(Boolean))];
@@ -75,7 +76,15 @@ export function BuiltInReplyWait() {
 
 export function OtherOpenAiCompatServers() {
   const { state } = useStore();
-  return <AddedServers servers={addedServers(state.instances)} />;
+  return (
+    <>
+      <AddedServers servers={addedServers(state.instances)} />
+      <details className="mt-3 rounded-lg border border-hairline/60 bg-inset px-3 py-2">
+        <summary className="cursor-pointer text-[13px] text-ink">{t("agentEndpoints.codexConnect")}</summary>
+        <CodexEndpoints />
+      </details>
+    </>
+  );
 }
 
 function AddedServers({ servers }: { servers: ReturnType<typeof addedServers> }) {

@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 
 import { PASS } from "../routes/table.ts";
+import { deleteAttachment } from "../attachments.ts";
 import { chunkText, createBotChannels } from "./engine.ts";
 import { telegramAdapter } from "./telegram.ts";
 
@@ -15,11 +16,19 @@ afterEach(() => { for (const stop of cleanups.splice(0)) stop(); });
 function fakeTelegram() {
   const queue: unknown[] = [];
   const sent: Array<{ chat_id: number; text: string }> = [];
+  const uploads: Array<{ method: string; form: FormData }> = [];
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/aZkAAAAASUVORK5CYII=", "base64");
   let updateId = 0;
   const fetch = vi.fn(async (url: string | URL, init?: RequestInit) => {
     const method = String(url).split("/").pop();
-    const body = JSON.parse(String(init?.body ?? "{}"));
     if (!String(url).includes(`/bot${TOKEN}/`)) return Response.json({ ok: false, description: "Unauthorized" }, { status: 401 });
+    if (String(url).includes(`/file/bot${TOKEN}/`)) return new Response(method === "photo.png" ? Uint8Array.from(png) : "fixture");
+    if (init?.body instanceof FormData && (method === "sendPhoto" || method === "sendDocument")) {
+      uploads.push({ method, form: init.body });
+      return Response.json({ ok: true, result: {} });
+    }
+    const body = JSON.parse(String(init?.body ?? "{}"));
+    if (method === "getFile") return Response.json({ ok: true, result: { file_path: body.file_id === "fixture-photo" ? "photos/photo.png" : "documents/report.csv" } });
     if (method === "getMe") return Response.json({ ok: true, result: { id: 1, is_bot: true, first_name: "Shop", username: "shop_bot" } });
     if (method === "sendMessage") { sent.push(body); return Response.json({ ok: true, result: {} }); }
     if (method === "sendChatAction") return Response.json({ ok: true, result: true });
@@ -33,7 +42,9 @@ function fakeTelegram() {
   let messageId = 0;
   const say = (from: number, text: string, name = "Ana") => queue.push({ message_id: ++messageId, chat: { id: from, type: "private" }, from: { id: from, is_bot: false, first_name: name }, text });
   const sayInGroup = (from: number, text: string, name = "Ana") => queue.push({ message_id: ++messageId, chat: { id: -100, type: "group" }, from: { id: from, is_bot: false, first_name: name }, text });
-  return { fetch, sent, say, sayInGroup };
+  const attach = (from: number) => queue.push({ message_id: ++messageId, chat: { id: from, type: "private" }, from: { id: from }, document: { file_id: "fixture-id", file_name: "report.csv" } });
+  const photo = (from: number) => queue.push({ message_id: ++messageId, chat: { id: from, type: "private" }, from: { id: from }, photo: [{ file_id: "fixture-photo" }] });
+  return { fetch, sent, say, sayInGroup, uploads, attach, photo, png };
 }
 
 function setup() {
@@ -43,7 +54,11 @@ function setup() {
   const telegram = createBotChannels({
     dataDir: dir, adapters: [telegramAdapter({ apiBase: "https://telegram.test", fetch: tg.fetch as unknown as typeof fetch })],
     botExists: (id) => id === "b1", manageRefusal: (auth) => (auth.scopes.includes("admin") ? null : "no"),
-    ask: async (botId, input) => { asks.push({ botId, text: input.text, ...(input.threadId ? { threadId: input.threadId } : {}), owner: input.owner }); return { threadId: input.threadId ?? `t${asks.length}`, reply: `Đã nhận: ${input.text}` }; },
+    ask: async (botId, input) => {
+      asks.push({ botId, text: input.text, ...(input.threadId ? { threadId: input.threadId } : {}), owner: input.owner });
+      if (input.attachment) cleanups.push(() => deleteAttachment(input.attachment!.path));
+      return { threadId: input.threadId ?? `t${asks.length}`, reply: `Đã nhận: ${input.text}`, ...(input.attachment ? { attachments: [input.attachment] } : {}) };
+    },
   });
   telegram.start();
   cleanups.push(() => { telegram.stop(); rmSync(dir, { recursive: true, force: true }); });
@@ -93,6 +108,18 @@ it("answers other people only when the owner allows everyone, as a confined call
   tg.say(8, "giá bao nhiêu", "Bình");
   await until(() => tg.sent.some((m) => m.chat_id === 8 && m.text === "Đã nhận: giá bao nhiêu"));
   expect(asks).toEqual([{ botId: "b1", text: "giá bao nhiêu", owner: false }]);
+  tg.attach(8);
+  await until(() => tg.uploads.length === 1);
+  const { method, form } = tg.uploads[0]!;
+  expect(method).toBe("sendDocument");
+  expect(form.get("chat_id")).toBe("8");
+  expect(form.get("document")).toBeInstanceOf(File);
+  expect(await (form.get("document") as File).text()).toBe("fixture");
+  tg.photo(8);
+  await until(() => tg.uploads.length === 2);
+  const image = tg.uploads[1]!;
+  expect(image.method).toBe("sendPhoto");
+  expect(Buffer.from(await (image.form.get("photo") as File).arrayBuffer())).toEqual(tg.png);
   await route("POST", "/api/bots/b1/telegram", { enabled: false });
   expect((await route("GET", "/api/bots/b1/telegram")).body).toMatchObject({ enabled: false });
   expect((await route("DELETE", "/api/bots/b1/telegram")).body).toEqual({ connected: false });

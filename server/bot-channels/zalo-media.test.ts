@@ -28,7 +28,7 @@ it("refuses other origins and invalid media", async () => {
   await expect(receiveZaloMedia(url.href, false)).rejects.toThrow();
 });
 
-it.each(["chat.photo", "chat.video.msg"])("receives and sends %s through the Zalo session", async msgType => {
+it.each(["chat.photo", "chat.video.msg", "share.file"])("receives and sends %s through the Zalo session", async msgType => {
   const handlers = new Map<string, (event: unknown) => void>();
   const sendMessage = vi.fn(async () => ({}));
   const api = { getOwnId: () => "bot", listener: {
@@ -39,9 +39,9 @@ it.each(["chat.photo", "chat.video.msg"])("receives and sends %s through the Zal
   const delivered: ChannelMessage[] = [];
   const session = await adapter.open("{}", { botId: "fixture", signal: abort.signal, offset: 0, healthy() {}, saveOffset() {}, deliver: m => delivered.push(m) });
   try {
-    const bytes = msgType === "chat.photo" ? png : Buffer.from("000000186674797069736f6d0000020069736f6d69736f32", "hex");
+    const bytes = msgType === "chat.photo" ? png : msgType === "share.file" ? Buffer.from("a,b\n1,2") : Buffer.from("000000186674797069736f6d0000020069736f6d69736f32", "hex");
     vi.mocked(fetchPublicPage).mockResolvedValue({ ok: true, url, headers: {}, body: bytes });
-    handlers.get("message")!({ type: 0, threadId: "friend", isSelf: false, data: { uidFrom: "friend", msgId: "1", msgType, content: { href: url.href } } });
+    handlers.get("message")!({ type: 0, threadId: "friend", isSelf: false, data: { uidFrom: "friend", msgId: "1", msgType, content: { href: url.href, ...(msgType === "share.file" ? { title: "report.csv" } : {}) } } });
     expect(fetchPublicPage).not.toHaveBeenCalled();
     const message = delivered[0]!;
     const attachment = await message.loadMedia!();

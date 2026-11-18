@@ -25,7 +25,7 @@ const draftOf = (instance: InstanceInfo): Draft => ({
   name: instance.displayName,
   url: (instance.claudeEndpoint ?? instance.codexEndpoint)?.baseUrl ?? "",
   token: "",
-  model: "",
+  model: (instance.claudeEndpoint ?? instance.codexEndpoint)?.model ?? "",
 });
 
 export function EndpointForm({ instance, engine, onDone, xingchi = false }: { xingchi?: boolean; instance?: InstanceInfo; engine: Engine; onDone: () => void }) {
@@ -48,7 +48,7 @@ export function EndpointForm({ instance, engine, onDone, xingchi = false }: { xi
     setError(null);
     const body = {
       displayName: draft.name.trim(),
-      ...(xingchi ? { profile: "xingchi" } : {}),
+      ...(xingchi && !instance ? { profile: "xingchi" } : {}),
       baseUrl: draft.url.trim() || official.url,
       ...(draft.token.trim() ? { token: draft.token.trim() } : {}),
       // Empty lets the server read the host's model list.
@@ -61,7 +61,10 @@ export function EndpointForm({ instance, engine, onDone, xingchi = false }: { xi
       if (Array.isArray(result.instances)) dispatch({ type: "instances", instances: result.instances });
       onDone();
     } catch (cause) {
-      setError(cause instanceof Error && cause.message ? cause.message : t("claudeEndpoints.failed"));
+      const message = cause instanceof Error ? cause.message : "";
+      setError(message.includes("HTTP 403, client_not_allowed")
+        ? t("agentEndpoints.modelListClientDenied")
+        : message || t("claudeEndpoints.failed"));
     } finally {
       setSaving(false);
     }
@@ -77,7 +80,7 @@ export function EndpointForm({ instance, engine, onDone, xingchi = false }: { xi
       </label>
       <label className="flex flex-col gap-1 text-[12px] font-medium text-ink">
         {t("claudeEndpoints.baseUrl")}
-        <input {...field("url")} readOnly={xingchi} type="url" maxLength={2048} placeholder={official.url} aria-label={t("claudeEndpoints.baseUrl")} className={cn(INPUT, "font-mono")} />
+        <input {...field("url")} readOnly={xingchi || instance?.codexEndpoint?.profile === "xingchi"} type="url" maxLength={2048} placeholder={official.url} aria-label={t("claudeEndpoints.baseUrl")} className={cn(INPUT, "font-mono")} />
       </label>
       <label className="flex flex-col gap-1 text-[12px] font-medium text-ink">
         {t("claudeEndpoints.token")}
@@ -100,8 +103,9 @@ export function EndpointForm({ instance, engine, onDone, xingchi = false }: { xi
   );
 }
 
-function EndpointRow({ instance, onEdit }: { instance: InstanceInfo; onEdit: () => void }) {
+export function EndpointManage({ instance, showName = false }: { instance: InstanceInfo; showName?: boolean }) {
   const { state, dispatch } = useStore();
+  const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,6 +113,7 @@ function EndpointRow({ instance, onEdit }: { instance: InstanceInfo; onEdit: () 
     || bot.fallback?.some((candidate) => candidate.instanceId === instance.instanceId)
     || bot.tasks?.some((task) => task.modelSelection?.instanceId === instance.instanceId)).length;
   const endpoint = instance.claudeEndpoint ?? instance.codexEndpoint;
+  if (!endpoint || instance.readOnly) return null;
   const remove = async () => {
     setConfirming(false);
     setRemoving(true);
@@ -122,35 +127,39 @@ function EndpointRow({ instance, onEdit }: { instance: InstanceInfo; onEdit: () 
       setRemoving(false);
     }
   };
+  if (editing) return <EndpointForm instance={instance} engine={instance.codexEndpoint ? "codex" : "claude"} onDone={() => setEditing(false)} />;
   return (
-    <li data-claude-endpoint={instance.claudeEndpoint ? instance.instanceId : undefined} data-codex-endpoint={instance.codexEndpoint ? instance.instanceId : undefined} className="px-3 py-2.5">
-      <div className="flex min-h-9 items-center gap-3">
+    <div data-claude-endpoint={instance.claudeEndpoint ? instance.instanceId : undefined} data-codex-endpoint={instance.codexEndpoint ? instance.instanceId : undefined}>
+      <div className="flex min-h-9 flex-wrap items-center gap-2">
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[13px] font-medium text-ink" title={instance.displayName}>{instance.displayName}</div>
-          <div className="truncate font-mono text-[11px] text-ink-secondary" title={endpoint?.baseUrl}>{endpoint?.baseUrl}</div>
+          {showName && <div className="truncate text-[13px] font-medium text-ink" title={instance.displayName}>{instance.displayName}</div>}
+          <div className="truncate font-mono text-[11px] text-ink-secondary" title={endpoint.baseUrl}>{endpoint.baseUrl}</div>
+          {endpoint.model && <div className="truncate font-mono text-[11px] text-ink-secondary" title={endpoint.model}>{endpoint.model}</div>}
         </div>
-        <button type="button" onClick={onEdit} disabled={removing} className="shrink-0 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-ink-secondary hover:bg-control hover:text-ink disabled:opacity-50">
+        <button type="button" onClick={() => setEditing(true)} disabled={removing} className="ui-button shrink-0">
           {t("claudeEndpoints.edit")}
         </button>
         <button type="button" disabled={removing || usedBy > 0} onClick={() => setConfirming(true)}
           title={usedBy > 0 ? t("accounts.inUse", { count: String(usedBy) }) : t("accounts.remove")}
           aria-label={t("claudeEndpoints.remove", { name: instance.displayName })}
-          className="flex size-8 shrink-0 items-center justify-center rounded-lg text-danger hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-50">
+          className="flex min-h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg px-2.5 text-[12px] font-medium text-danger hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-50">
           {removing ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+          {t("common.delete")}
         </button>
       </div>
+      {usedBy > 0 && <p className="mt-1 text-[12px] text-ink-secondary">{t("accounts.inUse", { count: String(usedBy) })}</p>}
       {error && <p role="alert" className="mt-1 text-[12px] text-danger">{error}</p>}
       <ConfirmDialog open={confirming} title={t("accounts.removeTitle", { name: instance.displayName })}
-        body={t("claudeEndpoints.removeBody")} confirmLabel={t("accounts.remove")} tone="neutral" pending={removing}
+        body={t("claudeEndpoints.removeBody")} confirmLabel={t("common.delete")} pending={removing}
         onCancel={() => setConfirming(false)} onConfirm={() => void remove()} />
-    </li>
+    </div>
   );
 }
 
 function AgentEndpoints({ engine }: { engine: Engine }) {
   const { state } = useStore();
-  const endpoints = state.instances.filter((instance) => engine === "claude" ? instance.claudeEndpoint : instance.codexEndpoint);
-  const [open, setOpen] = useState<string | null>(null);
+  const endpoints = state.instances.filter((instance) => !instance.readOnly && (engine === "claude" ? instance.claudeEndpoint : instance.codexEndpoint));
+  const [adding, setAdding] = useState(false);
   return (
     <div data-claude-endpoints={engine === "claude" ? "" : undefined} data-codex-endpoints={engine === "codex" ? "" : undefined} className="mt-3 space-y-2">
       <div className="text-[13px] leading-[18px] text-ink">{t(engine === "claude" ? "claudeEndpoints.title" : "agentEndpoints.codexTitle")}</div>
@@ -158,13 +167,11 @@ function AgentEndpoints({ engine }: { engine: Engine }) {
       {endpoints.length === 0
         ? <p className="text-[12px] leading-4 text-ink-secondary">{t("claudeEndpoints.empty")}</p>
         : <ul className="divide-y divide-hairline/40 rounded-xl border border-hairline/50 bg-panel/40">
-          {endpoints.map((instance) => open === instance.instanceId
-            ? <li key={instance.instanceId} className="p-3"><EndpointForm engine={engine} instance={instance} onDone={() => setOpen(null)} /></li>
-            : <EndpointRow key={instance.instanceId} instance={instance} onEdit={() => setOpen(instance.instanceId)} />)}
+          {endpoints.map((instance) => <li key={instance.instanceId} className="px-3 py-2.5"><EndpointManage instance={instance} showName /></li>)}
         </ul>}
-      {open === "new"
-        ? <EndpointForm engine={engine} onDone={() => setOpen(null)} />
-        : <button type="button" onClick={() => setOpen("new")} className="flex min-h-8 w-fit items-center gap-1.5 rounded-lg px-2 py-1.5 text-[13px] font-medium text-ink-secondary outline-none hover:bg-control hover:text-ink focus-visible:ring-2 focus-visible:ring-accent">
+      {adding
+        ? <EndpointForm engine={engine} onDone={() => setAdding(false)} />
+        : <button type="button" onClick={() => setAdding(true)} className="flex min-h-8 w-fit items-center gap-1.5 rounded-lg px-2 py-1.5 text-[13px] font-medium text-ink-secondary outline-none hover:bg-control hover:text-ink focus-visible:ring-2 focus-visible:ring-accent">
           <Plus size={14} />{t("claudeEndpoints.add")}
         </button>}
     </div>

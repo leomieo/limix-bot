@@ -220,7 +220,7 @@ describe("Claude account HTTP API", () => {
     expect(created.status, JSON.stringify(created.body)).toBe(201);
     const id = created.body.instanceId;
     const instance = created.body.instances.find((row: any) => row.instanceId === id);
-    expect(instance.codexEndpoint).toEqual({ baseUrl: fields.baseUrl, models: ["gateway-model"], tokenSaved: true });
+    expect(instance.codexEndpoint).toEqual({ baseUrl: fields.baseUrl, model: "gateway-model", models: ["gateway-model"], tokenSaved: true });
     expect(instance.authentication).toBeUndefined();
     expect(JSON.stringify(created.body)).not.toContain(fields.token);
     expect(saved().instances[id].environment.CODEX_HOME).toContain(id);

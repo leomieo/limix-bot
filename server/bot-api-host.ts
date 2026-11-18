@@ -2,7 +2,7 @@
 // message in, the bot's reply out; the turn it starts is outside work (the "api" trigger), so it never acts for the
 // person, is told the message came from outside, and anything that needs an approval waits for the person in the thread.
 // Inside: the app's routes to switch it on, mint a key and switch it off, open only to whoever may edit the bot.
-import type { ChannelMedia } from "./bot-channels/zalo-media.ts";
+import type { ChannelMedia } from "./bot-channels/channel-media.ts";
 import { z } from "zod";
 
 import { redactSecretsInText } from "../shared/redact.ts";
@@ -168,7 +168,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
 
   function replyMedia(lines: Message[]) {
     const reply = lines.findLast(line => line.role === "bot" && line.kind === "text");
-    return reply?.attachments?.filter((file): file is ChannelMedia => (file.kind === "image" && !file.fromTool) || (file.kind === "file" && file.mime === "video/mp4")) ?? [];
+    return reply?.attachments?.filter((file): file is ChannelMedia => (file.kind === "image" && !file.fromTool) || file.kind === "file") ?? [];
   }
 
   async function runCall(botId: string, call: z.output<typeof callSchema>, turnStarted: () => void, channel?: { attachment?: ChannelMedia; collect(files: ChannelMedia[]): void }): Promise<{ status: number; body: BotApiReply }> {

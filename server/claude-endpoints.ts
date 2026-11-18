@@ -70,6 +70,7 @@ export function claudeEndpointInfo(entry: InstanceConfig): ClaudeEndpointInfo {
   const environment = entry.environment ?? {};
   return {
     baseUrl: environment.ANTHROPIC_BASE_URL ?? "",
+    ...(environment.ANTHROPIC_MODEL ? { model: environment.ANTHROPIC_MODEL } : {}),
     models: Array.isArray(config.endpointModels) ? [...config.endpointModels] : [],
     tokenSaved: Boolean(environment.ANTHROPIC_AUTH_TOKEN || environment.ANTHROPIC_API_KEY),
     opusModel: environment.ANTHROPIC_DEFAULT_OPUS_MODEL ?? "",

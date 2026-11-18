@@ -1,3 +1,19 @@
+Limix Bot 0.3.87
+
+## Tiếng Việt
+
+- Trong **Cài đặt → AI**, bấm **Quản lý** trên từng kết nối Xingchi, Codex API hoặc Claude API để chỉnh sửa tên, mô hình và khóa API, hoặc xóa kết nối sau khi xác nhận.
+- Có thể thêm API tùy chỉnh qua Codex CLI ngay trong phần cài đặt khóa API. Khi máy chủ từ chối đọc danh sách mô hình, ứng dụng hướng dẫn nhập ID mô hình để lưu kết nối.
+- Bot có thể nhận và gửi ảnh, video, tài liệu và các tệp được nền tảng hỗ trợ qua Telegram, Discord, Zalo cá nhân, Facebook Page và Messenger cá nhân. Giới hạn là 10 MB mỗi tệp, riêng video MP4 qua Zalo tối đa 32 MB. Messenger cá nhân là tính năng thử nghiệm.
+- Zalo cá nhân có tùy chọn trả lời khi được @nhắc tên trong nhóm. Mọi thành viên trong nhóm dùng bot với quyền khách.
+
+## English
+
+- In **Settings → AI**, open **Manage** on an individual Xingchi, Codex API or Claude API connection to edit its name, model and API key, or confirm its removal.
+- Add a custom API connection through Codex CLI from API key settings. When a provider refuses to list its models, the app explains how to save the connection with a model ID.
+- Bots can receive and send images, videos, documents and other supported files through Telegram, Discord, personal Zalo, Facebook Pages and personal Messenger. The limit is 10 MB per file, with up to 32 MB for Zalo MP4 videos. Personal Messenger support is experimental.
+- Personal Zalo has an option to respond to @mentions in groups. All group members can use the bot with guest access.
+
 Limix Bot 0.3.86
 
 ## Tiếng Việt

@@ -10,7 +10,7 @@ import { mkdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { z } from "zod";
 
-import type { ChannelMedia } from "./zalo-media.ts";
+import type { ChannelMedia } from "./channel-media.ts";
 import { writeFileAtomic } from "../atomic.ts";
 import type { RequestAuth } from "../request-auth.ts";
 import { PASS, type RouteHandler } from "../routes/table.ts";
@@ -99,6 +99,7 @@ export interface ChannelView {
   name?: string;
   enabled?: boolean;
   access?: "owner" | "everyone";
+  groupMentions?: boolean;
   owner?: string;
   linkExpiresAt?: number;
   error?: string;
@@ -117,6 +118,7 @@ const botSchema = z.object({
   name: z.string().default(""),
   enabled: z.boolean().default(true),
   access: z.enum(["owner", "everyone"]).default("owner"),
+  groupMentions: z.boolean().optional(),
   owner: z.object({ id: z.union([z.string(), z.number()]).transform(String), name: z.string() }).optional(),
   link: z.object({ hash: z.string(), expiresAt: z.number() }).optional(),
   offset: z.number().default(0),
@@ -133,7 +135,7 @@ const text = (label: string) => ({
   badCode: `Mã không đúng hoặc đã hết hạn. Tạo mã mới trong app Limix: bot → Cài đặt → ${label}.`,
   linkHere: "Hãy gửi /link MÃ trong tin nhắn riêng với bot.",
   ownerOnly: "Bot này hiện chỉ trả lời chủ bot.",
-  textOnly: "Hiện bot chỉ đọc tin nhắn chữ.",
+  textOnly: "Bot chưa nhận được nội dung đọc được. Bạn hãy gửi chữ, ảnh hoặc tệp đính kèm.",
   fresh: "Đã bắt đầu cuộc trò chuyện mới.",
   approval: "Bot đang chờ bạn duyệt một bước trong app Limix.",
   working: "Bot vẫn đang làm việc này. Xem kết quả trong app Limix.",
@@ -267,7 +269,9 @@ export function createBotChannels(deps: BotChannelsDeps) {
       return void await send(say.linked);
     }
     const owner = message.direct && !adapter.guestsOnly && entry.owner?.id === message.from.id;
-    if (!owner && entry.access !== "everyone") return message.direct && !adapter.quietToStrangers ? void await send(say.ownerOnly) : undefined;
+    const everyone = entry.access === "everyone";
+    const allowsGuest = kind === "zalo" && !message.direct ? entry.groupMentions ?? everyone : everyone;
+    if (!owner && !allowsGuest) return message.direct && !adapter.quietToStrangers ? void await send(say.ownerOnly) : undefined;
     const conversation = message.direct ? message.chatId : `${message.chatId}:${message.from.id}`;
     if (command?.[1] === "new") {
       patch(kind, botId, (current) => { const chats = { ...current.chats }; delete chats[conversation]; return { ...current, chats }; });
@@ -281,13 +285,16 @@ export function createBotChannels(deps: BotChannelsDeps) {
       const known = read(kind).bots[botId]?.chats[conversation];
       let attachment: ChannelMedia | undefined;
       try { attachment = await message.loadMedia?.(); }
-      catch { return void await send("Bot chưa đọc được tệp này. Bạn hãy gửi lại ảnh JPG, PNG, WebP (tối đa 10 MB) hoặc video MP4 (tối đa 32 MB)."); }
-      const answer = await deps.ask(botId, { text: message.text || (attachment?.kind === "image" ? "Ảnh gửi qua Zalo" : "Video gửi qua Zalo"), ...(attachment ? { attachment } : {}), ...(known ? { threadId: known } : {}), title: `${adapter.label} · ${message.from.name}`, owner });
+      catch { return void await send("Bot chưa tải được tệp này. Bạn hãy thử gửi lại hoặc gửi tệp nhỏ hơn."); }
+      const answer = await deps.ask(botId, { text: message.text || (attachment?.kind === "image" ? "Ảnh đính kèm" : "Tệp đính kèm"), ...(attachment ? { attachment } : {}), ...(known ? { threadId: known } : {}), title: `${adapter.label} · ${message.from.name}`, owner });
       patch(kind, botId, (current) => ({ ...current, chats: { ...current.chats, [conversation]: answer.threadId } }));
       clearInterval(typing);
       const sendMedia = session.sendMedia;
       const media = sendMedia ? answer.attachments ?? [] : [];
-      if (sendMedia) for (const file of media) await paced(adapter, botId, () => sendMedia(message.chatId, file));
+      if (sendMedia) for (const file of media) {
+        try { await paced(adapter, botId, () => sendMedia(message.chatId, file)); }
+        catch { await send("Bot chưa gửi được một tệp đính kèm qua kênh này."); }
+      }
       if (answer.reply.trim() || !media.length) await send(answer.reply.trim() || (answer.status === "needs_approval" ? say.approval : answer.status === "working" ? say.working : say.empty));
     } catch (error) {
       log(`${kind}: ${failure(error)}`);
@@ -356,6 +363,7 @@ export function createBotChannels(deps: BotChannelsDeps) {
     if (!entry) return { connected: false, ...(login ? { login } : {}) };
     return {
       connected: true, username: entry.username, name: entry.name, enabled: entry.enabled, access: entry.access,
+      ...(kind === "zalo" ? { groupMentions: entry.groupMentions ?? entry.access === "everyone" } : {}),
       ...(entry.owner ? { owner: entry.owner.name } : {}),
       ...(entry.link && entry.link.expiresAt > now() ? { linkExpiresAt: entry.link.expiresAt } : {}),
       ...(entry.error ? { error: entry.error } : {}),
@@ -372,6 +380,7 @@ export function createBotChannels(deps: BotChannelsDeps) {
     const sameAccount = kept?.username === account.username;
     data.bots[botId] = botSchema.parse({
       sealed: seal(secret), username: account.username, name: account.name, enabled: true, access: kept?.access ?? (adapter.guestsOnly ? "everyone" : "owner"),
+      groupMentions: kept?.groupMentions,
       ...(kept?.owner ? { owner: kept.owner } : {}), offset: sameAccount ? kept.offset : 0, chats: sameAccount ? kept.chats : {},
     });
     write(kind, data);
@@ -393,7 +402,7 @@ export function createBotChannels(deps: BotChannelsDeps) {
   }
 
   const PATH = /^\/api\/bots\/([\w-]{1,128})\/(telegram|discord|zalo|facebook|messenger)(?:\/(link|unlink|login))?$/;
-  const changeSchema = z.object({ token: z.string().max(400).optional(), enabled: z.boolean().optional(), access: z.enum(["owner", "everyone"]).optional() }).strict();
+  const changeSchema = z.object({ token: z.string().max(400).optional(), enabled: z.boolean().optional(), access: z.enum(["owner", "everyone"]).optional(), groupMentions: z.boolean().optional() }).strict();
 
   const routes: RouteHandler = async ({ req, res, path, method, auth, json, readBody }) => {
     const match = PATH.exec(path);
@@ -416,13 +425,19 @@ export function createBotChannels(deps: BotChannelsDeps) {
       }
       if (action === "unlink") { patch(kind, botId, (current) => { const { owner: _gone, ...rest } = current; return rest as Stored; }); return json(res, 200, view(kind, botId)); }
       const parsed = changeSchema.safeParse(await readBody(req));
-      if (!parsed.success) return json(res, 400, { error: "invalid request" });
+      if (!parsed.success || (kind !== "zalo" && parsed.data.groupMentions !== undefined)) return json(res, 400, { error: "invalid request" });
       if (parsed.data.token !== undefined) {
         if (deps.logins?.[kind]) return json(res, 400, { error: "invalid request" });
         await connect(kind, botId, parsed.data.token.trim());
       }
-      if (parsed.data.enabled !== undefined || parsed.data.access !== undefined) {
-        patch(kind, botId, (current) => ({ ...current, ...(parsed.data.enabled !== undefined ? { enabled: parsed.data.enabled } : {}), ...(parsed.data.access ? { access: parsed.data.access } : {}) }));
+      const { enabled, access, groupMentions } = parsed.data;
+      if (enabled !== undefined || access !== undefined || groupMentions !== undefined) {
+        patch(kind, botId, (current) => ({
+          ...current,
+          enabled: enabled ?? current.enabled,
+          access: access ?? current.access,
+          groupMentions: groupMentions ?? current.groupMentions,
+        }));
         if (parsed.data.enabled === false) halt(kind, botId); else ensure(kind, botId);
       }
       return json(res, 200, view(kind, botId));

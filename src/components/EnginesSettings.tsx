@@ -10,7 +10,7 @@ import { ApiKeyEngineManage, EngineSetup, EngineUpdateNotice, EngineWarningNotic
 import { AppCopyNotice } from "./EngineAppCopy";
 import { forgetAppCopySwitches } from "@/state/engine-install";
 import { AccountsCard, AddAccount, accountGroupOf, accountsReady, type AccountGroup } from "./EngineAccounts";
-import { EndpointForm, ClaudeEndpoints, CodexEndpoints } from "./ClaudeEndpoints";
+import { EndpointForm, ClaudeEndpoints, CodexEndpoints, EndpointManage } from "./ClaudeEndpoints";
 import { ClaudeBedrockEndpoints } from "./ClaudeBedrock";
 import { DEVICE_SIGN_IN_COPY, deviceSignInProvider } from "./DeviceSignIn";
 import { AntigravityFreeSpace } from "./AntigravityFreeSpace";
@@ -389,6 +389,7 @@ function EngineRow({ instance, bare = false }: { instance: InstanceInfo; bare?: 
   return (
     <EngineCard instance={instance} bare={bare}>
       {policyNote}
+      {(instance.codexEndpoint || instance.claudeEndpoint) && <EndpointManage key={instance.instanceId} instance={instance} />}
       {!engineReady(instance) && <EngineSetup instance={instance} intent={instance.access === "custom" ? "inject" : "cloud"} description={instance.codexEndpoint ? t("agentEndpoints.codexHint") : undefined} unframed />}
       {engineReady(instance) && <ApiKeyEngineManage instance={instance} className="mt-3" />}
       {engineReady(instance) && instance.serverKind === "ollama" && <OllamaModels instance={instance} className="mt-3" />}
@@ -430,7 +431,7 @@ function SimpleEngines({ rows, isReady, renderEngine, more }: {
   more: { id: string; open: boolean; onToggle: () => void };
 }) {
   const [opened, setOpened] = useState<string | null>(null);
-  const featured = rows.filter((instance) => isReady(instance) || instance.authentication !== undefined);
+  const featured = rows.filter((instance) => isReady(instance) || instance.authentication !== undefined || instance.codexEndpoint || instance.claudeEndpoint);
   const [addingXingchi, setAddingXingchi] = useState(false);
   const canAdd = !rows.length || rows.some(instance => !instance.readOnly);
   const others = rows.filter((instance) => !featured.includes(instance));
@@ -451,7 +452,7 @@ function SimpleEngines({ rows, isReady, renderEngine, more }: {
                     </span>
                   </span>
                   <button type="button" aria-expanded={open} className="ui-button ml-auto shrink-0" onClick={() => setOpened(open ? null : instance.instanceId)}>
-                    {t(open ? "common.done" : ready ? "settings.simple.ai.manage" : "settings.simple.ai.setUp")}
+                    {t(open ? "common.done" : ready || instance.codexEndpoint || instance.claudeEndpoint ? "settings.simple.ai.manage" : "settings.simple.ai.setUp")}
                   </button>
                 </div>
                 {open && <div className="px-4 pb-3">{renderEngine(instance, true)}</div>}

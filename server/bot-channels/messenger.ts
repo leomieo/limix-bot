@@ -5,11 +5,12 @@
 import type { RequestAuth } from "../request-auth.ts";
 import { PASS, type RouteHandler } from "../routes/table.ts";
 import { ChannelError, type ChannelAdapter, type ChannelIo } from "./engine.ts";
+import { fetchChannelMedia, readChannelMedia } from "./channel-media.ts";
 
 const OUTBOX_WAIT_MS = 25_000;
 const SEND_WAIT_MS = 90_000;
 
-interface Outgoing { id: number; chatId: string; text: string; settle(error?: string): void }
+interface Outgoing { id: number; chatId: string; text: string; file?: { name: string; base64: string }; settle(error?: string): void }
 interface Bridge { io: ChannelIo; outbox: Outgoing[]; waiters: Array<() => void>; seenAt: number }
 
 export function messengerBridge(options: { manageRefusal(auth: RequestAuth, botId: string): string | null; now?(): number }) {
@@ -41,12 +42,11 @@ export function messengerBridge(options: { manageRefusal(auth: RequestAuth, botI
         for (const wake of bridge.waiters.splice(0)) wake();
         resolve();
       }, { once: true }));
-      return {
-        done,
-        send: (chatId, text) => new Promise<void>((resolve, reject) => {
+      const enqueue = (chatId: string, text: string, file?: Outgoing["file"]) => new Promise<void>((resolve, reject) => {
+          if (io.signal.aborted) return reject(new ChannelError("drop", "Messenger: stopped"));
           const id = ++nextId;
           const timer = setTimeout(() => item.settle("timeout"), SEND_WAIT_MS);
-          const item: Outgoing = { id, chatId, text, settle: (error) => {
+          const item: Outgoing = { id, chatId, text, file, settle: (error) => {
             clearTimeout(timer);
             pending.delete(id);
             bridge.outbox = bridge.outbox.filter((each) => each !== item);
@@ -55,7 +55,14 @@ export function messengerBridge(options: { manageRefusal(auth: RequestAuth, botI
           pending.set(id, item);
           bridge.outbox.push(item);
           for (const wake of bridge.waiters.splice(0)) wake();
-        }),
+        });
+      return {
+        done,
+        send: enqueue,
+        sendMedia: async (chatId, media) => {
+          const file = await readChannelMedia(media);
+          await enqueue(chatId, "", { name: file.filename, base64: file.data.toString("base64") });
+        },
       };
     },
   };
@@ -74,14 +81,15 @@ export function messengerBridge(options: { manageRefusal(auth: RequestAuth, botI
     if (action === "outbox" && method === "GET") {
       if (!bridge.outbox.length) await new Promise<void>((resolve) => { const timer = setTimeout(resolve, OUTBOX_WAIT_MS); bridge.waiters.push(() => { clearTimeout(timer); resolve(); }); });
       bridge.io.healthy();
-      return json(res, 200, { items: bridge.outbox.map(({ id, chatId, text }) => ({ id, chatId, text })) });
+      return json(res, 200, { items: bridge.outbox.slice(0, 1).map(({ id, chatId, text, file }) => ({ id, chatId, text, ...(file ? { file } : {}) })) });
     }
     if (method !== "POST") return json(res, 405, { error: "method not allowed" });
     const body = await readBody(req) as Record<string, unknown> | null;
     if (action === "sent") {
       const item = pending.get(Number(body?.id));
-      item?.settle(typeof body?.error === "string" ? body.error.slice(0, 200) : undefined);
-      return json(res, 200, { ok: Boolean(item) });
+      const owned = item && bridge.outbox.includes(item);
+      if (owned) item.settle(typeof body?.error === "string" ? body.error.slice(0, 200) : undefined);
+      return json(res, 200, { ok: Boolean(owned) });
     }
     const messages = Array.isArray(body?.messages) ? body.messages.slice(0, 50) : [];
     for (const raw of messages as Array<Record<string, unknown>>) {
@@ -89,7 +97,11 @@ export function messengerBridge(options: { manageRefusal(auth: RequestAuth, botI
       const text = typeof raw?.text === "string" ? raw.text.slice(0, 8_000) : "";
       if (!chatId || typeof raw.id !== "string") continue;
       const name = typeof raw.name === "string" && raw.name.trim() ? raw.name.trim().slice(0, 100) : chatId;
-      bridge.io.deliver({ id: raw.id.slice(0, 200), chatId, direct: true, from: { id: chatId, name }, text });
+      const url = typeof raw.fileUrl === "string" && raw.fileUrl.length <= 8_192 ? raw.fileUrl : undefined;
+      const filename = typeof raw.fileName === "string" && raw.fileName.length <= 512 ? raw.fileName : "attachment.bin";
+      bridge.io.deliver({ id: raw.id.slice(0, 200), chatId, direct: true, from: { id: chatId, name }, text,
+        ...(url ? { media: true, loadMedia: () => fetchChannelMedia(url, ["fbcdn.net", "fbsbx.com", "facebook.com"], filename) } : {}),
+      });
     }
     bridge.io.healthy();
     return json(res, 200, { ok: true });

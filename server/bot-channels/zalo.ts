@@ -3,12 +3,12 @@
 // so opening Zalo Web elsewhere ends this one (close code 3000).
 import { ChannelError, type ChannelAdapter, type ChannelLogin, type ChannelMessage } from "./engine.ts";
 
-import { receiveZaloMedia, zaloUpload } from "./zalo-media.ts";
+import { receiveZaloFile, receiveZaloMedia, zaloUpload } from "./zalo-media.ts";
 
 const USER = 0, GROUP = 1;
 
 export interface ZaloListener {
-  on(event: "message", listener: (message: { type: number; threadId: string; isSelf: boolean; data: { msgType?: string; msgId: string; uidFrom: string; dName?: string; content: unknown; mentions?: Array<{ uid: string; pos: number; len: number }> } }) => void): unknown;
+  on(event: "message", listener: (message: { type: number; threadId: string; isSelf: boolean; data: { msgType?: string; msgId: string; uidFrom: string; dName?: string; content: unknown; mentions?: Array<{ uid: string | number; pos: number; len: number }> } }) => void): unknown;
   on(event: "connected", listener: () => void): unknown;
   on(event: "closed", listener: (code: number, reason: string) => void): unknown;
   on(event: "error", listener: (error: unknown) => void): unknown;
@@ -69,20 +69,23 @@ export function zaloAdapter(load: ZaloLoader = loadZcaJs): ChannelAdapter {
           reject(new ChannelError("retry", `Zalo ngắt kết nối (${code}).`));
         });
         api.listener.on("message", (event) => {
-          if (event.isSelf || event.data.uidFrom === self) return;
+          if (event.isSelf || String(event.data.uidFrom) === self || (event.type !== USER && event.type !== GROUP)) return;
           const direct = event.type === USER;
-          const tag = (event.data.mentions ?? []).find((mention) => mention.uid === self);
+          const tag = event.data.mentions?.find((mention) => String(mention.uid) === self);
           if (!direct && !tag) return;
           const content = event.data.content;
           const data = content && typeof content === "object" ? content as Record<string, unknown> : {};
           const photo = event.data.msgType === "chat.photo";
-          const attachmentUrl = (photo || event.data.msgType === "chat.video.msg") && typeof data.href === "string" ? data.href : undefined;
+          const file = event.data.msgType === "share.file";
+          const attachmentUrl = (photo || file || event.data.msgType === "chat.video.msg") && typeof data.href === "string" ? data.href : undefined;
           const said = typeof content !== "string" ? "" : tag && !direct ? content.slice(0, tag.pos) + content.slice(tag.pos + tag.len) : content;
           const message: ChannelMessage = {
             id: String(event.data.msgId), chatId: `${direct ? "u" : "g"}:${event.threadId}`, direct,
             from: { id: String(event.data.uidFrom), name: event.data.dName || String(event.data.uidFrom) },
             text: said.trim() || (attachmentUrl && typeof data.title === "string" ? data.title : ""),
-            ...(attachmentUrl ? { loadMedia: () => receiveZaloMedia(attachmentUrl, photo) } : {}),
+            ...(attachmentUrl ? { loadMedia: () => file
+              ? receiveZaloFile(attachmentUrl, typeof data.title === "string" ? data.title : "attachment.bin")
+              : receiveZaloMedia(attachmentUrl, photo) } : {}),
             ...(typeof content === "string" ? {} : { media: true }),
           };
           io.deliver(message);

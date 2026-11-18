@@ -3,7 +3,12 @@
 // page and types the replies the server queues (server/bot-channels/messenger.ts). Nothing here sees the password: the
 // sign-in stays in the window's own storage partition. Facebook's page markup is not a contract; when it changes, reading
 // stops, and the bot's Messenger settings say so.
+import { mkdtemp, rm, rmdir, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { basename, join } from "node:path";
+
 const MESSAGES = "https://www.facebook.com/messages/t/";
+const FILE_LIMIT = 10 * 1024 * 1024;
 const SCAN_MS = 4_000;
 const SUPERVISE_MS = 20_000;
 const RELOAD_MS = 30 * 60_000;
@@ -36,9 +41,23 @@ export const READ_LAST = `(() => {
   const rows = [...main.querySelectorAll('[role="row"]')];
   for (let i = rows.length - 1; i >= 0; i--) {
     const parts = [...rows[i].querySelectorAll('div[dir="auto"]')].filter((node) => (node.innerText || "").trim());
-    if (!parts.length) continue;
-    const last = parts[parts.length - 1].getBoundingClientRect();
-    return { text: parts.map((node) => node.innerText.trim()).join("\\n"), mine: (last.left + last.right) / 2 > box.left + box.width * 0.55 };
+    const link = [...rows[i].querySelectorAll("a[href]")].find(node => {
+      const url = new URL(node.href);
+      return url.protocol === "https:" && (node.hasAttribute("download") || url.hostname.endsWith(".fbsbx.com")) &&
+        (url.hostname.endsWith(".fbsbx.com") || url.hostname.endsWith(".fbcdn.net"));
+    });
+    const image = [...rows[i].querySelectorAll("img")].find(node =>
+      node.naturalWidth >= 80 && node.naturalHeight >= 80 && node.currentSrc.startsWith("https://") &&
+      new URL(node.currentSrc).hostname.endsWith(".fbcdn.net"));
+    const content = link || image || parts.at(-1);
+    if (!content) continue;
+    const last = content.getBoundingClientRect();
+    return {
+      text: parts.map((node) => node.innerText.trim()).join("\\n"),
+      mine: (last.left + last.right) / 2 > box.left + box.width * 0.55,
+      fileUrl: link?.href ?? image?.currentSrc,
+      fileName: link ? (link.getAttribute("download") || link.innerText.trim() || "attachment.bin") : image ? "image.jpg" : undefined,
+    };
   }
   return null;
 })()`;
@@ -88,18 +107,46 @@ export function installMessengerPersonal({ app, ipcMain, BrowserWindow, session,
     const state = { win, stopped: false, busy: Promise.resolve(), before: null, loadedAt: Date.now() };
     const exclusive = (job) => { const next = state.busy.then(job, job); state.busy = next.catch(() => {}); return next; };
     const run = (code) => win.webContents.executeJavaScript(code, true);
+    const isThread = (thread) => {
+      const current = new URL(win.webContents.getURL());
+      return current.origin === new URL(MESSAGES).origin && current.pathname.replace(/\/$/, "") === "/messages/t/" + thread;
+    };
     win.on("close", (event) => { if (!state.stopped) { event.preventDefault(); win.hide(); } });
 
-    const typeInto = async (thread, text) => {
+    const typeInto = async (thread, text, file) => {
       if (!/^[\w.-]{1,64}$/u.test(thread)) throw new Error("bad thread");
       if (!(await run(OPEN_THREAD(thread)).catch(() => false))) { await win.loadURL(`${MESSAGES}${thread}/`); }
       await nap(2_500);
+      if (!isThread(thread)) throw new Error("Messenger thread did not open");
       if (!(await run(FOCUS_BOX).catch(() => false))) throw new Error("no message box");
       const input = win.webContents.debugger;
       if (!input.isAttached()) input.attach("1.3");
       const enter = async (modifiers) => {
         for (const type of ["keyDown", "keyUp"]) await input.sendCommand("Input.dispatchKeyEvent", { type, key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, modifiers, ...(type === "keyDown" && !modifiers ? { text: "\r" } : {}) });
       };
+      if (file) {
+        const bytes = typeof file.base64 === "string" && file.base64.length <= Math.ceil(FILE_LIMIT / 3) * 4
+          ? Buffer.from(file.base64, "base64") : null;
+        if (!bytes?.length || bytes.length > FILE_LIMIT || typeof file.name !== "string" || /[\\/:*?"<>|]/.test(file.name) ||
+            basename(file.name) !== file.name || file.name === "." || file.name === "..") throw new Error("Invalid Messenger attachment");
+        const dir = await mkdtemp(join(tmpdir(), "limix-messenger-"));
+        const path = join(dir, file.name);
+        try {
+          await writeFile(path, bytes, { flag: "wx" });
+          const { root } = await input.sendCommand("DOM.getDocument");
+          const { nodeId } = await input.sendCommand("DOM.querySelector", { nodeId: root.nodeId, selector: '[role="main"] input[type="file"]' });
+          if (!nodeId) throw new Error("Messenger attach control unavailable");
+          await input.sendCommand("DOM.setFileInputFiles", { nodeId, files: [path] });
+          await nap(2_500);
+          if (!isThread(thread) || !(await run(FOCUS_BOX))) throw new Error("no message box");
+          await enter(0);
+          await nap(2_000);
+        } finally {
+          await rm(path, { force: true });
+          await rmdir(dir).catch(() => {});
+        }
+        return;
+      }
       const lines = text.split("\n");
       for (const [index, line] of lines.entries()) {
         if (line) await input.sendCommand("Input.insertText", { text: line });
@@ -120,13 +167,16 @@ export function installMessengerPersonal({ app, ipcMain, BrowserWindow, session,
       for (const row of rows) state.before.set(row.thread, previewOf(row.preview));
       for (const row of fresh) {
         let text = previewOf(row.preview);
+        let file;
+        if (!/^[\w.-]{1,64}$/u.test(row.thread)) continue;
         if (await run(OPEN_THREAD(row.thread)).catch(() => false)) {
           await nap(2_000);
-          const last = await run(READ_LAST).catch(() => null);
+          const last = isThread(row.thread) ? await run(READ_LAST).catch(() => null) : null;
           if (last?.mine) continue;
           if (last?.text) text = last.text;
+          if (last?.fileUrl) file = { fileUrl: last.fileUrl, fileName: last.fileName };
         }
-        await call("POST", `/api/bots/${botId}/messenger/inbox`, { messages: [{ id: `${row.thread}:${Date.now()}`, chatId: row.thread, name: row.name, text }] }).catch((error) => log(`messenger: ${error.message}`));
+        await call("POST", `/api/bots/${botId}/messenger/inbox`, { messages: [{ id: `${row.thread}:${Date.now()}`, chatId: row.thread, name: row.name, text, ...file }] }).catch((error) => log(`messenger: ${error.message}`));
       }
     });
 
@@ -135,7 +185,7 @@ export function installMessengerPersonal({ app, ipcMain, BrowserWindow, session,
         const outbox = await call("GET", `/api/bots/${botId}/messenger/outbox`).catch(() => null);
         if (!outbox) { await nap(5_000); continue; }
         for (const item of outbox.items ?? []) {
-          const error = await exclusive(() => typeInto(item.chatId, item.text)).then(() => undefined, (failure) => String(failure?.message ?? failure));
+          const error = await exclusive(() => typeInto(item.chatId, item.text, item.file)).then(() => undefined, (failure) => String(failure?.message ?? failure));
           await call("POST", `/api/bots/${botId}/messenger/sent`, { id: item.id, ...(error ? { error } : {}) }).catch(() => {});
         }
       }

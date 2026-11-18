@@ -18,6 +18,7 @@ it.each([true, false])("discovers valid, unique per-agent model choices (Codex=%
 it.each([
   [new Response("fixture-secret", { status: 401 }), "rejected the API key (HTTP 401)"],
   [new Response("fixture-secret", { status: 403 }), "rejected the API key (HTTP 403)"],
+  [Response.json({ error: { code: "client_not_allowed", message: "fixture-secret" } }, { status: 403 }), "Enter the exact model ID from your working setup"],
   [new Response("fixture-secret", { status: 404 }), "model catalog was not found (HTTP 404)"],
   [new Response("fixture-secret", { status: 302 }), "redirected the model request"],
   [new Response("fixture-secret", { status: 500 }), "model request failed (HTTP 500)"],

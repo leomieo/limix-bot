@@ -34,7 +34,13 @@ export function isCodexEndpoint(entry: InstanceConfig | undefined): boolean {
 
 function infoOf(entry: InstanceConfig): CodexEndpointInfo {
   const endpoint = configOf(entry).endpoint!;
-  return { baseUrl: endpoint.url, models: [...endpoint.models], tokenSaved: Boolean(entry.environment?.OPENMAUSBOT_CODEX_API_KEY) };
+  return {
+    baseUrl: endpoint.url,
+    models: [...endpoint.models],
+    tokenSaved: Boolean(entry.environment?.OPENMAUSBOT_CODEX_API_KEY),
+    ...(endpoint.model ? { model: endpoint.model } : {}),
+    ...(endpoint.profile ? { profile: endpoint.profile } : {}),
+  };
 }
 
 export function withCodexEndpointInfo(described: unknown, configs: InstanceConfigMap): unknown {

@@ -1,13 +1,15 @@
 import { Readable } from "node:stream";
-import { basename, dirname } from "node:path";
-import { lstat, readFile } from "node:fs/promises";
 import { imageDimensions } from "../../shared/provider-icon.ts";
-import { ATTACHMENTS_DIR, IMAGE_MAX_BYTES, saveFile, saveImage } from "../attachments.ts";
+import { IMAGE_MAX_BYTES, saveFile, saveImage } from "../attachments.ts";
 import { fetchPublicPage } from "../wait-probes.ts";
-import type { BotAttachment } from "../bot-attachment.ts";
+import { fetchChannelMedia, readChannelMedia, type ChannelMedia } from "./channel-media.ts";
 
 const VIDEO_LIMIT = 32 * 1024 * 1024;
-export type ChannelMedia = Extract<BotAttachment, { kind: "file" | "image" }>;
+const ZALO_CDN = ["zaloapp.com", "zalo.me", "zdn.vn", "zadn.vn", "zalo.vn"];
+
+export function receiveZaloFile(url: string, name: string) {
+  return fetchChannelMedia(url, ZALO_CDN, name);
+}
 
 export async function receiveZaloMedia(url: string, photo: boolean): Promise<ChannelMedia> {
   const limit = photo ? IMAGE_MAX_BYTES : VIDEO_LIMIT;
@@ -27,11 +29,8 @@ export async function receiveZaloMedia(url: string, photo: boolean): Promise<Cha
 }
 
 export async function zaloUpload(file: ChannelMedia) {
-  if (dirname(file.path) !== ATTACHMENTS_DIR || !/^[0-9a-f-]{36}\.(jpg|png|webp|mp4)$/.test(basename(file.path))) throw Error("Unsupported attachment");
-  const stat = await lstat(file.path);
-  if (!stat.isFile() || stat.size > (file.kind === "image" ? IMAGE_MAX_BYTES : VIDEO_LIMIT)) throw Error("Attachment unavailable");
-  const data = await readFile(file.path);
+  const { data, filename } = await readChannelMedia(file, file.mime === "video/mp4" ? VIDEO_LIMIT : IMAGE_MAX_BYTES);
   const dimensions = file.kind === "image" ? imageDimensions(data, file.mime) : undefined;
   if (file.kind === "image" && !dimensions) throw Error("Unsupported image");
-  return { data, filename: basename(file.path), metadata: { ...dimensions, totalSize: data.length } };
+  return { data, filename, metadata: { ...dimensions, totalSize: data.length } };
 }

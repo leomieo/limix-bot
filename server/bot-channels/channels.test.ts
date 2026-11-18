@@ -8,6 +8,14 @@ import { discordAdapter, type SocketLike } from "./discord.ts";
 import { ChannelError, createBotChannels, type ChannelAdapter, type ChannelIo, type ChannelLogin } from "./engine.ts";
 import { facebookAdapter } from "./facebook.ts";
 import { zaloAdapter, zaloLogin, type ZaloClient } from "./zalo.ts";
+import { fetchPublicPage } from "../wait-probes.ts";
+import { deleteAttachment } from "../attachments.ts";
+
+vi.mock("../wait-probes.ts", () => ({ fetchPublicPage: vi.fn() }));
+
+function mockAttachment(url: string) {
+  vi.mocked(fetchPublicPage).mockResolvedValueOnce({ ok: true, body: Buffer.from("fixture"), headers: {}, url: new URL(url) });
+}
 
 const cleanups: Array<() => void> = [];
 afterEach(() => { for (const stop of cleanups.splice(0)) stop(); });
@@ -19,7 +27,11 @@ function host(adapter: ChannelAdapter, logins?: Partial<Record<ChannelAdapter["k
   const channels = createBotChannels({
     dataDir: dir, adapters: [adapter], ...(logins ? { logins } : {}), sleep: async () => {},
     botExists: (id) => id === "b1", manageRefusal: () => null,
-    ask: async (_botId, input) => { asks.push({ text: input.text, ...(input.threadId ? { threadId: input.threadId } : {}), owner: input.owner }); return { threadId: `t${asks.length}`, reply: `ok: ${input.text}` }; },
+    ask: async (_botId, input) => {
+      asks.push({ text: input.text, ...(input.threadId ? { threadId: input.threadId } : {}), owner: input.owner });
+      if (input.attachment) cleanups.push(() => deleteAttachment(input.attachment!.path));
+      return { threadId: `t${asks.length}`, reply: `ok: ${input.text}`, ...(input.attachment ? { attachments: [input.attachment] } : {}) };
+    },
   });
   channels.start();
   cleanups.push(() => { channels.stop(); rmSync(dir, { recursive: true, force: true }); });
@@ -105,7 +117,7 @@ it("connects Discord through the Gateway and answers a direct message and a ment
   const fetch = vi.fn(async (url: string | URL, init?: RequestInit) => {
     const path = String(url).replace("https://discord.com/api/v10", "");
     if (path === "/users/@me") return Response.json({ id: "99", username: "shopbot", bot: true });
-    posts.push({ path, body: init?.body ? JSON.parse(String(init.body)) : null });
+    posts.push({ path, body: init?.body instanceof FormData ? init.body : init?.body ? JSON.parse(String(init.body)) : null });
     return Response.json({ id: "m" });
   });
   const { asks, route } = host(discordAdapter({ fetch: fetch as unknown as typeof globalThis.fetch, openSocket, sleep: async () => {} }));
@@ -122,6 +134,17 @@ it("connects Discord through the Gateway and answers a direct message and a ment
   await until(() => posts.filter((post) => post.path.endsWith("/messages")).length === 2);
   expect(asks.map((ask) => ask.text)).toEqual(["@everyone xin chào", "giá?"]);
   expect(posts.find((post) => post.path === "/channels/c1/messages")!.body).toEqual({ content: "ok: giá?", allowed_mentions: { parse: [] } });
+  const discordUrl = "https://cdn.discordapp.com/attachments/1/2/list.csv";
+  mockAttachment(discordUrl);
+  gateway.emit("message", JSON.stringify({ op: 0, t: "MESSAGE_CREATE", d: {
+    id: "4", guild_id: "g", channel_id: "c1", author: { id: "8", username: "binh" }, content: "<@99>",
+    mentions: [{ id: "99" }], attachments: [{ url: discordUrl, filename: "list.csv" }],
+  } }));
+  await until(() => posts.some(post => post.path === "/channels/c1/messages" && post.body instanceof FormData));
+  const discordFile = posts.find(post => post.body instanceof FormData)!.body.get("files[0]");
+  expect(discordFile.name).toBe("list.csv");
+  expect(await discordFile.text()).toBe("fixture");
+  expect(asks.at(-1)).toMatchObject({ owner: false });
   gateway.close(4000);
   await until(() => sockets.length === 2);
   sockets[1]!.emit("message", JSON.stringify({ op: 10, d: { heartbeat_interval: 60_000 } }));
@@ -133,14 +156,14 @@ it("connects Discord through the Gateway and answers a direct message and a ment
 
 it("reads a Facebook Page's new messages once each and replies in Messenger", async () => {
   let clock = Date.parse("2026-11-18T10:00:00Z");
-  const inbox: Array<{ id: string; message: string; from: { id: string; name: string }; created_time: string }> = [];
+  const inbox: Array<{ id: string; message: string; from: { id: string; name: string }; created_time: string; attachments?: unknown }> = [];
   const replies: any[] = [];
   const fetch = vi.fn(async (url: string | URL, init?: RequestInit) => {
     const at = new URL(String(url));
     if (at.pathname.endsWith("/me") && at.searchParams.get("fields")?.includes("category")) return Response.json({ id: "page1", name: "Shop", category: "Shopping" });
     if (at.pathname.endsWith("/me")) return Response.json({ id: "page1" });
     if (at.pathname.endsWith("/me/conversations")) return Response.json({ data: [{ updated_time: inbox.at(-1)?.created_time ?? "2026-01-01T00:00:00+0000", messages: { data: [...inbox].reverse() } }] });
-    replies.push(JSON.parse(String(init?.body)));
+    replies.push(init?.body instanceof FormData ? init.body : JSON.parse(String(init?.body)));
     return Response.json({ message_id: "r" });
   });
   const { asks, route } = host(facebookAdapter({ fetch: fetch as unknown as typeof globalThis.fetch, now: () => clock, sleep: (_ms, signal) => new Promise((resolve) => { const timer = setTimeout(resolve, 5); signal.addEventListener("abort", () => { clearTimeout(timer); resolve(); }); }) }));
@@ -157,6 +180,18 @@ it("reads a Facebook Page's new messages once each and replies in Messenger", as
   await new Promise((resolve) => setTimeout(resolve, 60));
   expect(asks).toEqual([{ text: "còn size M không", owner: false }]);
   expect(replies.find((reply) => reply.message)).toEqual({ recipient: { id: "u1" }, messaging_type: "RESPONSE", message: { text: "ok: còn size M không" } });
+  const facebookUrl = "https://cdn.fbsbx.com/attachment/sample.pdf";
+  mockAttachment(facebookUrl);
+  inbox.push({ id: "m3", message: "", from: { id: "u1", name: "Lan" }, created_time: "2026-11-18T10:00:15+0000",
+    attachments: { data: [{ name: "sample.pdf", file_url: facebookUrl }] } });
+  await until(() => replies.some(reply => reply instanceof FormData));
+  const form = replies.find(reply => reply instanceof FormData)!;
+  expect(JSON.parse(String(form.get("recipient")))).toEqual({ id: "u1" });
+  expect(JSON.parse(String(form.get("message"))).attachment.type).toBe("file");
+  const file = form.get("filedata");
+  if (!(file instanceof File)) throw Error("Expected Facebook attachment bytes");
+  expect(file.name).toBe("sample.pdf");
+  expect(await file.text()).toBe("fixture");
 });
 
 it("signs Zalo in by QR, answers direct messages and mentions, and reports a session opened elsewhere", async () => {
@@ -185,16 +220,40 @@ it("signs Zalo in by QR, answers direct messages and mentions, and reports a ses
   const started = await route("GET", "/api/bots/b1/zalo");
   expect(started!.body.login.qr).toBe("data:image/png;base64,QRDATA");
   await until(() => handlers.has("message"));
-  await route("POST", "/api/bots/b1/zalo", { access: "everyone" });
-  expect((await route("GET", "/api/bots/b1/zalo"))!.body).toMatchObject({ connected: true, name: "Shop Zalo", username: "500" });
-  const say = (msgId: string, thread: string, type: number, content: string, mentions?: unknown[]) =>
-    handlers.get("message")!({ type, threadId: thread, isSelf: false, data: { msgId, uidFrom: "42", dName: "Hoa", content, ...(mentions ? { mentions } : {}) } });
-  say("1", "42", 0, "chào shop");
-  say("2", "g9", 1, "nói chuyện riêng trong nhóm");
-  say("3", "g9", 1, "@Shop Zalo giá bao nhiêu", [{ uid: "500", pos: 0, len: 10 }]);
+  expect((await route("POST", "/api/bots/b1/zalo", { groupMentions: true }))!.body).toMatchObject({
+    connected: true, name: "Shop Zalo", username: "500", access: "owner", groupMentions: true,
+  });
+  const say = (msgId: string, thread: string, type: number, content: string, mentions?: unknown[], uidFrom = "42") =>
+    handlers.get("message")!({ type, threadId: thread, isSelf: false, data: { msgId, uidFrom, dName: "Fixture", content, ...(mentions ? { mentions } : {}) } });
+  const tag = [{ uid: 500, pos: 0, len: 10 }];
+  const { code } = (await route("POST", "/api/bots/b1/zalo/link"))!.body;
+  say("1", "42", 0, `/link ${code}`);
+  await until(() => sends.length === 1);
+  say("2", "42", 0, "chào shop");
   await until(() => sends.length === 2);
-  expect(asks.map((ask) => ask.text)).toEqual(["chào shop", "giá bao nhiêu"]);
-  expect(sends).toEqual([{ text: "ok: chào shop", thread: "42", type: 0 }, { text: "ok: giá bao nhiêu", thread: "g9", type: 1 }]);
+  say("3", "41", 0, "tin riêng của khách", undefined, "41");
+  say("4", "g9", 1, "@Shop Zalo chỉ gõ tên bot");
+  say("5", "g9", 1, "@Shop Zalo câu hỏi khách", tag, "41");
+  say("6", "g9", 1, "@Shop Zalo câu hỏi chủ", tag);
+  say("7", "g9", 1, "@Shop Zalo hỏi thêm", tag, "41");
+  await until(() => sends.length === 5);
+  expect(asks).toEqual([
+    { text: "chào shop", owner: true },
+    { text: "câu hỏi khách", owner: false },
+    { text: "câu hỏi chủ", owner: false },
+    { text: "hỏi thêm", owner: false, threadId: "t2" },
+  ]);
+  expect(sends.slice(1)).toEqual([
+    { text: "ok: chào shop", thread: "42", type: 0 },
+    { text: "ok: câu hỏi khách", thread: "g9", type: 1 },
+    { text: "ok: câu hỏi chủ", thread: "g9", type: 1 },
+    { text: "ok: hỏi thêm", thread: "g9", type: 1 },
+  ]);
+  await route("POST", "/api/bots/b1/zalo", { access: "everyone", groupMentions: false });
+  say("8", "g9", 1, "@Shop Zalo đã tắt nhóm", tag, "41");
+  say("9", "41", 0, "mở tin riêng", undefined, "41");
+  await until(() => sends.length === 6);
+  expect(asks.slice(4)).toEqual([{ text: "mở tin riêng", owner: false }]);
   handlers.get("closed")!(3000, "duplicate");
   await new Promise((resolve) => setTimeout(resolve, 30));
   expect((await route("GET", "/api/bots/b1/zalo"))!.body.error).toContain("mở ở nơi khác");
@@ -218,4 +277,10 @@ it("queues personal Messenger replies for the desktop window and answers everyon
   expect(outbox.body.items).toEqual([{ id: 1, chatId: "t1", text: "ok: còn hàng không" }]);
   expect(asks).toEqual([{ text: "còn hàng không", owner: false }]);
   expect((await call("POST", "/api/bots/b1/messenger/sent", { id: 1 })).body).toEqual({ ok: true });
+  const messengerUrl = "https://cdn.fbsbx.com/attachment/list.csv";
+  mockAttachment(messengerUrl);
+  await call("POST", "/api/bots/b1/messenger/inbox", { messages: [{ id: "t1:3", chatId: "t1", fileUrl: messengerUrl, fileName: "list.csv" }] });
+  const upload = (await call("GET", "/api/bots/b1/messenger/outbox")).body.items[0];
+  expect(upload).toEqual({ id: 2, chatId: "t1", text: "", file: { name: "list.csv", base64: Buffer.from("fixture").toString("base64") } });
+  expect((await call("POST", "/api/bots/b1/messenger/sent", { id: 2 })).body).toEqual({ ok: true });
 });
