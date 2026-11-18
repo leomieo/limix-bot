@@ -14,7 +14,7 @@ import { writeFileAtomic } from "../atomic.ts";
 import type { RequestAuth } from "../request-auth.ts";
 import { PASS, type RouteHandler } from "../routes/table.ts";
 
-export type ChannelKind = "telegram" | "discord" | "zalo" | "facebook";
+export type ChannelKind = "telegram" | "discord" | "zalo" | "facebook" | "messenger";
 
 /** One incoming message, the same shape whatever the channel. */
 export interface ChannelMessage {
@@ -36,6 +36,7 @@ export class ChannelError extends Error {
 }
 
 export interface ChannelIo {
+  botId: string;
   signal: AbortSignal;
   offset: number;
   saveOffset(offset: number): void;
@@ -57,6 +58,8 @@ export interface ChannelAdapter {
   textMax: number;
   /** Strangers get no answer at all while only the owner is answered: the account is also a person's or a shop's inbox. */
   quietToStrangers?: boolean;
+  /** No one, the owner included, gets Full access here: the channel cannot tell a person's own chat from a group. */
+  guestsOnly?: boolean;
   /** Pause before each send on one account, picked between the two bounds. */
   paceMs?: readonly [number, number];
   /** Checks a secret and names the account it opens. */
@@ -252,6 +255,7 @@ export function createBotChannels(deps: BotChannelsDeps) {
     const command = /^\/(\w+)(?:@\w+)?(?:\s+(.*))?$/s.exec(message.text.trim());
     if (command?.[1] === "start" && !command[2]) return void await send(say.start);
     if (command?.[1] === "link") {
+      if (adapter.guestsOnly) return;
       if (!message.direct) return void await send(say.linkHere);
       const code = (command[2] ?? "").trim();
       const ok = entry.link && entry.link.expiresAt > now() && code && timingSafeEqual(Buffer.from(hashCode(code)), Buffer.from(entry.link.hash));
@@ -259,7 +263,7 @@ export function createBotChannels(deps: BotChannelsDeps) {
       patch(kind, botId, (current) => { const { link: _used, ...rest } = current; return { ...rest, owner: { id: message.from.id, name: message.from.name } }; });
       return void await send(say.linked);
     }
-    const owner = message.direct && entry.owner?.id === message.from.id;
+    const owner = message.direct && !adapter.guestsOnly && entry.owner?.id === message.from.id;
     if (!owner && entry.access !== "everyone") return message.direct && !adapter.quietToStrangers ? void await send(say.ownerOnly) : undefined;
     const conversation = message.direct ? message.chatId : `${message.chatId}:${message.from.id}`;
     if (command?.[1] === "new") {
@@ -303,6 +307,7 @@ export function createBotChannels(deps: BotChannelsDeps) {
       try {
         let session: ChannelSession | undefined;
         const io: ChannelIo = {
+          botId,
           signal: abort.signal,
           offset: entry.offset,
           saveOffset: (offset) => patch(kind, botId, (current) => ({ ...current, offset })),
@@ -357,7 +362,7 @@ export function createBotChannels(deps: BotChannelsDeps) {
     const kept = data.bots[botId];
     const sameAccount = kept?.username === account.username;
     data.bots[botId] = botSchema.parse({
-      sealed: seal(secret), username: account.username, name: account.name, enabled: true, access: kept?.access ?? "owner",
+      sealed: seal(secret), username: account.username, name: account.name, enabled: true, access: kept?.access ?? (adapter.guestsOnly ? "everyone" : "owner"),
       ...(kept?.owner ? { owner: kept.owner } : {}), offset: sameAccount ? kept.offset : 0, chats: sameAccount ? kept.chats : {},
     });
     write(kind, data);
@@ -378,7 +383,7 @@ export function createBotChannels(deps: BotChannelsDeps) {
       .catch((error) => { if (live() && !abort.signal.aborted) current.state = { error: failure(error) }; });
   }
 
-  const PATH = /^\/api\/bots\/([\w-]{1,128})\/(telegram|discord|zalo|facebook)(?:\/(link|unlink|login))?$/;
+  const PATH = /^\/api\/bots\/([\w-]{1,128})\/(telegram|discord|zalo|facebook|messenger)(?:\/(link|unlink|login))?$/;
   const changeSchema = z.object({ token: z.string().max(400).optional(), enabled: z.boolean().optional(), access: z.enum(["owner", "everyone"]).optional() }).strict();
 
   const routes: RouteHandler = async ({ req, res, path, method, auth, json, readBody }) => {

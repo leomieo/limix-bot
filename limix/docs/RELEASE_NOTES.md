@@ -1,3 +1,13 @@
+Limix Bot 0.3.82
+
+## Tiếng Việt
+
+- Thẻ **Kênh chat** có thêm **Messenger** cho tài khoản Facebook cá nhân (thử nghiệm, chỉ trên máy tính): bấm **Mở cửa sổ đăng nhập Facebook**, đăng nhập (nhập cả mã PIN khôi phục tin nhắn nếu Facebook hỏi) rồi đóng cửa sổ. App giữ một cửa sổ Facebook ẩn, đọc tin nhắn mới và gõ câu trả lời của bot. Mọi người nhắn tới đều được trả lời ở chế độ an toàn; chỉ chạy khi app đang mở. Nên dùng tài khoản phụ vì Facebook không có cách chính thức cho tài khoản cá nhân. Nút **Mở cửa sổ Messenger của bot** cho bạn xem và xử lý khi Facebook hỏi thêm.
+
+## English
+
+- The **Chat channels** card adds **Messenger** for a personal Facebook account (beta, desktop only): press **Open the Facebook sign-in window**, sign in (enter the chat-restore PIN if Facebook asks), then close the window. The app keeps a hidden Facebook window that reads new messages and types the bot's replies. Everyone who writes is answered in safe mode, and it runs only while the app is open. Use a spare account, since Facebook has no official way for personal accounts. **Show the bot's Messenger window** lets you look in and answer anything Facebook asks.
+
 Limix Bot 0.3.81
 
 ## Tiếng Việt

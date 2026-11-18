@@ -115,7 +115,7 @@ import { cloudPageSenderAllowed, cloudPlanDisk, cloudUnreachableText, createClou
 import { installCloudFiles } from "./cloud-sync-main.mjs";
 import { createCloudEntry } from "./cloud-entry.mjs"; import { installTeamJoin } from "./team-join-main.mjs";
 import { createLendingTarget } from "./lending-target.mjs"; import { createOpenAtLogin, installOpenAtLogin } from "./open-at-login.mjs";
-import { cleanWorkspaceDir, createCleanWorkspace, profilesDir } from "./clean-workspace.mjs"; import { createLocalProfiles, createProfileRegistry } from "./local-profiles.mjs"; import { createPlaceSwitch } from "./place-switch.mjs"; import { installOneHome } from "./one-home-main.mjs"; import { handSaved, installOwnHome } from "./own-home-main.mjs"; import { reopenSavedServer, serverOpens } from "./saved-server.mjs"; import { installTwoPlacesMain } from "./two-places-main.mjs";
+import { cleanWorkspaceDir, createCleanWorkspace, profilesDir } from "./clean-workspace.mjs"; import { createLocalProfiles, createProfileRegistry } from "./local-profiles.mjs"; import { createPlaceSwitch } from "./place-switch.mjs"; import { installOneHome } from "./one-home-main.mjs"; import { installMessengerPersonal } from "./messenger-personal.mjs"; import { handSaved, installOwnHome } from "./own-home-main.mjs"; import { reopenSavedServer, serverOpens } from "./saved-server.mjs"; import { installTwoPlacesMain } from "./two-places-main.mjs";
 import { askForMicrophone, openPrivacySettings } from "./privacy-settings.mjs";
 import { createHomeWindow, installHomeWindowIpc } from "./home-window.mjs";
 import { createTeamProfileSeeds } from "./team-profile-seed.mjs";
@@ -3272,7 +3272,7 @@ app.on("render-process-gone", (_event, contents, details) => {
   slog(`limix: main window page went away (${details?.reason}); loading it again`);
   setTimeout(() => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.reload(); }, 1_000);
 });
-ipcMain.handle("limix-phone:state", localOnly("limix-phone:state", () => ({ on: limixPhoneBrowserOn(app.getPath("userData")), active: limixLanActive })));
+ipcMain.handle("limix-phone:state", localOnly("limix-phone:state", () => ({ on: limixPhoneBrowserOn(app.getPath("userData")), active: limixLanActive }))); installMessengerPersonal({ app, ipcMain, BrowserWindow, session, localRequest: localServerRequest, guard: localOnly, log: slog });
 ipcMain.handle("limix-phone:set", localOnly("limix-phone:set", (_event, on) => { setLimixPhoneBrowser(app.getPath("userData"), on === true); app.relaunch(); app.quit(); }));
 app.on("will-quit", releaseDesktopDataDirLease);
 app.on("will-quit", () => { desktopTray?.destroy(); void tailnetShare.stop(); });

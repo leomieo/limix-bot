@@ -7,7 +7,9 @@ import { lx } from "@/lib/limix-text";
 import { api, type Bot } from "@/state/store";
 import { Switch } from "../SettingsPrimitives";
 
-type Kind = "telegram" | "discord" | "zalo" | "facebook";
+type Kind = "telegram" | "discord" | "zalo" | "facebook" | "messenger";
+type MessengerBridge = NonNullable<NonNullable<Window["ogb"]>["limixMessenger"]>;
+const messengerBridge = (): MessengerBridge | undefined => window.ogb?.limixMessenger;
 
 export interface ChannelView {
   connected: boolean;
@@ -48,6 +50,13 @@ const CHANNELS: Array<{ kind: Kind; label: string; placeholder?: string; howTo: 
     where: (view) => view.name || "Page",
     linkFrom: () => lx("Từ Facebook cá nhân, nhắn cho Page: ", "From your own Facebook, message the Page: "),
   },
+  {
+    kind: "messenger", label: "Messenger",
+    howTo: () => lx("Đăng nhập Facebook trong cửa sổ của app (nhập cả mã PIN khôi phục tin nhắn nếu Facebook hỏi), rồi đóng cửa sổ. App giữ một cửa sổ Facebook ẩn, đọc tin mới và gõ câu trả lời.", "Sign in to Facebook in the app's window (enter the chat-restore PIN if Facebook asks), then close it. The app keeps a hidden Facebook window that reads new messages and types the replies."),
+    note: () => lx("Thử nghiệm, tài khoản cá nhân. Chỉ chạy khi app đang mở trên máy này. Nên dùng tài khoản phụ: Facebook không có cách chính thức cho tài khoản cá nhân và có thể khoá tài khoản. Ai nhắn cũng được trả lời ở chế độ an toàn.", "Beta, personal accounts. Runs only while the app is open on this computer. Use a spare account: Facebook has no official way for personal accounts and may lock it. Everyone is answered in safe mode."),
+    where: () => lx("tài khoản Facebook đã đăng nhập", "the signed-in Facebook account"),
+    linkFrom: () => "",
+  },
 ];
 
 const buttonCls = "rounded-lg bg-control px-3 py-1.5 text-[13px] text-ink hover:bg-raised-hover disabled:cursor-not-allowed disabled:opacity-50";
@@ -58,16 +67,17 @@ export function BotChannelCards({ bot, className }: { bot: Bot; className?: stri
   useEffect(() => {
     let live = true;
     setViews({});
-    for (const channel of CHANNELS) api<ChannelView>(`/api/bots/${bot.id}/${channel.kind}`).then((view) => { if (live) setViews((all) => ({ ...all, [channel.kind]: view })); }).catch(() => {});
+    for (const channel of CHANNELS.filter((each) => each.kind !== "messenger" || messengerBridge())) api<ChannelView>(`/api/bots/${bot.id}/${channel.kind}`).then((view) => { if (live) setViews((all) => ({ ...all, [channel.kind]: view })); }).catch(() => {});
     return () => { live = false; };
   }, [bot.id]);
-  const channel = CHANNELS.find((each) => each.kind === kind)!;
+  const channels = CHANNELS.filter((each) => each.kind !== "messenger" || messengerBridge());
+  const channel = channels.find((each) => each.kind === kind)!;
   return (
     <div className={cn("rounded-xl bg-card p-4", className)} data-testid="channels-card">
       <div className="text-[15px] font-medium text-ink">{lx("Kênh chat", "Chat channels")}</div>
       <div className="mt-0.5 text-[13px] text-ink-secondary">{lx(`Cho ${bot.name} trả lời tin nhắn ngoài app.`, `Let ${bot.name} answer messages outside the app.`)}</div>
       <div role="tablist" className="mt-3 flex flex-wrap gap-1.5">
-        {CHANNELS.map((each) => {
+        {channels.map((each) => {
           const view = views[each.kind];
           return (
             <button key={each.kind} type="button" role="tab" aria-selected={kind === each.kind} onClick={() => setKind(each.kind)} data-testid={`channel-tab-${each.kind}`}
@@ -118,7 +128,9 @@ function ChannelPanel({ bot, channel, view, onView }: { bot: Bot; channel: (type
                   className="min-w-0 flex-1 rounded-lg bg-inset px-3 py-1.5 font-mono text-[13px] text-ink outline-none" data-testid={`channel-token-${channel.kind}`} />
                 <button type="submit" disabled={busy || !token.trim()} className={buttonCls} data-testid={`channel-connect-${channel.kind}`}>{lx("Kết nối", "Connect")}</button>
               </form>
-            : <ZaloSignIn view={view} busy={busy} start={() => void post({}, "/login")} cancel={() => void run(() => api(`${path}/login`, { method: "DELETE" }))} />}
+            : channel.kind === "messenger"
+              ? <button type="button" className={cn(buttonCls, "self-start")} disabled={busy} onClick={() => void run(async () => (await messengerBridge()!.signIn(bot.id)) as ChannelView)} data-testid="channel-signin-messenger">{lx("Mở cửa sổ đăng nhập Facebook", "Open the Facebook sign-in window")}</button>
+              : <ZaloSignIn view={view} busy={busy} start={() => void post({}, "/login")} cancel={() => void run(() => api(`${path}/login`, { method: "DELETE" }))} />}
         </div>
       )}
 
@@ -128,8 +140,10 @@ function ChannelPanel({ bot, channel, view, onView }: { bot: Bot; channel: (type
             <span>{lx(`${bot.name} trả lời tin nhắn gửi tới ${channel.where(view)}.`, `${bot.name} answers messages sent to ${channel.where(view)}.`)}</span>
             <Switch aria-label={lx(`Bật ${channel.label}`, `${channel.label} on`)} checked={view.enabled === true} disabled={busy} onClick={() => void post({ enabled: !view.enabled })} data-testid={`channel-switch-${channel.kind}`} />
           </div>
-          {channel.note && channel.kind === "facebook" && <span className="text-[12px] text-ink-secondary">{channel.note()}</span>}
-          {view.owner
+          {channel.note && (channel.kind === "facebook" || channel.kind === "messenger") && <span className="text-[12px] text-ink-secondary">{channel.note()}</span>}
+          {channel.kind === "messenger"
+            ? <button type="button" className={cn(buttonCls, "self-start")} onClick={() => void messengerBridge()?.show(bot.id)}>{lx("Mở cửa sổ Messenger của bot", "Show the bot's Messenger window")}</button>
+            : view.owner
             ? <div className="flex flex-wrap items-center gap-2 text-ink-secondary">
                 <span>{lx(`Chủ bot: ${view.owner}. Nhắn riêng ở đó như nhắn trong app, toàn quyền.`, `Owner: ${view.owner}. Direct messages there work as in the app, with full access.`)}</span>
                 <button type="button" className={buttonCls} disabled={busy} onClick={() => void post({}, "/unlink")}>{lx("Bỏ liên kết", "Unlink")}</button>
@@ -148,7 +162,7 @@ function ChannelPanel({ bot, channel, view, onView }: { bot: Bot; channel: (type
             <Switch aria-label={lx("Trả lời cả người khác", "Answer other people too")} checked={view.access === "everyone"} disabled={busy} onClick={() => void post({ access: view.access === "everyone" ? "owner" : "everyone" })} data-testid={`channel-everyone-${channel.kind}`} />
           </label>
           <div className="flex justify-end">
-            <button type="button" className={buttonCls} disabled={busy} onClick={() => void run(() => api(path, { method: "DELETE" }))} data-testid={`channel-remove-${channel.kind}`}>{lx("Gỡ kết nối", "Disconnect")}</button>
+            <button type="button" className={buttonCls} disabled={busy} onClick={() => void run(async () => { const gone = await api<ChannelView>(path, { method: "DELETE" }); if (channel.kind === "messenger") await messengerBridge()?.signOut(bot.id); return gone; })} data-testid={`channel-remove-${channel.kind}`}>{lx("Gỡ kết nối", "Disconnect")}</button>
           </div>
         </div>
       )}

@@ -199,3 +199,23 @@ it("signs Zalo in by QR, answers direct messages and mentions, and reports a ses
   await new Promise((resolve) => setTimeout(resolve, 30));
   expect((await route("GET", "/api/bots/b1/zalo"))!.body.error).toContain("mở ở nơi khác");
 });
+
+it("queues personal Messenger replies for the desktop window and answers everyone there as a guest", async () => {
+  const { messengerBridge } = await import("./messenger.ts");
+  const bridge = messengerBridge({ manageRefusal: () => null });
+  const { asks, route } = host(bridge.adapter);
+  const call = async (method: string, path: string, body?: unknown) => {
+    let status = 0, answer: any;
+    const json = ((_res: unknown, code: number, value: unknown) => { status = code; answer = value; }) as never;
+    await bridge.routes({ req: {} as never, res: {} as never, url: new URL(`http://x${path}`), path, method, auth: { scopes: ["admin"] } as never, json, readBody: (async () => body) as never });
+    return { status, body: answer };
+  };
+  expect((await route("POST", "/api/bots/b1/messenger", { token: JSON.stringify({ uid: "x" }) }))!.status).toBe(400);
+  expect((await route("POST", "/api/bots/b1/messenger", { token: JSON.stringify({ uid: "100045", name: "" }) }))!.body).toMatchObject({ connected: true, access: "everyone" });
+  for (let i = 0; i < 50 && !(await call("GET", "/api/messenger/bots")).body.bots.length; i++) await new Promise((resolve) => setTimeout(resolve, 10));
+  await call("POST", "/api/bots/b1/messenger/inbox", { messages: [{ id: "t1:1", chatId: "t1", name: "Lan", text: "/link ABC123" }, { id: "t1:2", chatId: "t1", name: "Lan", text: "còn hàng không" }] });
+  const outbox = await call("GET", "/api/bots/b1/messenger/outbox");
+  expect(outbox.body.items).toEqual([{ id: 1, chatId: "t1", text: "ok: còn hàng không" }]);
+  expect(asks).toEqual([{ text: "còn hàng không", owner: false }]);
+  expect((await call("POST", "/api/bots/b1/messenger/sent", { id: 1 })).body).toEqual({ ok: true });
+});

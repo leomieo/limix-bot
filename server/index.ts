@@ -1,5 +1,5 @@
 import { imageConnectorRefusal } from "./limix-image-routing.ts";
-import { botChannelAdapters, botChannelLogins } from "./bot-channels/adapters.ts"; import { createBotChannels } from "./bot-channels/engine.ts";
+import { botChannelParts } from "./bot-channels/adapters.ts"; import { createBotChannels } from "./bot-channels/engine.ts";
 // Import first: it reads a Cloud home's secrets off the launcher's pipe before any module can start a process.
 import { BOOT_CLOUD_SECRETS } from "./cloud-secrets-boot.ts";
 import { startFailureText } from "./start-failure-text.ts";
@@ -9592,9 +9592,9 @@ const webhookIngressStatus = () => ({
 });
 ROUTES.push(createWebhookRoutes({ webhooks, ingress: webhookIngressStatus, visible: (auth) => visibleTo(viewerFor(auth)) }), botApi.routes);
 // Limix Bot: a bot answers on Telegram, Discord, Zalo or a Facebook Page once its owner connects it in the bot's settings.
-const botChannels = createBotChannels({ dataDir: DATA_DIR, adapters: botChannelAdapters(), logins: botChannelLogins(), ask: botApi.askFromChannel, botExists: (botId) => Boolean(store.bot(botId)), log: (line) => console.log(line),
-  manageRefusal: (auth, botId) => auth.scopes.includes("admin") || (CLOUD_TEAM && levelOf(auth, botId) === "edit") ? null : refusalFor(store.bot(botId)?.name ?? "this bot", "edit").error });
-ROUTES.push(botChannels.routes); botChannels.start();
+const channelRefusal = (auth: RequestAuth, botId: string) => auth.scopes.includes("admin") || (CLOUD_TEAM && levelOf(auth, botId) === "edit") ? null : refusalFor(store.bot(botId)?.name ?? "this bot", "edit").error, channelParts = botChannelParts(channelRefusal);
+const botChannels = createBotChannels({ dataDir: DATA_DIR, ...channelParts, ask: botApi.askFromChannel, botExists: (botId) => Boolean(store.bot(botId)), log: (line) => console.log(line), manageRefusal: channelRefusal });
+ROUTES.push(botChannels.routes, channelParts.bridgeRoutes); botChannels.start();
 
 const RUNTIME_KEEP_MS = 30 * 24 * 60 * 60_000;
 let runtimePrunedAt = 0;

@@ -1,13 +1,13 @@
 {
- "_about": "Limix Bot: a bot answers on Telegram, Discord, Zalo or a Facebook Page from its own settings (server/bot-channels, ChannelCards.tsx). Applied after messaging-module.json; each edit is skipped once its text is gone.",
+ "_about": "Limix Bot: a bot answers on Telegram, Discord, Zalo, a Facebook Page or (beta) a personal Messenger account from its own settings (server/bot-channels, ChannelCards.tsx, electron/messenger-personal.mjs). Applied after messaging-module.json; each edit is skipped once its text is gone.",
  "server/index.ts": [
   {
    "before": "import { imageConnectorRefusal } from \"./limix-image-routing.ts\";\n// Import first: it reads a Cloud home's secrets off the launcher's pipe before any module can start a process.\n",
-   "after": "import { imageConnectorRefusal } from \"./limix-image-routing.ts\";\nimport { botChannelAdapters, botChannelLogins } from \"./bot-channels/adapters.ts\"; import { createBotChannels } from \"./bot-channels/engine.ts\";\n// Import first: it reads a Cloud home's secrets off the launcher's pipe before any module can start a process.\n"
+   "after": "import { imageConnectorRefusal } from \"./limix-image-routing.ts\";\nimport { botChannelParts } from \"./bot-channels/adapters.ts\"; import { createBotChannels } from \"./bot-channels/engine.ts\";\n// Import first: it reads a Cloud home's secrets off the launcher's pipe before any module can start a process.\n"
   },
   {
    "before": "ROUTES.push(createWebhookRoutes({ webhooks, ingress: webhookIngressStatus, visible: (auth) => visibleTo(viewerFor(auth)) }), botApi.routes);\n\n",
-   "after": "ROUTES.push(createWebhookRoutes({ webhooks, ingress: webhookIngressStatus, visible: (auth) => visibleTo(viewerFor(auth)) }), botApi.routes);\n// Limix Bot: a bot answers on Telegram, Discord, Zalo or a Facebook Page once its owner connects it in the bot's settings.\nconst botChannels = createBotChannels({ dataDir: DATA_DIR, adapters: botChannelAdapters(), logins: botChannelLogins(), ask: botApi.askFromChannel, botExists: (botId) => Boolean(store.bot(botId)), log: (line) => console.log(line),\n  manageRefusal: (auth, botId) => auth.scopes.includes(\"admin\") || (CLOUD_TEAM && levelOf(auth, botId) === \"edit\") ? null : refusalFor(store.bot(botId)?.name ?? \"this bot\", \"edit\").error });\nROUTES.push(botChannels.routes); botChannels.start();\n\n"
+   "after": "ROUTES.push(createWebhookRoutes({ webhooks, ingress: webhookIngressStatus, visible: (auth) => visibleTo(viewerFor(auth)) }), botApi.routes);\n// Limix Bot: a bot answers on Telegram, Discord, Zalo or a Facebook Page once its owner connects it in the bot's settings.\nconst channelRefusal = (auth: RequestAuth, botId: string) => auth.scopes.includes(\"admin\") || (CLOUD_TEAM && levelOf(auth, botId) === \"edit\") ? null : refusalFor(store.bot(botId)?.name ?? \"this bot\", \"edit\").error, channelParts = botChannelParts(channelRefusal);\nconst botChannels = createBotChannels({ dataDir: DATA_DIR, ...channelParts, ask: botApi.askFromChannel, botExists: (botId) => Boolean(store.bot(botId)), log: (line) => console.log(line), manageRefusal: channelRefusal });\nROUTES.push(botChannels.routes, channelParts.bridgeRoutes); botChannels.start();\n\n"
   }
  ],
  "src/components/bot-panel/SettingsPage.tsx": [
@@ -18,6 +18,28 @@
   {
    "before": "      </Card>\n\n      <BotApiCard bot={bot} webhooksLink className=\"mt-3.5\" />\n\n",
    "after": "      </Card>\n\n      {bot.yourAccess !== \"view\" && !bot.defaultBot && <BotChannelCards bot={bot} className=\"mt-3.5\" />}\n      <BotApiCard bot={bot} webhooksLink className=\"mt-3.5\" />\n\n"
+  }
+ ],
+ "electron/main.mjs": [
+  {
+   "before": "import { installOneHome } from \"./one-home-main.mjs\";",
+   "after": "import { installOneHome } from \"./one-home-main.mjs\"; import { installMessengerPersonal } from \"./messenger-personal.mjs\";"
+  },
+  {
+   "before": "ipcMain.handle(\"limix-phone:state\", localOnly(\"limix-phone:state\", () => ({ on: limixPhoneBrowserOn(app.getPath(\"userData\")), active: limixLanActive })));\n",
+   "after": "ipcMain.handle(\"limix-phone:state\", localOnly(\"limix-phone:state\", () => ({ on: limixPhoneBrowserOn(app.getPath(\"userData\")), active: limixLanActive }))); installMessengerPersonal({ app, ipcMain, BrowserWindow, session, localRequest: localServerRequest, guard: localOnly, log: slog });\n"
+  }
+ ],
+ "electron/preload.cjs": [
+  {
+   "before": "  limixPhone: { state: () => ipcRenderer.invoke(\"limix-phone:state\"), set: (on) => ipcRenderer.invoke(\"limix-phone:set\", on === true) },\n",
+   "after": "  limixPhone: { state: () => ipcRenderer.invoke(\"limix-phone:state\"), set: (on) => ipcRenderer.invoke(\"limix-phone:set\", on === true) },\n  limixMessenger: { signIn: (botId) => ipcRenderer.invoke(\"limix-messenger:sign-in\", String(botId)), show: (botId) => ipcRenderer.invoke(\"limix-messenger:show\", String(botId)), signOut: (botId) => ipcRenderer.invoke(\"limix-messenger:sign-out\", String(botId)) },\n"
+  }
+ ],
+ "src/types/ogb.d.ts": [
+  {
+   "before": "      limixPhone?: { state(): Promise<{ on: boolean; active: boolean }>; set(on: boolean): Promise<void> };\n",
+   "after": "      limixPhone?: { state(): Promise<{ on: boolean; active: boolean }>; set(on: boolean): Promise<void> };\n      limixMessenger?: { signIn(botId: string): Promise<unknown>; show(botId: string): Promise<boolean>; signOut(botId: string): Promise<boolean> };\n"
   }
  ]
 }

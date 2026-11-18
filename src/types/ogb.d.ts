@@ -434,6 +434,7 @@ const __APP_VERSION__: string;
       limixAccount?: { info(): Promise<{ username: string; email: string } | null>; signOut(username: string): Promise<boolean> };
       /** Limix Bot: this computer's Limix Bot in a phone browser on the same Wi-Fi. */
       limixPhone?: { state(): Promise<{ on: boolean; active: boolean }>; set(on: boolean): Promise<void> };
+      limixMessenger?: { signIn(botId: string): Promise<unknown>; show(botId: string): Promise<boolean>; signOut(botId: string): Promise<boolean> };
       /** Writes the redacted diagnostics report to a user-chosen file;
        * resolves the path, or null when cancelled. */
       exportDiagnostics?(): Promise<string | null>;
