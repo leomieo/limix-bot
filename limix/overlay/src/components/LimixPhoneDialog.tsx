@@ -6,7 +6,7 @@ import { LimixPhoneBrowser } from "./LimixPhoneBrowser";
 import { lx } from "@/lib/limix-text";
 
 /** "Kết nối điện thoại": a window in the middle of the screen (like the other dialogs), not a page buried in Settings. */
-export function LimixPhoneDialog({ onClose }: { onClose: () => void }) {
+export function LimixPhoneDialog({ onClose, cloudHome = false }: { onClose: () => void; cloudHome?: boolean }) {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -35,7 +35,7 @@ export function LimixPhoneDialog({ onClose }: { onClose: () => void }) {
             <X size={16} />
           </button>
         </div>
-        <LimixPhoneBrowser />
+        <LimixPhoneBrowser cloudHome={cloudHome} />
       </div>
     </div>
   );

@@ -1,3 +1,21 @@
+Limix Bot 0.3.83
+
+## Tiếng Việt
+
+- Trên My Cloud, **Kết nối điện thoại** tạo mã QR mở thẳng My Cloud: điện thoại ở đâu cũng vào được, kể cả khi máy tính tắt. Không còn hiện hướng dẫn điều khiển máy tính từ xa khi đang ở Cloud.
+- Sửa lỗi: bot chọn chuyển lên Cloud bị báo "đã chuyển" nhưng không có trên My Cloud, khi bản sao trước đó của bot từng bị xoá trên Cloud. Giờ bot được chọn luôn được gửi lại đầy đủ.
+- Sửa lỗi: bấm **Mở My Cloud** trong thông báo "… giờ ở trên My Cloud" không mở gì.
+- Trang đăng nhập My Cloud trên trình duyệt hướng dẫn rõ chỗ lấy mã ghép nối và bỏ liên kết tới ứng dụng điện thoại không có thật.
+- Mục **Limix Cloud** trong Cài đặt dùng chữ gọn hơn: "Gói … đang hoạt động", **Quản lý gói trên web**, **Mở trên điện thoại** (mở luôn mã QR); các chỗ nhắc "trang Gói của bạn" nay ghi rõ cloud.limixmedia.com.
+
+## English
+
+- On My Cloud, **Connect your phone** makes a QR code that opens My Cloud itself, from anywhere and with your computer off, instead of the remote-control steps for a computer.
+- Fixed: a bot chosen to move to Cloud was reported moved but was missing on My Cloud when an earlier copy of it had been removed there. A chosen bot is now always sent again in full.
+- Fixed: **Open My Cloud** in the "… is now on My Cloud" notice did nothing.
+- The My Cloud sign-in page in a browser says where to get a pairing code and no longer links to a phone app that does not exist.
+- In the **Limix Cloud** settings card, the phone button now goes straight to the QR code, and the Vietnamese wording is simpler.
+
 Limix Bot 0.3.82
 
 ## Tiếng Việt

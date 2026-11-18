@@ -574,6 +574,7 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
   const [aboutOpen, setAboutOpen] = useState(false);
   const [phoneAppOpen, setPhoneAppOpen] = useState(false);
   const [limixPhoneOpen, setLimixPhoneOpen] = useState(false);
+  useEffect(() => { const open = () => setLimixPhoneOpen(true); window.addEventListener("limix:phone", open); return () => window.removeEventListener("limix:phone", open); }, []);
   const [limixToolsOpen, setLimixToolsOpen] = useState<null | { asking: boolean }>(null);
   useEffect(() => {
     const open = () => setLimixToolsOpen({ asking: false });
@@ -718,7 +719,7 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
       />
       {limixSignOutOpen && limixAccount && <LimixSignOutDialog username={limixAccount.username} onClose={() => setLimixSignOutOpen(false)} />}
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
-      {limixPhoneOpen && <LimixPhoneDialog onClose={() => setLimixPhoneOpen(false)} />}
+      {limixPhoneOpen && <LimixPhoneDialog cloudHome={state.config?.cloudHome === true} onClose={() => setLimixPhoneOpen(false)} />}
       {limixToolsOpen && <LimixToolsDialog asking={limixToolsOpen.asking} onClose={() => setLimixToolsOpen(null)} />}
       {accounts.sheet && <AccountsSheet adding={accounts.sheet.email} note={accounts.sheet.note} onClose={accounts.closeSheet} />}
       {LIMIX_PHONE_APPS_ENABLED && phoneAppOpen && <PhoneAppDialog

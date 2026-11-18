@@ -226,9 +226,47 @@ function CopyRow({ url, code }: { url: string; code: string }) {
   );
 }
 
-/** Both ways to open Limix Bot on a phone, as two tabs. */
-export function LimixPhoneBrowser() {
+/** On My Cloud: the Cloud is always on and has its own web address, so the phone opens the Cloud itself, from anywhere. */
+function CloudPane() {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pairing, setPairing] = useState<Pairing | null>(null);
+  const make = useCallback(async () => {
+    setBusy(true); setError(null);
+    try {
+      setPairing(await api<Pairing>("/api/auth/pairing", { method: "POST", body: JSON.stringify({ label: lx("Điện thoại", "Phone"), ttlMs: 15 * 60_000 }) }));
+    } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+    finally { setBusy(false); }
+  }, []);
+  useEffect(() => { void make(); }, [make]);
+  const until = pairing ? new Date(pairing.expiresAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }) : "";
+  return (
+    <div className="flex flex-col gap-4 rounded-xl border border-hairline/40 bg-card px-4 py-4" data-limix-phone="cloud">
+      <div className="flex items-center gap-2 text-[14px] font-medium text-ink"><Smartphone size={16} />{lx("Mở My Cloud trên điện thoại", "Open My Cloud on your phone")}</div>
+      <p className="text-[13px] leading-relaxed text-ink-secondary">{lx("My Cloud luôn chạy trên máy chủ, nên điện thoại ở đâu cũng mở được, kể cả khi máy tính tắt. Không cần cài app.", "My Cloud always runs on the server, so your phone opens it from anywhere, even with your computer off. No app to install.")}</p>
+      <ol className="list-decimal space-y-1 pl-5 text-[13px] leading-relaxed text-ink-secondary">
+        <li>{lx("Mở camera điện thoại, quét mã bên dưới, chạm vào đường link hiện ra.", "Open the phone's camera, scan the code below, tap the link that appears.")}</li>
+        <li>{lx(<>Trong trình duyệt: Chia sẻ → <b>Thêm vào Màn hình chính</b> để dùng như một app.</>, <>In the browser: Share → <b>Add to Home Screen</b> to use it like an app.</>)}</li>
+      </ol>
+      {pairing?.url ? (
+        <div className="flex flex-col items-center gap-2">
+          <div className="rounded-2xl bg-white p-3"><QRCodeSVG value={pairing.url} size={220} level="M" marginSize={1} bgColor="#ffffff" fgColor="#111111" /></div>
+          <div className="text-[12px] text-ink-secondary">{lx("Mã dùng một lần, hết hạn lúc", "One-time code, expires at")} {until} · {lx("mã", "code")}: <span className="font-mono text-ink">{pairing.code}</span></div>
+          <CopyRow url={pairing.url} code={pairing.code} />
+        </div>
+      ) : pairing ? (
+        <p className="text-[13px] text-ink-secondary">{lx("Mở địa chỉ My Cloud trên điện thoại, thêm /pair vào cuối và nhập mã:", "Open My Cloud's address on your phone, add /pair at the end and enter the code:")} <span className="font-mono text-ink">{pairing.code}</span></p>
+      ) : busy ? <Loader2 size={15} className="animate-spin text-ink-secondary" /> : null}
+      {error && <p className="text-[12px] text-danger">{error}</p>}
+      <button type="button" className={`${button} w-fit`} disabled={busy} onClick={() => void make()}><RefreshCw size={14} />{lx("Tạo mã mới", "New code")}</button>
+    </div>
+  );
+}
+
+/** Both ways to open Limix Bot on a phone, as two tabs; on My Cloud, the Cloud's own link. */
+export function LimixPhoneBrowser({ cloudHome = false }: { cloudHome?: boolean }) {
   const [tab, setTab] = useState<"remote" | "wifi">("remote");
+  if (cloudHome) return <CloudPane />;
   const tabClass = (on: boolean) => `flex-1 rounded-lg px-3 py-1.5 text-[13px] ${on ? "bg-raised text-ink font-medium" : "text-ink-secondary hover:text-ink"}`;
   return (
     <div className="flex flex-col gap-3">

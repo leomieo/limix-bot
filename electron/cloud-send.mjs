@@ -289,6 +289,8 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
    * fields were not recorded yet has them all sent again. */
   function plan(origin, mine, theirs, force = [], { everything = false } = {}) {
     const kept = entry(origin);
+    // Bots chosen to move go even when an earlier copy of them was removed on My Cloud: choosing them asks for it.
+    if (everything && localScope) for (const item of mine?.items ?? []) if (kept.off[item.key] === "removed") { delete kept.off[item.key]; delete kept.sent[item.key]; }
     // A Cloud too old to keep a secret by its id would make a new one every send.
     const going = theirs?.vault ? mine : { ...mine, items: (mine?.items ?? []).filter((item) => item.kind !== "secret") };
     const planned = planSend({ local: going, cloud: theirs, sent: kept.sent, off: everything ? removedOnly(kept.off) : kept.off, force: [...force, ...Object.keys(kept.created)] });

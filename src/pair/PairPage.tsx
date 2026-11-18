@@ -1,3 +1,4 @@
+import { LIMIX_PHONE_APPS_ENABLED } from "../../shared/limix-features";
 import { useEffect, useState } from "react";
 import { DesktopWorkspaceSwitcher } from "../components/DesktopWorkspaceSwitcher";
 import { productName } from "../lib/brand";
@@ -271,7 +272,7 @@ export function PairPage({ initialCode, initialEmail = null, reason }: { initial
             <button type="submit" disabled={busy || !codeReady(code)} className={button}>
               {t(busy ? "pair.connecting" : "pair.connect")}
             </button>
-            {where?.origin ? (
+            {LIMIX_PHONE_APPS_ENABLED && where?.origin ? (
               <p className="mt-3 text-[13px] text-ink-secondary">
                 {t("pair.onPhone")}{" "}
                 <a href={openInAppLink(where.origin, code)} className="text-accent underline">{t("pair.openInApp", { app: productName() })}</a>
