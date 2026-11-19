@@ -86,7 +86,7 @@ async function searchWeb(query: string): Promise<string> {
   return results.length ? JSON.stringify(results) : NO_RESULTS;
 }
 
-export async function zaloPublicLookup(text: string, previousGuestText?: string): Promise<string | undefined> {
+export async function channelPublicLookup(text: string, previousGuestText?: string): Promise<string | undefined> {
   const query = publicQuery(text);
   if (!query) return undefined;
   try {

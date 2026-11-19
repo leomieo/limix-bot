@@ -10,7 +10,7 @@ import { redactSecretsInText } from "../shared/redact.ts";
 import { BOT_API_UPGRADE, botApiEndpoint, type BotApiReply } from "../shared/bot-api.ts";
 import type { AdminActionRow } from "./admin-activity.ts";
 import { BOT_API_MAX_MESSAGE_CHARS, BOT_API_MAX_PENDING, BotApiManager, botApiPrompt, retryableBusySchema, withoutAttachedImages, type BotApiAttempt, type BotApiStatus } from "./bot-api.ts";
-import { zaloPublicLookup } from "./zalo-public-lookup.ts";
+import { channelPublicLookup } from "./channel-public-lookup.ts";
 import { personKey } from "./person-key.ts";
 import type { RequestAuth } from "./request-auth.ts";
 import { PASS, type RouteHandler } from "./routes/table.ts";
@@ -172,7 +172,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     return reply?.attachments?.filter((file): file is ChannelMedia => (file.kind === "image" && !file.fromTool) || file.kind === "file") ?? [];
   }
 
-  async function runCall(botId: string, call: z.output<typeof callSchema>, turnStarted: () => void, channel?: { attachment?: ChannelMedia; delivery?: Parameters<ChannelAsk>[1]["delivery"]; zaloGroup?: true; collect(files: ChannelMedia[]): void }): Promise<{ status: number; body: BotApiReply }> {
+  async function runCall(botId: string, call: z.output<typeof callSchema>, turnStarted: () => void, channel?: { attachment?: ChannelMedia; delivery?: Parameters<ChannelAsk>[1]["delivery"]; collect(files: ChannelMedia[]): void }): Promise<{ status: number; body: BotApiReply }> {
     const store = deps.store;
     let threadId = call.thread;
     if (threadId !== undefined) {
@@ -197,7 +197,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       store.patchTask(botId, threadId, { botApi: true, outside: true });
     }
     channel?.delivery?.accepted(threadId);
-    const previousGuestText = channel?.zaloGroup ? store.messagesFor(threadId).findLast((line) => line.role === "user" && line.via === "api")?.text : undefined;
+    const previousGuestText = channel ? store.messagesFor(threadId).findLast((line) => line.role === "user" && line.via === "api")?.text : undefined;
     const receivedAt = Date.now();
     const userMessage = store.appendMessage(threadId, { role: "user", kind: "text", text: message, via: "api", ...(channel?.attachment ? { attachments: [channel.attachment] } : {}) });
     const after = () => messagesAfter(store.messagesFor(threadId!), userMessage.id);
@@ -205,9 +205,9 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     let dispatchError: string | undefined;
     markRunning(botId, threadId, true);
     try {
-      const publicLookup = channel?.zaloGroup ? await zaloPublicLookup(message, previousGuestText) : undefined;
+      const publicLookup = channel ? await channelPublicLookup(message, previousGuestText) : undefined;
       channel?.delivery?.signal.throwIfAborted();
-      await deps.startTurn(botId, mediaPrompt(botApiPrompt(message, receivedAt, { zaloGroup: channel?.zaloGroup, publicLookup }), channel?.attachment), {
+      await deps.startTurn(botId, mediaPrompt(botApiPrompt(message, receivedAt, { guestChannel: Boolean(channel), publicLookup }), channel?.attachment), {
         threadId, automationSource: "api", unattended: true, userMessage,
         onSettled: (outcome) => { settled = outcome; markRunning(botId, threadId!, false); },
         onDispatchError: (message) => { dispatchError = message; markRunning(botId, threadId!, false); },
@@ -247,7 +247,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     if (!input.owner) {
       if (!deps.canConfine(botId)) fail(403, CANNOT_CONFINE);
       let attachments: ChannelMedia[] = [];
-      const answer = await runCall(botId, { message: input.text, ...(input.threadId ? { thread: input.threadId } : {}), wait: Math.round((input.waitMs ?? 600_000) / 1000) } as z.output<typeof callSchema>, () => {}, { attachment: input.attachment, delivery: input.delivery, zaloGroup: input.zaloGroup, collect(files) { attachments = files; } });
+      const answer = await runCall(botId, { message: input.text, ...(input.threadId ? { thread: input.threadId } : {}), wait: Math.round((input.waitMs ?? 600_000) / 1000) } as z.output<typeof callSchema>, () => {}, { attachment: input.attachment, delivery: input.delivery, collect(files) { attachments = files; } });
       const body = answer.body as { reply?: string; thread: string; status?: "needs_approval" | "working" };
       return { threadId: body.thread, ...(attachments.length ? { attachments } : {}), reply: body.reply ?? "", ...(body.status ? { status: body.status } : {}) };
     }

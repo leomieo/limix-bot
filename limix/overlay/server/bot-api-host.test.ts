@@ -2,18 +2,22 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BotApiManager } from "./bot-api.ts";
 import { BOT_API_DEFAULT_WAIT_MS, createBotApiHost, type BotApiHostDeps, type BotApiTurnOptions } from "./bot-api-host.ts";
 import type { RequestAuth } from "./request-auth.ts";
 import type { Message } from "./store.ts";
 import { createWebhookIngressHandler } from "./webhook-ingress.ts";
+import { fetchPublicPage } from "./wait-probes.ts";
 
 import type { WebhookManager } from "./webhooks.ts";
 
 const dirs: string[] = [];
 const servers: Server[] = [];
+vi.mock("./wait-probes.ts", { spy: true });
+const lookupPage = vi.mocked(fetchPublicPage);
+beforeEach(() => { lookupPage.mockReset().mockResolvedValue({ ok: false, refused: false, error: "offline fixture" }); });
 afterEach(async () => {
   for (const server of servers.splice(0)) await new Promise((resolve) => server.close(resolve));
   for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
@@ -66,7 +70,7 @@ const replies = (text: string): Script => (fake, _botId, _prompt, opts) => {
   }, 30);
 };
 
-it("asks for a natural reply in the Zalo group while confining the turn as a guest", async () => {
+it("asks the guest for a missing location in the same channel", async () => {
   const h = await harness((fake, _botId, prompt, opts) => {
     expect(prompt).toContain("ask one brief follow-up here");
     expect(prompt).toContain("Skip receipt acknowledgments");
@@ -77,8 +81,30 @@ it("asks for a natural reply in the Zalo group while confining the turn as a gue
     expect(task).toMatchObject({ botApi: true, approvalMode: "ask", outside: true });
     replies("Bạn muốn xem nhiệt độ ở đâu?")(fake, _botId, prompt, opts);
   });
-  await expect(h.host.askFromChannel("b1", { text: "nhiệt độ hôm nay", title: "Fixture", owner: false, zaloGroup: true }))
+  await expect(h.host.askFromChannel("b1", { text: "nhiệt độ hôm nay", title: "Fixture", owner: false }))
     .resolves.toMatchObject({ reply: "Bạn muốn xem nhiệt độ ở đâu?" });
+});
+
+it("includes public source results on the guest channel path and keeps the owner's path direct", async () => {
+  lookupPage.mockImplementation(async (address) => {
+    const url = new URL(address);
+    expect(url.origin).toBe("https://vi.wikipedia.org");
+    return { ok: true, url, headers: {}, body: Buffer.from(JSON.stringify({ query: { search: [
+      { title: "Quang hợp", pageid: 3, snippet: "Cây sử dụng ánh sáng." },
+    ] } })) };
+  });
+  const prompts: string[] = [];
+  const h = await harness((fake, botId, prompt, opts) => {
+    prompts.push(prompt);
+    replies("Cây sử dụng ánh sáng.")(fake, botId, prompt, opts);
+  });
+  const input = { text: "Quang hợp là gì?", title: "Fixture" };
+  await h.host.askFromChannel("b1", { ...input, owner: false });
+  await h.host.askFromChannel("b1", { ...input, owner: true });
+  expect(lookupPage).toHaveBeenCalledOnce();
+  expect(prompts[0]).toContain("https://vi.wikipedia.org/?curid=3");
+  expect(prompts[0]).toContain("[end of records]");
+  expect(prompts[1]).toBe(input.text);
 });
 
 it.each([false, true])("delivers a channel result after 31 minutes (owner: %s)", async (owner) => {

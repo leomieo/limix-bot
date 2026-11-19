@@ -1,3 +1,13 @@
+Limix Bot 0.3.93
+
+## Tiếng Việt
+
+- Khách có thể hỏi bot về nhiệt độ và kiến thức phổ thông trên Telegram, Zalo, Discord, Facebook Page và Messenger. Bot tra nguồn công khai, dẫn nguồn và hỏi thêm trong cùng cuộc trò chuyện khi cần. Quyền khách vẫn được áp dụng.
+
+## English
+
+- Guests can ask about temperatures and general knowledge on Telegram, Zalo, Discord, Facebook Page, and Messenger. The bot uses public sources, includes links, and asks for missing details in the same chat. Guest permissions still apply.
+
 Limix Bot 0.3.92
 
 ## Tiếng Việt

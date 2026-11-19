@@ -72,7 +72,7 @@ export interface ChannelAdapter {
 }
 
 export interface ChannelAsk {
-  (botId: string, input: { text: string; attachment?: ChannelMedia; threadId?: string; title: string; owner: boolean; zaloGroup?: true; delivery?: { signal: AbortSignal; accepted(threadId: string): void; approval(): void } }): Promise<{ threadId: string; reply: string; attachments?: ChannelMedia[]; status?: "needs_approval" | "working" }>;
+  (botId: string, input: { text: string; attachment?: ChannelMedia; threadId?: string; title: string; owner: boolean; delivery?: { signal: AbortSignal; accepted(threadId: string): void; approval(): void } }): Promise<{ threadId: string; reply: string; attachments?: ChannelMedia[]; status?: "needs_approval" | "working" }>;
 }
 
 export interface BotChannelsDeps {
@@ -404,7 +404,6 @@ export function createBotChannels(deps: BotChannelsDeps) {
           ...(known ? { threadId: known } : {}),
           title: `${adapter.label} · ${message.from.name}`,
           owner,
-          ...(zaloGroup ? { zaloGroup: true as const } : {}),
           delivery: {
             signal,
             accepted(threadId) {
