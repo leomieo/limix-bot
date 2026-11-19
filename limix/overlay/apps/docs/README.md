@@ -1,51 +1,45 @@
-# Limix Bot documentation
+[Tiếng Việt](#tieng-viet) · [English](#english)
 
-The public documentation site is a Next.js 16 + Fumadocs app. User-facing content lives in `content/docs`; the repository's top-level `docs` folder remains available for implementation notes and detailed platform records.
+# Limix Bot Docs
 
-## Develop
+<a id="tieng-viet"></a>
 
-From the repository root:
+## Tiếng Việt
 
-```bash
+Trang tài liệu dùng Next.js và Fumadocs. Chỉnh nội dung trong `content/docs`. Chạy các lệnh sau từ thư mục gốc của kho mã nguồn.
+
+```sh
 pnpm install
 pnpm docs:dev
 ```
 
-The site opens at `http://localhost:3000`.
+Mở [bản xem trước](http://localhost:3000). Chạy các kiểm tra trước khi gửi đóng góp.
 
-## Verify
-
-```bash
+```sh
 pnpm docs:build
 pnpm --filter @openmausbot/docs types:check
 pnpm --filter @openmausbot/docs lint
 ```
 
-The changelog reads published releases from `milind-soni/OpenMausBot` plus the
-legacy updater archive, deduplicates them into one complete history, and caches
-the result for five minutes. If one repository is temporarily unavailable, the
-other still renders; if both fail, the page links directly to GitHub.
+Nếu tự triển khai trang tài liệu, chọn `apps/docs` làm thư mục gốc của ứng dụng Next.js trên nền tảng bạn sử dụng.
 
-## Deploy to Vercel
+<a id="english"></a>
 
-This deploys only the public documentation. It does not deploy the Electron app,
-local harness, credentials, agents, or user data. The changelog page uses Next.js
-incremental regeneration so published releases appear without a source commit.
+## English
 
-Create a second Vercel project beside the existing `openmausbot.com` project:
+The documentation site uses Next.js and Fumadocs. Edit pages in `content/docs`. Run these commands from the repository root.
 
-1. Import the `milind-soni/OpenMausBot` repository.
-2. Set **Root Directory** to `apps/docs`.
-3. Keep the detected **Next.js** framework settings.
-4. Set the production branch to `main` and deploy.
-5. Add `docs.openmausbot.com` under **Settings → Domains**.
+```sh
+pnpm install
+pnpm docs:dev
+```
 
-For an immediate changelog refresh after each desktop release, create a Vercel
-Deploy Hook for the production branch and save it in the GitHub repository as
-the `DOCS_DEPLOY_HOOK_URL` Actions secret. Without the optional hook, the next
-normal docs deployment still pulls the current published releases.
+Open the [local preview](http://localhost:3000). Run these checks before contributing.
 
-Vercel will build the Next.js docs app, publish every push to `main`, and create
-preview URLs for documentation pull requests. Keep `openmausbot.com` on the
-existing marketing project and add a Docs link there after the new domain is
-live.
+```sh
+pnpm docs:build
+pnpm --filter @openmausbot/docs types:check
+pnpm --filter @openmausbot/docs lint
+```
+
+If you host the documentation site yourself, set `apps/docs` as the root directory of the Next.js app on your hosting platform.

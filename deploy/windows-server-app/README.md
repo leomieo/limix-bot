@@ -11,11 +11,11 @@ Limix Cloud Server chạy trong máy ảo Linux riêng trên Hyper-V. Máy ảo 
 3. Mở **Tổng quan** để xem trạng thái và nhật ký. Thử truy cập từ một thiết bị khác trước khi đưa vào sử dụng.
 4. Dùng **Dữ liệu** để đổi ổ lưu trữ hoặc xuất gói chuyển máy được mã hóa. Dừng máy Cloud trước khi chuyển. Giữ máy cũ tắt khi khởi động bản nhập trên máy mới.
 
-Mục Với máy Cloud đã cài, tắt máy trong **Tổng quan** rồi mở **CPU và RAM** để đổi cấu hình. Nút **Dùng mức tối đa** chọn số luồng CPU Windows nhận diện và phần RAM còn lại sau khi chừa 8 GB cho Windows. Sau khi lưu, bật lại máy Cloud.
+Với máy Cloud đã cài, tắt máy trong **Tổng quan** rồi mở **CPU và RAM** để đổi cấu hình. Nút **Dùng mức tối đa** chọn số luồng CPU Windows nhận diện và phần RAM còn lại sau khi chừa 8 GB cho Windows. Sau khi lưu, bật lại máy Cloud.
 
 **Khởi động tự động** có cấu hình riêng cho bot điều khiển ứng dụng Windows và cho dịch vụ Docker Desktop. Cả hai chạy sau khi Windows đăng nhập. Microsoft Autologon yêu cầu tài khoản có mật khẩu. Bot điều khiển giao diện Windows cần phiên desktop có thể thao tác.
 
-Đây là bản thử nghiệm. Hãy sao lưu và kiểm tra lại Cloud sau khi khởi động máy. Nếu đã có máy Cloud, dùng **Tổng quan** để kiểm tra hoặc **Khắc phục** để xử lý lỗi.
+Bản này đang thử nghiệm. Sao lưu dữ liệu và kiểm tra lại kết nối Cloud sau khi khởi động máy. Mở **Khắc phục** nếu máy Cloud gặp lỗi.
 
 ## English
 
