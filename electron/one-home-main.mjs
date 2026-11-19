@@ -202,6 +202,19 @@ export function installOneHome({ localRequest: anyServer, clean = null, account,
   const local = {
     call: async (method, route, body) => answer(await localRequest(route, { method, signal: AbortSignal.timeout(120_000),
       ...(body === undefined ? {} : { headers: { "content-type": "application/json" }, body: JSON.stringify(body) }) })),
+    receiveAttachment: async (route, file) => {
+      const headers = { "content-type": "application/octet-stream" };
+      const length = file.headers.get("content-length");
+      if (length !== null) headers["content-length"] = length;
+      try {
+        const response = await localRequest(route, { method: "POST", body: file.body, duplex: "half", headers, signal: AbortSignal.timeout(120_000) });
+        await response.body?.cancel();
+        return response;
+      } catch (error) {
+        await file.body?.cancel().catch(() => {});
+        throw error;
+      }
+    },
     async json(route) {
       const got = await local.call("GET", route);
       if (!got.ok) throw new Error("Limix Bot on this computer did not answer. Try again in a moment.");
@@ -381,7 +394,7 @@ export function installOneHome({ localRequest: anyServer, clean = null, account,
     return botMoveState();
   }));
   sendDeps.ipcMain.handle("cloud-send:bot-bring-back", onPage("cloud-send:bot-bring-back", async (ids) => {
-    await botMove.bringBack(Array.isArray(ids) ? ids.map(String) : []);
+    await botMove.bringBack(Array.isArray(ids) ? ids.map(String) : [], oneHomeCloud(account()?.state())?.account ?? null);
     return botMoveState();
   }));
   sendDeps.ipcMain.handle("cloud-send:bot-move-level", onPage("cloud-send:bot-move-level", (ids, level) => {

@@ -294,8 +294,8 @@ export function MovedToMyCloudRow({ bots }: { bots: readonly Bot[] }) {
     <ConfirmDialog open={back !== null} tone="neutral" icon={<Cloud size={18} />}
       title={lx(`Chuyển ${back?.name ?? ""} về máy này?`, `Bring ${back?.name ?? ""} back to this computer?`)}
       body={<span className="flex flex-col gap-2" data-bring-back-confirm="">
-        <span>{lx("Bot chạy lại trên máy này với dữ liệu như lúc nó lên Cloud. Trên My Cloud, bản của bot được tạm dừng (không xóa), nên bot không chạy ở hai nơi cùng lúc.", "The bot runs on this computer again with its data from when it went to Cloud. On My Cloud its copy is paused (not deleted), so it never runs in both places.")}</span>
-        <span className="text-ink-secondary">{lx("Những cuộc trò chuyện và việc bot làm trên Cloud vẫn nằm trên My Cloud, chưa được chép về.", "Conversations and work it did on Cloud stay on My Cloud; they are not copied back.")}</span>
+        <span>{lx("Limix Bot sẽ tạm dừng bot trên My Cloud, tải tin nhắn và cuộc trò chuyện về rồi bật lại bot trên máy này.", "Limix Bot will pause the bot on My Cloud, download its messages and conversations, then bring it back on this computer.")}</span>
+        <span className="text-ink-secondary">{lx("Lịch sử trên máy được giữ lại. Tin nhắn đã có chỉ xuất hiện một lần.", "Your local history is kept. Messages already on this computer appear once.")}</span>
         {error && <span role="alert" className="text-danger">{error}</span>}
       </span>}
       confirmLabel={lx("Chuyển về", "Bring back")} pending={busy} onCancel={() => setBack(null)} onConfirm={bringBack} />

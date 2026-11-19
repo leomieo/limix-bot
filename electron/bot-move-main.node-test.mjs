@@ -49,7 +49,12 @@ function world({ files = [], busy = () => null, checks = [], untouched = [], rea
       async move(options) { w.passes.push({ ...options }); },
       async check(options) { w.passes.push({ check: true, ...options }); const next = checks.shift(); if (next instanceof Error) throw next; return { ok: next ?? true }; },
     },
-    session: async () => ({ async call(method, route, body) { w.cloud.push([method, route, body]); return reply(200, { v: 1 }); } }),
+    session: async () => ({ async call(method, route, body) {
+      w.cloud.push([method, route, body]);
+      if (method === "GET" && route === "/api/paused") return reply(200, { bots: [] });
+      if (route.startsWith("/api/cloud-send/chats?bot=")) return reply(200, { v: 1, dataDir: "/cloud", conversations: [] });
+      return reply(200, { v: 1 });
+    } }),
     ready, lease, sleep,
     lend: async (projects) => { (w.lender ?? ((seen) => w.lent.push(seen)))(projects); },
     now: () => clock,
@@ -232,7 +237,11 @@ test("a bot on My Cloud comes back: My Cloud pauses its copy first, then this co
   w.journal = { v: 1, moves: [{ bot: { id: "bots-x", name: "Pair" }, team: MY_CLOUD, bots: [{ id: "b0", name: "Bot 0" }, { id: "b1", name: "Bot 1" }], phase: "done", startedAt: 1 }] };
   w.holds.set("b0", "moved"); w.holds.set("b1", "moved");
   await w.move.bringBack(["b0"]);
-  assert.deepEqual(w.cloud, [["POST", "/api/paused", { kind: "bot", id: "b0", paused: true }]]);
+  assert.deepEqual(w.cloud, [
+    ["GET", "/api/paused", undefined],
+    ["POST", "/api/paused", { kind: "bot", id: "b0", paused: true }],
+    ["GET", "/api/cloud-send/chats?bot=b0", undefined],
+  ]);
   assert.equal(w.holds.has("b0"), false);
   assert.equal(w.holds.get("b1"), "moved");
   assert.deepEqual(w.journal.moves[0].bots, [{ id: "b1", name: "Bot 1" }]);

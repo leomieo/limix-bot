@@ -4,6 +4,7 @@
 // here one move carries a whole choice of bots to the "team" My Cloud, with the send kept to those bots (cloud-send.mjs).
 import { randomUUID } from "node:crypto";
 
+import { copyReturnedChats } from "./bot-return-chats.mjs";
 import { createTeamMove, parseTeamMoves } from "./team-move.mjs";
 import { QUEUE_POLL_MS, switchOn } from "./one-home.mjs";
 
@@ -25,9 +26,9 @@ export const choosable = (bots) => list(bots).filter((bot) => record(bot) && ID.
 /**
  * @param {{
  *   journal: { read(): unknown, write(value: unknown): void },
- *   local: { call(method: string, route: string, body?: unknown): Promise<{ ok: boolean, status: number, body: any }> },
+ *   local: { call(method: string, route: string, body?: unknown): Promise<{ ok: boolean, status: number, body: any }>, receiveAttachment(route: string, file: Response): Promise<Response> },
  *   send: { move(options: { final?: boolean, scope: string, level?: string }): Promise<unknown>, check(options: { scope: string, level?: string }): Promise<{ ok: boolean }> },
- *   session(): Promise<{ call(method: string, route: string, body?: unknown, options?: { timeoutMs?: number }): Promise<{ ok: boolean, status: number, body: any }> }>,
+ *   session(): Promise<{ call(method: string, route: string, body?: unknown, options?: { timeoutMs?: number }): Promise<{ ok: boolean, status: number, body: any }>, fetch(route: string): Promise<Response> }>,
  *   lease?: { take(): Promise<null | { name: string }>, release(): Promise<void> },
  *   ready(): boolean,
  *   lend?(projects: string[]): Promise<unknown>,
@@ -136,6 +137,7 @@ export function createBotMove({ journal, local, send, session, lease = null, rea
   }
 
   const engine = createTeamMove({ journal, open, inTeam: () => ready(), onChange: () => onChange(), log, ...(now ? { now } : {}), ...(timers ? { timers } : {}) });
+  let returning = false;
 
   return {
     kick: () => engine.kick().finally(lendWaiting),
@@ -202,30 +204,47 @@ export function createBotMove({ journal, local, send, session, lease = null, rea
       onChange();
       return stopped;
     },
-    /** The person brings bots that moved to My Cloud back to this computer. My Cloud pauses its copy first (kept, not
-     * deleted, with what it said there), so the bot never runs in both places; then this computer runs it again as it was
-     * when it went. Throws when My Cloud cannot be reached or refuses, and then nothing changed. */
-    async bringBack(ids) {
+    async bringBack(ids, account = null) {
+      if (returning) throw new Error("A bot is already coming back to this computer.");
       const asked = new Set(ids);
-      const done = moves().filter((move) => move.phase === "done" && list(move.bots).some((bot) => asked.has(bot.id)));
+      const done = moves().filter((move) => move.phase === "done" && (!move.account || move.account === account) && list(move.bots).some((bot) => asked.has(bot.id)));
       if (!done.length) throw Object.assign(new Error("This bot is not on My Cloud."), { status: 404 });
-      const there = await session();
-      for (const move of done) {
-        for (const bot of list(move.bots).filter((entry) => asked.has(entry.id))) {
-          const paused = await there.call("POST", "/api/paused", { kind: "bot", id: bot.id, paused: true }, { timeoutMs: 60_000 });
-          if (!paused.ok && paused.status !== 404) throw Object.assign(new Error(paused.body?.error ?? `My Cloud did not pause ${bot.name}.`), { status: paused.status });
-          const answer = await local.call("POST", `/api/bot-moves/${bot.id}`, { v: 1, state: "back", team: MY_CLOUD });
-          if (!answer.ok) throw Object.assign(new Error(answer.body?.error ?? `${bot.name} could not run here again.`), { status: answer.status });
-          const left = parseTeamMoves(journal.read());
-          journal.write({ ...left, moves: left.moves.flatMap((entry) => {
-            if (entry.bot.id !== move.bot.id) return [entry];
-            const rest = list(entry.bots).filter((one) => one.id !== bot.id);
-            return rest.length ? [{ ...entry, bots: rest }] : [];
-          }) });
-          log(`bot move: ${bot.name} is back on this computer`);
+      returning = true;
+      try {
+        const there = await session();
+        for (const move of done) {
+          for (const bot of list(move.bots).filter((entry) => asked.has(entry.id))) {
+            const hold = { kind: "bot", id: bot.id };
+            const before = await there.call("GET", "/api/paused");
+            if (!before.ok || !Array.isArray(before.body?.bots)) throw new Error("My Cloud could not check whether this bot is paused.");
+            const paused = await there.call("POST", "/api/paused", { ...hold, paused: true }, { timeoutMs: 60_000 });
+            if (!paused.ok && !(paused.status === 404 && paused.body?.error === "No such bot.")) {
+              throw Object.assign(new Error(paused.body?.error ?? `My Cloud did not pause ${bot.name}.`), { status: paused.status });
+            }
+            try {
+              await copyReturnedChats(there, local, bot.id);
+            } catch (error) {
+              if (paused.ok && !before.body.bots.includes(bot.id)) {
+                const resumed = await there.call("POST", "/api/paused", { ...hold, paused: false }).catch(() => null);
+                if (!resumed?.ok) throw new Error("This bot is still paused on My Cloud. Try bringing it back again.", { cause: error });
+              }
+              throw error;
+            }
+            const answer = await local.call("POST", `/api/bot-moves/${bot.id}`, { v: 1, state: "back", team: MY_CLOUD });
+            if (!answer.ok) throw Object.assign(new Error(answer.body?.error ?? `${bot.name} could not run here again.`), { status: answer.status });
+            const left = parseTeamMoves(journal.read());
+            journal.write({ ...left, moves: left.moves.flatMap((entry) => {
+              if (entry.bot.id !== move.bot.id) return [entry];
+              const rest = list(entry.bots).filter((one) => one.id !== bot.id);
+              return rest.length ? [{ ...entry, bots: rest }] : [];
+            }) });
+            log(`bot move: ${bot.name} is back on this computer`);
+          }
         }
+      } finally {
+        returning = false;
+        onChange();
       }
-      onChange();
     },
     /** This account's My Cloud ended: the bots that moved there are here again as they went. */
     async back(account) {

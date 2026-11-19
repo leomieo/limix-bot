@@ -1,3 +1,15 @@
+Limix Bot 0.3.90
+
+## Tiếng Việt
+
+- **Về máy** tải lịch sử chat và các cuộc trò chuyện của bot từ My Cloud trước khi bật lại bot trên máy này. Lịch sử trên máy được giữ lại và tin nhắn đã có chỉ xuất hiện một lần.
+- Có thể bấm chuyển về lại nếu mất kết nối giữa chừng. Những tin nhắn đã tải được giữ lại.
+
+## English
+
+- **Bring back** downloads the bot's chat history and conversations from My Cloud before bringing it back on this computer. It preserves local history and skips messages already on this computer.
+- You can try again if the connection drops. Messages already downloaded are kept.
+
 Limix Bot 0.3.89
 
 ## Tiếng Việt
