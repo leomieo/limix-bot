@@ -691,15 +691,21 @@ const useCloudComputer = () => {
 // round trip, so stdin stays open until the reply arrives.
 const MCP_CALL_PROGRAM = `
 const { spawn } = require("node:child_process");
-const { command, args, env, request } = JSON.parse(process.argv[1]);
+const { command, args, env, request, handshake } = JSON.parse(process.argv[1]);
 const child = spawn(command, args, { env: { ...process.env, ...env }, stdio: ["pipe", "pipe", "inherit"] });
+const send = (message) => child.stdin.write(JSON.stringify({ jsonrpc: "2.0", ...message }) + "\\n");
 let buffer = "";
 child.stdout.on("data", (chunk) => {
   buffer += chunk;
   for (const line of buffer.split("\\n").slice(0, -1)) {
     let reply;
     try { reply = JSON.parse(line); } catch { continue; }
-    if (reply.id !== request.id) continue;
+    if (handshake && reply.id === 2 && reply.result) {
+      send({ method: "notifications/initialized" });
+      send(request);
+      continue;
+    }
+    if (reply.id !== request.id && !(handshake && reply.id === 2 && reply.error)) continue;
     process.stdout.write(JSON.stringify(reply) + "\\n");
     child.kill();
     process.exit(0);
@@ -707,7 +713,8 @@ child.stdout.on("data", (chunk) => {
   buffer = buffer.slice(buffer.lastIndexOf("\\n") + 1);
 });
 child.on("exit", () => process.exit(1));
-child.stdin.write(JSON.stringify(request) + "\\n");
+if (handshake) send({ id: 2, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "fixture", version: "1" } } });
+else send(request);
 `;
 
 // A URL server, as Claude Code reaches one: initialize, list its tools, and call the one asked for, with the headers
@@ -742,7 +749,8 @@ const mcpToolCall = (serverName: string, name: string, input: Record<string, unk
   const request = { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: input } };
   const ran = server.url
     ? spawnSync(process.execPath, ["-e", MCP_HTTP_CALL_PROGRAM, JSON.stringify({ url: server.url, headers: server.headers ?? {}, name, input })], { encoding: "utf8", timeout: 120_000 })
-    : spawnSync(process.execPath, ["-e", MCP_CALL_PROGRAM, JSON.stringify({ command: server.command, args: server.args ?? [], env: server.env ?? {}, request })], {
+    : spawnSync(process.execPath, ["-e", MCP_CALL_PROGRAM, JSON.stringify({ command: server.command, args: server.args ?? [], env: server.env ?? {}, request,
+      handshake: process.env.FAKE_CLAUDE_MCP_STDIO_HANDSHAKE === "1" })], {
       encoding: "utf8", timeout: 120_000,
     });
   let reply: { result?: { isError?: boolean; content?: unknown }; error?: { message?: string } } = {};

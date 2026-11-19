@@ -280,6 +280,7 @@ export async function launchVerificationServer(
   boatFixtureApi?: string,
   /** Programmatic web UI qualification against the fixture's static server. */
   staticDir?: string,
+  packagedServer?: string,
 ): Promise<VerificationServer> {
   if (boatFixtureApi) {
     if (!/^http:\/\/127\.0\.0\.1:[1-9]\d{0,4}$/.test(boatFixtureApi)) {
@@ -364,7 +365,7 @@ export async function launchVerificationServer(
   });
   if (boatFixtureApi) childEnv.OMB_BOAT_API = boatFixtureApi;
   if (staticDir) childEnv.OMB_STATIC_DIR = staticDir;
-  const child = spawn(process.execPath, verificationServerArgs(childEnv), {
+  const child = spawn(process.execPath, packagedServer ? [packagedServer] : verificationServerArgs(childEnv), {
     cwd: ROOT,
     env: childEnv,
     stdio: ["ignore", log, log],

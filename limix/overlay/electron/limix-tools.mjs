@@ -13,15 +13,25 @@ import { limixRuntimeEnv } from "./limix-runtime.mjs";
 import { lxm } from "./limix-lang.mjs";
 import { skillRequirementId, skillPackageSpec, skillBaseTool, skillInstallPackages, installSkillPackage } from "./limix-skill-install.mjs";
 
-const REA_MCP_PACKAGE = "rea-agents@6.8.0";
+const REA_MCP_PACKAGE = "rea-agents@6.9.0";
 const REA_VIDEO_COMMIT = "3669923645e3953632e7406a57fb883e0ba8a6e0";
 const UA = { "user-agent": "LimixBot-tools", accept: "application/json" };
+
+function supportsReaNode(version) {
+  const match = /^v?(\d+)\.(\d+)\.(\d+)$/u.exec(version.trim());
+  if (!match) return false;
+  const [major, minor, patch] = match.slice(1).map(Number);
+  const floor = { 22: [23, 4], 24: [22, 1], 26: [12, 1] }[major];
+  return major > 26 || Boolean(floor && (minor > floor[0] || (minor === floor[0] && patch >= floor[1])));
+}
 
 export function limixToolPaths(userData) {
   const tools = path.join(userData, "limix-tools");
   return {
     tools,
     node: path.join(tools, "node"),
+    reaNode: path.join(tools, "rea-node"),
+    rea: path.join(tools, "rea"),
     ffmpeg: path.join(tools, "ffmpeg"),
     jdk: path.join(tools, "jdk"),
     jadx: path.join(tools, "jadx"),
@@ -46,7 +56,7 @@ const CATALOG = [
   { id: "jdk", name: "Java (JDK 21)", get why() { return lxm("JADX và Ghidra cần Java.", "JADX and Ghidra need Java."); }, size: "~190 MB" },
   { id: "jadx", name: "JADX", get why() { return lxm("Dịch ngược ứng dụng Android (APK) cho rea.", "Decompiles Android apps (APK) for rea."); }, size: "~30 MB", needs: ["jdk"] },
   { id: "ghidra", name: "Ghidra", get why() { return lxm("Dịch ngược file .exe/.dll cho rea. Chỉ dùng với phần mềm bạn có quyền.", "Decompiles .exe/.dll files for rea. Only use it on software you have the right to analyze."); }, size: "~450 MB", needs: ["jdk"] },
-  { id: "rea", name: "rea (MCP)", get why() { return lxm("Máy chủ MCP dịch ngược phần mềm. Được thêm vào danh sách MCP ở trạng thái tắt.", "MCP server for reverse-engineering software. It is added to the MCP list switched off."); }, get size() { return lxm("tải khi bật", "downloaded when switched on"); }, needs: ["node"] },
+  { id: "rea", name: "rea (MCP)", get why() { return lxm("Máy chủ MCP phân tích phần mềm. Sau khi cài, bạn có thể bật trong danh sách máy chủ MCP.", "MCP server for software analysis. Enable it in the MCP server list after installation."); }, get size() { return lxm("cài khi cần", "on demand"); }, needs: ["node"] },
 ];
 
 export function createLimixTools({ userData, resourcesPath, serverRequest, log = () => {}, fetchImpl = globalThis.fetch }) {
@@ -248,15 +258,15 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
       }
       if (!(await installed("docker"))) throw new Error(lxm("Đã cài xong. Khởi động lại máy rồi mở Docker Desktop một lần.", "Installed. Restart the computer, then open Docker Desktop once."));
     },
-    async node() {
+    async node({ supports = () => true, target = p.node, tool = "node" } = {}) {
       const index = await getJson("https://nodejs.org/dist/index.json");
-      const pick = index.find((v) => v.lts && (v.files ?? []).includes("win-x64-zip"));
+      const pick = index.find((v) => v.lts && (v.files ?? []).includes("win-x64-zip") && supports(v.version));
       if (!pick) throw new Error(lxm("Không tìm thấy bản Node.js LTS.", "No Node.js LTS build was found."));
       const name = `node-${pick.version}-win-x64.zip`;
       const sums = await getText(`https://nodejs.org/dist/${pick.version}/SHASUMS256.txt`);
       const sha = sums.split("\n").map((l) => l.trim().split(/\s+/)).find((parts) => parts[1] === name)?.[0];
       if (!sha) throw new Error(lxm("Không có mã kiểm tra cho Node.js.", "No checksum available for Node.js."));
-      await unpack("node", await download("node", `https://nodejs.org/dist/${pick.version}/${name}`, sha), p.node);
+      await unpack(tool, await download(tool, `https://nodejs.org/dist/${pick.version}/${name}`, sha), target);
     },
     async ffmpeg() {
       const base = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/";
@@ -290,9 +300,27 @@ export function createLimixTools({ userData, resourcesPath, serverRequest, log =
     },
     async rea() {
       set("rea", { step: lxm("Đang thêm vào MCP", "Adding to MCP"), progress: null });
-      const node = path.join(p.node, exe("node"));
-      const npx = path.join(p.node, "node_modules", "npm", "bin", "npx-cli.js");
-      const config = { mcpServers: { rea: { command: node, args: [npx, "-y", REA_MCP_PACKAGE, "mcp"] } } };
+      const separateNode = path.join(p.reaNode, exe("node"));
+      let node = fs.existsSync(separateNode) ? separateNode : (await locate("node"))?.where;
+      const npmPath = (runtime) => path.join(path.dirname(runtime), "node_modules", "npm", "bin", "npm-cli.js");
+      const supported = node && fs.existsSync(npmPath(node)) && await new Promise((resolve) => {
+        execFile(node, ["--version"], { timeout: 6000, windowsHide: true }, (error, stdout) => resolve(!error && supportsReaNode(stdout)));
+      });
+      if (!supported) {
+        await installers.node({ supports: supportsReaNode, target: p.reaNode, tool: "rea" });
+        node = separateNode;
+      }
+      const npm = npmPath(node);
+      if (!fs.existsSync(npm)) throw new Error(lxm("Chưa tìm thấy npm đi kèm Node.js.", "Node.js is missing its bundled npm."));
+      await fsp.mkdir(p.rea, { recursive: true });
+      set("rea", { step: lxm("Đang cài", "Installing"), progress: null });
+      await run(node, [npm, "install", "--prefix", p.rea, "--no-audit", "--no-fund", "--save-exact", REA_MCP_PACKAGE], {
+        PATH: [path.dirname(node), process.env.PATH].filter(Boolean).join(path.delimiter),
+        npm_config_cache: path.join(p.rea, "npm-cache"),
+      });
+      const cli = path.join(p.rea, "node_modules", "rea-agents", "scripts", "rea.mjs");
+      await fsp.access(cli);
+      const config = { mcpServers: { rea: { command: node, args: [cli, "mcp"] } } };
       const res = await serverRequest("/api/mcp/servers/import", {
         method: "POST",
         headers: { "content-type": "application/json" },

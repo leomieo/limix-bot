@@ -7,7 +7,7 @@ import { createServer } from 'node:net';
 const [executableInput, resourcesInput] = process.argv.slice(2);
 if (!executableInput || !resourcesInput) throw new Error('Pass packaged executable and resources paths');
 const executable = resolve(executableInput), resources = resolve(resourcesInput);
-for (const file of ['server/index.js', 'ui/index.html', 'app-update.yml', 'skills/rea-video/SKILL.md', 'limix-runtime/python/bin/python3', 'limix-runtime/uv/uv']) {
+for (const file of ['server/index.js', 'ui/index.html', 'app-update.yml', 'skills/rea-video/SKILL.md', 'skills/reverse-engineer-anything/SKILL.md', 'skills/reverse-engineer-anything/manifest.json', 'skills/reverse-engineer-anything/references/evidence-workflows.md', 'skills/reverse-engineer-anything/LICENSE', 'limix-runtime/python/bin/python3', 'limix-runtime/uv/uv']) {
   if (!existsSync(join(resources, file))) throw new Error(`Missing packaged resource: ${file}`);
 }
 const reserve = async () => {
@@ -37,5 +37,6 @@ try {
   child.kill('SIGTERM');
   const hardStop = setTimeout(() => child.kill('SIGKILL'), 10000);
   await closed; clearTimeout(hardStop);
-  rmSync(fixture, { recursive: true, force: true });
+  // A file the stopping server still flushes can make the first removal see a non-empty folder; try again briefly.
+  rmSync(fixture, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
 }

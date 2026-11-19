@@ -1,3 +1,13 @@
+Limix Bot 0.3.94
+
+## Tiếng Việt
+
+- Thêm kỹ năng kiểm tra tệp phần mềm vào bộ kỹ năng có sẵn cho bot. Trên Windows, bạn có thể cài rea (MCP) trong **Công cụ cho kỹ năng** rồi cấp quyền cho từng bot.
+
+## English
+
+- Added a built-in skill for inspecting software files. On Windows, install rea (MCP) from **Skill tools** and grant access to individual bots.
+
 Limix Bot 0.3.93
 
 ## Tiếng Việt

@@ -25,7 +25,7 @@ import { lxs } from "./limix-lang.ts";
 
 /** Always on for every bot. "Learning new skills" itself is the skill-authoring feature, on for every bot already. */
 export const LIMIX_CORE_SKILLS: ReadonlySet<string> = new Set([
-  "create-verification-skill", "agent-reach", "windows-computer-automation", "phone-connection", "phone-harness",
+  "create-verification-skill", "agent-reach", "windows-computer-automation", "phone-connection", "phone-harness", "reverse-engineer-anything",
 ]);
 
 /** What a shipped skill does, in the app's language (the manifest has one language; the skill itself is unchanged). */
@@ -36,6 +36,7 @@ const BUNDLED_TEXT: Record<string, [vi: string, en: string]> = {
   "phone-connection": ["Vì sao điện thoại không kết nối được với máy tính, và cách khắc phục.", "Why the phone can't reach the person's computer, and what fixes it."],
   "phone-harness": ["Điều khiển điện thoại Android thật nối qua USB (gỡ lỗi USB đã cho phép).", "Control a physical Android phone connected over authorized USB debugging."],
   "rea-video": ["Mổ xẻ cách một video được làm, từng cảnh (quay thật, AI, 3D, quay màn hình…), phụ đề, âm thanh, dựng phim, và cách làm lại.", "Reverse-engineers how a video was made, shot by shot (live action, AI, 3D, screen recording...), its subtitles, sound and editing, and how to remake it."],
+  "reverse-engineer-anything": ["Dùng REA để kiểm tra tệp phần mềm được phép phân tích và đối chiếu các bản phát hành.", "Inspect authorized software artifacts and compare releases with REA."],
   "social-posts": ["Xem trước bài đăng trông thế nào trên Instagram, LinkedIn, X, Threads, Facebook, TikTok, Reels và Shorts.", "Show how a social post will look on Instagram, LinkedIn, X, Threads, Facebook, TikTok, Reels and Shorts."],
   "ui-ux-pro-max": ["Trợ lý thiết kế UI/UX: phong cách, bảng màu, cặp phông chữ, luật UX và hướng dẫn theo nền tảng, tra bằng script Python trên máy.", "Design intelligence for UI/UX: styles, colour palettes, font pairings, UX rules and stack guidance, searched with a local Python script."],
   "windows-computer-automation": ["Điều khiển Windows an toàn: đọc màn hình, thao tác cửa sổ, nhập liệu, trình duyệt, ứng dụng, tệp và tiến trình qua Agent Desktop và Windows-MCP; chọn đúng công cụ, xác minh kết quả, chống lặp thao tác.", "Control Windows safely: read the screen, work windows, type, browse, and manage apps, files and processes through Agent Desktop and Windows-MCP; pick the right tool, check the result, never repeat an action blindly."],

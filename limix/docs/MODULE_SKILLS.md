@@ -30,9 +30,11 @@ file cài. Skill riêng của chủ dự án: làm sau.
   `server/env-path.ts`), `UV_PYTHON`, công cụ cài bằng uv vào `userData/limix-tools` (giữ qua cập nhật, không cần admin).
 - File cài nặng thêm khoảng 35–45 MB.
 
-## rea (Reverse Engineer Anything) — tắt sẵn, CHƯA đóng gói
+## REA
 
-MCP server + CLI (MIT), cần Node.js/npx trên máy khách và tùy loại Ghidra/JADX/JDK. Upstream có DISCLAIMER: chỉ dùng
-hợp pháp (nghiên cứu bảo mật, phần mềm mình có quyền). OpenMausBot chưa có danh mục "MCP gợi ý" để thêm sẵn ở trạng thái
-tắt, nên hiện bật thủ công: **Plugins → MCP servers → Add server**, dán `npx -y rea-agents@6.8.0 mcp`.
-Việc thêm danh mục MCP gợi ý (tắt sẵn) là ĐỀ XUẤT cho sau.
+`reverse-engineer-anything` có sẵn cho mọi bot để kiểm tra tệp phần mềm được phép phân tích và đối chiếu các bản phát hành.
+Limix Bot đóng gói hướng dẫn sử dụng, tài liệu ghi nhận bằng chứng từ nguồn đã ghim và giấy phép MIT.
+
+Trên Windows, mở **Cài đặt → Kỹ năng → Công cụ cho kỹ năng** để thêm **rea (MCP)** khi cần. Sau khi thêm, bật máy chủ và cấp quyền cho bot trong **Ứng dụng → Máy chủ MCP**. Java, JADX và Ghidra có thể cài riêng khi cần. Cấu hình MCP đã đăng ký giữ phiên bản hiện có.
+
+Cập nhật tài liệu nguồn bằng `python limix/skills/sync.py --update --skill reverse-engineer-anything`. Xem các thay đổi trong thư mục kỹ năng trước khi đưa vào bản phát hành.

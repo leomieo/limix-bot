@@ -9,11 +9,11 @@ a Limix manifest.json (name, trigger terms, default on/off) and a short Limix pr
 on a Limix Bot computer (bundled Python and uv). After --update, review `git diff limix/` before releasing:
 upstream skills can tell a bot to run commands on customers' computers.
 """
+import argparse
 import json
 import re
 import shutil
 import subprocess
-import sys
 import tempfile
 from pathlib import Path
 
@@ -25,6 +25,7 @@ SKIP_DIRS = {".git", "__pycache__", "tests", "test", "node_modules"}
 SKIP_SUFFIXES = {".pyc"}
 
 PREFACE = {
+    "mcp": "",
     "python": (
         "> **Limix Bot.** `python` (Python 3.12) is bundled with Limix Bot and on PATH (`python3` too); no install needed.\n"
         "> `<root>` below is the folder named by this skill's `root`. Quote it: it may contain spaces.\n"
@@ -60,13 +61,26 @@ def frontmatter_split(text):
 
 
 def build(skill, src, commit):
+    guide = ROOT / skill["guideFile"] if skill.get("guideFile") else src / skill["skillFile"]
+    text = guide.read_text(encoding="utf-8").replace("\r\n", "\n")
+    for old, new in skill.get("rewrite", []):
+        text = text.replace(old, new)
+    head, body = frontmatter_split(text)
+    head = head.replace('version: "{{VERSION}}"', f'version: "{commit[:7]}"')
+    folder = src / skill["folder"]
+    include = skill.get("include")
+    if include is not None and any(not (folder / name).is_file() for name in include):
+        raise SystemExit(f"{skill['id']}: a selected source reference is missing")
     dest = OUT / skill["id"]
+    if dest.resolve().parent != OUT.resolve():
+        raise SystemExit("invalid bundled skill destination")
     if dest.exists():
         shutil.rmtree(dest)
-    folder = src / skill["folder"]
     exclude = set(skill.get("exclude", []))
     for path in sorted(folder.rglob("*")):
         rel = path.relative_to(folder)
+        if include is not None and rel.as_posix() not in include:
+            continue
         if any(part in SKIP_DIRS for part in rel.parts) or path.suffix in SKIP_SUFFIXES or path.is_dir():
             continue
         if len(rel.parts) == 1 and rel.name in exclude:
@@ -74,11 +88,6 @@ def build(skill, src, commit):
         target = dest / rel
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(path, target)
-    text = (src / skill["skillFile"]).read_text(encoding="utf-8").replace("\r\n", "\n")
-    for old, new in skill.get("rewrite", []):
-        text = text.replace(old, new)
-    head, body = frontmatter_split(text)
-    head = head.replace('version: "{{VERSION}}"', f'version: "{commit[:7]}"')
     preface = PREFACE[skill["needs"]].format(install=skill.get("install", "").replace("{commit}", commit))
     source = f"> Source: https://github.com/{skill['repo']}/tree/{commit}/{skill['folder']} ({skill['license']}).\n"
     (dest / "SKILL.md").write_text(head + "\n" + preface + source + "\n" + body.lstrip("\n"), encoding="utf-8")
@@ -96,30 +105,37 @@ def build(skill, src, commit):
         "source": {"repo": skill["repo"], "commit": commit, "folder": skill["folder"], "license": skill["license"]},
     }
     (dest / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    if skill.get("mirrorBundled"):
+        runtime = ROOT / "skills"
+        mirror = runtime / skill["id"]
+        if mirror.resolve().parent != runtime.resolve():
+            raise SystemExit("invalid runtime skill destination")
+        if mirror.exists():
+            shutil.rmtree(mirror)
+        shutil.copytree(dest, mirror)
     return sum(1 for p in dest.rglob("*") if p.is_file())
 
 
 def main():
-    update = "--update" in sys.argv
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--update", action="store_true")
+    parser.add_argument("--skill", action="append")
+    args = parser.parse_args()
     data = json.loads(SOURCES.read_text(encoding="utf-8"))
+    selected = [skill for skill in data["skills"] if not args.skill or skill["id"] in args.skill]
+    if args.skill and set(args.skill) - {skill["id"] for skill in selected}:
+        parser.error("Unknown skill ID")
     OUT.mkdir(parents=True, exist_ok=True)
-    for skill in data["skills"]:
+    for skill in selected:
         with tempfile.TemporaryDirectory() as tmp:
             src = Path(tmp) / "src"
-            commit = checkout(skill["repo"], skill["ref"], None if update else skill["commit"], src)
-            if update and commit != skill["commit"]:
+            commit = checkout(skill["repo"], skill["ref"], None if args.update else skill["commit"], src)
+            if args.update and commit != skill["commit"]:
                 print(f"{skill['id']}: {skill['commit'][:7]} -> {commit[:7]}")
                 skill["commit"] = commit
             files = build(skill, src, commit)
             print(f"{skill['id']}: {files} files at {commit[:7]}")
-    overlay = Path(__file__).resolve().parents[1] / "overlay" / "skills"
-    if overlay.exists():
-        for source in sorted(overlay.rglob("*")):
-            if source.is_file():
-                target = OUT / source.relative_to(overlay)
-                target.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(source, target)
-    if update:
+    if args.update:
         SOURCES.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         print("Review `git diff limix/` before releasing.")
 

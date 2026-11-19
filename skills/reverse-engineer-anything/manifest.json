@@ -1,0 +1,25 @@
+{
+  "id": "reverse-engineer-anything",
+  "name": "REA",
+  "version": "1.0.0",
+  "description": "Read-only analysis of authorized local software artifacts and comparison of releases using REA.",
+  "defaultEnabled": true,
+  "triggerTerms": [
+    "reverse-engineer-anything",
+    "analyze app.asar",
+    "inspect an apk",
+    "inspect a binary",
+    "phân tích tệp nhị phân",
+    "phân tích gói ứng dụng",
+    "dịch ngược phần mềm",
+    "kiểm tra app.asar",
+    "phân tích apk"
+  ],
+  "requiredCapabilities": [],
+  "source": {
+    "repo": "morluto/rea",
+    "commit": "d74549e495c58eb4a560279fd9f05508401ea0a0",
+    "folder": ".agents/skills/reverse-engineer-anything",
+    "license": "MIT"
+  }
+}

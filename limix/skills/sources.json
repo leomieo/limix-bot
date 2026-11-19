@@ -97,6 +97,24 @@
       "defaultEnabled": true
     },
     {
+      "id": "reverse-engineer-anything",
+      "name": "REA",
+      "repo": "morluto/rea",
+      "ref": "main",
+      "commit": "d74549e495c58eb4a560279fd9f05508401ea0a0",
+      "skillFile": ".agents/skills/reverse-engineer-anything/SKILL.md",
+      "folder": ".agents/skills/reverse-engineer-anything",
+      "guideFile": "limix/skills/rea.md",
+      "mirrorBundled": true,
+      "include": ["references/evidence-workflows.md"],
+      "license": "MIT",
+      "licenseFile": "LICENSE",
+      "needs": "mcp",
+      "description": "Read-only analysis of authorized local software artifacts and comparison of releases using REA.",
+      "triggerTerms": ["reverse-engineer-anything", "analyze app.asar", "inspect an apk", "inspect a binary", "phân tích tệp nhị phân", "phân tích gói ứng dụng", "dịch ngược phần mềm", "kiểm tra app.asar", "phân tích apk"],
+      "defaultEnabled": true
+    },
+    {
       "id": "rea-video",
       "name": "rea-video",
       "repo": "JuneYaooo/rea-video",
