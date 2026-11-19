@@ -1,3 +1,15 @@
+Limix Bot 0.3.95
+
+## Tiếng Việt
+
+- Trong **Thư mục làm việc**, cấp quyền một lần cho desktop riêng của bot hoặc các bot trong nhóm để đọc, ghi và xóa tệp trực tiếp trong thư mục đã chọn qua Docker.
+- Bạn có thể thu hồi quyền ngay trong mục này. Với desktop đã có, hãy tắt desktop trước khi đổi quyền và thay thế desktop để áp dụng cấu hình mới.
+
+## English
+
+- From **Working folder**, grant a bot or the bots in a room one-time permission to read, write, and delete files directly in the selected folder from their private Docker desktops.
+- Revoke access from the same settings. Stop an existing desktop before changing access and replace it to apply the new configuration.
+
 Limix Bot 0.3.94
 
 ## Tiếng Việt

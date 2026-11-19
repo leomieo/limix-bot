@@ -5,6 +5,7 @@ import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
 import { shortPath } from "@/lib/short-path";
 import { useDesktopCapabilities } from "./DesktopCapabilities";
+import { VmWorkingFolderAccess } from "./VmWorkingFolderAccess";
 
 /**
  * PATCHed directly, not via patchGroup: the server validates the path, and a rejected folder must not stick in local
@@ -88,6 +89,8 @@ export function RoomWorkingFolder({ group, heading = true }: { group: Group; hea
         </form>
       )}
       {error && <div className="mt-2 text-[12px] text-danger">{error}</div>}
+      <VmWorkingFolderAccess kind="groups" id={group.id} folder={locked && shownCwd !== group.cwd ? undefined : group.cwd}
+        members={group.memberIds.join(",")} />
     </div>
   );
 }

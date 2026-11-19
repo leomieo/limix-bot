@@ -18,6 +18,7 @@ import { connectAppFromBot } from "../AppGrantPrompt";
 import { ServiceIcon } from "../ServiceIcon";
 import { RoutineEditor } from "../RoutinesPage";
 import { useWorkingFolder } from "../bot-settings/AccessSection";
+import { VmWorkingFolderAccess } from "../VmWorkingFolderAccess";
 import { useBotEditor } from "../bot-settings/BotEditorContext";
 import { inputCls } from "../bot-settings/field";
 import { ConflictNotice } from "../bot-settings/MemorySection";
@@ -558,6 +559,7 @@ export function FolderPage({ bot }: PageContext) {
           {error && <NoteRow tone="warn">{error}</NoteRow>}
         </Card>
       )}
+      <VmWorkingFolderAccess kind="bots" id={bot.id} folder={bot.cwd} />
     </>
   );
 }

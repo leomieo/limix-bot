@@ -235,6 +235,7 @@ export async function recoverLocalVms(input: {
   status(target: LocalVmTarget): Promise<ContainerComputerStatus | null>;
   note(target: LocalVmTarget, status: ContainerComputerStatus | null): void;
   armIdle(target: LocalVmTarget): void;
+  privateTarget?(botId: string): LocalVmTarget;
 }): Promise<void> {
   const settle = async (targets: LocalVmTarget[]) => {
     const statuses = await Promise.all(targets.map((target) => input.status(target)));
@@ -252,6 +253,6 @@ export async function recoverLocalVms(input: {
   if (!runtime?.runtime || !runtime.daemonUp) return;
   const existing = input.mode === "pool"
     ? await discoverExistingPoolLocalVms(input.seats, runtime.runtime).catch(() => [])
-    : (await discoverExistingPerBotLocalVms(input.bots, runtime.runtime).catch(() => [])).map(({ target }) => target);
+    : (await discoverExistingPerBotLocalVms(input.bots, runtime.runtime).catch(() => [])).map(({ bot, target }) => input.privateTarget?.(bot.id) ?? target);
   await settle(existing);
 }

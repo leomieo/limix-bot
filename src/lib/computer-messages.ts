@@ -17,6 +17,7 @@ export function localizeComputerProblem(problem: string | null | undefined): str
     "The existing Local VM exposes its viewer publicly; recreate it": "computer.problem.publicViewer",
     "The existing Local VM is missing safety limits; recreate it": "computer.problem.missingLimits",
     "The existing Local VM is missing its durable folder; recreate it": "computer.problem.missingDurableFolder",
+    "Replace the private desktop to apply the working folder access change": "computer.problem.workingFolderChanged",
     "Per-bot Local VMs require Docker or Podman because Apple container requires a fixed host port": "computer.problem.perBotRuntime",
     "Install a supported container runtime first": "computer.problem.noRuntime",
   };

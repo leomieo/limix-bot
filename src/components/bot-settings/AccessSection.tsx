@@ -17,6 +17,7 @@ import { useDesktopCapabilities } from "../DesktopCapabilities";
 import { CloudBackendPicker } from "../CloudBackendPicker";
 import { placeManagedBy, worksOnChoices, WorksOnGrid, worksOnSelected, type WorksOnMode } from "../WorksOnGrid";
 import { Switch } from "../SettingsPrimitives";
+import { VmWorkingFolderAccess } from "../VmWorkingFolderAccess";
 import { PhoneAppsCard } from "./PhoneAppsCard";
 import { ProposalStatus } from "./ProposalStatus";
 import { ToolGroupsCard } from "./ToolGroupsCard";
@@ -121,6 +122,7 @@ export function WorkingFolder({ bot }: { bot: Bot }) {
           {t("botAccess.folder.pinned", { path: pinned ? shortPath(pinned, home) : t("botAccess.folder.home") })}
         </div>
       )}
+      <VmWorkingFolderAccess kind="bots" id={bot.id} folder={bot.cwd} />
     </div>
   );
 }

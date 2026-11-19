@@ -56,6 +56,8 @@ jobs:
         run: node node_modules/vitest/vitest.mjs run server/limix-image-routing.test.ts server/limix-image-routing.e2e.test.ts server/image-generation.test.ts server/limix-image-connections.test.ts server/routes/image-settings.test.ts server/routes/image-tools.test.ts src/components/ImageGenerationSettings.test.ts
       - name: Verify the phone connection guide
         run: node node_modules/vitest/vitest.mjs run server/skill-library.test.ts
+      - name: Verify private desktop working folder grants
+        run: node node_modules/vitest/vitest.mjs run server/routes/vm-working-folder.test.ts server/container-computer.test.ts
       - name: clean build outputs
         shell: bash
         run: rm -rf dist dist-server release

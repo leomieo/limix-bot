@@ -5250,6 +5250,7 @@
   "computer.problem.publicViewer": "Trình xem của desktop riêng đang mở ra mạng; hãy thay thế",
   "computer.problem.missingLimits": "Desktop riêng thiếu giới hạn an toàn; hãy thay thế",
   "computer.problem.missingDurableFolder": "Desktop riêng thiếu thư mục riêng của nó; hãy thay thế",
+  "computer.problem.workingFolderChanged": "Hãy thay thế desktop riêng để áp dụng thay đổi quyền thư mục làm việc",
   "computer.problem.perBotRuntime": "Mỗi bot có desktop riêng thì cần Docker hoặc Podman, vì Apple container cần một cổng cố định trên máy chủ",
   "computer.problem.desktopFailed": "Desktop riêng không khởi động được: {detail}",
   "computer.err.vmOpenSettings": "{problem}. Mở Cài đặt → Desktop của bot.",

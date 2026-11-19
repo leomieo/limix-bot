@@ -1,7 +1,7 @@
 // Cua-backed Local VM: OMB owns only the sandbox boundary; desktop automation is Cua Driver's (`cua-driver mcp` in the container).
 import { execFile } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
-import { lstatSync } from "node:fs";
+import { lstatSync, realpathSync } from "node:fs";
 import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
@@ -36,6 +36,7 @@ import {
 import { SPAWNED_PROXIES } from "./proxy-paths.ts";
 import { limixVmCapacity, refreshLimixVmCapacity, serializeLimixVmStart } from "./limix-vm-capacity.ts";
 import { lxs } from "./limix-lang.ts";
+import { VM_PROJECT_FOLDER } from "./vm-working-folder.ts";
 
 const run = promisify(execFile);
 const SCREENSHOT_STATUS_TTL_MS = 10_000;
@@ -98,6 +99,8 @@ export interface LocalVmTarget {
   workspaceDir: string;
   viewerPort: number | null;
   label: string;
+  botId?: string;
+  projectDir?: string;
 }
 
 export const SHARED_LOCAL_VM_TARGET: LocalVmTarget = {
@@ -114,6 +117,7 @@ export function perBotLocalVmTarget(botId: string): LocalVmTarget {
   const short = digest.slice(0, 16);
   return {
     key: `bot:${digest}`,
+    botId,
     containerName: `${CONTAINER}-${short}`,
     workspaceDir: join(DATA_DIR, "vm-homes", short),
     viewerPort: null,
@@ -318,6 +322,7 @@ export interface ContainerComputerStatus {
   network: "loopback" | "unsafe" | "unknown";
   security: "hardened" | "unsafe" | "unknown";
   persistence: "durable" | "unsafe" | "unknown";
+  project_mount_changed?: boolean;
   desktopReady: boolean;
   desktop_error: string | null;
   stopped_at?: string | null;
@@ -421,6 +426,7 @@ function existingContainerProblem(status: ContainerComputerStatus): string | nul
   if (!status.managed) return "The existing container was not created by Limix Bot; recreate it";
   if (status.network === "unsafe") return "The existing Local VM exposes its viewer publicly; recreate it";
   if (status.security === "unsafe") return "The existing Local VM is missing safety limits; recreate it";
+  if (status.project_mount_changed) return "Replace the private desktop to apply the working folder access change";
   if (status.persistence === "unsafe") return "The existing Local VM is missing its durable folder; recreate it";
   return null;
 }
@@ -640,12 +646,15 @@ export async function containerComputerStatus(
         normalizeImageId(detail?.Image) === status.image_id;
       status.managed = containerOwnershipLabelsMatch(detail?.Config?.Labels, target);
       if (status.managed) raisePidsLimit(target.containerName, detail?.HostConfig?.PidsLimit, runner.bind(null, status.runtime));
-      status.persistence = dockerWorkspaceMountIsSafe(
-        detail?.Mounts,
-        platform,
-        target.workspaceDir,
-        status.runtime,
-      ) ? "durable" : "unsafe";
+      const project = detail?.Mounts?.filter((mount) => mount.Destination === VM_PROJECT_FOLDER) ?? [];
+      const expectedProject = target.projectDir;
+      status.project_mount_changed = expectedProject
+        ? status.runtime !== "docker" || project.length !== 1 || project[0]?.Type !== "bind" ||
+          project[0].RW !== true || !sameWorkspaceSource(project[0].Source, platform, expectedProject)
+        : project.length !== 0;
+      const ordinary = detail?.Mounts?.filter((mount) => mount.Destination !== VM_PROJECT_FOLDER);
+      status.persistence = !status.project_mount_changed &&
+        dockerWorkspaceMountIsSafe(ordinary, platform, target.workspaceDir, status.runtime) ? "durable" : "unsafe";
       status.security = (
         status.runtime === "podman"
           ? podmanSecurityIsHardened(detail?.HostConfig, detail?.EffectiveCaps, detail?.BoundingCaps, {
@@ -799,17 +808,17 @@ function dockerWorkspaceMountIsSafe(
   expectedWorkspace: string,
   runtime: Runtime = "docker",
 ): boolean {
-  const sourceMatches = sameWorkspaceSource(mounts?.[0]?.Source, platform, expectedWorkspace) ||
+  const matches = (source: string | undefined, expected: string) => sameWorkspaceSource(source, platform, expected) ||
     (runtime === "podman" &&
       platform === "win32" &&
-      samePodmanWindowsWorkspaceSource(mounts?.[0]?.Source, expectedWorkspace));
+      samePodmanWindowsWorkspaceSource(source, expected));
   const team = mounts?.[1];
   const teamOk = !team || (team.Type === "bind" && team.Destination === TEAM_FOLDER_GUEST && team.RW !== false &&
     typeof team.Source === "string" && dirname(team.Source) === TEAM_FOLDERS_DIR && /^[0-9a-f]{16}$/.test(basename(team.Source)));
   return Boolean(
     (mounts?.length === 1 || (mounts?.length === 2 && teamOk)) &&
       mounts[0]?.Type === "bind" &&
-      sourceMatches &&
+      matches(mounts[0]?.Source, expectedWorkspace) &&
       mounts[0]?.Destination === VM_WORKSPACE_GUEST &&
       mounts[0]?.RW !== false,
   );
@@ -888,6 +897,8 @@ export function containerRunArgs(
     ...(desktop.teamDir && runtime !== "container" ? ["--mount", runtime === "podman"
       ? `type=bind,source=${desktop.teamDir},target=${TEAM_FOLDER_GUEST},relabel=shared`
       : `type=bind,source=${desktop.teamDir},target=${TEAM_FOLDER_GUEST}`] : []),
+    ...(target.projectDir && runtime === "docker" ? ["--mount",
+      `type=bind,source=${target.projectDir},target=${VM_PROJECT_FOLDER},bind-recursive=disabled`] : []),
     "-e",
     `VNC_PW=${password}`,
     "-p",
@@ -972,6 +983,12 @@ export async function containerComputerAction(
   if (action === "pull") {
     await prepareManagedImage(runtime, runner);
   } else {
+    if ((action === "run" || action === "start") && target.projectDir) {
+      if (runtime !== "docker") throw new Error("The approved working folder requires Docker.");
+      if (realpathSync(target.projectDir) !== target.projectDir || !lstatSync(target.projectDir).isDirectory()) {
+        throw new Error("The approved working folder changed. Grant access again before starting the desktop.");
+      }
+    }
     if (action === "run") await ensureVmWorkspace(platform, target, runtime);
     if (action === "run" && teamDir) await ensureVmWorkspace(platform, { ...target, workspaceDir: teamDir }, runtime);
     if (action === "start" && runtime !== "container") {
@@ -1010,6 +1027,15 @@ export async function containerComputerAction(
   const after = await containerComputerStatus(runner, platform, target);
   if (createdStopped) after.capacity_limited = true;
   return after;
+}
+
+export async function dockerWorkingFolderDesktopsStopped(targets: readonly LocalVmTarget[], runner: CommandRunner = sh): Promise<boolean> {
+  const names = new Set(targets.flatMap(({ containerName }) => [containerName, containerName.replace(/^limixbot-computer/u, "openmausbot-computer")]));
+  const { stdout } = await runner("docker", ["container", "ls", "--all", "--format", "{{.Names}}\t{{.State}}"], 8000);
+  return stdout.trim().split(/\r?\n/u).every((line) => {
+    const [name, state] = line.split("\t");
+    return !names.has(name!) || state === "exited" || state === "created";
+  });
 }
 
 export async function runningLocalVmCount(runtime: Runtime, runner: CommandRunner = sh): Promise<number> {
@@ -1257,7 +1283,7 @@ export function setupCommands(
     runtimeStart,
     pull: command(baseImagePullArgs(runtime)),
     run:
-      runtime === "container" && target.key !== SHARED_LOCAL_VM_TARGET.key
+      target.projectDir || (runtime === "container" && target.key !== SHARED_LOCAL_VM_TARGET.key)
         ? null
         : command(containerRunArgs(runtime, "CHANGE_ME", target, {
           platform,

@@ -596,6 +596,8 @@ import { createBotCreateRoutes } from "./routes/bots-create.ts";
 import { createTeamOwnerRoutes } from "./routes/team-owners.ts";
 import { createBotSettingsRoutes } from "./routes/bot-settings.ts";
 import { createBotPatchRoutes } from "./routes/bot-patch.ts";
+import { createVmWorkingFolders, VM_PROJECT_FOLDER } from "./vm-working-folder.ts";
+import { createVmWorkingFolderRoutes } from "./routes/vm-working-folder.ts";
 import { createBotOrderRoutes } from "./routes/bot-order.ts";
 import { createGroupOrderRoutes } from "./routes/group-order.ts";
 import { createBotLifecycleRoutes } from "./routes/bot-lifecycle.ts";
@@ -3122,6 +3124,8 @@ function fullAccessForSource(botId: string, threadId: string): boolean {
 /** Limix: tells a bot which teammates share its desktop or its department folder, so they can split work on the same files. */
 function limixTeamDesktopNote(bot: BotRecord): string {
   if (localVmMode(cfg) !== "per-bot") return "";
+  const project = !bot.desktopTeam && vmWorkingFolders.forBot(bot.id)
+    ? ` The owner shared the working folder with this desktop at ${VM_PROJECT_FOLDER}. Use that path for files to keep on the host.` : "";
   const team = teamDesktopKey(bot);
   const mates = (shared: boolean) => store.bots.filter((other) => other.id !== bot.id && !other.hidden && teamDesktopKey(other) === team
     && (shared ? other.desktopTeam : other.desktopTeamFolder && !other.desktopTeam)).map((other) => `@${other.name}`);
@@ -3129,9 +3133,9 @@ function limixTeamDesktopNote(bot: BotRecord): string {
     const names = mates(true);
     return ` This desktop is your department's: ${names.length ? names.join(", ") + " use" : "teammates who join use"} it too, one at a time, so leave files and windows tidy for them.`;
   }
-  if (!bot.desktopTeamFolder) return "";
+  if (!bot.desktopTeamFolder) return project;
   const names = mates(false);
-  return ` Your desktop also has ${TEAM_FOLDER_GUEST}, a folder shared with ${names.length ? names.join(", ") : "your department's bots that join it"}, each on their own desktop; work there on shared files and tell them with coordinate_bots what you changed.`;
+  return project + ` Your desktop also has ${TEAM_FOLDER_GUEST}, a folder shared with ${names.length ? names.join(", ") : "your department's bots that join it"}, each on their own desktop; work there on shared files and tell them with coordinate_bots what you changed.`;
 }
 
 /** Limix: a bot with its own desktop that joined its department's folder gets that folder mounted when the desktop is created. */
@@ -4717,7 +4721,7 @@ const desktopViewer = createDesktopViewer({
         return connection;
       } };
     }
-    const targets = [SHARED_LOCAL_VM_TARGET, ...store.bots.map(bot => perBotLocalVmTarget(bot.id)),
+    const targets = [SHARED_LOCAL_VM_TARGET, ...store.bots.map(bot => privateLocalVmTarget(bot.id)),
       ...Array.from({ length: localVmMaxInstances(cfg) }, (_, seat) => poolLocalVmTarget(seat))];
     const target = targets.find(target => viewerTargetId(target) === id);
     return target && localDesktopTarget(target, {
@@ -5671,6 +5675,7 @@ const localVmOwnerBusy = (botId: string) => store.bot(botId)?.busy === true;
 const localVmLeases = new LocalVmLeasePool(30 * 60_000);
 const localVmSeatPool = new LocalVmSeatPool(() => localVmMaxInstances(cfg));
 const localVmLifecycleBusy = new Set<string>();
+const vmWorkingFolders = createVmWorkingFolders(DATA_DIR);
 const localVmThreadTargets = new Map<string, LocalVmTarget>();
 const localVmActiveThreads = new Map<string, string>();
 const autoVmClaims: AutoVmClaimTable = new Map();
@@ -5690,8 +5695,9 @@ let localVmImageBusy = false;
 let localVmProvisionBusy = false;
 let localVmModeChangeBusy = false;
 const localVmUpdates = createLocalVmUpdater({
-  status: (target) => containerComputerStatus(undefined, undefined, target),
-  act: (action, target) => containerComputerAction(action, undefined, undefined, target, localVmResourcesFor(target), () => localVmMaxInstances(cfg), localVmTeamFolderFor(target)),
+  status: (target) => containerComputerStatus(undefined, undefined, target.botId ? privateLocalVmTarget(target.botId) : target),
+  act: (action, target) => containerComputerAction(action, undefined, undefined, target.botId ? privateLocalVmTarget(target.botId) : target,
+    localVmResourcesFor(target), () => localVmMaxInstances(cfg), localVmTeamFolderFor(target)),
   imageBusy: { get: () => localVmImageBusy, set: (busy) => { localVmImageBusy = busy; } },
   provisionBusy: { get: () => localVmProvisionBusy, set: (busy) => { localVmProvisionBusy = busy; } },
   lifecycleBusy: localVmLifecycleBusy,
@@ -6281,7 +6287,19 @@ function localVmTargetForBot(botId: string): LocalVmTarget {
   if (localVmMode(cfg) !== "per-bot") return SHARED_LOCAL_VM_TARGET;
   const bot = store.bot(botId);
   // Limix: a bot that opted in shares its department's desktop with the others that did.
-  return bot?.desktopTeam ? teamLocalVmTarget(teamDesktopKey(bot)) : perBotLocalVmTarget(botId);
+  if (bot?.desktopTeam) return teamLocalVmTarget(teamDesktopKey(bot));
+  return privateLocalVmTarget(botId);
+}
+
+function privateLocalVmTarget(botId: string): LocalVmTarget {
+  const grant = vmWorkingFolders.forBot(botId);
+  return { ...perBotLocalVmTarget(botId), ...(grant ? { projectDir: grant.folder } : {}) };
+}
+
+function assertVmWorkingFolderCurrent(target: LocalVmTarget): void {
+  if (target.botId && privateLocalVmTarget(target.botId).projectDir !== target.projectDir) {
+    throw new Error("Working folder access changed. Retry with the updated desktop.");
+  }
 }
 
 function localVmPoolSeatHolder(seat: number): LocalVmSeatHolder | null {
@@ -6346,6 +6364,7 @@ function releaseLocalVmThread(threadId: string): void {
 
 void recoverLocalVms({
   mode: localVmMode(cfg), seats: localVmMaxInstances(cfg), bots: store.bots, seen: localVmSeen,
+  privateTarget: privateLocalVmTarget,
   status: (target) => containerComputerStatus(undefined, undefined, target).catch(() => null),
   note: noteLocalVmSeen, armIdle: (target) => localVmIdleFor(target).touch(),
 }).then(() => localVmUpdates.sweep()).catch(() => {});
@@ -6360,7 +6379,8 @@ async function localVmInventoryPayload() {
       problem: runtime.runtime ? `Start ${runtime.runtime} first` : "Install a supported container runtime first",
     };
   }
-  const existing = await discoverExistingPerBotLocalVms(store.bots, runtime.runtime);
+  const existing = (await discoverExistingPerBotLocalVms(store.bots, runtime.runtime))
+    .map(({ bot }) => ({ bot, target: privateLocalVmTarget(bot.id) }));
   const statuses = await Promise.all(existing.map(({ target }) =>
     containerComputerStatus(undefined, undefined, target),
   ));
@@ -8075,6 +8095,7 @@ async function beginTurn(
         const localVmTarget = pinnedTarget ?? localVmThreadTargets.get(claimThreadId) ?? { ...localVmTargetForThread(bot.id, claimThreadId) };
         await waitForLocalVmUpdate(localVmTarget, claimThreadId, () => directTurnClaimIsCurrent(bot.id, dispatchClaimId, claimThreadId));
         await bindTurnComputer(resourceOwner, `computer:vm:${localVmTarget.key}`, true);
+        assertVmWorkingFolderCurrent(localVmTarget);
         if (localVmImageBusy || localVmModeChangeBusy || localVmLifecycleBusy.has(localVmTarget.key)) {
           throw new Error("this Local VM is being started, stopped, or replaced — wait for setup to finish");
         }
@@ -10110,6 +10131,7 @@ async function runClaimedGroupMemberTurn(
       const target = { ...localVmTargetForThread(readyBot.id, threadId) };
       await waitForLocalVmUpdate(target, threadId, roomSetupIsCurrent, { botId: readyBot.id, name: readyBot.name, color: readyBot.color });
       await bindTurnComputer(resourceOwner, `computer:vm:${target.key}`, true);
+      assertVmWorkingFolderCurrent(target);
       if (localVmImageBusy || localVmModeChangeBusy || localVmLifecycleBusy.has(target.key)) {
         throw new Error("this Local VM is being started, stopped, or replaced");
       }
@@ -12472,6 +12494,14 @@ ROUTES.push(createMcpServerRoutes({
   mcpServerResponse, savedCustomDomain, appCatalog: chatAppsMcp, config: mcpConfig, lender: sessionLendingPrincipal, connectionHealth, ownsVault: () => !CLOUD_TEAM && !HOSTED_WORKSPACE, place: (server, auth) => lentMcp.place(server, { principal: sessionLendingPrincipal(auth), ...(auth.kind === "session" ? { session: auth.session.id } : {}), newest: true }) }));
 ROUTES.push(createSetupImportRoutes({ local: DESKTOP_MANAGED && !CLOUD_HOME && !HOSTED_WORKSPACE, cfg, mcpPolicyRefusal, persistMcpServers: persistAnnouncedMcpServers,
   mcpConfigBusy: mcpConfig.busy }));
+ROUTES.push(createVmWorkingFolderRoutes({
+  enabled: DESKTOP_MANAGED && !CLOUD_HOME && !HOSTED_WORKSPACE,
+  dataDir: DATA_DIR, store, grants: vmWorkingFolders,
+  perBot: () => localVmMode(cfg) === "per-bot",
+  locks: localVmLifecycleBusy,
+  busy: (target) => localVmModeChangeBusy || localVmImageBusy || localVmLifecycleBusy.has(target.key) ||
+    localVmActiveThreads.has(target.key) || Boolean(localVmLeaseFor(target).current(localVmOwnerBusy)),
+}));
 ROUTES.push(createComputerRoutes({
   store, cfg, sessions, teamComputers, computerControl,
   routines: () => routines,

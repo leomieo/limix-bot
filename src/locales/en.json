@@ -5251,6 +5251,7 @@
   "computer.problem.publicViewer": "The private desktop's viewer is open to the network; replace it",
   "computer.problem.missingLimits": "The private desktop is missing its safety limits; replace it",
   "computer.problem.missingDurableFolder": "The private desktop is missing its own folder; replace it",
+  "computer.problem.workingFolderChanged": "Replace the private desktop to apply the working folder access change",
   "computer.problem.perBotRuntime": "A private desktop for each bot needs Docker or Podman, because Apple container needs a fixed host port",
   "computer.problem.desktopFailed": "The private desktop didn't start: {detail}",
   "computer.err.vmOpenSettings": "{problem}. Open Settings → Bot desktops.",
