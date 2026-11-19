@@ -1,3 +1,13 @@
+Limix Bot 0.3.92
+
+## Tiếng Việt
+
+- Khi được nhắc tên trong nhóm Zalo, bot có thể tra nhiệt độ và kiến thức phổ thông từ nguồn công khai rồi trả lời kèm liên kết nguồn. Nếu thiếu địa điểm, bot hỏi lại ngay trong nhóm. Lượt chat vẫn dùng quyền khách.
+
+## English
+
+- When mentioned in a Zalo group, the bot can look up temperatures and general knowledge from public sources and include source links. It asks for the location in the group when needed. Guest permissions still apply.
+
 Limix Bot 0.3.91
 
 ## Tiếng Việt

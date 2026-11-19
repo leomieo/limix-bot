@@ -176,13 +176,14 @@ export interface PageFetchOptions {
   timeoutMs?: number;
   maxBytes?: number;
   maxRedirects?: number;
+  userAgent?: string;
 }
 
 type Answer = { status: number; location?: string; headers: IncomingHttpHeaders; body: Buffer };
 
 const fail = (error: string, refused = false): Failure => ({ ok: false, refused, error });
 
-function requestOnce(url: URL, address: { address: string; family: number }, signal: AbortSignal, maxBytes: number): Promise<Answer> {
+function requestOnce(url: URL, address: { address: string; family: number }, signal: AbortSignal, maxBytes: number, userAgent = "LimixBot-wait"): Promise<Answer> {
   return new Promise((resolve, reject) => {
     const pinned: LookupFunction = (_host, lookupOptions, callback) => {
       if (lookupOptions.all) callback(null, [address]);
@@ -195,7 +196,7 @@ function requestOnce(url: URL, address: { address: string; family: number }, sig
         agent: false,
         signal,
         lookup: pinned,
-        headers: { "user-agent": "LimixBot-wait", accept: "text/html,text/plain;q=0.9,*/*;q=0.1" },
+        headers: { "user-agent": userAgent, accept: "text/html,text/plain;q=0.9,*/*;q=0.1" },
       },
       (response: IncomingMessage) => {
         const status = response.statusCode ?? 0;
@@ -264,7 +265,7 @@ export async function fetchPublicPage(rawUrl: string, options: PageFetchOptions 
         return fail(`${host} points at this computer or a private network, which waits never check. Use a page on the public web.`, true);
       }
       signal.throwIfAborted();
-      const answer = await requestOnce(url, addresses[0], signal, maxBytes);
+      const answer = await requestOnce(url, addresses[0], signal, maxBytes, options.userAgent);
       if (answer.status >= 300 && answer.status < 400 && answer.location) {
         if (hop >= (options.maxRedirects ?? PAGE_MAX_REDIRECTS)) return fail("The page redirected too many times.");
         url = new URL(answer.location, url);

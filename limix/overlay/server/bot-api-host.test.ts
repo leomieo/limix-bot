@@ -70,14 +70,15 @@ it("asks for a natural reply in the Zalo group while confining the turn as a gue
   const h = await harness((fake, _botId, prompt, opts) => {
     expect(prompt).toContain("ask one brief follow-up here");
     expect(prompt).toContain("Skip receipt acknowledgments");
+    expect(prompt).toContain('{"status":"weather_location_required"}');
     expect(prompt).toContain("[UNTRUSTED BOT API MESSAGE]");
     expect(opts.automationSource).toBe("api");
     const task = fake.bots.get("b1")?.tasks.find((task) => task.threadId === opts.threadId);
     expect(task).toMatchObject({ botApi: true, approvalMode: "ask", outside: true });
-    replies("Bạn muốn báo cáo về chủ đề nào?")(fake, _botId, prompt, opts);
+    replies("Bạn muốn xem nhiệt độ ở đâu?")(fake, _botId, prompt, opts);
   });
-  await expect(h.host.askFromChannel("b1", { text: "báo cáo", title: "Fixture", owner: false, zaloGroup: true }))
-    .resolves.toMatchObject({ reply: "Bạn muốn báo cáo về chủ đề nào?" });
+  await expect(h.host.askFromChannel("b1", { text: "nhiệt độ hôm nay", title: "Fixture", owner: false, zaloGroup: true }))
+    .resolves.toMatchObject({ reply: "Bạn muốn xem nhiệt độ ở đâu?" });
 });
 
 it.each([false, true])("delivers a channel result after 31 minutes (owner: %s)", async (owner) => {

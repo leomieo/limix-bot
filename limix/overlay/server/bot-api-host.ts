@@ -10,6 +10,7 @@ import { redactSecretsInText } from "../shared/redact.ts";
 import { BOT_API_UPGRADE, botApiEndpoint, type BotApiReply } from "../shared/bot-api.ts";
 import type { AdminActionRow } from "./admin-activity.ts";
 import { BOT_API_MAX_MESSAGE_CHARS, BOT_API_MAX_PENDING, BotApiManager, botApiPrompt, retryableBusySchema, withoutAttachedImages, type BotApiAttempt, type BotApiStatus } from "./bot-api.ts";
+import { zaloPublicLookup } from "./zalo-public-lookup.ts";
 import { personKey } from "./person-key.ts";
 import type { RequestAuth } from "./request-auth.ts";
 import { PASS, type RouteHandler } from "./routes/table.ts";
@@ -196,6 +197,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       store.patchTask(botId, threadId, { botApi: true, outside: true });
     }
     channel?.delivery?.accepted(threadId);
+    const previousGuestText = channel?.zaloGroup ? store.messagesFor(threadId).findLast((line) => line.role === "user" && line.via === "api")?.text : undefined;
     const receivedAt = Date.now();
     const userMessage = store.appendMessage(threadId, { role: "user", kind: "text", text: message, via: "api", ...(channel?.attachment ? { attachments: [channel.attachment] } : {}) });
     const after = () => messagesAfter(store.messagesFor(threadId!), userMessage.id);
@@ -203,7 +205,9 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     let dispatchError: string | undefined;
     markRunning(botId, threadId, true);
     try {
-      await deps.startTurn(botId, mediaPrompt(botApiPrompt(message, receivedAt, { zaloGroup: channel?.zaloGroup }), channel?.attachment), {
+      const publicLookup = channel?.zaloGroup ? await zaloPublicLookup(message, previousGuestText) : undefined;
+      channel?.delivery?.signal.throwIfAborted();
+      await deps.startTurn(botId, mediaPrompt(botApiPrompt(message, receivedAt, { zaloGroup: channel?.zaloGroup, publicLookup }), channel?.attachment), {
         threadId, automationSource: "api", unattended: true, userMessage,
         onSettled: (outcome) => { settled = outcome; markRunning(botId, threadId!, false); },
         onDispatchError: (message) => { dispatchError = message; markRunning(botId, threadId!, false); },
