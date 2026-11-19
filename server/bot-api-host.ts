@@ -171,7 +171,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     return reply?.attachments?.filter((file): file is ChannelMedia => (file.kind === "image" && !file.fromTool) || file.kind === "file") ?? [];
   }
 
-  async function runCall(botId: string, call: z.output<typeof callSchema>, turnStarted: () => void, channel?: { attachment?: ChannelMedia; delivery?: Parameters<ChannelAsk>[1]["delivery"]; collect(files: ChannelMedia[]): void }): Promise<{ status: number; body: BotApiReply }> {
+  async function runCall(botId: string, call: z.output<typeof callSchema>, turnStarted: () => void, channel?: { attachment?: ChannelMedia; delivery?: Parameters<ChannelAsk>[1]["delivery"]; zaloGroup?: true; collect(files: ChannelMedia[]): void }): Promise<{ status: number; body: BotApiReply }> {
     const store = deps.store;
     let threadId = call.thread;
     if (threadId !== undefined) {
@@ -203,7 +203,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     let dispatchError: string | undefined;
     markRunning(botId, threadId, true);
     try {
-      await deps.startTurn(botId, mediaPrompt(botApiPrompt(message, receivedAt), channel?.attachment), {
+      await deps.startTurn(botId, mediaPrompt(botApiPrompt(message, receivedAt, { zaloGroup: channel?.zaloGroup }), channel?.attachment), {
         threadId, automationSource: "api", unattended: true, userMessage,
         onSettled: (outcome) => { settled = outcome; markRunning(botId, threadId!, false); },
         onDispatchError: (message) => { dispatchError = message; markRunning(botId, threadId!, false); },
@@ -238,12 +238,12 @@ export function createBotApiHost(deps: BotApiHostDeps) {
   /** Limix: a message from a chat channel this server itself reads (server/bot-channels), never from an outside caller. The
    * bot's verified owner talks to it as from the app, in a conversation of its own at Full access; anyone else is a
    * Bot API caller, confined. Waits for the answer up to `waitMs`. */
-  async function askFromChannel(botId: string, input: { text: string; attachment?: ChannelMedia; threadId?: string; title: string; owner: boolean; waitMs?: number; delivery?: Parameters<ChannelAsk>[1]["delivery"] }): Promise<{ threadId: string; reply: string; attachments?: ChannelMedia[]; status?: "needs_approval" | "working" }> {
+  async function askFromChannel(botId: string, input: Parameters<ChannelAsk>[1] & { waitMs?: number }): ReturnType<ChannelAsk> {
     const store = deps.store;
     if (!input.owner) {
       if (!deps.canConfine(botId)) fail(403, CANNOT_CONFINE);
       let attachments: ChannelMedia[] = [];
-      const answer = await runCall(botId, { message: input.text, ...(input.threadId ? { thread: input.threadId } : {}), wait: Math.round((input.waitMs ?? 600_000) / 1000) } as z.output<typeof callSchema>, () => {}, { attachment: input.attachment, delivery: input.delivery, collect(files) { attachments = files; } });
+      const answer = await runCall(botId, { message: input.text, ...(input.threadId ? { thread: input.threadId } : {}), wait: Math.round((input.waitMs ?? 600_000) / 1000) } as z.output<typeof callSchema>, () => {}, { attachment: input.attachment, delivery: input.delivery, zaloGroup: input.zaloGroup, collect(files) { attachments = files; } });
       const body = answer.body as { reply?: string; thread: string; status?: "needs_approval" | "working" };
       return { threadId: body.thread, ...(attachments.length ? { attachments } : {}), reply: body.reply ?? "", ...(body.status ? { status: body.status } : {}) };
     }

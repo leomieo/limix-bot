@@ -66,6 +66,20 @@ const replies = (text: string): Script => (fake, _botId, _prompt, opts) => {
   }, 30);
 };
 
+it("asks for a natural reply in the Zalo group while confining the turn as a guest", async () => {
+  const h = await harness((fake, _botId, prompt, opts) => {
+    expect(prompt).toContain("ask one brief follow-up here");
+    expect(prompt).toContain("Skip receipt acknowledgments");
+    expect(prompt).toContain("[UNTRUSTED BOT API MESSAGE]");
+    expect(opts.automationSource).toBe("api");
+    const task = fake.bots.get("b1")?.tasks.find((task) => task.threadId === opts.threadId);
+    expect(task).toMatchObject({ botApi: true, approvalMode: "ask", outside: true });
+    replies("Bạn muốn báo cáo về chủ đề nào?")(fake, _botId, prompt, opts);
+  });
+  await expect(h.host.askFromChannel("b1", { text: "báo cáo", title: "Fixture", owner: false, zaloGroup: true }))
+    .resolves.toMatchObject({ reply: "Bạn muốn báo cáo về chủ đề nào?" });
+});
+
 it.each([false, true])("delivers a channel result after 31 minutes (owner: %s)", async (owner) => {
   let finish!: () => void;
   const h = await harness((fake, _botId, _prompt, opts) => {

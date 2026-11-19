@@ -72,7 +72,7 @@ export interface ChannelAdapter {
 }
 
 export interface ChannelAsk {
-  (botId: string, input: { text: string; attachment?: ChannelMedia; threadId?: string; title: string; owner: boolean; delivery?: { signal: AbortSignal; accepted(threadId: string): void; approval(): void } }): Promise<{ threadId: string; reply: string; attachments?: ChannelMedia[]; status?: "needs_approval" | "working" }>;
+  (botId: string, input: { text: string; attachment?: ChannelMedia; threadId?: string; title: string; owner: boolean; zaloGroup?: true; delivery?: { signal: AbortSignal; accepted(threadId: string): void; approval(): void } }): Promise<{ threadId: string; reply: string; attachments?: ChannelMedia[]; status?: "needs_approval" | "working" }>;
 }
 
 export interface BotChannelsDeps {
@@ -164,6 +164,20 @@ const text = (label: string) => ({
   failed: "Bot chưa trả lời được lúc này. Thử lại sau.",
   empty: "Bot đã làm xong nhưng không có câu trả lời bằng chữ.",
 });
+
+const ZALO_RECEIPT = /^(?:\*\*)?(?:(?:mình|tôi|em)\s+)?đã nhận(?: được)? tin nhắn(?:\s*[:：]?\s+(?:“([^”\r\n]*)”|"([^"\r\n]*)"|'([^'\r\n]*)'|‘([^’\r\n]*)’)|(?: của bạn)?(?=\s*[.!。]|\s*$))\s*[.!。]?(?:\*\*)?\s*/iu;
+
+function zaloGroupReply(reply: string, message: string, hasMedia: boolean): string {
+  const receipt = ZALO_RECEIPT.exec(reply);
+  if (!receipt) return reply;
+  const quoted = receipt.slice(1).find((value) => value !== undefined);
+  if (quoted !== undefined && quoted.trim() !== message.trim()) return reply;
+  const rest = reply.slice(receipt[0].length).trimStart();
+  if (rest || hasMedia) return rest;
+  return /^(?:hi|hello|hey|chào|xin chào)[!.\s]*$/iu.test(message.trim())
+    ? "Chào bạn! Mình giúp gì cho bạn được?"
+    : "Bạn nói rõ hơn một chút để mình giúp nhé?";
+}
 
 /** Splits a reply at paragraph, then line, then word boundaries so each piece fits one message. */
 export function chunkText(body: string, max: number): string[] {
@@ -383,12 +397,14 @@ export function createBotChannels(deps: BotChannelsDeps) {
         const known = read(kind).bots[botId]?.chats[conversation];
         const attachment = await saved.media;
         if (attachment instanceof Error) throw attachment;
+        const zaloGroup = kind === "zalo" && !message.direct;
         const answer = await askWhenReady(botId, {
           text: message.text || (attachment?.kind === "image" ? "Ảnh đính kèm" : "Tệp đính kèm"),
           ...(attachment ? { attachment } : {}),
           ...(known ? { threadId: known } : {}),
           title: `${adapter.label} · ${message.from.name}`,
           owner,
+          ...(zaloGroup ? { zaloGroup: true as const } : {}),
           delivery: {
             signal,
             accepted(threadId) {
@@ -401,7 +417,10 @@ export function createBotChannels(deps: BotChannelsDeps) {
         if (!answer || signal.aborted) return;
         patch(kind, botId, (current) => ({ ...current, chats: { ...current.chats, [conversation]: answer.threadId } }));
         const attachments = answer.attachments;
-        result = { reply: answer.reply.trim() || (answer.status === "needs_approval" ? say.approval : answer.status === "working" ? say.working : attachments?.length && session.sendMedia ? "" : say.empty), attachments };
+        const replyText = answer.reply.trim();
+        const hasMedia = Boolean(attachments?.length && session.sendMedia);
+        const body = zaloGroup && !answer.status ? zaloGroupReply(replyText, message.text, hasMedia) : replyText;
+        result = { reply: body || (answer.status === "needs_approval" ? say.approval : answer.status === "working" ? say.working : hasMedia ? "" : say.empty), attachments };
       } catch (error) {
         if (signal.aborted) return;
         log(`${kind}: ${failure(error)}`);

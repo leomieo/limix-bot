@@ -1,3 +1,13 @@
+Limix Bot 0.3.91
+
+## Tiếng Việt
+
+- Khi được nhắc tên trong nhóm Zalo, bot chào hoặc trả lời trực tiếp, bỏ câu xác nhận lặp lại nội dung tin nhắn. Nếu thiếu thông tin, bot hỏi thêm ngay trong nhóm với quyền khách.
+
+## English
+
+- When mentioned in a Zalo group, the bot greets or answers directly without echoing the incoming message as an acknowledgment. It asks for missing details in the same group with guest permissions.
+
 Limix Bot 0.3.90
 
 ## Tiếng Việt

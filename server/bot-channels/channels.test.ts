@@ -21,17 +21,17 @@ const cleanups: Array<() => void> = [];
 afterEach(() => { for (const stop of cleanups.splice(0)) stop(); });
 const until = async (check: () => boolean) => { for (let i = 0; i < 300 && !check(); i++) await new Promise((resolve) => setTimeout(resolve, 10)); expect(check()).toBe(true); };
 
-function host(adapter: ChannelAdapter, logins?: Partial<Record<ChannelAdapter["kind"], ChannelLogin>>, beforeAsk?: (input: Parameters<ChannelAsk>[1]) => void | Promise<void>) {
+function host(adapter: ChannelAdapter, logins?: Partial<Record<ChannelAdapter["kind"], ChannelLogin>>, beforeAsk?: (input: Parameters<ChannelAsk>[1]) => string | void | Promise<string | void>) {
   const dir = mkdtempSync(join(tmpdir(), "limix-ch-"));
   const asks: Array<{ text: string; threadId?: string; owner: boolean }> = [];
   const channels = createBotChannels({
     dataDir: dir, adapters: [adapter], ...(logins ? { logins } : {}), sleep: async () => {},
     botExists: (id) => id === "b1", manageRefusal: () => null,
     ask: async (_botId, input) => {
-      await beforeAsk?.(input);
+      const reply = await beforeAsk?.(input);
       asks.push({ text: input.text, ...(input.threadId ? { threadId: input.threadId } : {}), owner: input.owner });
       if (input.attachment) cleanups.push(() => deleteAttachment(input.attachment!.path));
-      return { threadId: `t${asks.length}`, reply: `ok: ${input.text}`, ...(input.attachment ? { attachments: [input.attachment] } : {}) };
+      return { threadId: `t${asks.length}`, reply: reply ?? `ok: ${input.text}`, ...(input.attachment ? { attachments: [input.attachment] } : {}) };
     },
   });
   channels.start();
@@ -284,7 +284,12 @@ it("signs Zalo in by QR, answers direct messages and mentions, and reports a ses
     },
   };
   const load = async () => client;
-  const { asks, route } = host(zaloAdapter(load), { zalo: zaloLogin(load) });
+  const { asks, route } = host(zaloAdapter(load), { zalo: zaloLogin(load) }, (input) => {
+    if (!input.zaloGroup) return;
+    expect(input.owner).toBe(false);
+    if (input.text === "hi") return "Đã nhận được tin nhắn “hi”.";
+    if (input.text === "báo cáo") return "Đã nhận được tin nhắn “báo cáo”. Bạn muốn báo cáo về chủ đề nào?";
+  });
   expect((await route("POST", "/api/bots/b1/zalo", { token: "{}" }))!.status).toBe(400);
   await route("POST", "/api/bots/b1/zalo/login");
   const started = await route("GET", "/api/bots/b1/zalo");
@@ -303,20 +308,20 @@ it("signs Zalo in by QR, answers direct messages and mentions, and reports a ses
   await until(() => sends.length === 2);
   say("3", "41", 0, "tin riêng của khách", undefined, "41");
   say("4", "g9", 1, "@Shop Zalo chỉ gõ tên bot");
-  say("5", "g9", 1, "@Shop Zalo câu hỏi khách", tag, "41");
-  say("6", "g9", 1, "@Shop Zalo câu hỏi chủ", tag);
+  say("5", "g9", 1, "@Shop Zalo hi", tag, "41");
+  say("6", "g9", 1, "@Shop Zalo báo cáo", tag);
   say("7", "g9", 1, "@Shop Zalo hỏi thêm", tag, "41");
   await until(() => sends.some(({ text }) => text === "ok: hỏi thêm"));
   expect(asks).toEqual([
     { text: "chào shop", owner: true },
-    { text: "câu hỏi khách", owner: false },
-    { text: "câu hỏi chủ", owner: false },
+    { text: "hi", owner: false },
+    { text: "báo cáo", owner: false },
     { text: "hỏi thêm", owner: false, threadId: "t2" },
   ]);
   expect(sends.slice(1).filter(({ text }) => !text.startsWith("Đã nhận"))).toEqual([
     { text: "ok: chào shop", thread: "42", type: 0 },
-    { text: "ok: câu hỏi khách", thread: "g9", type: 1 },
-    { text: "ok: câu hỏi chủ", thread: "g9", type: 1 },
+    { text: "Chào bạn! Mình giúp gì cho bạn được?", thread: "g9", type: 1 },
+    { text: "Bạn muốn báo cáo về chủ đề nào?", thread: "g9", type: 1 },
     { text: "ok: hỏi thêm", thread: "g9", type: 1 },
   ]);
   await route("POST", "/api/bots/b1/zalo", { access: "everyone", groupMentions: false });
