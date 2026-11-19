@@ -58,6 +58,8 @@ jobs:
         run: node node_modules/vitest/vitest.mjs run server/skill-library.test.ts
       - name: Verify private desktop working folder grants
         run: node node_modules/vitest/vitest.mjs run server/routes/vm-working-folder.test.ts server/container-computer.test.ts
+      - name: Verify Cloud sign-out and restart
+        run: node --test electron/cloud-account-ipc.node-test.mjs electron/cloud-accounts.node-test.mjs electron/cloud-entry.node-test.mjs
       - name: clean build outputs
         shell: bash
         run: rm -rf dist dist-server release

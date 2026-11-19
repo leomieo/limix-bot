@@ -36,6 +36,7 @@ test("production personal Cloud IPC guards exact local main frame and forwards n
     ensureCloudAccount: () => Object.fromEntries(methods.map(method => [method, (...args) => { calls.push([method, ...args]); return { status: "signed-out" }; }])),
     connectCloudHome: (...args) => { calls.push(["connectHome", ...args]); return { status: "connected" }; },
     accounts: { signOutActive: (...args) => { calls.push(["signOut", ...args]); return { status: "signed-out" }; } },
+    limixRemoteCredential: () => null,
     // Limix: Sign in (and Sign in again) is this computer's Limix account, asked for by the person.
     limixCloudSignIn: (...args) => { calls.push(["limixCloudSignIn", ...args]); return { status: "signed-out" }; },
   });
@@ -48,6 +49,30 @@ test("production personal Cloud IPC guards exact local main frame and forwards n
   }
   assert.deepEqual(calls, bridgeMethods.map(method => method === "connectHomeForPhone" ? ["connectHome", "phone"]
     : ["begin", "signInAgain"].includes(method) ? ["limixCloudSignIn", true] : [method]));
+});
+test("startup keeps Cloud signed out even with a valid desktop account; the sign-in button can reconnect", async () => {
+  const source = readFileSync(new URL("./main.mjs", import.meta.url), "utf8");
+  const start = source.indexOf("async function limixCloudSignIn(");
+  const end = source.indexOf("\n}", start);
+  assert.ok(start >= 0 && end > start);
+  let state = { status: "signed-out" };
+  let signIns = 0;
+  const client = {
+    state: () => state,
+    signInWithLimix: async () => { signIns++; return (state = { status: "connected", account: { id: "fixture" } }); },
+  };
+  const check = vm.runInNewContext(`(${source.slice(start, end + 2)})`, {
+    LIMIX_CLOUD_ENABLED: true, app: { isPackaged: true }, desktopRemoteAccess: false,
+    ensureCloudAccount: () => client, limixRemoteCredential: () => ({ userId: "fixture", bearer: "fixture" }),
+  });
+  assert.equal((await check()).status, "signed-out");
+  assert.equal(signIns, 0);
+  assert.equal((await check(true)).status, "connected");
+  assert.equal((await check()).status, "connected");
+  assert.equal(signIns, 1);
+  state = { status: "reauth-required", account: { id: "fixture" } };
+  assert.equal((await check()).status, "reauth-required");
+  assert.equal(signIns, 1);
 });
 test("a team's Cloud opens from the page by its id alone: the team comes from the verified session, and opens as the switcher opens it", async () => {
   const f = preload();

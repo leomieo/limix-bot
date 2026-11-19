@@ -126,6 +126,9 @@ export function createCloudAccounts({ active, saved, client, makeClient, origin,
       if (usable(current, origin)) await client().revokeSaved(current).catch((error) => log(`accounts: signed out here only (${error?.message ?? error})`));
     } else {
       await naming(id);
+      if (list.some((record) => record.account.id === id)) {
+        await writeSaved(list.filter((record) => record.account.id !== id), id);
+      }
       await leaving(id);
       await client().signOut();
       await left(id);

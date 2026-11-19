@@ -830,8 +830,7 @@ function ensureCloudAccount() {
 }
 
 /**
- * Limix: Limix Cloud follows the Limix account this computer is signed in with (electron/limix-account.mjs). A Cloud
- * sign-in for another account, or one that ended, is replaced. `asked`: the person pressed Sign in (or Sign in again).
+ * The desktop account and Cloud have separate sign-in lifecycles. Only a person's explicit sign-in may issue a Cloud grant.
  */
 async function limixCloudSignIn(asked = false) {
   if (!LIMIX_CLOUD_ENABLED || !app.isPackaged || desktopRemoteAccess) return cloudAccount?.state() ?? null;
@@ -839,8 +838,10 @@ async function limixCloudSignIn(asked = false) {
   if (!credential) return client.state();
   const current = client.state();
   const wrongAccount = current.account && current.account.id !== credential.userId;
-  if (wrongAccount || current.status === "reauth-required" || (asked && current.status === "unavailable" && current.message !== "unreachable")) await client.signOut().catch(() => {});
-  return client.state().status === "signed-out" ? client.signInWithLimix(credential.bearer) : client.state();
+  if (wrongAccount || (asked && (current.status === "reauth-required" || (current.status === "unavailable" && current.message !== "unreachable")))) {
+    await client.signOut().catch(() => {});
+  }
+  return asked && client.state().status === "signed-out" ? client.signInWithLimix(credential.bearer) : client.state();
 }
 
 /** Open the trusted owner page with the current Limix account; it immediately removes the fragment. */

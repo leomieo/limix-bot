@@ -208,6 +208,20 @@ test("sign out of the last account: signed out, with nothing left on this device
   assert.deepEqual(w.calls.filter((call) => call !== "state"), ["leaving:acct-a", "settled", "removed:acct-a", "changed"]);
 });
 
+test("sign-out also clears a duplicate saved during an interrupted account switch before the next startup", async (t) => {
+  const w = await world(t);
+  w.activeFile = w.grant("a");
+  w.savedFile = { v: 1, accounts: [w.grant("a", { token: tokenOf("c") })] };
+  await w.boot();
+  assert.deepEqual(await w.ring.signOut("acct-a"), { outcome: "signed-out" });
+  w.ring.close();
+  w.client.close();
+  await w.boot();
+  assert.equal(w.client.state().status, "signed-out");
+  assert.equal(w.savedFile, null);
+  assert.equal(w.activeFile, null);
+});
+
 test("sign out of an account that is waiting: its token ends, and the one in use isn't touched", async (t) => {
   const w = await world(t);
   w.activeFile = w.grant("a");

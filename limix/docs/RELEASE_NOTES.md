@@ -1,3 +1,13 @@
+Limix Bot 0.3.96
+
+## Tiếng Việt
+
+- Khi bạn đăng xuất Limix Cloud, ứng dụng giữ trạng thái đăng xuất sau khi mở lại. Bạn có thể kết nối lại bằng nút đăng nhập Cloud.
+
+## English
+
+- Limix Cloud stays signed out after you restart the app. Use the Cloud sign-in button to reconnect.
+
 Limix Bot 0.3.95
 
 ## Tiếng Việt
