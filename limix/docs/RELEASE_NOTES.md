@@ -1,3 +1,15 @@
+Limix Bot 0.3.97
+
+## Tiếng Việt
+
+- Có thể kéo cạnh hoặc góc cửa sổ **Bản mẫu** để đổi kích thước. Ứng dụng ghi nhớ kích thước bạn chọn.
+- Danh sách mẫu bot và nhóm tự đổi số cột theo chiều rộng cửa sổ. Tên, vai trò và mô tả dài tự xuống dòng để đọc đầy đủ.
+
+## English
+
+- Drag an edge or corner of the **Templates** window to resize it. The app remembers your preferred size.
+- Bot and team templates adjust their column layout to fit the window. Long names, roles, and descriptions wrap so you can read them in full.
+
 Limix Bot 0.3.96
 
 ## Tiếng Việt

@@ -151,26 +151,28 @@ export function LimixBotGallery({ search, onDialog, onAdded, revision = 0 }: {
       </button>)}
     </div>
     {error && <p role="alert" className="mb-3 rounded-xl bg-danger/10 px-3 py-2 text-[13px] text-danger">{error}</p>}
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-      {visible.map((card) => <article key={card.id} data-ready-bot={card.id} className="flex flex-col rounded-2xl border border-hairline/40 bg-card p-4">
-        <div className="flex items-center gap-3">
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,280px),1fr))] gap-3">
+      {visible.map((card) => <article key={card.id} data-ready-bot={card.id} className="flex min-w-0 flex-col rounded-2xl border border-hairline/40 bg-card p-4 [overflow-wrap:anywhere]">
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3">
           <MausAvatar color={card.look.color} bodyId={card.look.mascotBody} state={card.look.mascotExpression ?? "idle"} size={40} animated={false} label={card.name} />
           <div className="min-w-0 flex-1">
-            <h4 className="truncate text-[14px] font-medium text-ink">{card.name}</h4>
-            <p className="truncate text-[12px] text-ink-secondary">{card.title} · {t(CATEGORY_KEYS[card.category])}</p>
+            <h4 className="text-[14px] font-medium text-ink">{card.name}</h4>
+            <p className="text-[12px] text-ink-secondary">{card.title} · {t(CATEGORY_KEYS[card.category])}</p>
           </div>
+        </div>
+        <p className="mt-3 text-[13px] leading-[1.45] text-ink-secondary">{card.description}</p>
+        <p className="mt-2 text-[12px] italic text-ink-tertiary">{t("readyBots.try", { prompt: card.try })}</p>
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-3">
+          <button type="button" data-ready-bot-details={card.id} onClick={() => showDetails(card)} aria-label={lx(`Xem thêm về ${card.name}`, `More about ${card.name}`)}
+            className="flex w-fit items-center gap-1 text-[12px] font-medium text-accent-text hover:underline focus-visible:outline-2 focus-visible:outline-accent">
+            <Info size={13} aria-hidden="true" />{lx("Xem thêm", "See more")}
+          </button>
           <button type="button" onClick={() => void use(card)} disabled={busy !== null} aria-label={lx(`Dùng mẫu ${card.name}, ${card.title}`, `Use template ${card.name}, ${card.title}`)}
             className="flex h-8 shrink-0 items-center gap-1 rounded-full bg-raised px-3 text-[13px] font-medium text-ink hover:bg-raised-hover disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-accent">
             {busy === card.id ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Plus size={14} aria-hidden="true" />}{lx("Dùng mẫu", "Use template")}
           </button>
         </div>
-        <p className="mt-3 text-[13px] leading-[1.45] text-ink-secondary">{card.description}</p>
-        <p className="mt-2 text-[12px] italic text-ink-tertiary">{t("readyBots.try", { prompt: card.try })}</p>
-        <button type="button" data-ready-bot-details={card.id} onClick={() => showDetails(card)} aria-label={lx(`Xem thêm về ${card.name}`, `More about ${card.name}`)}
-          className="mt-2 flex w-fit items-center gap-1 text-[12px] font-medium text-accent-text hover:underline focus-visible:outline-2 focus-visible:outline-accent">
-          <Info size={13} aria-hidden="true" />{lx("Xem thêm", "See more")}
-        </button>
-        {(card.apps.length > 0 || card.routines > 0) && <p className="mt-auto pt-2 text-[12px] text-ink-tertiary">
+        {(card.apps.length > 0 || card.routines > 0) && <p className="pt-2 text-[12px] text-ink-tertiary">
           {[card.apps.length > 0 && t("readyBots.worksWith", { apps: card.apps.map((app) => APP_LABELS[app] ?? app).join(", ") }),
             card.routines > 0 && t("readyBots.pausedRoutine")].filter(Boolean).join(" · ")}
         </p>}

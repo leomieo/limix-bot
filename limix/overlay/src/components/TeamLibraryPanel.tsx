@@ -11,10 +11,12 @@ import { api, useStore, type Bot, type Group } from "@/state/store";
 import { ArrowLeft, Check, Compass, ExternalLink, FolderOpen, Github, Loader2, RefreshCw, Search, Share2, UploadCloud, Users, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { TeamTemplateDetails } from "./TemplateDetails";
 import { catalogCopy, catalogMatches, type TeamCatalog, type TeamCatalogEntry } from "@/lib/team-catalog";
 
 import { TEAM_GLYPHS, TeamImportDetails } from "./TeamImportDetails";
 import { LimixBotGallery, refreshTemplateBots } from "./LimixBotGallery";
+import { LimixResizeHandles } from "./LimixResizeHandles";
 import { ShareTeamDialog } from "./ShareTeamDialog";
 import { OrgLibraryTab } from "./TeamLibraryPanelOrg";
 import { MAX_TEAM_BACKUP_BYTES } from "../../shared/team-backup";
@@ -128,6 +130,7 @@ export function TeamLibraryPanel({
   const [creating, setCreating] = useState(false);
   const [sharing, setSharing] = useState<string | null>(null);
   const [nestedDialog, setNestedDialog] = useState(false);
+  const [teamDetails, setTeamDetails] = useState<TeamCatalogEntry | null>(null);
   const [orgListing, setOrgListing] = useState<OrgLibraryListing | null>(null);
   const [orgBusy, setOrgBusy] = useState<string | null>(null);
   const [orgNotice, setOrgNotice] = useState("");
@@ -480,7 +483,7 @@ export function TeamLibraryPanel({
         aria-modal="true"
         aria-labelledby="team-library-title"
         tabIndex={-1}
-        className="animate-pop-in flex h-[min(780px,calc(100dvh-2rem))] w-full max-w-[1040px] flex-col overflow-hidden rounded-2xl border border-hairline/50 bg-panel shadow-2xl shadow-black/50 outline-none"
+        className="animate-pop-in relative flex h-[min(780px,calc(100dvh-2rem))] max-h-full w-[min(100%,1040px)] flex-col overflow-hidden rounded-2xl border border-hairline/50 bg-panel shadow-2xl shadow-black/50 outline-none"
       >
         <header className="flex items-start justify-between gap-4 px-6 pb-3 pt-6 sm:px-8 sm:pt-7">
           <div className="min-w-0">
@@ -499,7 +502,7 @@ export function TeamLibraryPanel({
                   <ArrowLeft size={18} />
                 </button>
               )}
-              <h2 id="team-library-title" className="truncate text-[22px] font-semibold tracking-[-0.01em] text-ink">
+              <h2 id="team-library-title" className="[overflow-wrap:anywhere] text-[22px] font-semibold tracking-[-0.01em] text-ink">
                 {pending ? pending.name : t("templates.title")}
               </h2>
             </div>
@@ -713,6 +716,7 @@ export function TeamLibraryPanel({
               )}
               {tab === "teams" && (
                 <div>
+                  {teamDetails && <TeamTemplateDetails entry={teamDetails} onClose={() => { setTeamDetails(null); setNestedDialog(false); }} onUse={() => { const entry = teamDetails; setTeamDetails(null); setNestedDialog(false); void loadLibraryTeam(entry); }} />}
                   {catalogLoading && (
                     <div className="flex items-center justify-center gap-2 py-24 text-[13px] text-ink-secondary">
                       <Loader2 size={16} className="animate-spin" /> {t("templates.loading")}
@@ -725,29 +729,32 @@ export function TeamLibraryPanel({
                     </div>
                   )}
                   {!catalogLoading && catalog && (
-                    <div className="grid grid-cols-1 gap-x-10 md:grid-cols-2">
+                    <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,360px),1fr))] gap-x-10">
                       {visibleTeams.map((entry, index) => {
                         const copy = catalogCopy(entry);
                         return (
-                        <article key={entry.slug} className="flex min-h-[104px] items-center gap-3 border-b border-hairline/35 px-1 py-4">
+                        <article key={entry.slug} className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 border-b border-hairline/35 px-1 py-4">
                           <TeamGlyph index={index} />
                           <div className="min-w-0 flex-1">
-                            <h3 className="truncate text-[14px] font-medium text-ink">{copy.name}</h3>
-                            <p className="mt-0.5 truncate text-[13px] text-ink-secondary">{copy.outcome ?? copy.summary}</p>
-                            <p className="mt-1 truncate text-[12px] text-ink-tertiary">
+                            <h3 className="[overflow-wrap:anywhere] text-[14px] font-medium text-ink">{copy.name}</h3>
+                            <p className="mt-0.5 [overflow-wrap:anywhere] text-[13px] text-ink-secondary">{copy.outcome ?? copy.summary}</p>
+                            <p className="mt-1 [overflow-wrap:anywhere] text-[12px] text-ink-tertiary">
                               {t("templates.botCount", { count: entry.members })} · {t("templates.playbookCount", { count: entry.skills.length })}
                               {entry.requires.apps.length > 0 && ` · ${entry.requires.apps.join(", ")}`}
                               {entry.setupMinutes && ` · ${t("templates.minutes", { count: entry.setupMinutes })}`}
                             </p>
                           </div>
-                          <button
-                            onClick={() => void loadLibraryTeam(entry)}
-                            disabled={busySlug !== null}
-                            className="flex min-w-[72px] items-center justify-center gap-1.5 rounded-full bg-raised px-3.5 py-2 text-[13px] text-ink hover:bg-raised-hover disabled:opacity-40"
-                          >
-                            {busySlug === entry.slug && <Loader2 size={13} className="animate-spin" />}
-                            {busySlug === entry.slug ? t("templates.loadingShort") : t("templates.load")}
-                          </button>
+                          <div className="col-span-2 flex flex-wrap justify-end gap-2">
+                            <button type="button" data-team-details={entry.slug} onClick={() => { setTeamDetails(entry); setNestedDialog(true); }} className="shrink-0 rounded-full px-2.5 py-2 text-[13px] text-accent-text hover:underline">{lx("Xem thêm", "See more")}</button>
+                            <button
+                              onClick={() => void loadLibraryTeam(entry)}
+                              disabled={busySlug !== null}
+                              className="flex min-w-[72px] items-center justify-center gap-1.5 rounded-full bg-raised px-3.5 py-2 text-[13px] text-ink hover:bg-raised-hover disabled:opacity-40"
+                            >
+                              {busySlug === entry.slug && <Loader2 size={13} className="animate-spin" />}
+                              {busySlug === entry.slug ? t("templates.loadingShort") : t("templates.load")}
+                            </button>
+                          </div>
                         </article>
                         );
                       })}
@@ -1002,6 +1009,7 @@ export function TeamLibraryPanel({
             </div>
           </>
         )}
+        <LimixResizeHandles storageKey="limix.templates.size" widthInset={48} heightInset={48} showGrip />
       </div>
       {sharing !== null && <ShareTeamDialog team={sharing} onClose={() => setSharing(null)} />}
     </div>,
