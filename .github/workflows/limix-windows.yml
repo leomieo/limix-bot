@@ -19,7 +19,7 @@ permissions:
 jobs:
   package:
     name: Windows installer
-    runs-on: windows-2022
+    runs-on: windows-latest
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -40,6 +40,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Verify Windows CUA Driver before packaging
+        run: pnpm build:cua:win
       - name: Verify channel replies and Cloud move menu
         run: node node_modules/vitest/vitest.mjs run src/components/MoveToMyCloud.dom.test.ts
       - name: Verify template mascot library

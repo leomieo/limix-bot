@@ -1,6 +1,6 @@
 // Stage the Windows CUA executable and native SDK outside ASAR.
 import { createHash } from "node:crypto";
-import { copyFile, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { existsSync, realpathSync } from "node:fs";
 import { execFile } from "node:child_process";
 import { dirname, join } from "node:path";
@@ -33,7 +33,10 @@ if (expectedVersion !== release.version) {
 }
 
 async function binaryVersion(candidate, verbose = false) {
-  if (!candidate || !existsSync(candidate)) return null;
+  if (!candidate || !existsSync(candidate)) {
+    if (verbose) console.error("CUA Driver executable is missing.");
+    return null;
+  }
   try {
     const { stdout, stderr } = await run(candidate, ["--version"], { timeout: 15_000, windowsHide: true });
     const version = `${stdout}\n${stderr}`.match(/cua-driver\s+([\d.]+)/)?.[1] ?? null;
@@ -66,13 +69,12 @@ async function officialBinary() {
   }
   const archive = join(cache, release.file);
   await writeFile(archive, bytes);
-  await run("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command",
-    "Expand-Archive -LiteralPath $env:OMB_CUA_ARCHIVE -DestinationPath $env:OMB_CUA_EXTRACT"], {
-    env: { ...process.env, OMB_CUA_ARCHIVE: archive, OMB_CUA_EXTRACT: cache },
+  await run("tar.exe", ["-xf", archive, "-C", cache], {
     timeout: 60_000,
     windowsHide: true,
   });
   if ((await binaryVersion(cachedBinary, true)) !== expectedVersion) {
+    console.error("CUA Driver release files:", (await readdir(cache)).join(", "));
     throw new Error(`downloaded CUA Driver does not report version ${expectedVersion}`);
   }
   return cachedBinary;
