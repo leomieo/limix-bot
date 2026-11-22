@@ -4,11 +4,13 @@ Limix Bot 0.3.97
 
 - Có thể kéo cạnh hoặc góc cửa sổ **Bản mẫu** để đổi kích thước. Ứng dụng ghi nhớ kích thước bạn chọn.
 - Danh sách mẫu bot và nhóm tự đổi số cột theo chiều rộng cửa sổ. Tên, vai trò và mô tả dài tự xuống dòng để đọc đầy đủ.
+- Thông báo khi nhà cung cấp AI yêu cầu giao thức Responses hoặc trả lỗi 503 hướng dẫn cách đổi kết nối trong ứng dụng.
 
 ## English
 
 - Drag an edge or corner of the **Templates** window to resize it. The app remembers your preferred size.
 - Bot and team templates adjust their column layout to fit the window. Long names, roles, and descriptions wrap so you can read them in full.
+- Errors from AI providers that require Responses or return HTTP 503 explain how to change the connection in the app.
 
 Limix Bot 0.3.96
 

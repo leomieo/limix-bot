@@ -32,12 +32,15 @@ if (expectedVersion !== release.version) {
   );
 }
 
-async function binaryVersion(candidate) {
+async function binaryVersion(candidate, verbose = false) {
   if (!candidate || !existsSync(candidate)) return null;
   try {
-    const { stdout } = await run(candidate, ["--version"], { timeout: 5000, windowsHide: true });
-    return stdout.match(/cua-driver\s+([\d.]+)/)?.[1] ?? null;
-  } catch {
+    const { stdout, stderr } = await run(candidate, ["--version"], { timeout: 15_000, windowsHide: true });
+    const version = `${stdout}\n${stderr}`.match(/cua-driver\s+([\d.]+)/)?.[1] ?? null;
+    if (verbose && !version) console.error("CUA Driver --version returned no recognizable version.");
+    return version;
+  } catch (error) {
+    if (verbose) console.error("CUA Driver --version failed", { code: error.code, signal: error.signal, killed: error.killed, stderr: error.stderr?.trim().slice(0, 300) });
     return null;
   }
 }
@@ -69,7 +72,7 @@ async function officialBinary() {
     timeout: 60_000,
     windowsHide: true,
   });
-  if ((await binaryVersion(cachedBinary)) !== expectedVersion) {
+  if ((await binaryVersion(cachedBinary, true)) !== expectedVersion) {
     throw new Error(`downloaded CUA Driver does not report version ${expectedVersion}`);
   }
   return cachedBinary;
@@ -99,7 +102,7 @@ if (process.env.CUA_DRIVER_PATH) {
   }
 }
 
-if ((await binaryVersion(binary)) !== expectedVersion) {
+if ((await binaryVersion(binary, true)) !== expectedVersion) {
   throw new Error(`CUA executable must match SDK ${expectedVersion}`);
 }
 const details = await stat(binary);
