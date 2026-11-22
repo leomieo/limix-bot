@@ -2660,6 +2660,8 @@
   "error.plain.connection": "Kết nối bị gián đoạn. Hãy thử lại.",
   "error.plain.timeout": "Quá trình này mất quá nhiều thời gian. Hãy thử lại.",
   "error.plain.clientNotAllowed": "Nhà cung cấp từ chối ứng dụng gửi yêu cầu. Nếu API này dùng được trong Codex, hãy thêm tại Cài đặt → AI → Codex qua API trực tiếp, sau đó chọn kết nối đó cho bot.",
+  "error.plain.responsesRequired": "Nhà cung cấp yêu cầu giao thức Responses. Vào Cài đặt → AI → Codex qua API trực tiếp, thêm kết nối rồi chọn kết nối đó cho bot.",
+  "error.plain.responsesUnavailable": "Nhà cung cấp AI tạm thời không xử lý được yêu cầu (503). Nếu thử lại vẫn lỗi, hãy chọn kết nối AI khác cho cuộc trò chuyện.",
   "error.plain.access": "Quyền truy cập bị từ chối. Hãy kiểm tra đăng nhập rồi thử lại.",
   "error.plain.permission": "Máy tính này không cho phép thực hiện điều đó. Hãy kiểm tra quyền của tệp hoặc thư mục rồi thử lại.",
   "error.plain.notFound": "Không tìm thấy mục đó. Có thể mục này đã bị gỡ bỏ.",

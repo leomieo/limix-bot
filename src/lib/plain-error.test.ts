@@ -22,6 +22,8 @@ describe("plainErrorLine", () => {
     ["HTTP 502 Bad Gateway", "Something went wrong on the other end. Try again."],
     ["upstream HTTP 403: 仅支持编程客户端 Codex, Claude Code (client_not_allowed)", "The provider rejected the app making this request. If this API works in Codex, add it in Settings → AI → Codex direct API, then select that connection for your bot."],
     ['unexpected status 403 Forbidden: {"error":{"code":"client_not_allowed"}}', "The provider rejected the app making this request. If this API works in Codex, add it in Settings → AI → Codex direct API, then select that connection for your bot."],
+    ["upstream HTTP 400: 本站已停用 /v1/chat/completions 接口，请改用 /v1/responses (chat_completions_disabled)", "The provider requires the Responses API. Add a connection in Settings → AI → Codex direct API, then select it for your bot."],
+    ["unexpected status 503 Service Unavailable: Service temporarily unavailable, url: https://api.example.test/v1/responses, request id: fixture", "The AI provider couldn't process this request (503). If retrying fails, choose another AI connection for this conversation."],
     ["upstream HTTP 503 Service Unavailable", "The service is busy right now. Try again in a moment."],
     ["EACCES: permission denied, open '/Users/sam/notes.md'", "This computer didn't allow that. Check the file or folder permissions, then try again."],
     ["upstream HTTP 401: {\"error\":{\"message\":\"invalid x-api-key\"}}", "Access was refused. Check the sign-in, then try again."],

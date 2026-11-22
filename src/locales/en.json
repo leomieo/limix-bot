@@ -2661,6 +2661,8 @@
   "error.plain.connection": "The connection dropped. Try again.",
   "error.plain.timeout": "That took too long. Try again.",
   "error.plain.clientNotAllowed": "The provider rejected the app making this request. If this API works in Codex, add it in Settings → AI → Codex direct API, then select that connection for your bot.",
+  "error.plain.responsesRequired": "The provider requires the Responses API. Add a connection in Settings → AI → Codex direct API, then select it for your bot.",
+  "error.plain.responsesUnavailable": "The AI provider couldn't process this request (503). If retrying fails, choose another AI connection for this conversation.",
   "error.plain.access": "Access was refused. Check the sign-in, then try again.",
   "error.plain.permission": "This computer didn't allow that. Check the file or folder permissions, then try again.",
   "error.plain.notFound": "That couldn't be found. It may have been removed.",

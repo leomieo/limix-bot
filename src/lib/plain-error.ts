@@ -42,6 +42,8 @@ const STATUS_PREFIX = /^(?:[\w-]+ ){0,2}(?:API Error|HTTP|status(?: code)?)[:\s]
 const REASON_PHRASE = /^(?:[A-Z][a-z]+ ?){1,4}\.?$/;
 
 export function plainErrorLine(raw: string): string | undefined {
+  if (/\bchat_completions_disabled\b/i.test(raw)) return t("error.plain.responsesRequired");
+  if (/\b(?:HTTP\s+|status\s+)503\b/i.test(raw) && /\/v1\/responses\b/i.test(raw)) return t("error.plain.responsesUnavailable");
   if (/\b(?:HTTP(?:\/\d(?:\.\d)?)?|status(?: code)?)[:\s]+403\b/i.test(raw) && /\bclient_not_allowed\b/i.test(raw)) return t("error.plain.clientNotAllowed");
   const tooLargeFor = requestTooLargeModel(raw);
   if (tooLargeFor) return t("chat.error.requestTooLarge", { model: tooLargeFor });
