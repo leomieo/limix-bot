@@ -1,3 +1,4 @@
+import { SharedFolderPicker } from "./SharedFolderPicker";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
@@ -173,6 +174,7 @@ export function TeamSettingsDialog({ team, onClose }: { team: string; onClose: (
                   <input aria-label={t("teamSettings.workspace")} disabled={running} className="mt-1 w-full rounded-lg border border-hairline bg-inset p-2 font-mono" value={folder ?? commonFolder} onChange={event => setFolder(event.target.value)} />
                 </label>
                 {window.ogb?.pickFolder && <button type="button" disabled={running} className="ui-button" onClick={() => void chooseFolder()}>{t("room.folder.choose")}</button>}
+                <SharedFolderPicker value={folder ?? commonFolder} disabled={running} onChoose={setFolder} />
                 {folderError && <p role="alert" className="text-danger">{folderError}</p>}
                 <ul className="space-y-2">{bots.map(bot => <li key={bot.id} className="rounded-lg bg-inset p-2 text-[13px]"><strong>{bot.name}</strong><div className="break-all font-mono text-ink-secondary">{bot.cwd || t("botPanel.folder.private")}</div></li>)}</ul>
               </div>

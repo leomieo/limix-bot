@@ -1,3 +1,13 @@
+Limix Bot 0.3.98
+
+## Tiếng Việt
+
+- Trong My Cloud, chọn thư mục đã chia sẻ làm thư mục làm việc của bot, phòng chat hoặc nhóm bot. Trên máy chứa tệp, mở mục chia sẻ ngay từ phần thư mục làm việc.
+
+## English
+
+- In My Cloud, choose a shared folder as the workspace for a bot, room, or team. On the computer holding the files, open folder sharing directly from workspace settings.
+
 Limix Bot 0.3.97
 
 ## Tiếng Việt

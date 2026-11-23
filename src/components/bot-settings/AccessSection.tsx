@@ -1,3 +1,4 @@
+import { SharedFolderPicker } from "../SharedFolderPicker";
 import { useEffect, useState } from "react";
 import { lx } from "@/lib/limix-text";
 import { browserUnavailableReason } from "@/lib/feature-flags";
@@ -122,6 +123,7 @@ export function WorkingFolder({ bot }: { bot: Bot }) {
           {t("botAccess.folder.pinned", { path: pinned ? shortPath(pinned, home) : t("botAccess.folder.home") })}
         </div>
       )}
+      <SharedFolderPicker value={bot.cwd} disabled={saving} onChoose={save} />
       <VmWorkingFolderAccess kind="bots" id={bot.id} folder={bot.cwd} />
     </div>
   );

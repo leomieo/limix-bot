@@ -1,3 +1,4 @@
+import { SharedFolderPicker } from "../SharedFolderPicker";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { FileText, FolderOpen, Plus, Server } from "lucide-react";
 
@@ -559,6 +560,7 @@ export function FolderPage({ bot }: PageContext) {
           {error && <NoteRow tone="warn">{error}</NoteRow>}
         </Card>
       )}
+      <SharedFolderPicker value={bot.cwd} disabled={saving} onChoose={save} />
       <VmWorkingFolderAccess kind="bots" id={bot.id} folder={bot.cwd} />
     </>
   );

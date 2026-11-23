@@ -1,3 +1,4 @@
+import { SharedFolderPicker } from "./SharedFolderPicker";
 import { useState } from "react";
 import { Folder, FolderOpen } from "lucide-react";
 import { api, type Group } from "@/state/store";
@@ -89,6 +90,7 @@ export function RoomWorkingFolder({ group, heading = true }: { group: Group; hea
         </form>
       )}
       {error && <div className="mt-2 text-[12px] text-danger">{error}</div>}
+      {!locked && <SharedFolderPicker value={group.cwd} disabled={saving} onChoose={save} />}
       <VmWorkingFolderAccess kind="groups" id={group.id} folder={locked && shownCwd !== group.cwd ? undefined : group.cwd}
         members={group.memberIds.join(",")} />
     </div>
