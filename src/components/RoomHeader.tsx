@@ -236,6 +236,8 @@ export function RoomHeader({
             <Search size={18} />
           </button>
           <ExportTranscriptMenu
+            threadId={group.threadId}
+            hasMore={group.hasMore}
             title={group.name}
             messages={group.messages}
             isGroup

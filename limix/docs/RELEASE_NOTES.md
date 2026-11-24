@@ -1,3 +1,15 @@
+Limix Bot 0.3.108
+
+## Tiếng Việt
+
+- Sao chép hoặc tải toàn bộ lịch sử của cuộc trò chuyện đang mở, kể cả các tin nhắn cũ chưa cuộn tới. Khi trò chuyện có nhiều nhánh, bản xuất giữ đúng nhánh bạn đang xem.
+- Khi sao chép bảng dữ liệu sang bảng tính, nội dung nhiều dòng, dấu ngoặc kép và ký tự tab vẫn nằm trong đúng ô.
+
+## English
+
+- Copy or download the full conversation, including older messages you haven't scrolled to. Exports follow the branch you selected.
+- Copy data into a spreadsheet while preserving multiline cells, quotation marks and tabs.
+
 Limix Bot 0.3.107
 
 ## Tiếng Việt

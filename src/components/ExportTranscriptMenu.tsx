@@ -7,13 +7,15 @@ import { t } from "@/lib/i18n";
 import {
   copyTranscriptToClipboard,
   downloadMarkdownTranscript,
-  formatTranscriptMarkdown,
   slugifyTranscriptFilename,
 } from "@/lib/export-transcript";
-import type { Message } from "@/state/store";
+import { conversationTranscript } from "@/lib/conversation-transcript";
+import { useStore, type Message } from "@/state/store";
 import { MENU_HEADING, MENU_SHEET } from "./menu-recipe";
 
 export interface ExportTranscriptMenuProps {
+  threadId: string;
+  hasMore?: boolean;
   title: string;
   messages: readonly Message[];
   botName?: string;
@@ -22,12 +24,15 @@ export interface ExportTranscriptMenuProps {
 }
 
 export function ExportTranscriptMenu({
+  threadId,
+  hasMore,
   title,
   messages,
   botName,
   isGroup = false,
   className,
 }: ExportTranscriptMenuProps) {
+  const { dispatch } = useStore();
   const [open, setOpen] = useState(false);
   const motion = useMenuMotion(open);
   const [copied, setCopied] = useState(false);
@@ -66,7 +71,9 @@ export function ExportTranscriptMenu({
 
   const handleCopy = async () => {
     if (!hasMessages) return;
-    const markdown = formatTranscriptMarkdown({
+    const markdown = conversationTranscript({
+      threadId,
+      hasMore,
       title,
       messages,
       botName,
@@ -81,17 +88,23 @@ export function ExportTranscriptMenu({
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!hasMessages) return;
-    const markdown = formatTranscriptMarkdown({
+    const markdown = conversationTranscript({
+      threadId,
+      hasMore,
       title,
       messages,
       botName,
       isGroup,
     });
     const filename = slugifyTranscriptFilename(title);
-    downloadMarkdownTranscript(filename, markdown);
-    setOpen(false);
+    try {
+      downloadMarkdownTranscript(filename, await markdown);
+      setOpen(false);
+    } catch (error) {
+      dispatch({ type: "error", message: error instanceof Error ? error.message : String(error) });
+    }
   };
 
   return (

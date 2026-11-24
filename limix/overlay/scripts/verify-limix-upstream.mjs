@@ -1,6 +1,8 @@
 import { spawnSync } from "node:child_process";
 
 const files = [
+  "src/components/conversation-export.test.ts", "src/lib/copy-text-async.test.ts",
+  "src/components/data/data-format.test.ts", "src/lib/export-transcript.test.ts",
   "server/attachments.test.ts", "server/turn-images.test.ts",
   "server/drivers/acp/copilot.test.ts", "server/drivers/acp/opencode-go.test.ts",
   "server/runtime-coordinator.test.ts", "server/plan-usage.test.ts", "server/limit-resets.test.ts",

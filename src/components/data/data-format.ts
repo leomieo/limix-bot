@@ -40,7 +40,7 @@ export function rowObjects(columns: DataColumn[], rows: Cell[][]): Array<Record<
 }
 
 export function tsv(columns: string[], rows: Cell[][]): string {
-  const clean = (text: string) => text.replace(/[\t\r\n]+/g, " ");
+  const clean = (text: string) => /["\t\r\n]/.test(text) ? '"' + text.replaceAll('"', '""') + '"' : text;
   return [columns.map(clean).join("\t"), ...rows.map((row) => row.map((cell) => clean(cellText(cell))).join("\t"))].join("\n");
 }
 
