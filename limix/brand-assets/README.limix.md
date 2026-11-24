@@ -35,7 +35,7 @@ Limix Bot là không gian làm việc với AI cho cá nhân và đội nhóm. M
 | Tính năng | Bạn có thể làm gì |
 | --- | --- |
 | **Bot và nhóm mẫu** | Bắt đầu với 30 mẫu bot phòng ban và 10 nhóm theo ngành, rồi điều chỉnh mô hình, chỉ dẫn và kỹ năng theo nhu cầu. |
-| **Chăm sóc khách hàng** | Phân loại yêu cầu, tra cứu danh mục đã kết nối và chuẩn bị bàn giao cho nhân viên. |
+| **Chăm sóc khách hàng** | Giữ ngữ cảnh riêng cho từng cuộc trò chuyện, phân loại yêu cầu, tra cứu danh mục và chuẩn bị bàn giao cho nhân viên. |
 | **Sản xuất video** | Lên kịch bản phân cảnh, soạn phụ đề và tạo dự án Hypit có thể chỉnh sửa với **Limix AI Video Creator**. |
 | **Kỹ năng và tự động hóa** | Thêm kỹ năng theo công việc, xem công cụ cần dùng và đặt lịch cho tác vụ lặp lại. |
 | **Kênh chat** | Kết nối bot với Telegram, Zalo, Discord, Facebook Page hoặc Messenger tùy cấu hình. |
@@ -83,7 +83,7 @@ Limix Bot is an AI workspace for individuals and teams. Each bot can have its ow
 | Feature | What you can do |
 | --- | --- |
 | **Bot and team templates** | Start with 30 departmental bot templates and 10 industry teams, then tailor their models, instructions and skills. |
-| **Customer support** | Triage requests, look up information in a connected catalog and prepare handoffs to staff. |
+| **Customer support** | Keep context separate for each customer conversation, triage requests, look up catalog information and prepare handoffs to staff. |
 | **Video production** | Storyboard short videos, draft captions and prepare editable Hypit projects with **Limix AI Video Creator**. |
 | **Skills and automation** | Add skills for each role, review the tools they need, and schedule recurring tasks. |
 | **Chat channels** | Connect a bot to Telegram, Zalo, Discord, Facebook Page or Messenger, depending on your setup. |

@@ -35,6 +35,8 @@ Mỗi bot có thể dùng mô hình, chỉ dẫn và kỹ năng riêng. Bạn c�
 
 Trong phần **Kênh chat** của bot, bạn có thể kết nối Telegram, Zalo, Discord, Facebook Page hoặc Messenger tùy theo cấu hình. Các kênh hỗ trợ xác minh danh tính cho phép liên kết chủ bot và thêm quản trị viên. Bot dùng quyền khách khi phản hồi trong nhóm.
 
+**Siêu bot CSKH giữ ngữ cảnh riêng theo cuộc trò chuyện của từng khách.** Khi khách nhắn tiếp trong cùng cuộc trò chuyện, bot có thể dựa vào các tin nhắn trước đó. Tin nhắn của khách khác và ghi chú riêng của bot không được đưa vào ngữ cảnh trả lời khách.
+
 Bạn có thể thử bot trong Limix trước, sau đó kết nối một kênh và kiểm tra bằng tin nhắn riêng. Cách này giúp bạn xem bot trả lời ra sao trước khi mở quyền cho khách.
 
 <a id="vi-operations"></a>
@@ -93,6 +95,8 @@ Each bot can have its own model, instructions and skills. Create a single bot fo
 ### Talk to bots on familiar channels
 
 Under **Chat channels** in the bot settings, connect Telegram, Zalo, Discord, Facebook Page or Messenger, depending on your setup. Channels that support identity verification let you link the bot owner and add administrators. Bots answer in groups with guest permissions.
+
+**The customer support bot keeps context separate for each customer conversation.** When a customer follows up in the same chat, the bot can refer to earlier messages in that chat. Other customers’ messages and the bot’s private notes are excluded from guest replies.
 
 You can test the bot in Limix first, then connect a channel and send a private message. This lets you see how the bot replies before opening access to guests.
 

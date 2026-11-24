@@ -6,7 +6,7 @@ import { INDUSTRY_CARE_SKILL } from "../shared/industry-templates.ts";
 
 it("mounts the operator toolkit and supplies only the current bot's public facts to an outside conversation", async () => {
   const reply = "Đã nhận yêu cầu tra cứu sản phẩm.";
-  const fixture = await launchVerificationServer({ FAKE_CLAUDE_VERSION: "2.1.284", FAKE_CLAUDE_TOOL_CALLS: "[]", FAKE_CLAUDE_REPLIES: JSON.stringify([reply]) });
+  const fixture = await launchVerificationServer({ FAKE_CLAUDE_VERSION: "2.1.284", FAKE_CLAUDE_TOOL_CALLS: "[]", FAKE_CLAUDE_REPLIES: JSON.stringify([reply, reply, reply]) });
   const url = fixture.info.url;
   const api = async <T = unknown>(method: string, path: string, body?: unknown): Promise<T> => {
     const response = await fetch(url + path, { method, headers: { origin: url, "content-type": "application/json" }, body: JSON.stringify(body) });
@@ -58,11 +58,36 @@ it("mounts the operator toolkit and supplies only the current bot's public facts
     const bridge = `/api/bots/${bot.id}/messenger`;
     await api("POST", bridge, { token: JSON.stringify({ uid: "100045", name: "Fixture" }), access: "everyone" });
     await expect.poll(async () => (await api<{ bots: string[] }>("GET", "/api/messenger/bots")).bots).toContain(bot.id);
-    await api("POST", bridge + "/inbox", { messages: [{ id: "fixture:care:1", chatId: "fixture-customer", name: "Lan", text: "Giá bán SKU A/B?" }] });
-    const { items } = await api<{ items: { chatId: string; text: string; id: number }[] }>("GET", bridge + "/outbox");
-    expect(items).toContainEqual(expect.objectContaining({ chatId: "fixture-customer", text: reply }));
-    await api("POST", bridge + "/sent", { id: items[0]!.id });
+    const exchange = async (id: string, chatId: string, text: string) => {
+      await api("POST", bridge + "/inbox", { messages: [{ id, chatId, name: "Lan", text }] });
+      const { items } = await api<{ items: { chatId: string; text: string; id: number }[] }>("GET", bridge + "/outbox");
+      expect(items).toMatchObject([{ chatId, text: reply }]);
+      await api("POST", bridge + "/sent", { id: items[0]!.id });
+    };
+    const channelChats = (): Record<string, string> =>
+      JSON.parse(readFileSync(join(fixture.info.dataDir, "limix-messenger.json"), "utf8")).bots[bot.id].chats;
+    await exchange("fixture:care:1", "customer-a", "Giá bán SKU A/B? care-fixture-customer-ALPHA");
+    const firstThread = channelChats()["customer-a"];
+    expect(firstThread).toBeTruthy();
     expect(JSON.stringify(dump().prompt)).toContain("fixture approved price list");
+
+    await exchange("fixture:care:2", "customer-b", "Xin tư vấn care-fixture-customer-BETA");
+    const secondThread = channelChats()["customer-b"];
+    expect(secondThread).toBeTruthy();
+    expect(secondThread).not.toBe(firstThread);
+    expect(JSON.stringify(dump())).not.toContain("care-fixture-customer-ALPHA");
+
+    await exchange("fixture:care:3", "customer-a", "Tôi hỏi thêm về sản phẩm.");
+    expect(channelChats()["customer-a"]).toBe(firstThread);
+    expect(JSON.stringify(dump())).not.toContain("care-fixture-customer-BETA");
+    for (const [threadId, included, excluded] of [
+      [firstThread, "care-fixture-customer-ALPHA", "care-fixture-customer-BETA"],
+      [secondThread, "care-fixture-customer-BETA", "care-fixture-customer-ALPHA"],
+    ] as const) {
+      const { messages } = await api<{ messages: unknown[] }>("GET", `/api/threads/${threadId}/messages?limit=100`);
+      expect(JSON.stringify(messages)).toContain(included);
+      expect(JSON.stringify(messages)).not.toContain(excluded);
+    }
   } finally {
     await fixture.close();
   }
