@@ -21,6 +21,9 @@ it("installs a customer care bot and its scoped tools on an isolated host with p
     expect(videoBot.soul).toContain("video-workflow");
     const videoStore = await (await fetch(fixture.info.url + "/api/limix/skill-store/" + videoBot.id)).json() as { skills: unknown[] };
     expect(videoStore.skills).toContainEqual(expect.objectContaining({ name: "video-workflow", added: true }));
+    const scan = await (await fetch(fixture.info.url + "/api/limix/skill-requirements")).json() as { requirements: Array<{ skill: string; name: string; optional?: boolean }> };
+    const tools = scan.requirements.filter(row => row.skill === "Limix AI Video Creator" && row.optional).map(row => row.name);
+    expect(tools).toEqual(expect.arrayContaining(["hypit", "node", "ffmpeg", "ffprobe", "rea-video", "remotion", "@remotion/cli", "vieneu", "whisperx"]));
     const selection = { industryTemplate: SUPER_SUPPORT_BOT.id };
     expect((await request("/api/bots", selection, "POST", { "x-openmausbot-companion": "1" })).status).toBe(403);
     expect((await request("/api/bots", { industryTemplate: "missing-template" })).status).toBe(400);

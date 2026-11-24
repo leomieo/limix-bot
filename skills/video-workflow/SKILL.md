@@ -1,6 +1,11 @@
 ---
 name: video-workflow
 description: Analyze a reference video, author an editable Hypit workflow and produce verified short-form variants.
+metadata:
+  optionalRequirements:
+    bins: [hypit, node, ffmpeg, ffprobe, rea-video]
+    npm: [remotion, "@remotion/cli"]
+    python: [vieneu, whisperx]
 ---
 
 # Short-form video production
@@ -16,6 +21,15 @@ Start from a brief or a reference the user can use. Record the intended audience
 3. To start from still artwork, copy the files in assets/starter to the project directory, place the supplied image at hero.png and update the image dimensions. Author the composition in main.svml, appearance in style.svs and the delivery target in build.svrun. Reuse accepted media across variants.
 4. If the operator has installed Hypit, inspect its version, run `hypit check main.svml` and `hypit plan build.svrun` in the project. Summarize the targets, missing inputs, remote operations and expected charges if known. A working source or plan is a valid deliverable when rendering is unavailable.
 5. With a prepared runtime and an approved plan, run `hypit build build.svrun --follow`; read the actual build ID and export with `hypit get BUILD_ID --output final.video --to output/final.mp4`. Retain the sources, plan, output and differences between versions.
+
+## Tools by task
+
+Drafts, shot lists and caption scripts can be written directly. For external tools, direct the user to Tools for skills → Skill requirements. Use only tools already available or explicitly selected for the project.
+
+- Hypit CLI and Node.js run the SVML workflow. Hypit Studio is available through the same CLI. Find the official CLI and Studio setup in https://github.com/hypit-ai/hypit/blob/main/docs/quickstart/run.md. Choose a local runtime for rendering, or configure a provider explicitly for generated assets.
+- FFmpeg and ffprobe process and inspect rendered media. REA Video decomposes a reference into shots.
+- Remotion and its CLI render code-driven motion graphics when that workflow is requested.
+- VieNeu-TTS (Python distribution `vieneu`) synthesizes Vietnamese narration. WhisperX aligns spoken words to subtitle timings.
 
 ## Safety Boundaries
 

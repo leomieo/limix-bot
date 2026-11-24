@@ -13,6 +13,22 @@ interface SkillScan { error?: string; skillCount?: number; scannedAt?: string; r
 interface ToolsState { supported: boolean; items: ToolItem[]; skillScan?: SkillScan | null }
 type Bridge = { state(): Promise<ToolsState>; scan?(): Promise<ToolsState>; install(ids: string[]): Promise<ToolsState>; installRequirements?(ids: string[], project: string): Promise<ToolsState>; shouldAsk(): Promise<boolean>; markAsked(): Promise<void> };
 
+function videoToolPurpose(name: string) {
+  const copy: Record<string, [string, string]> = {
+    hypit: ["Kiểm tra và dựng dự án SVML. Mở Hypit Studio để xem trước và chỉnh sửa.", "Validate and render SVML projects. Open Hypit Studio to preview and edit."],
+    node: ["Chạy Hypit CLI và các công cụ JavaScript.", "Run Hypit CLI and JavaScript tools."],
+    ffmpeg: ["Xử lý hình ảnh, âm thanh và xuất video.", "Process audio and video and encode the final cut."],
+    ffprobe: ["Kiểm tra kích thước, thời lượng và các luồng âm thanh của tệp xuất.", "Check the dimensions, duration and audio streams of the export."],
+    "rea-video": ["Phân tích video tham khảo theo từng cảnh.", "Break a reference video down shot by shot."],
+    remotion: ["Tạo đồ họa chuyển động bằng mã.", "Create motion graphics with code."],
+    "@remotion/cli": ["Dựng và xuất đồ họa Remotion từ dòng lệnh.", "Render Remotion graphics from the command line."],
+    vieneu: ["VieNeu-TTS tạo giọng đọc tiếng Việt.", "Synthesize Vietnamese narration with VieNeu-TTS."],
+    whisperx: ["Nhận dạng lời nói và căn thời gian phụ đề theo từng từ.", "Transcribe speech and align captions to individual words."],
+  };
+  const entry = copy[name];
+  return entry && lx(...entry);
+}
+
 export const limixTools = (): Bridge | undefined => (window as unknown as { ogb?: { limixTools?: Bridge } }).ogb?.limixTools;
 
 const button = "inline-flex items-center gap-1.5 rounded-lg border border-hairline/60 bg-raised px-3 py-1.5 text-[13px] text-ink hover:bg-raised-hover disabled:opacity-50";
@@ -104,7 +120,7 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
   const switchTab = (next: "tools" | "requirements") => { setTab(next); if (scrollRef.current) scrollRef.current.scrollTop = 0; };
   const missing = state?.items.filter((item) => !item.installed) ?? [];
   const missingRecommended = missing.filter((item) => item.recommended);
-  const missingPackages = (state?.skillScan?.requirements ?? []).filter((row) => row.id && row.installable && row.status === "missing");
+  const missingPackages = (state?.skillScan?.requirements ?? []).filter((row) => row.id && row.installable && !row.optional && row.status === "missing");
   const prepareInstall = async (rows: SkillRequirement[], baseIds: string[] = []) => {
     setError(null);
     try {
@@ -219,6 +235,10 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
                 <span className={req.status === "missing" ? "shrink-0 text-danger" : "shrink-0 text-ink-secondary"}>{req.status === "found" ? lx("Đã tìm thấy", "Found") : req.status === "missing" ? lx("Chưa tìm thấy", "Not found") : lx("Cần kiểm tra", "Needs review")}</span>
               </div>
               <p className="mt-1 break-words text-ink-secondary" title={req.directory}>{req.skill} · {req.kind}{req.version && ` · ${req.version}`}</p>
+              {req.skill === "Limix AI Video Creator" && <div className="mt-1 text-ink-secondary">
+                {videoToolPurpose(req.name)}
+                {req.name === "hypit" && <a className="ms-2 underline" href="https://github.com/hypit-ai/hypit" target="_blank" rel="noreferrer">{lx("Hướng dẫn cài Hypit", "Hypit setup guide")}</a>}
+              </div>}
               {req.status === "review" && <p className="mt-1 text-ink-tertiary">{lx("Chưa xác minh tự động: có thể là hướng dẫn, yêu cầu cấu hình hoặc giới hạn phiên bản. Xem nguồn bên dưới.", "Not automatically verified: this may be setup guidance, configuration or a version constraint. See the source below.")}</p>}
               {req.job?.status === "working" ? <p className="mt-1 flex items-center gap-1 text-ink-secondary"><Loader2 size={12} className="animate-spin" />{req.job.step ?? lx("Đang cài", "Installing")}</p> : req.installable && req.id && req.status === "missing" && limixTools()?.installRequirements ? <button type="button" className={`${button} mt-2`} disabled={busy || scanning || !state.supported} onClick={() => void prepareInstall([req])}><Download size={12} />{req.job?.status === "error" ? lx("Thử lại", "Retry") : lx("Cài", "Install")}</button> : null}
               {req.job?.status === "error" && <p role="alert" className="mt-1 text-danger">{req.job.message}</p>}

@@ -42,7 +42,7 @@ it("scans again on demand and shows requirements, evidence and incomplete checks
   }
 });
 
-it("reviews missing packages and the destination before starting the batch installer", async () => {
+it("installs optional video packages individually after reviewing the destination", async () => {
   setLocale("en");
   const snapshot = { supported: true, items: [], skillScan: { skillCount: 1, requirements: [
     { id: "req-remotion", installable: true, packages: ["remotion", "@remotion/cli"], optional: true, skill: "video", directory: "/skills/video", kind: "npm", name: "remotion", status: "missing", evidence: "Code rendering" },
@@ -57,8 +57,9 @@ it("reviews missing packages and the destination before starting the batch insta
   const button = (text: string) => [...document.querySelectorAll("button")].find((node) => node.textContent === text)!;
   try {
     flushSync(() => root.render(createElement(LimixToolsDialog, { onClose: vi.fn() })));
-    await vi.waitFor(() => expect(button("Install all missing requirements")).toBeDefined());
-    flushSync(() => button("Install all missing requirements").click());
+    await vi.waitFor(() => expect(button("Install")).toBeDefined());
+    expect(button("Install all missing requirements")).toBeUndefined();
+    flushSync(() => button("Install").click());
     await vi.waitFor(() => expect(document.body.textContent).toContain("No folder selected"));
     expect(installRequirements).not.toHaveBeenCalled();
     expect(button("Install packages").disabled).toBe(true);

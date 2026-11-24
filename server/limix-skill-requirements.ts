@@ -28,6 +28,7 @@ const object = (value: unknown): Record<string, unknown> => value && typeof valu
 
 export function extractSkillRequirements(text: string): SkillRequirement[] {
   const out: SkillRequirement[] = [];
+  const optionalKeys = new Set<string>();
   const add = (kind: Kind, value: unknown, evidence: string) => {
     if (typeof value !== "string" || !value.trim()) return;
     const raw = kind === "review" ? value.trim() : value.trim().replace(/[.,;:]+$/, "");
@@ -57,6 +58,11 @@ export function extractSkillRequirements(text: string): SkillRequirement[] {
         if (typeof block === "string" || Array.isArray(block)) read(block, "review", "SKILL.md metadata");
         for (const [key, kind] of Object.entries({ bins: "bin", tools: "bin", npm: "npm", packages: "npm", python: "python", pip: "python", env: "env", mcp: "mcp" }) as Array<[string, Kind]>) read(req[key], kind, `metadata.${key}`);
         for (const key of Object.keys(req)) if (!["bins", "tools", "npm", "packages", "python", "pip", "env", "mcp"].includes(key)) add("review", `${key}: ${JSON.stringify(req[key])}`, "SKILL.md metadata");
+      }
+      for (const [key, kind] of [["bins", "bin"], ["npm", "npm"], ["python", "python"]] as const) {
+        const start = out.length;
+        read(object(metadata.optionalRequirements)[key], kind, `metadata.optionalRequirements.${key}`);
+        for (const req of out.slice(start)) optionalKeys.add(`${req.kind}:${req.name}`);
       }
       if (fields.compatibility) add("review", fields.compatibility, "compatibility");
     } catch {
@@ -98,7 +104,7 @@ export function extractSkillRequirements(text: string): SkillRequirement[] {
     else if (/\b(?:requires?|prerequisites?|dependencies|needs? to be installed)\b|yêu cầu|cần (?:cài|có)/i.test(line)) add("review", line.trim(), "Requirements mentioned in skill instructions");
   }
   const unique = new Map(out.map((req) => [`${req.kind}:${req.name}:${req.required ?? ""}`, req]));
-  return [...unique.values()];
+  return [...unique.values()].map(req => optionalKeys.has(`${req.kind}:${req.name}`) ? { ...req, optional: true } : req);
 }
 
 export function findSkillBinary(name: string, dirs: string[], platform = process.platform): string | null {
