@@ -84,6 +84,15 @@ edit(".gitignore", lambda s: s if "/limix-runtime/" in s else s.rstrip("\n") + "
 edit(".gitignore", lambda s: s if "limix/__pycache__/" in s else s.rstrip("\n") + "\nlimix/__pycache__/\n")
 
 # 2b. Build on GitHub: only Limix Bot's own Windows workflow runs in the fork.
+if (ROOT / ".github/CODEOWNERS").is_file():
+    edit(".github/CODEOWNERS", lambda s: re.sub(r"(?<!\S)@milind-soni(?=\s|$)", f"@{OWNER}", s))
+
+for path, upstream in ((".github/FUNDING.yml", "github: milind-soni"), (".well-known/funding-manifest-urls", "https://mausbot.com/funding.json")):
+    metadata = ROOT / path
+    if metadata.is_file() and metadata.read_text(encoding="utf-8").strip() == upstream:
+        metadata.unlink()
+        changed.append(f"{path} (removed)")
+
 wf = ROOT / ".github/workflows"
 if wf.exists():
     for f in wf.glob("*.yml"):
