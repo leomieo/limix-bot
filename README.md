@@ -35,6 +35,15 @@ Limix Bot giúp bạn tạo đội bot AI để trò chuyện, giao việc và t
 - Cho bot làm việc trong trình duyệt hoặc trên máy tính riêng, tùy cấu hình. Ghép nối điện thoại để truy cập khi máy chủ bot đang chạy và có mạng.
 - Khi My Cloud mất kết nối, chọn **Dùng máy tính này** để làm việc với các bot có sẵn trên máy. Đồng bộ lịch sử trò chuyện khi kết nối lại.
 
+## Tài liệu
+
+| Bạn muốn làm gì? | Hướng dẫn |
+| --- | --- |
+| Cài ứng dụng, chọn AI và tạo bot đầu tiên | [Bắt đầu với Limix Bot](docs/README.md#tieng-viet) |
+| Dùng bot mẫu, nhóm bot và kỹ năng | [Bot, nhóm bot và kỹ năng](docs/README.md#vi-bots) |
+| Kết nối kênh chat hoặc xử lý lỗi | [Kênh chat và xử lý lỗi](docs/README.md#vi-channels) |
+| Vận hành máy chủ hoặc Fleet trên Linux | [Triển khai máy chủ](docs/README.md#vi-operations) |
+
 ## Yêu cầu và lưu ý
 
 - Bộ cài đang ở giai đoạn beta. Hãy sao lưu dữ liệu trước khi chuyển máy và chỉ tải từ trang phát hành chính thức.
@@ -74,6 +83,15 @@ Limix Bot lets you build a team of AI bots to chat, delegate work and automate r
 - Install skills from the Limix library and review the permissions and tools they need before enabling them.
 - Let your bots work in a browser or a dedicated computer, depending on your setup. Pair your phone for access while the bot’s host is running and online.
 - If My Cloud is unavailable, select **Use this computer** to keep working with bots stored locally. Sync chat history when the connection returns.
+
+## Documentation
+
+| I want to… | Guide |
+| --- | --- |
+| Install the app, choose AI and create my first bot | [Getting started](docs/README.md#english) |
+| Use bot templates, teams and skills | [Bots, teams and skills](docs/README.md#en-bots) |
+| Connect a chat channel or diagnose a problem | [Chat channels and troubleshooting](docs/README.md#en-channels) |
+| Run a server or manage Linux Fleet | [Server deployment](docs/README.md#en-operations) |
 
 ## Requirements and notes
 
