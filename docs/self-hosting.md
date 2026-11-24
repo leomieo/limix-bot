@@ -511,8 +511,8 @@ Providers added with `opencode auth login` work everywhere.
 
 ## Many client workspaces on one server
 
-`openmausbot fleet` runs one workspace per client on a single Linux server,
-each as its own OS user, its own `openmausbot@<name>` service on its own
+`limixbot fleet` runs one workspace per client on a single Linux server,
+each as its own OS user, its own `limixbot@<name>.service` service on its own
 loopback ports, its own data folder, brand, sign-in list and provider key,
 reached at `<name>.<your domain>` through the system Caddy. Bots of one
 workspace cannot read another's files or reach its API: the data lives in a
@@ -524,7 +524,7 @@ Once, as root, with the package installed permanently and a wildcard DNS
 record (`*.example.com`) pointing at the server:
 
 ```sh
-openmausbot fleet init --domain example.com
+limixbot fleet init --domain example.com
 ```
 
 That writes the template unit, the fence and its unit, the workspace folders,
@@ -532,14 +532,14 @@ and adds `import /etc/caddy/omb.d/*.caddy` to `/etc/caddy/Caddyfile`. Then per
 client:
 
 ```sh
-openmausbot fleet create acme --admin owner@acme.test --member @acme.test \
+limixbot fleet create acme --admin owner@acme.test --member @acme.test \
   --brand /root/acme-brand.json --anthropic-key-file /root/acme-anthropic.key \
   --cap 50 --memory 1G
-openmausbot fleet users acme add bob@acme.test --chat-only
-openmausbot fleet list
-openmausbot fleet suspend acme      # 503 page, service stopped; resume undoes it
-openmausbot fleet upgrade           # new release, then every running workspace restarted in turn
-openmausbot fleet delete acme --yes # add --keep-data to keep the home folder
+limixbot fleet users acme add bob@acme.test --chat-only
+limixbot fleet list
+limixbot fleet suspend acme      # 503 page, service stopped; resume undoes it
+limixbot fleet upgrade           # new release, then every running workspace restarted in turn
+limixbot fleet delete acme --yes # add --keep-data to keep the home folder
 ```
 
 Give `init` `--operator USER` (the Unix user your own workspace runs as; the
@@ -555,6 +555,20 @@ in with an emailed code. `OMB_LICENSE_KEY` in the environment (or
 `--license-key`) is carried into every workspace so a partner's white-label
 key covers them all. Not root? Every command prints the exact steps to run as
 root instead, and `--dry-run` always prints.
+
+### Updating an existing fleet to the new service name
+
+Pause fleet administration and schedule downtime for each running workspace.
+Run `limixbot fleet init --domain <existing-domain> --yes` to write
+`limixbot@.service` and preserve the registry. For each workspace, copy any
+instance-specific systemd overrides from the old unit's `.service.d` directory
+to the corresponding `limixbot@<name>.service.d` directory. Reload systemd
+after copying overrides. Disable and stop the previous unit before enabling
+and starting the new unit for a running workspace. Leave a suspended
+workspace stopped and disabled. Check each running workspace's
+`/api/health` endpoint before moving to the next. Keep the prior unit and
+overrides until the migration is verified. If a workspace fails to start,
+stop and disable its new unit before restoring the prior unit.
 
 ## Signing the engines in without a terminal
 

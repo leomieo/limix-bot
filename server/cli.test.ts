@@ -138,7 +138,7 @@ describe("openmausbot command line", () => {
       const guided = browserSignInLines(local, "ABCD-EFGH-JKLM", Date.now() + 60_000);
       expect(guided).toContain(local);
       expect(guided).toContain("ABCD-EFGH-JKLM");
-      expect(guided).toContain("openmausbot pair");
+      expect(guided).toContain("limixbot pair");
     });
   });
 
@@ -180,7 +180,7 @@ describe("openmausbot command line", () => {
       expect(out).toContain('server "cli test"');
       expect(out).toMatch(/Reach {4}✗ https:\/\/mini\.example doesn't reach this server/);
       expect(out, "not a terminal: no code goes into a log").not.toMatch(/Pairing code {3}[A-Z2-9]{4}-/);
-      expect(out).toContain("Get a pairing code: openmausbot pair");
+      expect(out).toContain("Get a pairing code: limixbot pair");
       expect(out).not.toContain("Ctrl+C");
       const paired = spawnSync(process.execPath, ["--experimental-strip-types", join(SERVER_DIR, "limixbot.ts"), "pair", "--port", String(port)], { cwd: join(SERVER_DIR, ".."), env: { PATH: process.env.PATH ?? "", HOME: home }, encoding: "utf8" });
       expect(paired.stdout).toMatch(/Pairing code {3}[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4} {3}works once, until .+ · everything/);
@@ -281,7 +281,7 @@ describe("terminal onboarding commands", () => {
     expect(setup.runSetup).toHaveBeenCalledWith({ dataDir: options.dataDir, port: options.port });
     expect(setup.isSetupComplete).not.toHaveBeenCalled();
     expect(serve).not.toHaveBeenCalled();
-    expect(output.log).toHaveBeenCalledWith(expect.stringContaining("Start with: openmausbot"));
+    expect(output.log).toHaveBeenCalledWith(expect.stringContaining("Start with: limixbot"));
     expect(phoneSetup).toHaveBeenCalledOnce();
     expect(setup.saveCliStartup).toHaveBeenCalledWith(options.dataDir, { access: "local" });
   });

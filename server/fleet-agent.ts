@@ -4,7 +4,7 @@ import { appendFileSync, chmodSync, existsSync, mkdirSync, rmSync } from "node:f
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { dirname } from "node:path";
 import { defaultFleetDeps, executePlan, loadRegistry, markProvisioningFailed, planFleetAction, type FleetDeps, type FleetInput } from "./fleet-cli.ts";
-import { assertSlug, fleetLayout, fleetUser, openRouterModelIds, workspaceDataDir, type FleetLayout, type FleetWorkspace } from "./fleet.ts";
+import { assertSlug, fleetLayout, fleetUser, fleetWorkspaceUnit, openRouterModelIds, workspaceDataDir, type FleetLayout, type FleetWorkspace } from "./fleet.ts";
 
 export interface FleetAgentOptions {
   socketPath: string;
@@ -142,7 +142,7 @@ export function createFleetAgent(options: FleetAgentOptions): Server {
         const workspaces: (FleetWorkspaceView | Pick<FleetWorkspaceView, "slug" | "live">)[] = [];
         for (const workspace of Object.values(registry.workspaces).sort((a, b) => a.slug.localeCompare(b.slug))) {
           const live = workspace.status === "running" || workspace.status === "suspended"
-            ? (await deps.run(["systemctl", "is-active", `openmausbot@${workspace.slug}.service`])).output.trim() || "unknown"
+            ? (await deps.run(["systemctl", "is-active", fleetWorkspaceUnit(workspace.slug)])).output.trim() || "unknown"
             : workspace.status;
           workspaces.push(statusOnly ? { slug: workspace.slug, live } : { ...workspace, live, usage: workspaceUsage(layout, workspace.slug, now(), deps) });
         }

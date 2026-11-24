@@ -1,3 +1,13 @@
+Limix Bot 0.3.107
+
+## Tiếng Việt
+
+- Dịch vụ Fleet cho từng workspace trên Linux dùng tên `limixbot@<workspace>.service`. Máy chủ đang chạy Fleet có thể chuyển từng workspace theo [hướng dẫn nâng cấp](https://github.com/leomieo/limix-bot/blob/main/docs/self-hosting.md#updating-an-existing-fleet-to-the-new-service-name).
+
+## English
+
+- Linux Fleet workspace services now use `limixbot@<workspace>.service`. For existing Fleet servers, follow the [workspace migration guide](https://github.com/leomieo/limix-bot/blob/main/docs/self-hosting.md#updating-an-existing-fleet-to-the-new-service-name).
+
 Limix Bot 0.3.106
 
 ## Tiếng Việt
