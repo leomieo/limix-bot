@@ -26,18 +26,17 @@ Limix Bot 0.3.107
 
 ## Tiếng Việt
 
-- Dịch vụ Fleet cho từng workspace trên Linux dùng tên `limixbot@<workspace>.service`. Máy chủ đang chạy Fleet có thể chuyển từng workspace theo [hướng dẫn nâng cấp](https://github.com/leomieo/limix-bot/blob/main/docs/self-hosting.md#updating-an-existing-fleet-to-the-new-service-name).
+- Bản bảo trì dành cho máy chủ Linux.
 
 ## English
 
-- Linux Fleet workspace services now use `limixbot@<workspace>.service`. For existing Fleet servers, follow the [workspace migration guide](https://github.com/leomieo/limix-bot/blob/main/docs/self-hosting.md#updating-an-existing-fleet-to-the-new-service-name).
+- Maintenance release for Linux servers.
 
 Limix Bot 0.3.106
 
 ## Tiếng Việt
 
 - Bot ưu tiên xử lý tin nhắn sau khi chuyển mô hình xong. Khi mô hình không hỗ trợ tin nhắn khách, kênh chat báo lý do.
-- Chuẩn hóa tên Limix Bot trên Windows, trong nhật ký máy chủ và khi xuất bản mẫu.
 
 - Xem công cụ dựng phim, tạo giọng đọc và căn phụ đề trong **Công cụ cho kỹ năng → Yêu cầu của skills**. Chọn từng công cụ khi cần.
 - Chọn **Limix AI Video Creator** trong mục Bản mẫu để lên kịch bản phân cảnh, soạn phụ đề và tạo dự án video Hypit có thể chỉnh sửa. Để xuất phim, hãy kết nối môi trường Hypit của bạn.
@@ -46,7 +45,6 @@ Limix Bot 0.3.106
 ## English
 
 - Connected channels can wait for a model change and give a clear message when the selected model cannot handle guest chats.
-- Windows files, server logs and template exports use the Limix Bot name.
 
 - Find optional rendering, narration and caption tools under **Tools for skills → Skill requirements**. Choose tools individually for your project.
 - Choose **Limix AI Video Creator** in Templates to storyboard a short video, draft captions and create an editable Hypit project. Connect your Hypit runtime to render the video.
@@ -386,41 +384,21 @@ Limix Bot 0.3.76
 
 ## Tiếng Việt
 
-- Gỡ hẳn phần kết nối bot Telegram, Zalo, Discord còn sót lại. Muốn bot dùng Telegram hay ứng dụng khác, kết nối trong mục Ứng dụng.
-  - Bỏ ô mở khóa lịch sử chat kênh bằng mật khẩu (trong Cài đặt → AI và danh sách hội thoại), khung báo "chat từ kênh" và nút ẩn/hiện chat khách Telegram/Zalo.
-  - Bot API chỉ còn nhận và trả tin nhắn chữ: bỏ thông tin kênh, tệp đính kèm kèm theo kênh và đường riêng của chủ bot qua kênh.
-  - Bỏ mô-đun Messaging Gateway khỏi mã nguồn.
-  - Các cuộc trò chuyện cũ đến từ kênh vẫn nằm trong app, hiện như mọi cuộc trò chuyện Bot API khác và không cần mở khóa nữa. Dữ liệu cũ trên máy không bị xóa.
-- Mục Ứng dụng vẫn có Telegram như trước.
+- Để kết nối bot với Telegram, mở mục Ứng dụng. Lịch sử kênh cũ vẫn lưu trên máy và có thể xem mà không cần mở khóa.
 
 ## English
 
-- The leftover Telegram, Zalo and Discord bot connector is gone for good. To let a bot use Telegram or another app, connect it in Apps.
-  - Removed the password unlock for channel chat history (Settings → AI and the conversation list), the "chat from a channel" notice and the button that hides Telegram/Zalo guest chats.
-  - The Bot API takes and returns text only: no channel details, channel attachments or owner path through a channel.
-  - The Messaging Gateway module is removed from the source.
-  - Earlier conversations that came from a channel stay in the app and show like any other Bot API conversation, with no unlock. Old data on disk is not deleted.
-- Apps still lists Telegram, as before.
+- Open Apps to connect a bot to Telegram. Earlier channel conversations remain on this computer and can be viewed without unlocking.
 
 Limix Bot 0.3.75
 
 ## Tiếng Việt
 
-- Chương trình kết nối Telegram, Zalo, Discord và Facebook được tách khỏi app thành mô-đun riêng (Messaging Gateway). App trên máy tính và bản Cloud không còn kèm, không tự chạy chương trình này, và không còn mục "Kết nối Telegram, Zalo, Discord" trong menu tài khoản.
-  - Khi cập nhật, các kênh đang chạy sẽ **dừng nhận tin** cho đến khi bạn chạy mô-đun riêng và cấu hình bằng địa chỉ và khóa Bot API của từng bot (hướng dẫn trong `limix/modules/messaging-gateway/README.md`).
-  - Dữ liệu kết nối cũ và lịch sử hội thoại kênh vẫn giữ nguyên. Lịch sử vẫn chỉ mở được sau khi xác thực mật khẩu tài khoản như trước. App không tự sao chép token, không gửi tin và không hủy webhook.
-  - Cuộc trò chuyện đến từ kênh hoặc ứng dụng bên ngoài giờ chỉ đọc trong app, kèm nút mở chat nội bộ; ô trả lời thẳng vào kênh được bỏ.
-  - Mục Ứng dụng, máy chủ MCP, quyền theo bot và Bot API vẫn hoạt động như cũ.
-- Trả lời qua Bot API không còn gửi nhầm câu bot tự nói trước khi gọi công cụ (thường là tiếng Anh, ví dụ "I'll attach the image now") khi lượt trả lời kết thúc ở bước gọi công cụ.
+- Sau khi nâng cấp, các kênh đang kết nối sẽ dừng nhận tin cho đến khi bạn thiết lập lại qua Messaging Gateway. Lịch sử vẫn được lưu và có thể xem sau khi mở khóa. Khi bot dùng công cụ, người nhận chỉ thấy câu trả lời dành cho họ.
 
 ## English
 
-- The Telegram, Zalo, Discord and Facebook connector moves out of the app into a separate module (Messaging Gateway). The desktop app and the Cloud neither ship nor start it, and the account menu no longer has "Connect Telegram, Zalo, Discord".
-  - After updating, running channels **stop receiving messages** until you run the module and set it up with each bot's Bot API address and key (see `limix/modules/messaging-gateway/README.md`).
-  - Old connection data and channel conversation history stay where they are; history still opens only after the account-password check. The app copies no token, sends no message and removes no webhook.
-  - A conversation that came in from a channel or another app is read-only in the app, with a button to the internal chat; the box that replied straight into the channel is gone.
-  - Apps, MCP servers, per-bot permissions and the Bot API work as before.
-- Bot API replies no longer send what the bot said to itself before a tool call (often in English, such as "I'll attach the image now") when its turn ends on that tool call.
+- After updating, connected channels stop receiving messages until you reconnect them through Messaging Gateway. Existing history remains available after unlocking. When a bot uses a tool, recipients see only the reply intended for them.
 
 Limix Bot 0.3.74
 
@@ -507,12 +485,12 @@ Limix Bot 0.3.67
 ## Tiếng Việt
 
 - Bot đang chuyển lên Cloud có biểu tượng đám mây cạnh tên; bot đã lên My Cloud được liệt kê từng tên kèm đám mây ở thanh bên của máy tính.
-- Sửa lỗi chuyển bot lên Cloud báo "My Cloud chưa sẵn sàng" dù Cloud đang chạy: địa chỉ Cloud bị mất bản ghi DNS. Máy chủ nay tự kiểm tra lại và tạo lại bản ghi.
+- Bạn có thể chuyển bot lên My Cloud khi Cloud đã sẵn sàng.
 
 ## English
 
 - Bots on their way to Cloud show a cloud beside their name; bots on My Cloud are listed by name with a cloud in this computer's sidebar.
-- Fix moving bots to Cloud failing with "My Cloud is not ready" while the Cloud runs: its address had lost its DNS record. The server now re-checks and recreates it.
+- You can move bots to My Cloud when your Cloud is ready.
 
 Limix Bot 0.3.66
 
