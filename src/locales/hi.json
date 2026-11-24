@@ -1,4 +1,13 @@
 {
+  "readyBots.bot.video-workflow.title": "लघु वीडियो निर्माता",
+  "readyBots.bot.video-workflow.description": "विचार से उपशीर्षक और अलग-अलग संस्करणों सहित संपादन योग्य Hypit वीडियो प्रोजेक्ट बनाएँ।",
+  "readyBots.bot.video-workflow.try": "उत्पाद के 30 सेकंड के वीडियो का स्टोरीबोर्ड बनाएँ।",
+  "readyBots.bot.video-workflow.try2": "इस क्लिप के लिए दो शुरुआत लिखें।",
+  "channels.admin.invite": "व्यवस्थापक जोड़ें",
+  "channels.admin.remove": "हटाएँ",
+  "channels.admin.removeNamed": "{name} ({id}) को हटाएँ",
+  "channels.admin.explain": "व्यवस्थापकों के पास निजी चैट में मालिक के और समूह में अतिथि के अधिकार होते हैं।",
+  "channels.admin.account": "{name} ({id})",
   "helperIntro.templates.support": "ग्राहक सहायता बॉट देखें",
   "helperIntro.templates.team": "अपने उद्योग के लिए टीम खोजें",
   "helperIntro.templates.department": "विभाग के लिए बॉट चुनें",

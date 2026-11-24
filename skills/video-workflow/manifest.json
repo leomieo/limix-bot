@@ -1,0 +1,19 @@
+{
+  "id": "video-workflow",
+  "name": "Kino",
+  "version": "1.0.0",
+  "description": "Analyze footage, author editable video compositions and verify rendered variants.",
+  "defaultEnabled": false,
+  "triggerTerms": [
+    "video",
+    "Hypit",
+    "SVML",
+    "dựng phim",
+    "kịch bản",
+    "bảng cảnh",
+    "storyboard",
+    "render",
+    "phụ đề"
+  ],
+  "requiredCapabilities": []
+}

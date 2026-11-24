@@ -1,4 +1,13 @@
 {
+  "readyBots.bot.video-workflow.title": "短影音製作人",
+  "readyBots.bot.video-workflow.description": "將構想轉為可編輯的 Hypit 影片專案，附有字幕和多種版本。",
+  "readyBots.bot.video-workflow.try": "為一支30秒的產品影片撰寫分鏡。",
+  "readyBots.bot.video-workflow.try2": "為這段影片寫兩種開場。",
+  "channels.admin.invite": "新增管理員",
+  "channels.admin.remove": "移除",
+  "channels.admin.removeNamed": "移除 {name}（{id}）",
+  "channels.admin.explain": "管理員在私聊時擁有擁有者權限，在群組中則使用訪客權限。",
+  "channels.admin.account": "{name} ({id})",
   "helperIntro.templates.support": "預覽客服機器人",
   "helperIntro.templates.team": "尋找適合本產業的團隊",
   "helperIntro.templates.department": "選擇部門機器人",

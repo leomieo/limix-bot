@@ -132,3 +132,28 @@ it("splits a long reply at paragraph and word boundaries to fit Telegram", () =>
   expect(parts.every((part) => part.length <= 4096)).toBe(true);
   expect(parts.join(" ").replace(/\s+/g, " ")).toBe(long.trim().replace(/\s+/g, " "));
 });
+
+it("grants separate private conversations to multiple administrators and revokes one independently", async () => {
+  const { tg, asks, route } = setup();
+  const path = "/api/bots/b1/telegram";
+  await route("POST", path, { token: TOKEN });
+  for (const id of [11, 12, 13]) {
+    const { code } = (await route("POST", path + "/link")).body;
+    tg.say(id, `/link ${code}`);
+    await until(() => tg.sent.some(m => m.chat_id === id && m.text.startsWith("Đã liên kết")));
+    tg.say(id, "first");
+    await until(() => asks.length === id - 10);
+  }
+  expect(asks.map(a => [a.owner, a.threadId])).toEqual([[true, undefined], [true, undefined], [true, undefined]]);
+  expect((await route("GET", path)).body.admins.map((a: { id: string }) => a.id)).toEqual(["12", "13"]);
+  expect((await route("POST", path + "/remove-admin", { id: "12" }, ["read"])).status).toBe(403);
+  expect((await route("POST", path + "/remove-admin", { id: "12" })).status).toBe(200);
+  await route("POST", path, { access: "everyone" });
+  tg.say(12, "revoked");
+  await until(() => asks.length === 4);
+  tg.say(13, "still here");
+  await until(() => asks.length === 5);
+  expect(asks[3]).toMatchObject({ owner: false });
+  expect(asks[3]?.threadId).toBeUndefined();
+  expect(asks[4]).toMatchObject({ owner: true, threadId: "t3" });
+});

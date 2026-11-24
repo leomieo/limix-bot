@@ -38,6 +38,7 @@ export async function createConfiguredBot(
     method: "POST", body: JSON.stringify({ name: profile.name, title: profile.title,
       description: profile.description, ...chosenAi, section: profile.section,
       useDefaults: false, ...(visibility !== undefined ? { visibility } : {}), ...(reportsTo ? { reportsTo } : {}),
+      ...(!preset && draft.role === "video-workflow" ? { videoTemplate: true } : {}),
       ...(industry ? { industryTemplate: industry.id, templateLocale: activeLocale() } : {}),
       ...(Object.hasOwn(template.profile, "toolScope") ? { settings: { toolScope } } : {}),
       ...(preset ? { preset: preset.id } : {}) }),

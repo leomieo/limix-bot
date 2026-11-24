@@ -1,0 +1,4 @@
+<?svml using="@hypit/recipe@1"?>
+<sheet version="1">
+  film.cover { background: #121a28; }
+</sheet>

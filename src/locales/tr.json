@@ -1,4 +1,13 @@
 {
+  "readyBots.bot.video-workflow.title": "Kısa video yapımcısı",
+  "readyBots.bot.video-workflow.description": "Bir fikri altyazılar ve alternatif kurgular içeren düzenlenebilir bir Hypit video projesine dönüştürür.",
+  "readyBots.bot.video-workflow.try": "30 saniyelik ürün videosu için sahne planı hazırla.",
+  "readyBots.bot.video-workflow.try2": "Bu klip için iki açılış yaz.",
+  "channels.admin.invite": "Yönetici ekle",
+  "channels.admin.remove": "Kaldır",
+  "channels.admin.removeNamed": "{name} ({id}) kullanıcısını kaldır",
+  "channels.admin.explain": "Yöneticiler özel sohbette sahip, gruplarda misafir yetkilerine sahiptir.",
+  "channels.admin.account": "{name} ({id})",
   "helperIntro.templates.support": "Müşteri hizmetleri botunu incele",
   "helperIntro.templates.team": "Sektörüme uygun ekip bul",
   "helperIntro.templates.department": "Departman botu seç",

@@ -1,4 +1,13 @@
 {
+  "readyBots.bot.video-workflow.title": "Продюсер коротких відео",
+  "readyBots.bot.video-workflow.description": "Створює за описом редагований відеопроєкт Hypit із субтитрами й варіантами монтажу.",
+  "readyBots.bot.video-workflow.try": "Підготуй розкадрування 30-секундного відео про товар.",
+  "readyBots.bot.video-workflow.try2": "Напиши два варіанти початку цього ролика.",
+  "channels.admin.invite": "Додати адміністратора",
+  "channels.admin.remove": "Видалити",
+  "channels.admin.removeNamed": "Видалити {name} ({id})",
+  "channels.admin.explain": "Адміністратори мають права власника в особистому чаті та права гостя в групах.",
+  "channels.admin.account": "{name} ({id})",
   "helperIntro.templates.support": "Переглянути бота служби підтримки",
   "helperIntro.templates.team": "Знайти команду для моєї галузі",
   "helperIntro.templates.department": "Вибрати бота для відділу",

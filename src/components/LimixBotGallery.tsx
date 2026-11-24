@@ -60,7 +60,7 @@ function builtInCard(bot: ReadyBot): Card {
 
 export function templateCards(bots: Omit<Card, "builtIn">[]): Card[] {
   const general = bots.length
-    ? bots.filter((bot) => !industryTemplate(bot.id)).map((bot) => ({ ...bot, builtIn: false }))
+    ? [builtInCard(readyBot("video-workflow")!), ...bots.filter((bot) => bot.id !== "video-workflow" && !industryTemplate(bot.id)).map((bot) => ({ ...bot, builtIn: false }))]
     : READY_BOTS.map(builtInCard);
   return [...INDUSTRY_BOTS.map(builtInCard), ...general];
 }

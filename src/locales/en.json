@@ -1,4 +1,13 @@
 {
+  "readyBots.bot.video-workflow.title": "Short-form video producer",
+  "readyBots.bot.video-workflow.description": "Turn a brief into an editable Hypit video project with captions and variants.",
+  "readyBots.bot.video-workflow.try": "Storyboard a 30-second product video.",
+  "readyBots.bot.video-workflow.try2": "Write two openings for this clip.",
+  "channels.admin.invite": "Add administrator",
+  "channels.admin.remove": "Remove",
+  "channels.admin.removeNamed": "Remove {name} ({id})",
+  "channels.admin.explain": "Administrators have owner permissions in private chats and guest access in groups.",
+  "channels.admin.account": "{name} ({id})",
   "chat.channel.title": "Connected-channel conversation",
   "chat.channel.readOnly": "Messages in this conversation come from a connected channel. Configure your bot in its separate internal chat.",
   "chat.channel.openInternal": "Open internal chat",

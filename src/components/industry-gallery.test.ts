@@ -44,6 +44,6 @@ describe("industry bot gallery", () => {
     const online = templateCards([{ ...local, name: "Network copy" }, remote]);
     expect(online.filter((card) => card.id === local.id)).toEqual([local]);
     expect(online.find((card) => card.id === remote.id)).toMatchObject({ builtIn: false });
-    expect(online.filter((card) => card.builtIn)).toHaveLength(INDUSTRY_BOTS.length);
+    expect(online.filter((card) => card.builtIn)).toHaveLength(INDUSTRY_BOTS.length + 1);
   });
 });

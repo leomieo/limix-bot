@@ -1,4 +1,13 @@
 {
+  "readyBots.bot.video-workflow.title": "ショート動画制作者",
+  "readyBots.bot.video-workflow.description": "アイデアから字幕とバリエーションを備えた編集可能な Hypit 動画プロジェクトを作成します。",
+  "readyBots.bot.video-workflow.try": "30秒の商品動画の絵コンテを作って。",
+  "readyBots.bot.video-workflow.try2": "このクリップの冒頭を2案考えて。",
+  "channels.admin.invite": "管理者を追加",
+  "channels.admin.remove": "削除",
+  "channels.admin.removeNamed": "{name}（{id}）を削除",
+  "channels.admin.explain": "管理者は個別チャットでは所有者権限、グループではゲスト権限を持ちます。",
+  "channels.admin.account": "{name} ({id})",
   "helperIntro.templates.support": "カスタマーサポートボットを見る",
   "helperIntro.templates.team": "業種に合うチームを探す",
   "helperIntro.templates.department": "部門別ボットを選ぶ",

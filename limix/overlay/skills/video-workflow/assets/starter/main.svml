@@ -1,0 +1,24 @@
+<?svml using="@hypit/markup@1"?>
+<svml>
+  <import as="space" from="@hypit/spatial@1"/>
+  <import as="clockwork" from="@hypit/timeline-author@1"/>
+  <import as="asset" from="@hypit/media@1"/>
+  <import as="shots" from="@hypit/visual-track@1"/>
+  <import as="movie" from="@hypit/film@1"/>
+  <import as="encode" from="@hypit/html-video@1"/>
+  <import as="palette" source="./style.svs"/>
+
+  <space:Canvas id="portrait" width="540" height="960"/>
+  <space:Extent id="art-size" width="540" height="960"/>
+  <space:Frame id="stage" within={portrait.bounds} left="6%" top="6%" right="94%" bottom="94%"/>
+  <clockwork:Clock id="rate" frame-rate="24"/>
+  <clockwork:Timeline id="cut" clock={rate} end="3s"/>
+  <asset:Image id="hero" src="./hero.png"/>
+  <shots:Track id="picture" timeline={cut.timeline}>
+    <shots:Clip id="cover" image={hero} extent={art-size} during={cut.window} frame={stage} z="10" fit="contain"/>
+  </shots:Track>
+  <movie:Film id="portrait-cut" canvas={portrait.canvas} timeline={cut.timeline} appearance={palette.film.cover}>
+    <movie:Track source={picture.visual}/>
+  </movie:Film>
+  <encode:Video id="final" composition={portrait-cut.composition} timeline={cut.timeline}/>
+</svml>

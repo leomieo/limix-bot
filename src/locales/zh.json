@@ -1,4 +1,13 @@
 {
+  "readyBots.bot.video-workflow.title": "短视频制作人",
+  "readyBots.bot.video-workflow.description": "将创意转为可编辑的 Hypit 视频项目，配有字幕和多个版本。",
+  "readyBots.bot.video-workflow.try": "为一个30秒的产品视频写分镜。",
+  "readyBots.bot.video-workflow.try2": "为这段视频写两种开场。",
+  "channels.admin.invite": "添加管理员",
+  "channels.admin.remove": "移除",
+  "channels.admin.removeNamed": "移除 {name}（{id}）",
+  "channels.admin.explain": "管理员在私聊中拥有所有者权限，在群聊中拥有访客权限。",
+  "channels.admin.account": "{name} ({id})",
   "helperIntro.templates.support": "预览客服机器人",
   "helperIntro.templates.team": "查找适合本行业的团队",
   "helperIntro.templates.department": "选择部门机器人",

@@ -1,4 +1,13 @@
 {
+  "readyBots.bot.video-workflow.title": "Nhà sản xuất video ngắn",
+  "readyBots.bot.video-workflow.description": "Biến ý tưởng thành dự án video Hypit có thể chỉnh sửa, kèm phụ đề và các phiên bản khác nhau.",
+  "readyBots.bot.video-workflow.try": "Lên kịch bản phân cảnh cho video sản phẩm dài 30 giây.",
+  "readyBots.bot.video-workflow.try2": "Viết hai cách mở đầu cho đoạn phim này.",
+  "channels.admin.invite": "Thêm quản trị viên",
+  "channels.admin.remove": "Gỡ quyền",
+  "channels.admin.removeNamed": "Gỡ quyền của {name} ({id})",
+  "channels.admin.explain": "Quản trị viên có quyền như chủ bot khi nhắn riêng. Trong nhóm, họ dùng quyền khách.",
+  "channels.admin.account": "{name} ({id})",
   "server.peerResend.failed": "Không thể gửi lại yêu cầu cho AI dự phòng. Chi tiết: {detail}",
   "chat.channel.title": "Cuộc trò chuyện từ kênh kết nối",
   "chat.channel.readOnly": "Tin nhắn trong cuộc trò chuyện này đến từ kênh đã kết nối. Hãy cấu hình bot trong cuộc trò chuyện nội bộ riêng.",

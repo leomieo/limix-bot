@@ -1,0 +1,122 @@
+{
+  "server/routes/bots-create.ts": [
+    {
+      "before": "import type { WireBot } from \"../../shared/wire.ts\";\nimport { industryBotSettings, industryTemplate } from \"../../shared/industry-templates.ts\";\nimport { enableIndustryCare } from \"../industry-care.ts\";\nimport { freshLook } from \"../bot-look.ts\";\n",
+      "after": "import type { WireBot } from \"../../shared/wire.ts\";\nimport { industryBotSettings, industryTemplate } from \"../../shared/industry-templates.ts\";\nimport { VIDEO_WORKFLOW } from \"../../shared/ready-bots.ts\";\nimport { limixBundledSwitch } from \"../limix-skill-store.ts\";\nimport { enableIndustryCare } from \"../industry-care.ts\";\nimport { freshLook } from \"../bot-look.ts\";\n"
+    },
+    {
+      "before": "      const industry = typeof body.industryTemplate === \"string\" ? industryTemplate(body.industryTemplate, typeof body.templateLocale === \"string\" ? body.templateLocale : \"en\") : undefined;\n      if (body.industryTemplate !== undefined && !industry) return json(res, 400, { error: \"Unknown built-in industry template\" });\n      if (industry && body.preset !== undefined) return json(res, 400, { error: \"Choose one bot template\" });\n      if (industry && auth.kind === \"session\" && !auth.scopes.includes(\"admin\")) {\n",
+      "after": "      const industry = typeof body.industryTemplate === \"string\" ? industryTemplate(body.industryTemplate, typeof body.templateLocale === \"string\" ? body.templateLocale : \"en\") : undefined;\n      if (body.industryTemplate !== undefined && !industry) return json(res, 400, { error: \"Unknown built-in industry template\" });\n      const video = body.videoTemplate === true;\n      if (video && (industry || body.preset !== undefined)) return json(res, 400, { error: \"Choose one bot template\" });\n      if (video && auth.kind === \"session\" && !auth.scopes.includes(\"admin\")) return json(res, 403, { error: \"Installing a video template requires the admin scope\" });\n      if (industry && body.preset !== undefined) return json(res, 400, { error: \"Choose one bot template\" });\n      if (industry && auth.kind === \"session\" && !auth.scopes.includes(\"admin\")) {\n"
+    },
+    {
+      "before": "      } : body);\n      const settings = template.profile;\n      if (auth.kind === \"session\" && !auth.scopes.includes(\"admin\")) {\n        const field = clientBotPatchViolation(settings);\n",
+      "after": "      } : body);\n      const settings = template.profile;\n      if (video) settings.soul = VIDEO_WORKFLOW.soul;\n      if (auth.kind === \"session\" && !auth.scopes.includes(\"admin\")) {\n        const field = clientBotPatchViolation(settings);\n"
+    },
+    {
+      "before": "          if (ownersRoutines) cloudRoutineAuthors?.wrote(created.id, ownersRoutines);\n        }\n        if (industry) enableIndustryCare(bot.id, industry.id);\n      } catch (error) {\n",
+      "after": "          if (ownersRoutines) cloudRoutineAuthors?.wrote(created.id, ownersRoutines);\n        }\n        if (video && limixBundledSwitch(bot.id, VIDEO_WORKFLOW.id, true)?.status !== 200) throw new Error(\"Could not install the video workflow skill\");\n        if (industry) enableIndustryCare(bot.id, industry.id);\n      } catch (error) {\n"
+    }
+  ],
+  "src/lib/create-configured-bot.ts": [
+    {
+      "before": "      description: profile.description, ...chosenAi, section: profile.section,\n      useDefaults: false, ...(visibility !== undefined ? { visibility } : {}), ...(reportsTo ? { reportsTo } : {}),\n      ...(industry ? { industryTemplate: industry.id, templateLocale: activeLocale() } : {}),\n      ...(Object.hasOwn(template.profile, \"toolScope\") ? { settings: { toolScope } } : {}),\n",
+      "after": "      description: profile.description, ...chosenAi, section: profile.section,\n      useDefaults: false, ...(visibility !== undefined ? { visibility } : {}), ...(reportsTo ? { reportsTo } : {}),\n      ...(!preset && draft.role === \"video-workflow\" ? { videoTemplate: true } : {}),\n      ...(industry ? { industryTemplate: industry.id, templateLocale: activeLocale() } : {}),\n      ...(Object.hasOwn(template.profile, \"toolScope\") ? { settings: { toolScope } } : {}),\n"
+    }
+  ],
+  "src/locales/de.json": [
+    {
+      "before": "{\n  \"helperIntro.templates.support\": \"Kundenservice-Bot ansehen\",\n  \"helperIntro.templates.team\": \"Team für meine Branche finden\",\n",
+      "after": "{\n  \"readyBots.bot.video-workflow.title\": \"Produzent für Kurzvideos\",\n  \"readyBots.bot.video-workflow.description\": \"Erstellt bearbeitbare Hypit-Videoprojekte mit Untertiteln und Varianten.\",\n  \"readyBots.bot.video-workflow.try\": \"Erstelle ein Storyboard für ein 30-Sekunden-Produktvideo.\",\n  \"readyBots.bot.video-workflow.try2\": \"Schreibe zwei Einstiege für diesen Clip.\",\n  \"channels.admin.invite\": \"Administrator hinzufügen\",\n  \"channels.admin.remove\": \"Entfernen\",\n  \"channels.admin.removeNamed\": \"{name} ({id}) entfernen\",\n  \"channels.admin.explain\": \"Administratoren haben im privaten Chat Inhaberrechte und in Gruppen Gastrechte.\",\n  \"channels.admin.account\": \"{name} ({id})\",\n  \"helperIntro.templates.support\": \"Kundenservice-Bot ansehen\",\n  \"helperIntro.templates.team\": \"Team für meine Branche finden\",\n"
+    }
+  ],
+  "src/locales/en.json": [
+    {
+      "before": "{\n  \"chat.channel.title\": \"Connected-channel conversation\",\n  \"chat.channel.readOnly\": \"Messages in this conversation come from a connected channel. Configure your bot in its separate internal chat.\",\n",
+      "after": "{\n  \"readyBots.bot.video-workflow.title\": \"Short-form video producer\",\n  \"readyBots.bot.video-workflow.description\": \"Turn a brief into an editable Hypit video project with captions and variants.\",\n  \"readyBots.bot.video-workflow.try\": \"Storyboard a 30-second product video.\",\n  \"readyBots.bot.video-workflow.try2\": \"Write two openings for this clip.\",\n  \"channels.admin.invite\": \"Add administrator\",\n  \"channels.admin.remove\": \"Remove\",\n  \"channels.admin.removeNamed\": \"Remove {name} ({id})\",\n  \"channels.admin.explain\": \"Administrators have owner permissions in private chats and guest access in groups.\",\n  \"channels.admin.account\": \"{name} ({id})\",\n  \"chat.channel.title\": \"Connected-channel conversation\",\n  \"chat.channel.readOnly\": \"Messages in this conversation come from a connected channel. Configure your bot in its separate internal chat.\",\n"
+    }
+  ],
+  "src/locales/es.json": [
+    {
+      "before": "{\n  \"helperIntro.templates.support\": \"Ver el bot de atención al cliente\",\n  \"helperIntro.templates.team\": \"Buscar un equipo para mi sector\",\n",
+      "after": "{\n  \"readyBots.bot.video-workflow.title\": \"Productor de vídeos cortos\",\n  \"readyBots.bot.video-workflow.description\": \"Convierte una idea en un proyecto de vídeo editable en Hypit con subtítulos y variantes.\",\n  \"readyBots.bot.video-workflow.try\": \"Prepara un guion gráfico para un vídeo de producto de 30 segundos.\",\n  \"readyBots.bot.video-workflow.try2\": \"Escribe dos inicios para este vídeo.\",\n  \"channels.admin.invite\": \"Añadir administrador\",\n  \"channels.admin.remove\": \"Quitar\",\n  \"channels.admin.removeNamed\": \"Quitar a {name} ({id})\",\n  \"channels.admin.explain\": \"Los administradores tienen permisos de propietario en privado y de invitado en grupos.\",\n  \"channels.admin.account\": \"{name} ({id})\",\n  \"helperIntro.templates.support\": \"Ver el bot de atención al cliente\",\n  \"helperIntro.templates.team\": \"Buscar un equipo para mi sector\",\n"
+    }
+  ],
+  "src/locales/fr.json": [
+    {
+      "before": "{\n  \"helperIntro.templates.support\": \"Découvrir le bot de service client\",\n  \"helperIntro.templates.team\": \"Trouver une équipe pour mon secteur\",\n",
+      "after": "{\n  \"readyBots.bot.video-workflow.title\": \"Créateur de vidéos courtes\",\n  \"readyBots.bot.video-workflow.description\": \"Transforme une idée en projet vidéo Hypit modifiable avec sous-titres et variantes.\",\n  \"readyBots.bot.video-workflow.try\": \"Prépare un storyboard pour une vidéo produit de 30 secondes.\",\n  \"readyBots.bot.video-workflow.try2\": \"Propose deux introductions pour cette vidéo.\",\n  \"channels.admin.invite\": \"Ajouter un administrateur\",\n  \"channels.admin.remove\": \"Retirer\",\n  \"channels.admin.removeNamed\": \"Retirer {name} ({id})\",\n  \"channels.admin.explain\": \"Les administrateurs ont les droits du propriétaire en privé et ceux des invités en groupe.\",\n  \"channels.admin.account\": \"{name} ({id})\",\n  \"helperIntro.templates.support\": \"Découvrir le bot de service client\",\n  \"helperIntro.templates.team\": \"Trouver une équipe pour mon secteur\",\n"
+    }
+  ],
+  "src/locales/hi.json": [
+    {
+      "before": "{\n  \"helperIntro.templates.support\": \"ग्राहक सहायता बॉट देखें\",\n  \"helperIntro.templates.team\": \"अपने उद्योग के लिए टीम खोजें\",\n",
+      "after": "{\n  \"readyBots.bot.video-workflow.title\": \"लघु वीडियो निर्माता\",\n  \"readyBots.bot.video-workflow.description\": \"विचार से उपशीर्षक और अलग-अलग संस्करणों सहित संपादन योग्य Hypit वीडियो प्रोजेक्ट बनाएँ।\",\n  \"readyBots.bot.video-workflow.try\": \"उत्पाद के 30 सेकंड के वीडियो का स्टोरीबोर्ड बनाएँ।\",\n  \"readyBots.bot.video-workflow.try2\": \"इस क्लिप के लिए दो शुरुआत लिखें।\",\n  \"channels.admin.invite\": \"व्यवस्थापक जोड़ें\",\n  \"channels.admin.remove\": \"हटाएँ\",\n  \"channels.admin.removeNamed\": \"{name} ({id}) को हटाएँ\",\n  \"channels.admin.explain\": \"व्यवस्थापकों के पास निजी चैट में मालिक के और समूह में अतिथि के अधिकार होते हैं।\",\n  \"channels.admin.account\": \"{name} ({id})\",\n  \"helperIntro.templates.support\": \"ग्राहक सहायता बॉट देखें\",\n  \"helperIntro.templates.team\": \"अपने उद्योग के लिए टीम खोजें\",\n"
+    }
+  ],
+  "src/locales/it.json": [
+    {
+      "before": "{\n  \"helperIntro.templates.support\": \"Visualizza il bot del servizio clienti\",\n  \"helperIntro.templates.team\": \"Trova una squadra per il tuo settore\",\n",
+      "after": "{\n  \"readyBots.bot.video-workflow.title\": \"Produttore di video brevi\",\n  \"readyBots.bot.video-workflow.description\": \"Trasforma un’idea in un progetto video Hypit modificabile con sottotitoli e varianti.\",\n  \"readyBots.bot.video-workflow.try\": \"Prepara uno storyboard per un video di prodotto di 30 secondi.\",\n  \"readyBots.bot.video-workflow.try2\": \"Scrivi due aperture per questa clip.\",\n  \"channels.admin.invite\": \"Aggiungi amministratore\",\n  \"channels.admin.remove\": \"Rimuovi\",\n  \"channels.admin.removeNamed\": \"Rimuovi {name} ({id})\",\n  \"channels.admin.explain\": \"Gli amministratori hanno i permessi del proprietario in privato e quelli degli ospiti nei gruppi.\",\n  \"channels.admin.account\": \"{name} ({id})\",\n  \"helperIntro.templates.support\": \"Visualizza il bot del servizio clienti\",\n  \"helperIntro.templates.team\": \"Trova una squadra per il tuo settore\",\n"
+    }
+  ],
+  "src/locales/ja.json": [
+    {
+      "before": "{\n  \"helperIntro.templates.support\": \"カスタマーサポートボットを見る\",\n  \"helperIntro.templates.team\": \"業種に合うチームを探す\",\n",
+      "after": "{\n  \"readyBots.bot.video-workflow.title\": \"ショート動画制作者\",\n  \"readyBots.bot.video-workflow.description\": \"アイデアから字幕とバリエーションを備えた編集可能な Hypit 動画プロジェクトを作成します。\",\n  \"readyBots.bot.video-workflow.try\": \"30秒の商品動画の絵コンテを作って。\",\n  \"readyBots.bot.video-workflow.try2\": \"このクリップの冒頭を2案考えて。\",\n  \"channels.admin.invite\": \"管理者を追加\",\n  \"channels.admin.remove\": \"削除\",\n  \"channels.admin.removeNamed\": \"{name}（{id}）を削除\",\n  \"channels.admin.explain\": \"管理者は個別チャットでは所有者権限、グループではゲスト権限を持ちます。\",\n  \"channels.admin.account\": \"{name} ({id})\",\n  \"helperIntro.templates.support\": \"カスタマーサポートボットを見る\",\n  \"helperIntro.templates.team\": \"業種に合うチームを探す\",\n"
+    }
+  ],
+  "src/locales/ko.json": [
+    {
+      "before": "{\n  \"helperIntro.templates.support\": \"고객 지원 봇 미리 보기\",\n  \"helperIntro.templates.team\": \"업종에 맞는 팀 찾기\",\n",
+      "after": "{\n  \"readyBots.bot.video-workflow.title\": \"숏폼 영상 제작자\",\n  \"readyBots.bot.video-workflow.description\": \"아이디어를 자막과 여러 버전이 포함된 편집 가능한 Hypit 영상 프로젝트로 만듭니다.\",\n  \"readyBots.bot.video-workflow.try\": \"30초 제품 영상의 스토리보드를 만들어 줘.\",\n  \"readyBots.bot.video-workflow.try2\": \"이 영상의 도입부 두 가지를 써 줘.\",\n  \"channels.admin.invite\": \"관리자 추가\",\n  \"channels.admin.remove\": \"삭제\",\n  \"channels.admin.removeNamed\": \"{name}({id}) 삭제\",\n  \"channels.admin.explain\": \"관리자는 개인 채팅에서 소유자 권한을, 그룹에서 게스트 권한을 가집니다.\",\n  \"channels.admin.account\": \"{name} ({id})\",\n  \"helperIntro.templates.support\": \"고객 지원 봇 미리 보기\",\n  \"helperIntro.templates.team\": \"업종에 맞는 팀 찾기\",\n"
+    }
+  ],
+  "src/locales/pl.json": [
+    {
+      "before": "{\n  \"helperIntro.templates.support\": \"Zobacz bota do obsługi klienta\",\n  \"helperIntro.templates.team\": \"Znajdź zespół dla swojej branży\",\n",
+      "after": "{\n  \"readyBots.bot.video-workflow.title\": \"Producent krótkich filmów\",\n  \"readyBots.bot.video-workflow.description\": \"Tworzy edytowalny projekt wideo Hypit z napisami i wariantami na podstawie pomysłu.\",\n  \"readyBots.bot.video-workflow.try\": \"Przygotuj scenopis 30-sekundowego filmu o produkcie.\",\n  \"readyBots.bot.video-workflow.try2\": \"Napisz dwa wstępy do tego klipu.\",\n  \"channels.admin.invite\": \"Dodaj administratora\",\n  \"channels.admin.remove\": \"Usuń\",\n  \"channels.admin.removeNamed\": \"Usuń {name} ({id})\",\n  \"channels.admin.explain\": \"Administratorzy mają uprawnienia właściciela w prywatnej rozmowie i gościa w grupach.\",\n  \"channels.admin.account\": \"{name} ({id})\",\n  \"helperIntro.templates.support\": \"Zobacz bota do obsługi klienta\",\n  \"helperIntro.templates.team\": \"Znajdź zespół dla swojej branży\",\n"
+    }
+  ],
+  "src/locales/pt-br.json": [
+    {
+      "before": "{\n  \"helperIntro.templates.support\": \"Ver o bot de atendimento ao cliente\",\n  \"helperIntro.templates.team\": \"Encontrar uma equipe para meu setor\",\n",
+      "after": "{\n  \"readyBots.bot.video-workflow.title\": \"Produtor de vídeos curtos\",\n  \"readyBots.bot.video-workflow.description\": \"Transforma uma ideia em um projeto de vídeo editável no Hypit com legendas e variações.\",\n  \"readyBots.bot.video-workflow.try\": \"Crie um storyboard para um vídeo de produto de 30 segundos.\",\n  \"readyBots.bot.video-workflow.try2\": \"Escreva duas aberturas para este clipe.\",\n  \"channels.admin.invite\": \"Adicionar administrador\",\n  \"channels.admin.remove\": \"Remover\",\n  \"channels.admin.removeNamed\": \"Remover {name} ({id})\",\n  \"channels.admin.explain\": \"Administradores têm permissões de proprietário no privado e de convidado em grupos.\",\n  \"channels.admin.account\": \"{name} ({id})\",\n  \"helperIntro.templates.support\": \"Ver o bot de atendimento ao cliente\",\n  \"helperIntro.templates.team\": \"Encontrar uma equipe para meu setor\",\n"
+    }
+  ],
+  "src/locales/ru.json": [
+    {
+      "before": "{\n  \"helperIntro.templates.support\": \"Посмотреть бота службы поддержки\",\n  \"helperIntro.templates.team\": \"Найти команду для моей отрасли\",\n",
+      "after": "{\n  \"readyBots.bot.video-workflow.title\": \"Продюсер коротких видео\",\n  \"readyBots.bot.video-workflow.description\": \"Создаёт по описанию редактируемый видеопроект Hypit с субтитрами и вариантами монтажа.\",\n  \"readyBots.bot.video-workflow.try\": \"Подготовь раскадровку 30-секундного ролика о продукте.\",\n  \"readyBots.bot.video-workflow.try2\": \"Напиши два варианта начала этого ролика.\",\n  \"channels.admin.invite\": \"Добавить администратора\",\n  \"channels.admin.remove\": \"Удалить\",\n  \"channels.admin.removeNamed\": \"Удалить {name} ({id})\",\n  \"channels.admin.explain\": \"У администраторов права владельца в личном чате и права гостя в группах.\",\n  \"channels.admin.account\": \"{name} ({id})\",\n  \"helperIntro.templates.support\": \"Посмотреть бота службы поддержки\",\n  \"helperIntro.templates.team\": \"Найти команду для моей отрасли\",\n"
+    }
+  ],
+  "src/locales/tr.json": [
+    {
+      "before": "{\n  \"helperIntro.templates.support\": \"Müşteri hizmetleri botunu incele\",\n  \"helperIntro.templates.team\": \"Sektörüme uygun ekip bul\",\n",
+      "after": "{\n  \"readyBots.bot.video-workflow.title\": \"Kısa video yapımcısı\",\n  \"readyBots.bot.video-workflow.description\": \"Bir fikri altyazılar ve alternatif kurgular içeren düzenlenebilir bir Hypit video projesine dönüştürür.\",\n  \"readyBots.bot.video-workflow.try\": \"30 saniyelik ürün videosu için sahne planı hazırla.\",\n  \"readyBots.bot.video-workflow.try2\": \"Bu klip için iki açılış yaz.\",\n  \"channels.admin.invite\": \"Yönetici ekle\",\n  \"channels.admin.remove\": \"Kaldır\",\n  \"channels.admin.removeNamed\": \"{name} ({id}) kullanıcısını kaldır\",\n  \"channels.admin.explain\": \"Yöneticiler özel sohbette sahip, gruplarda misafir yetkilerine sahiptir.\",\n  \"channels.admin.account\": \"{name} ({id})\",\n  \"helperIntro.templates.support\": \"Müşteri hizmetleri botunu incele\",\n  \"helperIntro.templates.team\": \"Sektörüme uygun ekip bul\",\n"
+    }
+  ],
+  "src/locales/uk.json": [
+    {
+      "before": "{\n  \"helperIntro.templates.support\": \"Переглянути бота служби підтримки\",\n  \"helperIntro.templates.team\": \"Знайти команду для моєї галузі\",\n",
+      "after": "{\n  \"readyBots.bot.video-workflow.title\": \"Продюсер коротких відео\",\n  \"readyBots.bot.video-workflow.description\": \"Створює за описом редагований відеопроєкт Hypit із субтитрами й варіантами монтажу.\",\n  \"readyBots.bot.video-workflow.try\": \"Підготуй розкадрування 30-секундного відео про товар.\",\n  \"readyBots.bot.video-workflow.try2\": \"Напиши два варіанти початку цього ролика.\",\n  \"channels.admin.invite\": \"Додати адміністратора\",\n  \"channels.admin.remove\": \"Видалити\",\n  \"channels.admin.removeNamed\": \"Видалити {name} ({id})\",\n  \"channels.admin.explain\": \"Адміністратори мають права власника в особистому чаті та права гостя в групах.\",\n  \"channels.admin.account\": \"{name} ({id})\",\n  \"helperIntro.templates.support\": \"Переглянути бота служби підтримки\",\n  \"helperIntro.templates.team\": \"Знайти команду для моєї галузі\",\n"
+    }
+  ],
+  "src/locales/vi.json": [
+    {
+      "before": "{\n  \"server.peerResend.failed\": \"Không thể gửi lại yêu cầu cho AI dự phòng. Chi tiết: {detail}\",\n  \"chat.channel.title\": \"Cuộc trò chuyện từ kênh kết nối\",\n",
+      "after": "{\n  \"readyBots.bot.video-workflow.title\": \"Nhà sản xuất video ngắn\",\n  \"readyBots.bot.video-workflow.description\": \"Biến ý tưởng thành dự án video Hypit có thể chỉnh sửa, kèm phụ đề và các phiên bản khác nhau.\",\n  \"readyBots.bot.video-workflow.try\": \"Lên kịch bản phân cảnh cho video sản phẩm dài 30 giây.\",\n  \"readyBots.bot.video-workflow.try2\": \"Viết hai cách mở đầu cho đoạn phim này.\",\n  \"channels.admin.invite\": \"Thêm quản trị viên\",\n  \"channels.admin.remove\": \"Gỡ quyền\",\n  \"channels.admin.removeNamed\": \"Gỡ quyền của {name} ({id})\",\n  \"channels.admin.explain\": \"Quản trị viên có quyền như chủ bot khi nhắn riêng. Trong nhóm, họ dùng quyền khách.\",\n  \"channels.admin.account\": \"{name} ({id})\",\n  \"server.peerResend.failed\": \"Không thể gửi lại yêu cầu cho AI dự phòng. Chi tiết: {detail}\",\n  \"chat.channel.title\": \"Cuộc trò chuyện từ kênh kết nối\",\n"
+    }
+  ],
+  "src/locales/zh-tw.json": [
+    {
+      "before": "{\n  \"helperIntro.templates.support\": \"預覽客服機器人\",\n  \"helperIntro.templates.team\": \"尋找適合本產業的團隊\",\n",
+      "after": "{\n  \"readyBots.bot.video-workflow.title\": \"短影音製作人\",\n  \"readyBots.bot.video-workflow.description\": \"將構想轉為可編輯的 Hypit 影片專案，附有字幕和多種版本。\",\n  \"readyBots.bot.video-workflow.try\": \"為一支30秒的產品影片撰寫分鏡。\",\n  \"readyBots.bot.video-workflow.try2\": \"為這段影片寫兩種開場。\",\n  \"channels.admin.invite\": \"新增管理員\",\n  \"channels.admin.remove\": \"移除\",\n  \"channels.admin.removeNamed\": \"移除 {name}（{id}）\",\n  \"channels.admin.explain\": \"管理員在私聊時擁有擁有者權限，在群組中則使用訪客權限。\",\n  \"channels.admin.account\": \"{name} ({id})\",\n  \"helperIntro.templates.support\": \"預覽客服機器人\",\n  \"helperIntro.templates.team\": \"尋找適合本產業的團隊\",\n"
+    }
+  ],
+  "src/locales/zh.json": [
+    {
+      "before": "{\n  \"helperIntro.templates.support\": \"预览客服机器人\",\n  \"helperIntro.templates.team\": \"查找适合本行业的团队\",\n",
+      "after": "{\n  \"readyBots.bot.video-workflow.title\": \"短视频制作人\",\n  \"readyBots.bot.video-workflow.description\": \"将创意转为可编辑的 Hypit 视频项目，配有字幕和多个版本。\",\n  \"readyBots.bot.video-workflow.try\": \"为一个30秒的产品视频写分镜。\",\n  \"readyBots.bot.video-workflow.try2\": \"为这段视频写两种开场。\",\n  \"channels.admin.invite\": \"添加管理员\",\n  \"channels.admin.remove\": \"移除\",\n  \"channels.admin.removeNamed\": \"移除 {name}（{id}）\",\n  \"channels.admin.explain\": \"管理员在私聊中拥有所有者权限，在群聊中拥有访客权限。\",\n  \"channels.admin.account\": \"{name} ({id})\",\n  \"helperIntro.templates.support\": \"预览客服机器人\",\n  \"helperIntro.templates.team\": \"查找适合本行业的团队\",\n"
+    }
+  ]
+}

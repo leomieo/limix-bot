@@ -1,4 +1,13 @@
 {
+  "readyBots.bot.video-workflow.title": "Produzent für Kurzvideos",
+  "readyBots.bot.video-workflow.description": "Erstellt bearbeitbare Hypit-Videoprojekte mit Untertiteln und Varianten.",
+  "readyBots.bot.video-workflow.try": "Erstelle ein Storyboard für ein 30-Sekunden-Produktvideo.",
+  "readyBots.bot.video-workflow.try2": "Schreibe zwei Einstiege für diesen Clip.",
+  "channels.admin.invite": "Administrator hinzufügen",
+  "channels.admin.remove": "Entfernen",
+  "channels.admin.removeNamed": "{name} ({id}) entfernen",
+  "channels.admin.explain": "Administratoren haben im privaten Chat Inhaberrechte und in Gruppen Gastrechte.",
+  "channels.admin.account": "{name} ({id})",
   "helperIntro.templates.support": "Kundenservice-Bot ansehen",
   "helperIntro.templates.team": "Team für meine Branche finden",
   "helperIntro.templates.department": "Abteilungsbot auswählen",

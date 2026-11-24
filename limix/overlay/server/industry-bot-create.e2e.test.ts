@@ -14,6 +14,12 @@ it("installs a customer care bot and its scoped tools on an isolated host with p
       memory: { "memory/private.md": "Private fixture note" }, routines: [], skills: [],
     } }, "PATCH");
     expect(defaults.status, await defaults.text()).toBe(200);
+    const video = await request("/api/bots", { name: "Kino", videoTemplate: true, useDefaults: false });
+    expect(video.status).toBe(201);
+    const { bot: kino } = await video.json() as { bot: { id: string; soul: string } };
+    expect(kino.soul).toContain("video-workflow");
+    const videoStore = await (await fetch(fixture.info.url + "/api/limix/skill-store/" + kino.id)).json() as { skills: unknown[] };
+    expect(videoStore.skills).toContainEqual(expect.objectContaining({ name: "video-workflow", added: true }));
     const selection = { industryTemplate: SUPER_SUPPORT_BOT.id };
     expect((await request("/api/bots", selection, "POST", { "x-openmausbot-companion": "1" })).status).toBe(403);
     expect((await request("/api/bots", { industryTemplate: "missing-template" })).status).toBe(400);

@@ -2,6 +2,7 @@
 // by QR. The server holds each connection itself (server/bot-channels).
 import { useEffect, useState } from "react";
 
+import { t } from "@/lib/i18n";
 import { cn } from "@/lib/cn";
 import { lx } from "@/lib/limix-text";
 import { api, type Bot } from "@/state/store";
@@ -19,6 +20,7 @@ export interface ChannelView {
   access?: "owner" | "everyone";
   groupMentions?: boolean;
   owner?: string;
+  admins?: Array<{ id: string; name: string }>;
   linkExpiresAt?: number;
   error?: string;
   login?: { qr?: string; scanned?: string; error?: string };
@@ -103,10 +105,15 @@ function ChannelPanel({ bot, channel, view, onView }: { bot: Bot; channel: (type
   const waiting = Boolean(view?.login && !view.login.error && !view.connected);
 
   useEffect(() => {
-    if (!waiting) return;
-    const timer = setInterval(() => { api<ChannelView>(path).then(onView).catch(() => {}); }, 2_000);
-    return () => clearInterval(timer);
-  }, [waiting, path, onView]);
+    if (!waiting && !code) return;
+    let live = true;
+    const timer = setInterval(() => { api<ChannelView>(path).then(next => {
+      if (!live) return;
+      onView(next);
+      if (!next.linkExpiresAt) setCode(null);
+    }).catch(() => {}); }, 2_000);
+    return () => { live = false; clearInterval(timer); };
+  }, [waiting, code, path, onView]);
 
   const run = async (request: () => Promise<ChannelView & { code?: string }>) => {
     setBusy(true); setError(null);
@@ -144,16 +151,20 @@ function ChannelPanel({ bot, channel, view, onView }: { bot: Bot; channel: (type
           {channel.note && (channel.kind === "facebook" || channel.kind === "messenger") && <span className="text-[12px] text-ink-secondary">{channel.note()}</span>}
           {channel.kind === "messenger"
             ? <button type="button" className={cn(buttonCls, "self-start")} onClick={() => void messengerBridge()?.show(bot.id)}>{lx("Mở cửa sổ Messenger của bot", "Show the bot's Messenger window")}</button>
-            : view.owner
-            ? <div className="flex flex-wrap items-center gap-2 text-ink-secondary">
-                <span>{lx(`Chủ bot: ${view.owner}. Nhắn riêng ở đó như nhắn trong app, toàn quyền.`, `Owner: ${view.owner}. Direct messages there work as in the app, with full access.`)}</span>
-                <button type="button" className={buttonCls} disabled={busy} onClick={() => void post({}, "/unlink")}>{lx("Bỏ liên kết", "Unlink")}</button>
-              </div>
-            : <div className="flex flex-col gap-1.5 text-ink-secondary">
-                <span>{lx("Liên kết tài khoản của bạn để nhắn với bot như trong app:", "Link your own account to talk to the bot as in the app:")}</span>
-                {code
+            : <div className="flex flex-col gap-2 text-ink-secondary">
+                {view.owner && <div className="flex flex-wrap items-center gap-2">
+                  <span>{lx(`Chủ bot: ${view.owner}`, `Owner: ${view.owner}`)}</span>
+                  <button type="button" className={buttonCls} disabled={busy} onClick={() => void post({}, "/unlink")}>{lx("Bỏ liên kết", "Unlink")}</button>
+                </div>}
+                {view.admins?.map(admin => <div key={admin.id} className="flex flex-wrap items-center gap-2">
+                  <span>{t("channels.admin.account", { name: admin.name, id: admin.id })}</span>
+                  <button type="button" className={buttonCls} disabled={busy} aria-label={t("channels.admin.removeNamed", { name: admin.name, id: admin.id })}
+                    onClick={() => void post({ id: admin.id }, "/remove-admin")}>{t("channels.admin.remove")}</button>
+                </div>)}
+                <span>{t("channels.admin.explain")}</span>
+                {code && view.linkExpiresAt
                   ? <span className="text-ink" data-testid={`channel-code-${channel.kind}`}>{channel.linkFrom(view)}<code className="rounded bg-inset px-1.5 py-0.5 font-mono">/link {code}</code>{lx(" (hết hạn sau 15 phút)", " (expires in 15 minutes)")}</span>
-                  : <button type="button" className={cn(buttonCls, "self-start")} disabled={busy} onClick={() => void post({}, "/link")} data-testid={`channel-link-${channel.kind}`}>{lx("Tạo mã liên kết", "Make a link code")}</button>}
+                  : <button type="button" className={cn(buttonCls, "self-start")} disabled={busy} onClick={() => void post({}, "/link")} data-testid={`channel-link-${channel.kind}`}>{view.owner ? t("channels.admin.invite") : lx("Tạo mã liên kết", "Make a link code")}</button>}
               </div>}
           <label className="flex items-center justify-between gap-3 text-ink">
             <span>

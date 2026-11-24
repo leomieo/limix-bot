@@ -102,6 +102,7 @@ export interface ChannelView {
   access?: "owner" | "everyone";
   groupMentions?: boolean;
   owner?: string;
+  admins?: Array<{ id: string; name: string }>;
   linkExpiresAt?: number;
   error?: string;
   login?: LoginState & { error?: string };
@@ -122,7 +123,7 @@ const mediaSchema = z.discriminatedUnion("kind", [
 const inboxSchema = z.object({
   id: z.string(), chatId: z.string(), from: z.object({ id: z.string(), name: z.string() }),
   text: z.string(), direct: z.boolean(), media: z.boolean().optional(),
-  downloading: z.boolean().optional(), attachment: mediaSchema.optional(), owner: z.boolean(),
+  downloading: z.boolean().optional(), attachment: mediaSchema.optional(), owner: z.boolean(), grant: z.string().optional(),
   started: z.boolean().optional(),
   result: z.object({ reply: z.string(), attachments: z.array(mediaSchema).optional() }).optional(),
   sent: z.number().int().min(0).optional(),
@@ -136,7 +137,8 @@ const botSchema = z.object({
   access: z.enum(["owner", "everyone"]).default("owner"),
   groupMentions: z.boolean().optional(),
   owner: z.object({ id: z.union([z.string(), z.number()]).transform(String), name: z.string() }).optional(),
-  link: z.object({ hash: z.string(), expiresAt: z.number() }).optional(),
+  admins: z.array(z.object({ id: z.string(), name: z.string(), grant: z.string() })).default([]),
+  link: z.object({ role: z.enum(["owner", "admin"]).optional(), hash: z.string(), expiresAt: z.number() }).optional(),
   offset: z.number().default(0),
   chats: z.record(z.string(), z.string()).default({}),
   error: z.string().optional(),
@@ -146,6 +148,12 @@ const botSchema = z.object({
 const fileSchema = z.object({ v: z.literal(1), bots: z.record(z.string(), botSchema) });
 type InboxMessage = z.output<typeof inboxSchema>;
 type Stored = z.output<typeof botSchema>;
+function privateGrant(adapter: ChannelAdapter, entry: Stored | undefined, message: Pick<ChannelMessage, "direct" | "from">) {
+  if (!entry?.enabled || !message.direct || adapter.guestsOnly) return undefined;
+  if (entry.owner?.id === message.from.id) return "owner";
+  return entry.admins.find(admin => admin.id === message.from.id)?.grant;
+}
+
 type FileShape = z.output<typeof fileSchema>;
 
 const text = (label: string) => ({
@@ -294,8 +302,8 @@ export function createBotChannels(deps: BotChannelsDeps) {
     catch (error) { log(`${adapter.kind}: send failed (${failure(error)})`); }
   }
 
-  async function askWhenReady(botId: string, input: Parameters<ChannelAsk>[1], signal: AbortSignal, onQueue: () => void) {
-    while (!signal.aborted) {
+  async function askWhenReady(botId: string, input: Parameters<ChannelAsk>[1], signal: AbortSignal, onQueue: () => void, authorized: () => boolean) {
+    while (!signal.aborted && authorized()) {
       try {
         return await deps.ask(botId, input);
       } catch (error) {
@@ -322,9 +330,10 @@ export function createBotChannels(deps: BotChannelsDeps) {
 
   async function deliverResult(adapter: ChannelAdapter, botId: string, id: string, message: InboxMessage, signal: AbortSignal) {
     const lane = `${adapter.kind}:${botId}`;
+    const authorized = () => !message.owner || privateGrant(adapter, read(adapter.kind).bots[botId], message) === (message.grant ?? "owner");
     const result = message.result!;
     let sent = message.sent ?? 0;
-    while (!signal.aborted) {
+    while (!signal.aborted && authorized()) {
       const session = sessions.get(lane);
       if (!session) {
         await sleep(BUSY_RETRY_MS, signal);
@@ -336,11 +345,11 @@ export function createBotChannels(deps: BotChannelsDeps) {
       try {
         const file = media[sent];
         await paced(adapter, botId, () => {
-          if (signal.aborted || sessions.get(lane) !== session) throw new ChannelError("drop", "Connection changed");
+          if (signal.aborted || !authorized() || sessions.get(lane) !== session) throw new ChannelError("drop", "Connection changed");
           return file ? session.sendMedia!(message.chatId, file) : session.send(message.chatId, parts[sent - media.length]!);
         });
       } catch (error) {
-        if (signal.aborted) return;
+        if (signal.aborted || !authorized()) return;
         if (sessions.get(lane) !== session || error instanceof ChannelError && error.reason === "retry") {
           await sleep(BACKOFF_MS[0]!, signal);
           continue;
@@ -369,15 +378,22 @@ export function createBotChannels(deps: BotChannelsDeps) {
       const code = (command[2] ?? "").trim();
       const ok = entry.link && entry.link.expiresAt > now() && code && timingSafeEqual(Buffer.from(hashCode(code)), Buffer.from(entry.link.hash));
       if (!ok) return void await send(say.badCode);
-      patch(kind, botId, (current) => { const { link: _used, ...rest } = current; return { ...rest, owner: { id: message.from.id, name: message.from.name } }; });
+      patch(kind, botId, (current) => {
+        const { link, ...rest } = current;
+        const person = { id: message.from.id, name: message.from.name };
+        if (current.owner?.id === person.id || current.admins.some(admin => admin.id === person.id)) return rest;
+        if (!current.owner && link?.role !== "admin") return { ...rest, owner: person };
+        return { ...rest, admins: [...current.admins, { ...person, grant: randomBytes(16).toString("hex") }] };
+      });
       return void await send(say.linked);
     }
-    const isOwner = message.direct && !adapter.guestsOnly && entry.owner?.id === message.from.id;
-    if (saved?.row.owner && !isOwner) return;
-    const owner = isOwner && (saved?.row.owner ?? true);
+    const grant = privateGrant(adapter, entry, message);
+    const owner = !!grant && (saved?.row.owner ?? true);
+    const authorized = () => !saved?.row.owner || privateGrant(adapter, read(kind).bots[botId], message) === (saved.row.grant ?? "owner");
+    if (!authorized()) return;
     const allowsGuest = acceptGuest(kind, entry, message);
     if (!owner && !allowsGuest) return message.direct && !adapter.quietToStrangers ? void await send(say.ownerOnly) : undefined;
-    const conversation = message.direct ? message.chatId : `${message.chatId}:${message.from.id}`;
+    const conversation = owner && grant !== "owner" ? JSON.stringify(["admin", grant, message.chatId]) : message.direct ? message.chatId : `${message.chatId}:${message.from.id}`;
     if (command?.[1] === "new") {
       patch(kind, botId, (current) => { const chats = { ...current.chats }; delete chats[conversation]; return { ...current, chats }; });
       return void await send(say.fresh);
@@ -410,10 +426,10 @@ export function createBotChannels(deps: BotChannelsDeps) {
               updateInbox(kind, botId, saved.id, (row) => ({ ...row, started: true }), signal);
               if (!signal.aborted) patch(kind, botId, (current) => ({ ...current, chats: { ...current.chats, [conversation]: threadId } }));
             },
-            approval() { if (!signal.aborted) void send(say.approval); },
+            approval() { if (!signal.aborted && authorized()) void send(say.approval); },
           },
-        }, signal, saved.queued);
-        if (!answer || signal.aborted) return;
+        }, signal, saved.queued, authorized);
+        if (!answer || signal.aborted || !authorized()) return;
         patch(kind, botId, (current) => ({ ...current, chats: { ...current.chats, [conversation]: answer.threadId } }));
         const attachments = answer.attachments;
         const replyText = answer.reply.trim();
@@ -444,9 +460,10 @@ export function createBotChannels(deps: BotChannelsDeps) {
     const link = !message.media && /^\/link(?:@\w+)?(?:\s|$)/.test(message.text.trim());
     if (link && adapter.guestsOnly) return;
     const command = link || !message.media && /^\/start(?:@\w+)?$/.test(message.text.trim());
-    const owner = message.direct && !adapter.guestsOnly && entry.owner?.id === message.from.id;
+    const grant = privateGrant(adapter, entry, message);
+    const owner = !!grant;
     const eligible = (owner || acceptGuest(kind, entry, message)) && !command && (message.text.trim() || message.loadMedia);
-    const row = restored ?? (eligible ? inboxSchema.parse({ ...message, owner, downloading: Boolean(message.loadMedia) }) : undefined);
+    const row = restored ?? (eligible ? inboxSchema.parse({ ...message, owner, grant, downloading: Boolean(message.loadMedia) }) : undefined);
     if (!row && !firstSight(`${chat}:${id}`)) return;
     if (row && !restored) patch(kind, botId, (current) => ({ ...current, inbox: { ...current.inbox, [id]: row } }));
     let notified = Boolean(restored);
@@ -541,6 +558,7 @@ export function createBotChannels(deps: BotChannelsDeps) {
       connected: true, username: entry.username, name: entry.name, enabled: entry.enabled, access: entry.access,
       ...(kind === "zalo" ? { groupMentions: entry.groupMentions ?? entry.access === "everyone" } : {}),
       ...(entry.owner ? { owner: entry.owner.name } : {}),
+      ...(entry.admins.length ? { admins: entry.admins.map(({ id, name }) => ({ id, name })) } : {}),
       ...(entry.link && entry.link.expiresAt > now() ? { linkExpiresAt: entry.link.expiresAt } : {}),
       ...(entry.error ? { error: entry.error } : {}),
       ...(login ? { login } : {}),
@@ -557,7 +575,7 @@ export function createBotChannels(deps: BotChannelsDeps) {
     data.bots[botId] = botSchema.parse({
       sealed: seal(secret), username: account.username, name: account.name, enabled: true, access: kept?.access ?? (adapter.guestsOnly ? "everyone" : "owner"),
       groupMentions: kept?.groupMentions,
-      ...(sameAccount && kept.owner ? { owner: kept.owner } : {}), offset: sameAccount ? kept.offset : 0, chats: sameAccount ? kept.chats : {},
+      ...(sameAccount && kept.owner ? { owner: kept.owner } : {}), admins: sameAccount ? kept.admins : [], offset: sameAccount ? kept.offset : 0, chats: sameAccount ? kept.chats : {},
       inbox: sameAccount ? kept.inbox : {}, recent: sameAccount ? kept.recent : {},
     });
     write(kind, data);
@@ -578,7 +596,7 @@ export function createBotChannels(deps: BotChannelsDeps) {
       .catch((error) => { if (live() && !abort.signal.aborted) current.state = { error: failure(error) }; });
   }
 
-  const PATH = /^\/api\/bots\/([\w-]{1,128})\/(telegram|discord|zalo|facebook|messenger)(?:\/(link|unlink|login))?$/;
+  const PATH = /^\/api\/bots\/([\w-]{1,128})\/(telegram|discord|zalo|facebook|messenger)(?:\/(link|unlink|login|remove-admin))?$/;
   const changeSchema = z.object({ token: z.string().max(400).optional(), enabled: z.boolean().optional(), access: z.enum(["owner", "everyone"]).optional(), groupMentions: z.boolean().optional() }).strict();
 
   const routes: RouteHandler = async ({ req, res, path, method, auth, json, readBody }) => {
@@ -595,12 +613,19 @@ export function createBotChannels(deps: BotChannelsDeps) {
       if (method !== "POST") return json(res, 405, { error: "method not allowed" });
       if (action === "login") { startLogin(kind, botId); return json(res, 202, view(kind, botId)); }
       if (action === "link") {
+        if (adapters.get(kind)!.guestsOnly) return json(res, 400, { error: "Guest-only channel" });
         if (!read(kind).bots[botId]) return json(res, 409, { error: `Kết nối ${adapters.get(kind)!.label} trước.` });
-        const code = randomBytes(4).toString("hex").toUpperCase().slice(0, 6);
-        patch(kind, botId, (current) => ({ ...current, link: { hash: hashCode(code), expiresAt: now() + LINK_MS } }));
+        const code = randomBytes(8).toString("hex").toUpperCase();
+        patch(kind, botId, (current) => ({ ...current, link: { role: current.owner ? "admin" : "owner", hash: hashCode(code), expiresAt: now() + LINK_MS } }));
         return json(res, 200, { code, ...view(kind, botId) });
       }
-      if (action === "unlink") { patch(kind, botId, (current) => { const { owner: _gone, ...rest } = current; return rest as Stored; }); return json(res, 200, view(kind, botId)); }
+      if (action === "remove-admin") {
+        const input = z.object({ id: z.string().min(1) }).strict().safeParse(await readBody(req));
+        if (!input.success) return json(res, 400, { error: "Invalid administrator ID" });
+        patch(kind, botId, current => ({ ...current, admins: current.admins.filter(admin => admin.id !== input.data.id) }));
+        return json(res, 200, view(kind, botId));
+      }
+      if (action === "unlink") { patch(kind, botId, (current) => { const { owner: _gone, link: _cancelled, ...rest } = current; return rest as Stored; }); return json(res, 200, view(kind, botId)); }
       const parsed = changeSchema.safeParse(await readBody(req));
       if (!parsed.success || (kind !== "zalo" && parsed.data.groupMentions !== undefined)) return json(res, 400, { error: "invalid request" });
       if (parsed.data.token !== undefined) {

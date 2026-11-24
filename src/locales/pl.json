@@ -1,4 +1,13 @@
 {
+  "readyBots.bot.video-workflow.title": "Producent krótkich filmów",
+  "readyBots.bot.video-workflow.description": "Tworzy edytowalny projekt wideo Hypit z napisami i wariantami na podstawie pomysłu.",
+  "readyBots.bot.video-workflow.try": "Przygotuj scenopis 30-sekundowego filmu o produkcie.",
+  "readyBots.bot.video-workflow.try2": "Napisz dwa wstępy do tego klipu.",
+  "channels.admin.invite": "Dodaj administratora",
+  "channels.admin.remove": "Usuń",
+  "channels.admin.removeNamed": "Usuń {name} ({id})",
+  "channels.admin.explain": "Administratorzy mają uprawnienia właściciela w prywatnej rozmowie i gościa w grupach.",
+  "channels.admin.account": "{name} ({id})",
   "helperIntro.templates.support": "Zobacz bota do obsługi klienta",
   "helperIntro.templates.team": "Znajdź zespół dla swojej branży",
   "helperIntro.templates.department": "Wybierz bota dla działu",

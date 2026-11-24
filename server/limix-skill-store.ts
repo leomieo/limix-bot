@@ -31,6 +31,7 @@ export const LIMIX_CORE_SKILLS: ReadonlySet<string> = new Set([
 
 /** What a shipped skill does, in the app's language (the manifest has one language; the skill itself is unchanged). */
 const BUNDLED_TEXT: Record<string, [vi: string, en: string]> = {
+  "video-workflow": ["Lên kịch bản phân cảnh, tạo dự án video Hypit và kiểm tra phim xuất ra.", "Storyboard short videos, author Hypit projects and verify rendered files."],
   "limix-bot-factory": ["Tạo bản nháp bot và kỹ năng, kiểm tra quyền và xuất gói mẫu.", "Draft bots and skills, check permissions and export template packages."],
   "agent-reach": ["Tìm và đọc (chỉ đọc) X/Twitter, Reddit, YouTube (phụ đề), GitHub, Bilibili, XiaoHongShu, V2EX, LinkedIn… bằng lệnh agent-reach.", "Read-only search and reading on X/Twitter, Reddit, YouTube (subtitles), GitHub, Bilibili, XiaoHongShu, V2EX, LinkedIn and more through the agent-reach command."],
   "create-verification-skill": ["Viết một kĩ năng kiểm chứng cho một ứng dụng hoặc dự án cụ thể.", "Write one verification skill for a specific app or project."],
@@ -96,7 +97,7 @@ export function limixSelectBundled(text: string, capabilities: Iterable<string>,
   const folded = foldVietnamese(text);
   const unaccented = usable.filter(({ manifest }) => manifest.defaultEnabled && manifest.triggerTerms.some((term) => folded.includes(foldVietnamese(term))));
   const called = usable.filter(({ manifest }) => slashCalled(text, manifest.id));
-  return mergeSkills(mergeSkills(selectBundledSkills(text, available, skills), unaccented), [...called, ...usable.filter(skill => industrySkills.has(skill.manifest.id))]);
+  return mergeSkills(mergeSkills(selectBundledSkills(text, available, skills), unaccented), [...called, ...usable.filter(skill => skill.manifest.id === "video-workflow" || industrySkills.has(skill.manifest.id))]);
 }
 
 export interface BundledListing {

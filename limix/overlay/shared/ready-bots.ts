@@ -17,6 +17,7 @@ export interface ReadyBot {
   tryAsking: string[];
   /** Connected apps the bot works best with; suggested, never connected for the person. */
   apps: string[];
+  skills?: string[];
   notes?: Record<string, string>;
   routines?: BotRoutineTemplate[];
 }
@@ -26,7 +27,20 @@ const WEEKDAYS = [1, 2, 3, 4, 5];
 const paused = (name: string, prompt: string, time: string, weekdays: number[]): BotRoutineTemplate =>
   ({ name, prompt, schedule: { type: "daily", time, weekdays }, enabled: false, overlap: "skip" });
 
+export const VIDEO_WORKFLOW: ReadyBot = {
+  id: "video-workflow", category: "design", name: "Kino", title: "Short-form video producer",
+  description: "Turn a brief or reference into an editable Hypit project with a shot list, captions and video variants.",
+  soul: [
+    "Use the video-workflow skill to produce short videos from a brief or an authorized reference. Speak the user's language.",
+    "Deliver an original shot list, script and caption timings. Use editable Hypit project files and keep approved source media intact.",
+    "Check and plan the composition before building. Ask before paid generation, uploads or publication. Verify exported media before calling a render complete.",
+  ].join("\n"),
+  look: { color: "purple", mascotBody: "star" }, apps: [], skills: ["video-workflow"],
+  tryAsking: ["Storyboard a 30-second vertical video for this product.", "Create two different openings for this clip."],
+};
+
 export const READY_BOTS: ReadyBot[] = [
+  VIDEO_WORKFLOW,
   {
     id: "assistant",
     category: "everyday",
@@ -332,6 +346,9 @@ export function readyBotTemplate(defaults: NewBotDefaults, bot: ReadyBot, locale
   const industry = industryTemplate(bot.id, locale);
   const template: NewBotDefaults = industry ? {
     profile: { ...industryBotSettings(), ...(defaults.profile.modelSelection ? { modelSelection: structuredClone(defaults.profile.modelSelection) } : {}) },
+    skills: [], routines: [], memory: {},
+  } : bot.id === VIDEO_WORKFLOW.id ? {
+    profile: { approvalMode: "ask", ...(defaults.profile.modelSelection ? { modelSelection: structuredClone(defaults.profile.modelSelection) } : {}) },
     skills: [], routines: [], memory: {},
   } : structuredClone(defaults);
   bot = industry ?? bot;
