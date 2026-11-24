@@ -1,8 +1,8 @@
-# Dựng video ngắn với Kino
+# Dựng video ngắn với Limix AI Video Creator
 
 ## Mục đích
 
-Kino giúp phân tích nhịp dựng của video tham khảo và biến kịch bản thành một dự án có thể chỉnh sửa, dùng lại hoặc xuất thành nhiều phiên bản.
+Limix AI Video Creator giúp phân tích nhịp dựng của video tham khảo và biến kịch bản thành một dự án có thể chỉnh sửa, dùng lại hoặc xuất thành nhiều phiên bản.
 
 ## Cách dùng
 

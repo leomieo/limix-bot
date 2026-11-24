@@ -1,13 +1,13 @@
-Limix Bot 0.3.103
+Limix Bot 0.3.104
 
 ## Tiếng Việt
 
-- Chọn **Kino** trong mục Bản mẫu để lên kịch bản phân cảnh, soạn phụ đề và tạo dự án video Hypit có thể chỉnh sửa. Để xuất phim, hãy kết nối môi trường Hypit của bạn.
+- Chọn **Limix AI Video Creator** trong mục Bản mẫu để lên kịch bản phân cảnh, soạn phụ đề và tạo dự án video Hypit có thể chỉnh sửa. Để xuất phim, hãy kết nối môi trường Hypit của bạn.
 - Trong phần Kênh chat, bạn có thể mời nhiều quản trị viên qua tin nhắn riêng và gỡ quyền từng người. Trong nhóm chat, quản trị viên dùng quyền khách.
 
 ## English
 
-- Choose **Kino** in Templates to storyboard a short video, draft captions and create an editable Hypit project. Connect your Hypit runtime to render the video.
+- Choose **Limix AI Video Creator** in Templates to storyboard a short video, draft captions and create an editable Hypit project. Connect your Hypit runtime to render the video.
 - Invite multiple administrators in Chat channels and remove them individually. Administrators have guest access in group chats.
 
 Limix Bot 0.3.102

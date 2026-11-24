@@ -28,7 +28,7 @@ const paused = (name: string, prompt: string, time: string, weekdays: number[]):
   ({ name, prompt, schedule: { type: "daily", time, weekdays }, enabled: false, overlap: "skip" });
 
 export const VIDEO_WORKFLOW: ReadyBot = {
-  id: "video-workflow", category: "design", name: "Kino", title: "Short-form video producer",
+  id: "video-workflow", category: "design", name: "Limix AI Video Creator", title: "Short-form video producer",
   description: "Turn a brief or reference into an editable Hypit project with a shot list, captions and video variants.",
   soul: [
     "Use the video-workflow skill to produce short videos from a brief or an authorized reference. Speak the user's language.",

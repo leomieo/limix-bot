@@ -1,6 +1,6 @@
 {
   "id": "video-workflow",
-  "name": "Kino",
+  "name": "Limix AI Video Creator",
   "version": "1.0.0",
   "description": "Analyze footage, author editable video compositions and verify rendered variants.",
   "defaultEnabled": false,
