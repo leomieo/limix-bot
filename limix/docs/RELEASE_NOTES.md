@@ -1,3 +1,15 @@
+Limix Bot 0.3.109
+
+## Tiếng Việt
+
+- Khi bạn đổi mô hình của bot, tin nhắn tiếp theo từ khách dùng mô hình mới và tiếp tục cuộc trò chuyện đang mở.
+- Khách có thể trò chuyện bằng văn bản với các mô hình Gemini qua Antigravity CLI hỗ trợ quyền khách nghiêm ngặt.
+
+## English
+
+- Customer messages follow the bot’s selected model, including in existing conversations.
+- Gemini models can answer customer text messages through Antigravity CLI with strict guest permissions.
+
 Limix Bot 0.3.108
 
 ## Tiếng Việt

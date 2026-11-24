@@ -30,6 +30,7 @@ import {
 import { resolveAntigravityReleaseAsset } from "./antigravity-release.ts";
 import { VERIFICATION_TEMP_KEY, scheduleAntigravityTempSweep } from "./antigravity-temp.ts";
 import { augmentedPath } from "../env-path.ts";
+import { antigravityGuestAdapter } from "./antigravity-guest.ts";
 import { agyCliFor, releaseAgyCli } from "../limix-agy-cli.ts";
 import { bundledEngineCatalog } from "../model-manifest/bundled.ts";
 import { currentEngineCatalog } from "../model-manifest/manifest.ts";
@@ -78,6 +79,10 @@ function limixModeFor(wanted: string, option: any): string | null {
   return (LIMIX_MODE_ALIASES[wanted] ?? [wanted]).find((value) => offered.includes(value)) ?? null;
 }
 
+function selectedAgyCli(cli: string | undefined, id: string, env: NodeJS.ProcessEnv) {
+  return !cli || cli === "agy" ? agyCliFor(id, env) : null;
+}
+
 const support: AcpSupport = {
   driverKind: "antigravityAgent",
   // Named for what people look for: Google moved personal Gemini subscriptions (free, AI Pro, AI Ultra) from Gemini CLI to Antigravity on 2026-06-18.
@@ -107,7 +112,7 @@ const support: AcpSupport = {
   sanitizeToolPayload: true,
 
   resolveCommand: async (env, config, instanceId) => {
-    const agyCli = agyCliFor(instanceId, env);
+    const agyCli = selectedAgyCli(config.cli, instanceId, env);
     if (agyCli) return { command: agyCli, args: ["acp"] };
     const runtime = await resolveAntigravityRuntime(config.cli, env);
     const profile = await prepareAntigravityProfile({ instanceId, runtime, baseEnv: env });
@@ -123,7 +128,7 @@ const support: AcpSupport = {
   resolveModels: async (env, config, instanceId) => {
     // Limix: the person's own `agy` CLI is signed in to their Google account (Pro, Ultra…), whose models differ; read
     // them from the CLI itself instead of the fixed list, which only ever showed one plan's models.
-    const agyCli = agyCliFor(instanceId, env);
+    const agyCli = selectedAgyCli(config.cli, instanceId, env);
     if (agyCli) return discoverAcpModels(env, agyCli, ["acp"], { default: currentEngineCatalog("antigravity").default, exitGraceMs: 2_000 });
     const runtime = await resolveAntigravityRuntime(config.cli, env);
     const profile = await prepareAntigravityProfile({ instanceId, runtime, baseEnv: env });
@@ -141,7 +146,7 @@ const support: AcpSupport = {
   authFailure: "fail",
   requireAuthenticationBeforeSpawn: true,
   isAuthenticated: async (env, config, instanceId) => {
-    if (agyCliFor(instanceId, env)) return true;
+    if (selectedAgyCli(config.cli, instanceId, env)) return true;
     try {
       const runtime = await resolveAntigravityRuntime(config.cli, env);
       const profile = await prepareAntigravityProfile({ instanceId, runtime, baseEnv: env });
@@ -151,7 +156,7 @@ const support: AcpSupport = {
     }
   },
   snapshot: async (env, config, instanceId): Promise<ProviderSnapshot> => {
-    if (agyCliFor(instanceId, env)) return { state: "available", version: "Antigravity CLI", authenticated: true };
+    if (selectedAgyCli(config.cli, instanceId, env)) return { state: "available", version: "Antigravity CLI", authenticated: true };
     try {
       const runtime = await resolveAntigravityRuntime(config.cli, env);
       const profile = await prepareAntigravityProfile({ instanceId, runtime, baseEnv: env });
@@ -205,12 +210,13 @@ export const AntigravityDriver: ProviderDriver<AcpConfig> = {
       });
       return { runtime, profile };
     };
+    const env = { ...process.env, ...input.environment, PATH: augmentedPath() };
+    const guestCli = selectedAgyCli(input.config.cli, input.instanceId, env);
+    const normal = { ...base.adapter, sendTurn: async (turn: SendTurnInput) => base.adapter.sendTurn(stageAntigravitySkills(turn, antigravityProfileDirectory(input.instanceId))) };
+    const adapter = guestCli ? antigravityGuestAdapter(normal, guestCli, env) : normal;
     return {
       ...base,
-      adapter: {
-        ...base.adapter,
-        sendTurn: async (turn) => base.adapter.sendTurn(stageAntigravitySkills(turn, antigravityProfileDirectory(input.instanceId))),
-      },
+      adapter,
       get models() {
         return base.models;
       },
@@ -250,6 +256,7 @@ export const AntigravityDriver: ProviderDriver<AcpConfig> = {
       },
       dispose: async () => {
         auth.cancel();
+        await adapter.stopAll();
         await base.dispose();
       },
     };

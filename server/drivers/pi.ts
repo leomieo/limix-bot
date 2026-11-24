@@ -436,7 +436,7 @@ export const PiDriver: ProviderDriver<PiConfig> = {
       const { threadId } = turn;
       const selection = parseToolScope(turn.toolScope);
       if (!selection.ok) throw new Error(selection.error);
-      const toolScope = selection.scope;
+      const toolScope = turn.guestConfined ? { allow: [] } : selection.scope;
       if (active.has(threadId)) throw new Error("a turn is already running on this thread");
       const fullAuto = turn.approvalMode === undefined ? config.fullAuto : false;
       // Host control always routes through the permission card, full-auto or not.
@@ -463,7 +463,7 @@ export const PiDriver: ProviderDriver<PiConfig> = {
 
       // The MCP config carries credentials: a 0600 temp file removed at settle, never argv.
       // Written on every turn: the extension also carries ask_user.
-      const mcpServers = buildMcpServers(turn);
+      const mcpServers = turn.guestConfined ? {} : buildMcpServers(turn);
       const askUser = toolScope === undefined || allowsTool(toolScope, { kind: "native", name: ASK_USER_TOOL });
       const mcpTempDir = mkdtempSync(join(tmpdir(), "omb-pi-mcp-"));
       const scopeReadyPath = toolScope !== undefined ? join(mcpTempDir, "scope-ready.json") : undefined;
@@ -476,7 +476,8 @@ export const PiDriver: ProviderDriver<PiConfig> = {
         } catch {}
         throw err;
       }
-      const childArgs = [...PI_ARGS, "-e", SPAWNED_PROXIES.piMcpExtension];
+      const guestArgs = turn.guestConfined ? ["--no-tools", "--no-extensions", "--no-skills", "--no-context-files", "--no-prompt-templates"] : [];
+      const childArgs = [...PI_ARGS, ...guestArgs, "-e", SPAWNED_PROXIES.piMcpExtension];
 
       // spawnCli can throw synchronously, before settle() could remove the credential file.
       const child = (() => {
@@ -978,6 +979,7 @@ export const PiDriver: ProviderDriver<PiConfig> = {
         provider: DRIVER_KIND,
         capabilities: {
           sessionModelSwitch: "in-session",
+          guestTurns: "confined",
           // pi core has no MCP client of its own.
           agentsMcp: true,
           computerMcp: true,

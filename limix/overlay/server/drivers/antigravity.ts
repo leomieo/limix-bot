@@ -1,0 +1,264 @@
+// Google Antigravity through its official ACP server: managed runtime, isolated Google profile,
+// model/mode configuration and OAuth.
+import type { ApprovalMode } from "../../shared/approval-mode.ts";
+import { dirname, join } from "node:path";
+import { stageAntigravitySkills } from "./antigravity-skills.ts";
+import { antigravityAccount } from "./antigravity-account.ts";
+import type {
+  DriverCreateInput,
+  ModelCatalog,
+  ProviderDriver,
+  ProviderInstance,
+  ProviderSnapshot,
+  SendTurnInput,
+} from "../contracts.ts";
+import { createAcpDriver, type AcpConfig, type AcpSupport } from "./acp/core.ts";
+import {
+  AntigravityAuthController,
+  antigravityProfileAuthenticated,
+  antigravityProfileDirectory,
+  prepareAntigravityProfile,
+  probeAntigravityModels,
+  removeAntigravitySignIn,
+  validateAntigravityRuntime,
+} from "./antigravity-acp.ts";
+import {
+  antigravityManagedInstallAvailable,
+  installAntigravityRuntime,
+  resolveAntigravityRuntime,
+} from "./antigravity-runtime.ts";
+import { resolveAntigravityReleaseAsset } from "./antigravity-release.ts";
+import { VERIFICATION_TEMP_KEY, scheduleAntigravityTempSweep } from "./antigravity-temp.ts";
+import { augmentedPath } from "../env-path.ts";
+import { antigravityGuestAdapter } from "./antigravity-guest.ts";
+import { agyCliFor, releaseAgyCli } from "../limix-agy-cli.ts";
+import { bundledEngineCatalog } from "../model-manifest/bundled.ts";
+import { currentEngineCatalog } from "../model-manifest/manifest.ts";
+import { discoverAcpModels } from "./acp/custom-model-catalog.ts";
+
+export const STATIC_ANTIGRAVITY_MODELS: ModelCatalog = bundledEngineCatalog("antigravity");
+
+/** Bots saved before the thinking-level option hold ids like `gemini-3.8-flash-medium` or `gemini-4-argon-high`;
+ * the official runtime offers only the base model with that option, so run the base at the saved level. A runtime
+ * that still offers the suffixed id, or lacks the base, or a turn that chose its own level, keeps its selection. */
+export function normalizeAntigravityTurn(turn: SendTurnInput, offeredModels: readonly string[]): SendTurnInput {
+  if (turn.variant !== undefined) return turn;
+  const match = turn.model?.match(/^(.+)-(low|medium|high)$/u);
+  return match && offeredModels.includes(match[1]) && !offeredModels.includes(match[0])
+    ? { ...turn, model: match[1], variant: match[2] }
+    : turn;
+}
+
+/** Antigravity's session modes: `yolo` for Full, `auto_edit` for auto-accept edits, `default` otherwise (it has no reviewer for Auto). */
+export function antigravityPermissionMode(fullAuto: boolean, approvalMode?: ApprovalMode): "yolo" | "auto_edit" | "default" {
+  if (fullAuto || approvalMode === "full") return "yolo";
+  return approvalMode === "edits" ? "auto_edit" : "default";
+}
+
+const managedAsset = resolveAntigravityReleaseAsset();
+
+const LIMIX_MODE_ALIASES: Record<string, string[]> = {
+  yolo: ["yolo", "bypassPermissions", "bypass_permissions", "full", "auto", "autoEdit", "auto_edit", "acceptEdits"],
+  auto_edit: ["auto_edit", "autoEdit", "acceptEdits", "accept_edits"],
+  default: ["default", "ask", "normal"],
+};
+
+/** The mode value this session offers for `wanted`; null when it offers none (the session keeps its own). */
+function limixModeFor(wanted: string, option: any): string | null {
+  const offered: string[] = [];
+  const collect = (list: unknown): void => {
+    if (!Array.isArray(list)) return;
+    for (const item of list) {
+      if (item && typeof item === "object" && Array.isArray((item as any).options)) collect((item as any).options);
+      const value = item && typeof item === "object" ? (item as any).value ?? (item as any).id : item;
+      if (typeof value === "string") offered.push(value);
+    }
+  };
+  collect(option?.options);
+  if (offered.length === 0) return wanted;
+  return (LIMIX_MODE_ALIASES[wanted] ?? [wanted]).find((value) => offered.includes(value)) ?? null;
+}
+
+function selectedAgyCli(cli: string | undefined, id: string, env: NodeJS.ProcessEnv) {
+  return !cli || cli === "agy" ? agyCliFor(id, env) : null;
+}
+
+const support: AcpSupport = {
+  driverKind: "antigravityAgent",
+  // Named for what people look for: Google moved personal Gemini subscriptions (free, AI Pro, AI Ultra) from Gemini CLI to Antigravity on 2026-06-18.
+  displayName: "Google Gemini (Antigravity)",
+  get models() { return currentEngineCatalog("antigravity"); },
+  defaultCli: "agy", // migration alias: resolveAntigravityRuntime treats it as managed
+  nativeSource: "antigravity.acp",
+  loginNote: "Antigravity needs a Google account — choose Sign in with Google in engine setup",
+  install: {
+    docsUrl: "https://github.com/agentclientprotocol/registry/tree/main/antigravity-acp",
+    ...(managedAsset
+      ? { managed: { label: "Install official Antigravity", downloadBytes: managedAsset.archiveBytes } }
+      : {}),
+  },
+  images: true,
+  spawnArgs: () => [],
+  selectModel: { configId: "model" },
+  modelVariants: true,
+  normalizeSessionSelection: normalizeAntigravityTurn,
+  // Google's server reads its new-session default from this variable (agy_acp_server 1.4.3
+  // model_selection.get_default_model_id); a later switch re-fetches the model list (1.3-1.8 s).
+  sessionModelEnv: "AGY_ACP_DEFAULT_MODEL",
+  sessionScopedApproval: true,
+  resumeMethod: "resume",
+  clientFileSystem: true,
+  clientReadRoots: (turn) => (turn.skillFiles ?? []).map(dirname),
+  sanitizeToolPayload: true,
+
+  resolveCommand: async (env, config, instanceId) => {
+    const agyCli = selectedAgyCli(config.cli, instanceId, env);
+    if (agyCli) return { command: agyCli, args: ["acp"] };
+    const runtime = await resolveAntigravityRuntime(config.cli, env);
+    const profile = await prepareAntigravityProfile({ instanceId, runtime, baseEnv: env });
+    if (profile.tempDirectory) scheduleAntigravityTempSweep(instanceId);
+    return {
+      command: runtime.executablePath,
+      args: process.platform === "linux" ? ["--uid="] : [],
+      env: profile.environment,
+      ro: [join(profile.directory, "omb-skills")],
+    };
+  },
+
+  resolveModels: async (env, config, instanceId) => {
+    // Limix: the person's own `agy` CLI is signed in to their Google account (Pro, Ultra…), whose models differ; read
+    // them from the CLI itself instead of the fixed list, which only ever showed one plan's models.
+    const agyCli = selectedAgyCli(config.cli, instanceId, env);
+    if (agyCli) return discoverAcpModels(env, agyCli, ["acp"], { default: currentEngineCatalog("antigravity").default, exitGraceMs: 2_000 });
+    const runtime = await resolveAntigravityRuntime(config.cli, env);
+    const profile = await prepareAntigravityProfile({ instanceId, runtime, baseEnv: env });
+    if (!(await antigravityProfileAuthenticated(profile))) throw new Error(support.loginNote);
+    return probeAntigravityModels({
+      runtime,
+      profile,
+      fallbackDefault: currentEngineCatalog("antigravity").default,
+    });
+  },
+
+  pickAuthMethod: (methods) => methods.some((method) => method.id === "oauth-personal")
+    ? "oauth-personal"
+    : null,
+  authFailure: "fail",
+  requireAuthenticationBeforeSpawn: true,
+  isAuthenticated: async (env, config, instanceId) => {
+    if (selectedAgyCli(config.cli, instanceId, env)) return true;
+    try {
+      const runtime = await resolveAntigravityRuntime(config.cli, env);
+      const profile = await prepareAntigravityProfile({ instanceId, runtime, baseEnv: env });
+      return antigravityProfileAuthenticated(profile);
+    } catch {
+      return false;
+    }
+  },
+  snapshot: async (env, config, instanceId): Promise<ProviderSnapshot> => {
+    if (selectedAgyCli(config.cli, instanceId, env)) return { state: "available", version: "Antigravity CLI", authenticated: true };
+    try {
+      const runtime = await resolveAntigravityRuntime(config.cli, env);
+      const profile = await prepareAntigravityProfile({ instanceId, runtime, baseEnv: env });
+      return {
+        state: "available",
+        version: runtime.version,
+        authenticated: await antigravityProfileAuthenticated(profile),
+        account: await antigravityAccount(profile.tokenPath),
+      };
+    } catch (error) {
+      return { state: "unavailable", reason: error instanceof Error ? error.message : String(error) };
+    }
+  },
+
+  configureSession: async ({ request, sessionId, config, turn, configOptions }) => {
+    if (!Array.isArray(configOptions) || !configOptions.some(option => option?.id === "mode")) {
+      return;
+    }
+    const wanted = limixModeFor(antigravityPermissionMode(config.fullAuto, turn.approvalMode), configOptions.find((option: any) => option?.id === "mode"));
+    if (!wanted) return;
+    const result = await request("session/set_config_option", {
+      sessionId,
+      configId: "mode",
+      value: wanted,
+    });
+    const mode = Array.isArray(result?.configOptions)
+      ? result.configOptions.find((option: any) => option?.id === "mode")?.currentValue
+      : undefined;
+    if (mode !== wanted) throw new Error(`Antigravity did not apply ${wanted} permission mode.`);
+  },
+};
+
+const AcpAntigravityDriver = createAcpDriver(support);
+
+export const AntigravityDriver: ProviderDriver<AcpConfig> = {
+  ...AcpAntigravityDriver,
+  async create(input: DriverCreateInput<AcpConfig>): Promise<ProviderInstance> {
+    const base = await AcpAntigravityDriver.create(input);
+    scheduleAntigravityTempSweep(input.instanceId);
+    scheduleAntigravityTempSweep(VERIFICATION_TEMP_KEY);
+    const auth = new AntigravityAuthController(() => void base.refreshModels?.());
+    let installFailure: string | undefined;
+    const runtimeAndProfile = async () => {
+      // A GUI launch's raw PATH may omit the official runtime the model picker found.
+      const environment = { ...process.env, ...input.environment, PATH: augmentedPath() };
+      const runtime = await resolveAntigravityRuntime(input.config.cli, environment);
+      const profile = await prepareAntigravityProfile({
+        instanceId: input.instanceId,
+        runtime,
+        baseEnv: environment,
+      });
+      return { runtime, profile };
+    };
+    const env = { ...process.env, ...input.environment, PATH: augmentedPath() };
+    const guestCli = selectedAgyCli(input.config.cli, input.instanceId, env);
+    const normal = { ...base.adapter, sendTurn: async (turn: SendTurnInput) => base.adapter.sendTurn(stageAntigravitySkills(turn, antigravityProfileDirectory(input.instanceId))) };
+    const adapter = guestCli ? antigravityGuestAdapter(normal, guestCli, env) : normal;
+    return {
+      ...base,
+      adapter,
+      get models() {
+        return base.models;
+      },
+      get modelsUnconfirmed() {
+        return base.modelsUnconfirmed;
+      },
+      snapshot: async () => {
+        const snapshot = await base.snapshot();
+        if (snapshot.state === "available") installFailure = undefined;
+        return snapshot.state === "unavailable" && installFailure
+          ? { ...snapshot, reason: installFailure }
+          : snapshot;
+      },
+      ...(antigravityManagedInstallAvailable()
+        ? {
+            installRuntime: async () => {
+              installFailure = undefined;
+              try {
+                await installAntigravityRuntime({ validate: validateAntigravityRuntime });
+              } catch (error) {
+                installFailure = error instanceof Error ? error.message : String(error);
+                throw error;
+              }
+            },
+          }
+        : {}),
+      startAuthentication: async () => {
+        const { runtime, profile } = await runtimeAndProfile();
+        return auth.start(runtime, profile);
+      },
+      completeAuthentication: async (flowId, callbackUrl) => auth.complete(flowId, callbackUrl),
+      cancelAuthentication: async () => auth.cancel(),
+      signOut: async () => {
+        auth.cancel();
+        await removeAntigravitySignIn(input.instanceId);
+        releaseAgyCli(input.instanceId);
+      },
+      dispose: async () => {
+        auth.cancel();
+        await adapter.stopAll();
+        await base.dispose();
+      },
+    };
+  },
+};

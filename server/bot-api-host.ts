@@ -2,6 +2,7 @@
 // message in, the bot's reply out; the turn it starts is outside work (the "api" trigger), so it never acts for the
 // person, is told the message came from outside, and anything that needs an approval waits for the person in the thread.
 // Inside: the app's routes to switch it on, mint a key and switch it off, open only to whoever may edit the bot.
+import type { ModelSelection } from "./contracts.ts";
 import type { ChannelAsk } from "./bot-channels/engine.ts";
 import type { ChannelMedia } from "./bot-channels/channel-media.ts";
 import { z } from "zod";
@@ -40,6 +41,7 @@ export interface BotApiTurnOptions {
   threadId: string;
   /** "api" for an outside caller; absent for the owner writing from a channel this server reads (as from the app). */
   automationSource?: "api";
+  channelGuestModel?: ModelSelection;
   unattended: true;
   userMessage: Message;
   onSettled: (outcome: TurnOutcome) => void;
@@ -55,6 +57,7 @@ export interface BotApiHostDeps {
   canStart(botId: string, threadId: string): boolean;
   /** This bot's AI can run a turn with no shell and no tools; one that can't doesn't take a call. */
   canConfine(botId: string, threadId?: string): boolean;
+  channelGuestModel?(botId: string, threadId?: string): Promise<ModelSelection | undefined>;
   channelModelChanging?(botId: string, threadId?: string): boolean;
   /** A thread the API opened whose turn never started. */
   discard?(botId: string, threadId: string): void;
@@ -174,7 +177,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     return reply?.attachments?.filter((file): file is ChannelMedia => (file.kind === "image" && !file.fromTool) || file.kind === "file") ?? [];
   }
 
-  async function runCall(botId: string, call: z.output<typeof callSchema>, turnStarted: () => void, channel?: { attachment?: ChannelMedia; delivery?: Parameters<ChannelAsk>[1]["delivery"]; collect(files: ChannelMedia[]): void }): Promise<{ status: number; body: BotApiReply }> {
+  async function runCall(botId: string, call: z.output<typeof callSchema>, turnStarted: () => void, channel?: { model?: ModelSelection; attachment?: ChannelMedia; delivery?: Parameters<ChannelAsk>[1]["delivery"]; collect(files: ChannelMedia[]): void }): Promise<{ status: number; body: BotApiReply }> {
     const store = deps.store;
     let threadId = call.thread;
     if (threadId !== undefined) {
@@ -212,6 +215,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       channel?.delivery?.signal.throwIfAborted();
       await deps.startTurn(botId, mediaPrompt(botApiPrompt(message, receivedAt, { guestChannel: Boolean(channel), publicLookup, careFacts }), channel?.attachment), {
         threadId, automationSource: "api", unattended: true, userMessage,
+        ...(channel?.model ? { channelGuestModel: channel.model } : {}),
         onSettled: (outcome) => { settled = outcome; markRunning(botId, threadId!, false); },
         onDispatchError: (message) => { dispatchError = message; markRunning(botId, threadId!, false); },
       });
@@ -252,9 +256,11 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     if (deps.channelModelChanging?.(botId, channelThread)) failBeforeAcceptance("capacity_busy");
     if (!input.owner) {
       if (savedTask && !savedTask.botApi) fail(404, "no such thread");
-      if (!deps.canConfine(botId, channelThread)) throw Object.assign(new Error(CANNOT_CONFINE), { status: 403, code: "guest_engine" });
+      const model = await deps.channelGuestModel?.(botId, channelThread);
+      if (deps.channelModelChanging?.(botId, channelThread)) failBeforeAcceptance("capacity_busy");
+      if (deps.channelGuestModel ? !model : !deps.canConfine(botId, channelThread)) throw Object.assign(new Error(CANNOT_CONFINE), { status: 403, code: "guest_engine" });
       let attachments: ChannelMedia[] = [];
-      const answer = await runCall(botId, { message: input.text, ...(channelThread ? { thread: channelThread } : {}), wait: Math.round((input.waitMs ?? 600_000) / 1000) } as z.output<typeof callSchema>, () => {}, { attachment: input.attachment, delivery: input.delivery, collect(files) { attachments = files; } });
+      const answer = await runCall(botId, { message: input.text, ...(channelThread ? { thread: channelThread } : {}), wait: Math.round((input.waitMs ?? 600_000) / 1000) } as z.output<typeof callSchema>, () => {}, { model, attachment: input.attachment, delivery: input.delivery, collect(files) { attachments = files; } });
       const body = answer.body as { reply?: string; thread: string; status?: "needs_approval" | "working" };
       return { threadId: body.thread, ...(attachments.length ? { attachments } : {}), reply: body.reply ?? "", ...(body.status ? { status: body.status } : {}) };
     }

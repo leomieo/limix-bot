@@ -55,6 +55,8 @@ it("mounts the operator toolkit and supplies only the current bot's public facts
     catalog("other-bot");
     expect(await ask()).not.toContain("fixture approved price list");
     catalog(bot.id);
+    const primary = { instanceId: "claude", model: "claude-sonnet-5" };
+    await api("PATCH", `/api/bots/${bot.id}`, { modelSelection: primary });
     const bridge = `/api/bots/${bot.id}/messenger`;
     await api("POST", bridge, { token: JSON.stringify({ uid: "100045", name: "Fixture" }), access: "everyone" });
     await expect.poll(async () => (await api<{ bots: string[] }>("GET", "/api/messenger/bots")).bots).toContain(bot.id);
@@ -77,7 +79,13 @@ it("mounts the operator toolkit and supplies only the current bot's public facts
     expect(secondThread).not.toBe(firstThread);
     expect(JSON.stringify(dump())).not.toContain("care-fixture-customer-ALPHA");
 
+    const { bots } = await api<{ bots: { id: string; modelSelection: unknown }[] }>("GET", "/api/bots");
+    expect(bots.find(item => item.id === bot.id)?.modelSelection).toEqual(primary);
+    expect(dump().argv).toContain("--restricted");
+
+    await api("PATCH", `/api/bots/${bot.id}`, { modelSelection: { instanceId: "claude", model: "claude-opus-5-5" } });
     await exchange("fixture:care:3", "customer-a", "Tôi hỏi thêm về sản phẩm.");
+    expect(dump().argv).toContain("claude-opus-5-5");
     expect(channelChats()["customer-a"]).toBe(firstThread);
     expect(JSON.stringify(dump())).not.toContain("care-fixture-customer-BETA");
     for (const [threadId, included, excluded] of [

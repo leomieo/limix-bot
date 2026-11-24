@@ -1,0 +1,16 @@
+{
+  "server/index.ts": [
+    {
+      "before": "    automationSource?: RoutineRunTrigger;\n    unattended?: boolean;",
+      "after": "    automationSource?: RoutineRunTrigger;\n    channelGuestModel?: ModelSelection;\n    unattended?: boolean;"
+    },
+    {
+      "before": "  const bot = store.projectBotForTask(botId, threadId);\n  if (!bot) throw Object.assign(new Error(\"no such task\"), { status: 404 });\n  if (bot.approvalGrant)",
+      "after": "  const projected = store.projectBotForTask(botId, threadId);\n  if (!projected) throw Object.assign(new Error(\"no such task\"), { status: 404 });\n  // Only the confined channel ingress may override the provider for a single turn.\n  const channelModel = opts?.channelGuestModel && opts.automationSource === \"api\" && botApiThread(threadId)\n    ? opts.channelGuestModel : undefined;\n  const bot = channelModel ? { ...projected, modelSelection: channelModel } : projected;\n  if (bot.approvalGrant)"
+    },
+    {
+      "before": "}, canConfine: (botId, threadId) => {",
+      "after": "}, channelGuestModel: async (botId) => {\n  const selected = store.bot(botId)?.modelSelection;\n  return selected && registry.get(selected.instanceId)?.adapter.capabilities.guestTurns === \"confined\" ? selected : undefined;\n}, canConfine: (botId, threadId) => {"
+    }
+  ]
+}

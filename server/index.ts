@@ -7625,6 +7625,7 @@ async function beginTurn(
     runOn?: RoutineRunOn;
     /** Puts externally supplied payloads behind an explicit untrusted-data boundary in the system prompt. */
     automationSource?: RoutineRunTrigger;
+    channelGuestModel?: ModelSelection;
     unattended?: boolean;
     peerAsk?: Message["peerAsk"];
     /** The prompt is control-plane context, never a message authored by the user. */
@@ -7671,8 +7672,12 @@ async function beginTurn(
   }
   healThreadModel(botId, threadId);
   limitFailovers.restore(botId, threadId);
-  const bot = store.projectBotForTask(botId, threadId);
-  if (!bot) throw Object.assign(new Error("no such task"), { status: 404 });
+  const projected = store.projectBotForTask(botId, threadId);
+  if (!projected) throw Object.assign(new Error("no such task"), { status: 404 });
+  // Only the confined channel ingress may override the provider for a single turn.
+  const channelModel = opts?.channelGuestModel && opts.automationSource === "api" && botApiThread(threadId)
+    ? opts.channelGuestModel : undefined;
+  const bot = channelModel ? { ...projected, modelSelection: channelModel } : projected;
   if (bot.approvalGrant) {
     throw Object.assign(new Error("this bot's approval level is still being confirmed — try again"), { status: 409, code: "settling" });
   }
@@ -9590,6 +9595,9 @@ const webhooks = new WebhookManager({
 const webhookRequests = new WebhookRequestService({ store, webhooks, botName: (botId) => store.bot(botId)?.name ?? "the bot" }); const botApi = createBotApiHost({ store, startTurn, threadBusy, careFacts: (botId, message) => { const bot = store.bot(botId); return bot ? industryGuestFacts(bot, message, servers => managedPolicy.filterMcp(servers)) : Promise.resolve(undefined); }, canStart: (botId, threadId) => canAdmitDirectTurn(botId, threadId, false), channelModelChanging: (botId, threadId) => {
   const selection = threadId ? turnSelection(botId, threadId) : store.bot(botId)?.modelSelection;
   return Boolean(store.bot(botId)?.approvalGrant || selection && providerInstancesChanging.has(selection.instanceId));
+}, channelGuestModel: async (botId) => {
+  const selected = store.bot(botId)?.modelSelection;
+  return selected && registry.get(selected.instanceId)?.adapter.capabilities.guestTurns === "confined" ? selected : undefined;
 }, canConfine: (botId, threadId) => {
   const selection = threadId ? turnSelection(botId, threadId) : store.bot(botId)?.modelSelection;
   return registry.get(selection?.instanceId ?? "")?.adapter.capabilities.guestTurns === "confined";
