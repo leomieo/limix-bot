@@ -24,15 +24,16 @@ Limix Bot giúp bạn tạo đội bot AI để trò chuyện, giao việc và t
 
 1. Cài gói phù hợp và đăng nhập tài khoản Limix khi ứng dụng yêu cầu.
 2. Vào **Cài đặt → AI**. Chọn nhà cung cấp rồi đăng nhập hoặc thêm khóa API.
-3. Chọn **+** ở thanh bên, đặt tên và vai trò cho bot rồi bắt đầu trò chuyện.
+3. Mở **Trợ lý Limix**, chọn mẫu bot hoặc nhóm theo ngành rồi bấm **Dùng mẫu**. Bạn cũng có thể chọn **+** ở thanh bên để tự tạo bot.
 
 ## Bạn có thể làm gì
 
+- Chọn từ 30 mẫu bot phòng ban và 10 nhóm theo ngành. Dùng Siêu bot CSKH để phân loại yêu cầu, tra danh mục của bạn và chuẩn bị bàn giao cho nhân viên.
 - Giao vai trò, chọn mô hình AI và thêm kỹ năng riêng cho từng bot. Cho các bot phối hợp trong nhóm hoặc lên lịch làm việc định kỳ.
 - Kết nối Telegram, Zalo, Discord và các kênh được hỗ trợ trong phần **Kênh chat** của bot. Tính năng gửi tệp phụ thuộc vào từng nền tảng.
 - Cài kỹ năng từ thư viện Limix và xem quyền, công cụ cần dùng trước khi bật.
 - Cho bot làm việc trong trình duyệt hoặc trên máy tính riêng, tùy cấu hình. Ghép nối điện thoại để truy cập khi máy chủ bot đang chạy và có mạng.
-- Khi My Cloud mất kết nối, chọn **Dùng máy tính này** để làm việc với các bot có sẵn trên máy. Bật đồng bộ để gửi lịch sử local lên My Cloud khi kết nối lại. Khi chọn **Về máy** cho bot đang ở My Cloud, ứng dụng tải các cuộc trò chuyện và tin nhắn về trước khi bật bot local.
+- Khi My Cloud mất kết nối, chọn **Dùng máy tính này** để làm việc với các bot có sẵn trên máy. Đồng bộ lịch sử trò chuyện khi kết nối lại.
 
 ## Yêu cầu và lưu ý
 
@@ -63,15 +64,16 @@ Limix Bot lets you build a team of AI bots to chat, delegate work and automate r
 
 1. Install the matching package and sign in to your Limix account when prompted.
 2. Open **Settings → AI**. Choose a provider, then sign in or add an API key.
-3. Select **+** in the sidebar, give your bot a name and role, and start a conversation.
+3. Open the **Limix assistant**, choose a bot or industry team, then select **Use template**. You can also select **+** in the sidebar to create your own bot.
 
 ## What you can do
 
+- Choose from 30 departmental bot templates and 10 industry teams. Use the customer support bot to triage requests, look up products in your catalog and prepare handoffs.
 - Give each bot a role, an AI model and its own skills. Let bots work together in groups or run scheduled tasks.
 - Connect Telegram, Zalo, Discord and other supported services in the bot’s **Chat channels** settings. File support varies by service.
 - Install skills from the Limix library and review the permissions and tools they need before enabling them.
 - Let your bots work in a browser or a dedicated computer, depending on your setup. Pair your phone for access while the bot’s host is running and online.
-- If My Cloud is unavailable, select **Use this computer** to keep working with bots stored locally. Enable sync to upload local history when the connection returns. When you select **Bring back** for a bot on My Cloud, Limix Bot downloads its conversations and messages before starting it locally.
+- If My Cloud is unavailable, select **Use this computer** to keep working with bots stored locally. Sync chat history when the connection returns.
 
 ## Requirements and notes
 

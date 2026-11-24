@@ -2,8 +2,7 @@ import type { Components } from 'react-markdown';
 import ReactMarkdown from 'react-markdown';
 
 const RELEASE_REPOSITORIES = [
-  'milind-soni/OpenMausBot',
-  'milind-soni/openmausbot-releases',
+  'leomieo/limix-bot',
 ] as const;
 const RELEASES_PER_PAGE = 100;
 const MAX_RELEASE_PAGES = 10;
@@ -63,8 +62,7 @@ function releaseNotes(release: GitHubRelease) {
   const legacyDraft = LEGACY_DRAFT_NOTES.exec(body);
   if (!legacyDraft) return body;
 
-  const commit = legacyDraft[1];
-  return `This build predates curated release notes. [View its source commit (${commit.slice(0, 7)})](https://github.com/milind-soni/OpenMausBot/commit/${commit}).`;
+  return 'This build predates curated release notes.';
 }
 
 async function fetchPublishedReleases(repository: string): Promise<GitHubRelease[]> {
@@ -76,7 +74,7 @@ async function fetchPublishedReleases(repository: string): Promise<GitHubRelease
       const response = await fetch(endpoint, {
         headers: {
           Accept: 'application/vnd.github+json',
-          'User-Agent': 'OpenMausBot-docs',
+          'User-Agent': 'Limix-Bot-docs',
           'X-GitHub-Api-Version': '2022-11-28',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },

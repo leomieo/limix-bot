@@ -2,25 +2,25 @@ Limix Bot 0.3.100
 
 ## Tiếng Việt
 
-- Từ lời chào hoặc bảng Chi tiết của Trợ lý Limix, mở 30 mẫu bot phòng ban, 10 nhóm theo ngành hoặc mẫu Siêu bot CSKH. Xem trước rồi chọn **Dùng mẫu**. Các mẫu vẫn có sẵn khi thư viện trực tuyến mất kết nối.
-- Mỗi nhóm ngành có một bot tiếp nhận, ba bot chuyên môn và một phòng nội bộ để bàn giao yêu cầu đúng người phụ trách.
-- Siêu bot CSKH có thể phân loại yêu cầu, tra SKU trong danh mục công khai của doanh nghiệp và chuẩn bị hồ sơ bàn giao. Kết nối tài khoản nhắn tin và nạp danh mục của bạn khi thiết lập.
+- Chọn 30 mẫu bot phòng ban, 10 nhóm theo ngành hoặc Siêu bot CSKH ngay từ Trợ lý Limix.
+- Dùng nhóm mẫu để giao yêu cầu cho bot chuyên môn trong phòng chat của nhóm.
+- Kết nối kênh nhắn tin và thêm danh mục để Siêu bot CSKH phân loại yêu cầu, tra sản phẩm và chuẩn bị bàn giao.
 
 ## English
 
-- From the Limix assistant’s welcome message or Details panel, browse 30 departmental bot templates, 10 industry teams, or the customer support bot. Preview a template and select **Use template**. The templates remain available when the online library is offline.
-- Each industry team includes an intake bot, three specialists and an internal room for handing requests to the right person.
-- The customer support bot can triage requests, look up SKUs in your public catalog and prepare a handoff. Connect your messaging accounts and add your catalog during setup.
+- Browse 30 departmental bots, 10 industry teams, or the customer support bot from the Limix assistant.
+- Use a team template to hand off requests to the right specialist bot in the team chat.
+- Connect messaging channels and add a catalog so the support bot can triage requests, look up products and prepare handoffs.
 
 Limix Bot 0.3.99
 
 ## Tiếng Việt
 
-- Mục **Bản mẫu → Nhập** dùng tên .limixbot.json cho tệp sao lưu và .limixteam.json cho tệp nhóm. Bạn vẫn có thể nhập và xem trước tệp từ phiên bản cũ.
+- Có thể xem trước và nhập lại bản sao lưu bot hoặc mẫu nhóm từ các phiên bản trước.
 
 ## English
 
-- **Templates → Import** shows .limixbot.json for backups and .limixteam.json for team files. You can still import and preview files from earlier versions.
+- Preview and import bot backups or team templates from earlier versions.
 
 Limix Bot 0.3.98
 

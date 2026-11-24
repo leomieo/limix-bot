@@ -7,7 +7,7 @@ import { releaseHighlights } from "@/lib/release-highlights";
 import { RELEASES_URL, appVersion, openExternalLink } from "@/lib/app-links";
 import { productName } from "../lib/brand";
 import { cn } from "@/lib/cn";
-import { t } from "@/lib/i18n";
+import { activeLocale, t } from "@/lib/i18n";
 import { useDesktopCapabilities, windowFramed } from "./DesktopCapabilities";
 
 export function updateIndicatorShown(state: UpdaterState | null): boolean {
@@ -137,7 +137,7 @@ export function UpdateCard({
 
   const updater = window.ogb?.updater;
   const handoff = state.installMode === "handoff";
-  const highlights = releaseHighlights(state.releaseNotes);
+  const highlights = releaseHighlights(state.releaseNotes, undefined, activeLocale());
   const downloading = status === "downloading" || status === "preparing";
   const percent = status === "downloading" && state.percent != null ? Math.max(0, Math.min(100, Math.round(state.percent))) : null;
   const installing = status === "installing" || pending;

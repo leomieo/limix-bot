@@ -141,7 +141,8 @@ jobs:
           v=$(node -p "require('./package.json').version")
           tag="v$v"
           if ! gh release view "$tag" >/dev/null 2>&1; then
-            gh release create "$tag" --draft --title "Limix Bot $v" --notes-file limix/docs/RELEASE_NOTES.md --target "$GITHUB_SHA"
+            node scripts/limix-release-body.mjs "$v" > "$RUNNER_TEMP/limix-release-notes.md"
+            gh release create "$tag" --draft --title "Limix Bot $v" --notes-file "$RUNNER_TEMP/limix-release-notes.md" --target "$GITHUB_SHA"
           fi
           gh release upload "$tag" release/*.exe release/*.dmg release/*.zip release/*.AppImage release/*.deb release/*.blockmap release/latest*.yml --clobber
           gh release edit "$tag" --draft=false --latest

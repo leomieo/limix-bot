@@ -10,10 +10,10 @@ Choose your computer below. Each link always downloads the latest published buil
 
 | Platform | Recommended package | Notes |
 |---|---|---|
-| macOS Apple silicon | [Download `.dmg`](https://github.com/milind-soni/OpenMausBot/releases/latest/download/OpenMausBot.dmg) | Signed and notarized. Drag to Applications. |
-| macOS Intel | [Download `.dmg`](https://github.com/milind-soni/OpenMausBot/releases/latest/download/OpenMausBot-intel.dmg) | Signed and notarized. |
-| Windows x64 | [Download installer](https://github.com/milind-soni/OpenMausBot/releases/latest/download/OpenMausBot-setup.exe) | Per-user installer; Windows signing is not yet available. |
-| Ubuntu 24.04 x64 | [Download `.deb`](https://github.com/milind-soni/OpenMausBot/releases/latest/download/OpenMausBot-amd64.deb) · [AppImage](https://github.com/milind-soni/OpenMausBot/releases/latest/download/OpenMausBot.AppImage) | The `.deb` is recommended; the AppImage is portable. |
+| macOS Apple silicon | [Download `.dmg`](https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-Apple-Silicon.dmg) | Drag to Applications. |
+| macOS Intel | [Download `.dmg`](https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-Intel.dmg) | Drag to Applications. |
+| Windows x64 | [Download installer](https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-setup.exe) | Per-user installer; Windows signing is not yet available. |
+| Ubuntu 24.04 x64 | [Download `.deb`](https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-Linux-x64.deb) · [AppImage](https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-Linux-x64.AppImage) | The `.deb` is recommended; the AppImage is portable. |
 
 <Callout type="warn" title="Windows SmartScreen">
   The Windows installer is not code-signed yet. Windows may show “Unknown publisher.” Verify that you downloaded it from the official Limix Bot releases repository before choosing **More info → Run anyway**.
@@ -39,8 +39,8 @@ If your company uses Limix Bot Admin, you can sign in with your organization to 
 Requirements: Node.js 24 or newer, pnpm 10.33.0, and at least one authenticated agent CLI.
 
 ```bash
-git clone https://github.com/milind-soni/OpenMausBot.git
-cd OpenMausBot
+git clone https://github.com/leomieo/limix-bot.git
+cd limix-bot
 corepack enable
 pnpm install --frozen-lockfile
 ```

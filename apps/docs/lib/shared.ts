@@ -5,7 +5,7 @@ export const appName = 'MausBot Docs';
 export const siteUrl = 'https://docs.openmausbot.com';
 
 export const gitConfig = {
-  user: 'milind-soni',
-  repo: 'OpenMausBot',
+  user: 'leomieo',
+  repo: 'limix-bot',
   branch: 'main',
 };

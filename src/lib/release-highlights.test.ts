@@ -41,6 +41,20 @@ describe("releaseHighlights", () => {
     ]);
   });
 
+  it("chooses the display language for bilingual release notes", () => {
+    const notes = "## Tiếng Việt\n- Mở bộ mẫu theo ngành.\n## English\n> Open industry templates.";
+    expect(releaseHighlights(notes, 4, "vi-VN")).toEqual(["Mở bộ mẫu theo ngành."]);
+    expect(releaseHighlights(notes, 4, "en")).toEqual(["Open industry templates."]);
+    expect(releaseHighlights(notes, 4, "ja")).toEqual(["Open industry templates."]);
+  });
+
+  it("reads the language sections in GitHub HTML", () => {
+    const notes = "<h2>Tiếng Việt</h2><ul><li>Mở mẫu bot.</li></ul>"
+      + "<h2>English</h2><blockquote>\n<p>Open a bot template.</p>\n</blockquote>";
+    expect(releaseHighlights(notes, 4, "vi")).toEqual(["Mở mẫu bot."]);
+    expect(releaseHighlights(notes, 4, "en")).toEqual(["Open a bot template."]);
+  });
+
   it("stops at the limit and has nothing to say for empty or bullet-less notes", () => {
     expect(releaseHighlights(markdown, 2)).toHaveLength(2);
     expect(releaseHighlights(undefined)).toEqual([]);
