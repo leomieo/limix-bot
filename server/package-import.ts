@@ -1,3 +1,4 @@
+import { enableCodingWorkflow } from "./limix-skill-store.ts";
 // Packages are untrusted: import only adds new records, sets every privilege-bearing field itself, and rolls back on any failure.
 import { createHash, randomUUID } from "node:crypto";
 
@@ -90,6 +91,7 @@ export interface PackageImportOptions {
   visibility?: BotVisibility;
   /** Set only for an explicitly selected, server-generated industry package. */
   builtInIndustry?: boolean;
+  codingWorkflow?: boolean;
   org?: OrgImportContext;
 }
 
@@ -345,6 +347,7 @@ function runImport(source: ImportSource, options: PackageImportOptions, deps: Pa
         ...(agent?.connections ? { mcpServers: agent.connections.flatMap((key) => serverForKey.has(key) ? [serverForKey.get(key)!] : []) } : {}),
         ...avatar,
       });
+      if (options.codingWorkflow) enableCodingWorkflow(created.id);
       if (options.builtInIndustry) enableIndustryCare(created.id, pkg!.id);
       for (const skillName of agent?.skills ?? []) {
         const skill = skillByName.get(skillName);

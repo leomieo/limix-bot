@@ -339,7 +339,9 @@ export function createTeamRoutes(deps: TeamRouteDeps): RouteHandler {
       const body = await readBody(req, MAX_TEAM_BACKUP_BYTES);
       const builtInSlug = url.searchParams.get("builtInTeam");
       const localTeam = builtInSlug === null ? undefined : industryTeam(builtInSlug, url.searchParams.get("locale") ?? "en");
-      if (builtInSlug !== null && (!localTeam || importMode !== "add" || !isDeepStrictEqual(body, localTeam))) {
+      const engineering = builtInSlug === "engineering";
+      const checkedTemplate = engineering ? await fetchLibraryTeam("engineering") : localTeam;
+      if (builtInSlug !== null && (!checkedTemplate || importMode !== "add" || !isDeepStrictEqual(body, checkedTemplate))) {
         return json(res, 409, { error: "The built-in team differs from this preview. Open its card again." });
       }
       if (body?.format === "openmaus.backup") {
@@ -368,6 +370,7 @@ export function createTeamRoutes(deps: TeamRouteDeps): RouteHandler {
       }
       const deps = packageImportDeps(await defaultSelection());
       const options = {
+        codingWorkflow: engineering,
         mode: importMode as "add" | "project",
         cwd: projectCwd,
         room: url.searchParams.get("room") ?? undefined,

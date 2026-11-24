@@ -1,3 +1,4 @@
+import { isCodingTemplate } from "../../shared/coding-templates";
 import { api, desktopApprovalBridge, persistBotUpdate, persistTaskApproval, type Bot } from "@/state/store";
 import type { Routine } from "./routines";
 import type { BotCreationDraft } from "./bot-creation-draft";
@@ -38,6 +39,7 @@ export async function createConfiguredBot(
     method: "POST", body: JSON.stringify({ name: profile.name, title: profile.title,
       description: profile.description, ...chosenAi, section: profile.section,
       useDefaults: false, ...(visibility !== undefined ? { visibility } : {}), ...(reportsTo ? { reportsTo } : {}),
+      ...(!preset && isCodingTemplate(draft.role) ? { codingTemplate: draft.role } : {}),
       ...(!preset && draft.role === "video-workflow" ? { videoTemplate: true } : {}),
       ...(industry ? { industryTemplate: industry.id, templateLocale: activeLocale() } : {}),
       ...(Object.hasOwn(template.profile, "toolScope") ? { settings: { toolScope } } : {}),

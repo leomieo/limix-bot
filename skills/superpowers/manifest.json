@@ -1,0 +1,13 @@
+{
+  "id": "superpowers",
+  "name": "Superpowers",
+  "version": "7.0.2",
+  "description": "Design, implement, debug, review and verify software with 15 composable workflows.",
+  "defaultEnabled": false,
+  "triggerTerms": [
+    "software",
+    "code",
+    "lập trình"
+  ],
+  "requiredCapabilities": []
+}

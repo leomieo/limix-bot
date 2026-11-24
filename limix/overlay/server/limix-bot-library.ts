@@ -1,3 +1,4 @@
+import { isCodingTemplate } from "../shared/coding-templates.ts";
 // Limix bot templates: the "Bot dựng sẵn" list in Templates comes from github.com/leomieo/limix-bot-templates.
 // GET /api/limix/bots reads only the light list in catalog.json (cached ten minutes); GET /api/limix/bots/<id> fetches
 // that one bot's file when the person presses "Dùng mẫu". Everything is checked here before it reaches the page, and a
@@ -154,6 +155,7 @@ export function parseLibraryBot(value: unknown, expectedId: string): LibraryBot 
     }
     bot.skills = [...new Set(value.skills as string[])];
   }
+  if (isCodingTemplate(id)) bot.skills = [...new Set([...(bot.skills ?? []), "superpowers"])];
   return bot;
 }
 

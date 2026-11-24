@@ -1,0 +1,1 @@
+Superpowers 7.0.2, MIT. The skills directory is vendored from https://github.com/obra/superpowers/tree/22f0b463e7a5e579904dd6211a520321035526f7/skills . The Limix entrypoint supplies host-specific routing. See LICENSE.

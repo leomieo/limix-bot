@@ -273,7 +273,7 @@ export function TeamLibraryPanel({
     setError("");
     try {
       const preview = teamImportPreview(await api(`/api/team-library/teams/${entry.slug}${entry.builtIn ? `?locale=${activeLocale()}` : ""}`));
-      previewManifest(entry.builtIn ? { ...preview, builtInTeam: entry.slug } : preview, "library");
+      previewManifest(entry.builtIn || entry.slug === "engineering" ? { ...preview, builtInTeam: entry.slug } : preview, "library");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {

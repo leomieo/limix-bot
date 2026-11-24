@@ -59,7 +59,7 @@ const TEMPLATE_ID = new RegExp(`^(?:builtin:(${SLUG})|bot:(${SLUG})|team:(${SLUG
 
 export class TemplateIdError extends Error {}
 
-export function industryGalleryTarget(raw: string): GalleryTarget | undefined {
+export function industryGalleryTarget(raw: string, locale = "en"): GalleryTarget | undefined {
   const match = TEMPLATE_ID.exec(raw.trim());
   if (!match) return;
   if (match[3]) {
@@ -67,7 +67,7 @@ export function industryGalleryTarget(raw: string): GalleryTarget | undefined {
     if (team) return { kind: "team", id: team.slug, name: team.name };
     return;
   }
-  const bot = industryTemplate(match[1] ?? match[2] ?? match[5]);
+  const bot = industryTemplate(match[1] ?? match[2] ?? match[5], locale);
   if (bot) return { kind: "bot", id: bot.id, name: bot.name };
 }
 

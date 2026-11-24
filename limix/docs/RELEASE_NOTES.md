@@ -1,3 +1,13 @@
+Limix Bot 0.3.111
+
+## Tiếng Việt
+
+- Mẫu Dev, các mẫu bot chuyên lập trình và bốn thành viên của nhóm Kỹ thuật được trang bị Superpowers. Bot có thể chọn trong 15 quy trình để thiết kế tính năng, viết kiểm thử, tìm nguyên nhân lỗi và đánh giá mã trước khi bàn giao.
+
+## English
+
+- Dev, specialist coding templates and all four members of the Engineering team now include Superpowers. Bots can draw on 15 workflows to design features, write tests, diagnose defects and review changes before handoff.
+
 Limix Bot 0.3.110
 
 ## Tiếng Việt

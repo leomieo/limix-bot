@@ -94,6 +94,7 @@ export const READY_BOTS: ReadyBot[] = [
   },
   {
     id: "coder",
+    skills: ["superpowers"],
     category: "work",
     name: "Dev",
     title: "Coding partner",

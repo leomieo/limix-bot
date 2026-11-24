@@ -166,6 +166,7 @@ export async function fetchTeamCatalog(fetcher: Fetcher = fetch): Promise<TeamCa
   };
   try {
     const remote = await communityCatalog(fetcher);
+    for (const team of remote.teams) if (team.slug === "engineering") team.skills.push("Superpowers");
     const reserved = new Set(industryTeamCatalog.map((team) => team.slug));
     return { ...local, teams: [...industryTeamCatalog, ...remote.teams.filter((team) => !reserved.has(team.slug))] };
   } catch {

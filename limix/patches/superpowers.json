@@ -1,0 +1,78 @@
+{
+  "src/lib/create-configured-bot.ts": [
+    {
+      "before": "import { api, desktopApprovalBridge, persistBotUpdate, persistTaskApproval, type Bot } from \"@/state/store\";\n",
+      "after": "import { isCodingTemplate } from \"../../shared/coding-templates\";\nimport { api, desktopApprovalBridge, persistBotUpdate, persistTaskApproval, type Bot } from \"@/state/store\";\n"
+    },
+    {
+      "before": "      ...(!preset && draft.role === \"video-workflow\"",
+      "after": "      ...(!preset && isCodingTemplate(draft.role) ? { codingTemplate: draft.role } : {}),\n      ...(!preset && draft.role === \"video-workflow\""
+    }
+  ],
+  "server/routes/bots-create.ts": [
+    {
+      "before": "import type { WireBot } from \"../../shared/wire.ts\";\n",
+      "after": "import { isCodingTemplate } from \"../../shared/coding-templates.ts\";\nimport type { WireBot } from \"../../shared/wire.ts\";\n"
+    },
+    {
+      "before": "import { limixBundledSwitch }",
+      "after": "import { enableCodingWorkflow, limixBundledSwitch }"
+    },
+    {
+      "before": "      const video =",
+      "after": "      const coding = isCodingTemplate(body.codingTemplate);\n      if (body.codingTemplate !== undefined && (!coding || industry || body.preset || body.videoTemplate)) return json(res, 400, { error: \"Invalid coding template\" });\n      if (coding && auth.kind === \"session\" && !auth.scopes.includes(\"admin\")) return json(res, 403, { error: \"Installing a coding template requires admin access\" });\n      const video ="
+    },
+    {
+      "before": "        if (industry) enableIndustryCare",
+      "after": "        if (coding) enableCodingWorkflow(bot.id);\n        if (industry) enableIndustryCare"
+    }
+  ],
+  "server/team-library.ts": [
+    {
+      "before": "    const remote = await communityCatalog(fetcher);",
+      "after": "    const remote = await communityCatalog(fetcher);\n    for (const team of remote.teams) if (team.slug === \"engineering\") team.skills.push(\"Superpowers\");"
+    }
+  ],
+  "server/routes/teams.ts": [
+    {
+      "before": "      if (builtInSlug !== null && (!localTeam",
+      "after": "      const engineering = builtInSlug === \"engineering\";\n      const checkedTemplate = engineering ? await fetchLibraryTeam(\"engineering\") : localTeam;\n      if (builtInSlug !== null && (!checkedTemplate"
+    },
+    {
+      "before": "!isDeepStrictEqual(body, localTeam)",
+      "after": "!isDeepStrictEqual(body, checkedTemplate)"
+    },
+    {
+      "before": "        mode: importMode as",
+      "after": "        codingWorkflow: engineering,\n        mode: importMode as"
+    }
+  ],
+  "server/package-import.ts": [
+    {
+      "before": "// Packages are untrusted: import only adds new records, sets every privilege-bearing field itself, and rolls back on any failure.\n",
+      "after": "import { enableCodingWorkflow } from \"./limix-skill-store.ts\";\n// Packages are untrusted: import only adds new records, sets every privilege-bearing field itself, and rolls back on any failure.\n"
+    },
+    {
+      "before": "  builtInIndustry?: boolean;",
+      "after": "  builtInIndustry?: boolean;\n  codingWorkflow?: boolean;"
+    },
+    {
+      "before": "      if (options.builtInIndustry) enableIndustryCare",
+      "after": "      if (options.codingWorkflow) enableCodingWorkflow(created.id);\n      if (options.builtInIndustry) enableIndustryCare"
+    }
+  ],
+  "server/team-setup-requests.ts": [
+    {
+      "before": "import { createHash } from \"node:crypto\";\n",
+      "after": "import { isCodingTemplate } from \"../shared/coding-templates.ts\";\nimport { enableCodingWorkflow } from \"./limix-skill-store.ts\";\nimport { createHash } from \"node:crypto\";\n"
+    },
+    {
+      "before": "    const result = this.options.store.applyTeamSetup(request);",
+      "after": "    for (const operation of request.operations) {\n      if (operation.action !== \"create\") continue;\n      const id = operation.template?.id ?? \"\";\n      if (id.startsWith(\"team:engineering/\") || isCodingTemplate(id.replace(/^(?:builtin|bot):/, \"\"))) enableCodingWorkflow(operation.botId);\n    }\n    const result = this.options.store.applyTeamSetup(request);"
+    },
+    {
+      "before": "const gallery = industryGalleryTarget(id);",
+      "after": "const gallery = industryGalleryTarget(id, \"vi\");"
+    }
+  ]
+}

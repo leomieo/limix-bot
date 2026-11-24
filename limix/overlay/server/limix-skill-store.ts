@@ -31,6 +31,7 @@ export const LIMIX_CORE_SKILLS: ReadonlySet<string> = new Set([
 
 /** What a shipped skill does, in the app's language (the manifest has one language; the skill itself is unchanged). */
 const BUNDLED_TEXT: Record<string, [vi: string, en: string]> = {
+  superpowers: ["Lập kế hoạch, viết kiểm thử, gỡ lỗi, đánh giá mã và xác minh kết quả trước khi bàn giao.", "Plan, test, debug and review software, then verify the outcome before handoff."],
   "video-workflow": ["Lên kịch bản phân cảnh, tạo dự án video Hypit và kiểm tra phim xuất ra.", "Storyboard short videos, author Hypit projects and verify rendered files."],
   "limix-bot-factory": ["Tạo bản nháp bot và kỹ năng, kiểm tra quyền và xuất gói mẫu.", "Draft bots and skills, check permissions and export template packages."],
   "agent-reach": ["Tìm và đọc (chỉ đọc) X/Twitter, Reddit, YouTube (phụ đề), GitHub, Bilibili, XiaoHongShu, V2EX, LinkedIn… bằng lệnh agent-reach.", "Read-only search and reading on X/Twitter, Reddit, YouTube (subtitles), GitHub, Bilibili, XiaoHongShu, V2EX, LinkedIn and more through the agent-reach command."],
@@ -97,7 +98,7 @@ export function limixSelectBundled(text: string, capabilities: Iterable<string>,
   const folded = foldVietnamese(text);
   const unaccented = usable.filter(({ manifest }) => manifest.defaultEnabled && manifest.triggerTerms.some((term) => folded.includes(foldVietnamese(term))));
   const called = usable.filter(({ manifest }) => slashCalled(text, manifest.id));
-  return mergeSkills(mergeSkills(selectBundledSkills(text, available, skills), unaccented), [...called, ...usable.filter(skill => skill.manifest.id === "video-workflow" || industrySkills.has(skill.manifest.id))]);
+  return mergeSkills(mergeSkills(selectBundledSkills(text, available, skills), unaccented), [...called, ...usable.filter(skill => skill.manifest.id === "superpowers" || skill.manifest.id === "video-workflow" || industrySkills.has(skill.manifest.id))]);
 }
 
 export interface BundledListing {
@@ -123,6 +124,10 @@ export function limixBundledSwitch(botId: string, name: string, enabled: boolean
   }
   setBundledPick(botId, name, enabled);
   return { status: 200, body: { skill: { ...limixBundledListings(botId).find((skill) => skill.name === name), name, enabled } } };
+}
+
+export function enableCodingWorkflow(botId: string): void {
+  if (limixBundledSwitch(botId, "superpowers", true)?.status !== 200) throw new Error("The bundled Superpowers skill is unavailable.");
 }
 
 export type StoreBots = Pick<Store, "bot" | "patchBot">;

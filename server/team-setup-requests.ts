@@ -1,3 +1,5 @@
+import { isCodingTemplate } from "../shared/coding-templates.ts";
+import { enableCodingWorkflow } from "./limix-skill-store.ts";
 import { createHash } from "node:crypto";
 import { botOwner, chiefScope } from "../shared/bot-owner.ts";
 import { z } from "zod";
@@ -47,7 +49,7 @@ export class TeamSetupError extends Error {
 }
 
 function requireSetupTemplate(id: string) {
-  const gallery = industryGalleryTarget(id);
+  const gallery = industryGalleryTarget(id, "vi");
   if (gallery) throw new TeamSetupError(industryGalleryInstruction(gallery), 409);
 }
 
@@ -392,6 +394,11 @@ export class TeamSetupRequestService {
       const bot = operation.action === "update" ? this.options.store.bot(operation.botId) : undefined;
       return bot ? [{ id: bot.id, profile: profileSnapshot(bot) }] : [];
     });
+    for (const operation of request.operations) {
+      if (operation.action !== "create") continue;
+      const id = operation.template?.id ?? "";
+      if (id.startsWith("team:engineering/") || isCodingTemplate(id.replace(/^(?:builtin|bot):/, ""))) enableCodingWorkflow(operation.botId);
+    }
     const result = this.options.store.applyTeamSetup(request);
     for (const { id, profile } of before) {
       const bot = this.options.store.bot(id);

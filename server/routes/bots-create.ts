@@ -1,7 +1,8 @@
+import { isCodingTemplate } from "../../shared/coding-templates.ts";
 import type { WireBot } from "../../shared/wire.ts";
 import { industryBotSettings, industryTemplate } from "../../shared/industry-templates.ts";
 import { VIDEO_WORKFLOW } from "../../shared/ready-bots.ts";
-import { limixBundledSwitch } from "../limix-skill-store.ts";
+import { enableCodingWorkflow, limixBundledSwitch } from "../limix-skill-store.ts";
 import { enableIndustryCare } from "../industry-care.ts";
 import { freshLook } from "../bot-look.ts";
 import { validateBotCwd } from "../bot-cwd.ts";
@@ -106,6 +107,9 @@ export function createBotCreateRoutes(deps: BotCreateRouteDeps): RouteHandler {
       body = rest;
       const industry = typeof body.industryTemplate === "string" ? industryTemplate(body.industryTemplate, typeof body.templateLocale === "string" ? body.templateLocale : "en") : undefined;
       if (body.industryTemplate !== undefined && !industry) return json(res, 400, { error: "Unknown built-in industry template" });
+      const coding = isCodingTemplate(body.codingTemplate);
+      if (body.codingTemplate !== undefined && (!coding || industry || body.preset || body.videoTemplate)) return json(res, 400, { error: "Invalid coding template" });
+      if (coding && auth.kind === "session" && !auth.scopes.includes("admin")) return json(res, 403, { error: "Installing a coding template requires admin access" });
       const video = body.videoTemplate === true;
       if (video && (industry || body.preset !== undefined)) return json(res, 400, { error: "Choose one bot template" });
       if (video && auth.kind === "session" && !auth.scopes.includes("admin")) return json(res, 403, { error: "Installing a video template requires the admin scope" });
@@ -262,6 +266,7 @@ export function createBotCreateRoutes(deps: BotCreateRouteDeps): RouteHandler {
           if (ownersRoutines) cloudRoutineAuthors?.wrote(created.id, ownersRoutines);
         }
         if (video && limixBundledSwitch(bot.id, VIDEO_WORKFLOW.id, true)?.status !== 200) throw new Error("Could not install the video workflow skill");
+        if (coding) enableCodingWorkflow(bot.id);
         if (industry) enableIndustryCare(bot.id, industry.id);
       } catch (error) {
         for (const routine of createdRoutines) routines!.remove(routine.id);
