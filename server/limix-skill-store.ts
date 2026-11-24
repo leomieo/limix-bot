@@ -30,6 +30,7 @@ export const LIMIX_CORE_SKILLS: ReadonlySet<string> = new Set([
 
 /** What a shipped skill does, in the app's language (the manifest has one language; the skill itself is unchanged). */
 const BUNDLED_TEXT: Record<string, [vi: string, en: string]> = {
+  "limix-bot-factory": ["Tạo bản nháp bot và kỹ năng, kiểm tra quyền và xuất gói mẫu.", "Draft bots and skills, check permissions and export template packages."],
   "agent-reach": ["Tìm và đọc (chỉ đọc) X/Twitter, Reddit, YouTube (phụ đề), GitHub, Bilibili, XiaoHongShu, V2EX, LinkedIn… bằng lệnh agent-reach.", "Read-only search and reading on X/Twitter, Reddit, YouTube (subtitles), GitHub, Bilibili, XiaoHongShu, V2EX, LinkedIn and more through the agent-reach command."],
   "create-verification-skill": ["Viết một kĩ năng kiểm chứng cho một ứng dụng hoặc dự án cụ thể.", "Write one verification skill for a specific app or project."],
   "data-dashboards": ["Dựng trang và bảng số liệu nhanh, đẹp, ngay trong chat hoặc ở một đường link công khai.", "Build fast, good-looking pages and data dashboards, in the chat or at a public link."],
@@ -71,9 +72,9 @@ function setBundledPick(botId: string, id: string, on: boolean): void {
 }
 
 /** The shipped skills one bot has: the core ones and the ones a person added to it. */
-export function limixBundledFor(botId: string, skills: readonly BundledSkill[]): BundledSkill[] {
+export function limixBundledFor(botId: string, skills: readonly BundledSkill[], helperFactory = false): BundledSkill[] {
   const picks = bundledPicks(botId);
-  return skills.filter(({ manifest }) => LIMIX_CORE_SKILLS.has(manifest.id) || picks.has(manifest.id));
+  return skills.filter(({ manifest }) => manifest.id === "limix-bot-factory" ? helperFactory : LIMIX_CORE_SKILLS.has(manifest.id) || picks.has(manifest.id));
 }
 
 const slashCalled = (text: string, id: string) => new RegExp(`(^|\\s)/${id.replace(/[-]/g, "\\-")}(?=$|[\\s.,:;!?])`, "m").test(text);
@@ -99,8 +100,8 @@ export interface BundledListing {
 }
 
 /** The bot's shipped skills as rows of its Skills page. */
-export function limixBundledListings(botId: string): BundledListing[] {
-  return limixBundledFor(botId, loadBundledSkills()).map(({ manifest }) => ({
+export function limixBundledListings(botId: string, helperFactory = false): BundledListing[] {
+  return limixBundledFor(botId, loadBundledSkills(), helperFactory).map(({ manifest }) => ({
     name: manifest.id, description: limixSkillText(manifest.id, manifest.description), enabled: true, editable: false,
     source: LIMIX_CORE_SKILLS.has(manifest.id) ? lxs("Kĩ năng gốc của Limix Bot", "Limix Bot core skill") : lxs("Kho Kĩ Năng (Skills) · có sẵn", "Skills Store · built in"),
     sha256: "", importedAt: "", warnings: [], skippedFiles: [], origin: "bundled", core: LIMIX_CORE_SKILLS.has(manifest.id),
@@ -129,7 +130,8 @@ function storeItems(bots: StoreBots, botId: string): StoreItem[] {
   const picks = bundledPicks(botId);
   const items = new Map<string, StoreItem>();
   for (const { manifest } of loadBundledSkills()) {
-    const core = LIMIX_CORE_SKILLS.has(manifest.id);
+    if (manifest.id === "limix-bot-factory" && !bot.defaultBot) continue;
+    const core = LIMIX_CORE_SKILLS.has(manifest.id) || manifest.id === "limix-bot-factory";
     items.set(manifest.id, { name: manifest.id, description: limixSkillText(manifest.id, manifest.description), kind: "bundled", added: core || picks.has(manifest.id), core, ready: true, warnings: 0, source: lxs("Có sẵn trong Limix Bot", "Built into Limix Bot") });
   }
   for (const skill of listLibrarySkills()) {

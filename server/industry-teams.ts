@@ -1,49 +1,51 @@
+import { industryTeamLabel, industryWords } from "../shared/industry-display.ts";
 import { INDUSTRY_PROFILES, type IndustryProfile } from "../shared/industry-profiles.ts";
-import { industryRoleBot, SUPER_SUPPORT_BOT } from "../shared/industry-templates.ts";
+import { industryRoleBot, industryTemplate, INDUSTRY_CARE_SKILL } from "../shared/industry-templates.ts";
 import type { ReadyBot } from "../shared/ready-bots.ts";
 import { parsePackageDocument, type PackageDocument } from "../shared/package-format.ts";
 import type { TeamCatalogEntry } from "./team-library.ts";
 
 const teamSlug = (profile: IndustryProfile) => `industry-${profile.slug}`;
-const teamName = (profile: IndustryProfile) => `Nhóm ${profile.name}`;
+
 
 export const industryTeamCatalog: TeamCatalogEntry[] = INDUSTRY_PROFILES.map((profile) => ({
-  slug: teamSlug(profile), name: teamName(profile), summary: profile.description,
-  category: profile.name, members: profile.roles.length + 1, skills: ["industry-customer-care"],
+  slug: teamSlug(profile), ...industryTeamLabel(profile), members: profile.roles.length + 1, skills: ["industry-customer-care"],
   requires: { apps: [] }, manifest: `/api/team-library/teams/${teamSlug(profile)}`, builtIn: true,
 }));
 
-export function industryTeam(slug: string): PackageDocument | undefined {
+export function industryTeam(slug: string, locale = "en"): PackageDocument | undefined {
   const profile = INDUSTRY_PROFILES.find((item) => teamSlug(item) === slug);
   if (!profile) return undefined;
-  const roster = profile.roles.map((role) => `${role.name} — ${role.description}`).join("\n");
+  const label = industryTeamLabel(profile, locale);
+  const words = industryWords(locale);
+  const roster = profile.roles.map(role => `${role.name} — ${role.description}`).join("\n");
   const handoff = [
-    "Trong phòng nội bộ, CSKH nhận yêu cầu và chọn một bộ phận theo danh sách bên dưới. Khi giao việc trong phòng, dùng @ kèm đúng tên hiển thị của một thành viên đang ở phòng. Trong kênh khách hàng, chỉ soạn tóm tắt bàn giao.",
-    "Khi cần bàn giao, ghi bộ phận nhận, câu hỏi còn mở và nguồn đã kiểm tra. Chỉ ghi dữ kiện cần thiết đã được phép chia sẻ trong phòng.",
-    "Tách tin nhắn trả khách khỏi ghi chú nội bộ. Chỉ báo đã giao việc hoặc đã sửa hồ sơ khi hệ thống có xác nhận.",
-    "Khi gặp yêu cầu duyệt, thông tin riêng hoặc hai bộ phận chưa thống nhất, dừng chuyển tiếp và nhờ người phụ trách xử lý.",
+    "Triage each request and select one department from the roster. In internal rooms, mention the assigned member using @ and their exact current display name. On customer channels, prepare only a handoff summary.",
+    "Record the receiving department, open questions and checked sources. Share only necessary details authorized for this room.",
+    "Separate customer replies from internal notes. Confirm assignment or record changes only after system acknowledgement.",
+    "If approval, private data or conflicting decisions are involved, stop forwarding and ask the responsible human.",
     roster,
   ].join("\n");
   const agent = (key: string, bot: ReadyBot) => ({
     key, name: bot.name, title: bot.title, description: bot.description, soul: bot.soul,
     appearance: bot.look, approval: "ask", playbooks: ["handoff"],
   });
-  const lead = agent("care", SUPER_SUPPORT_BOT);
+  const lead = agent("care", industryTemplate(INDUSTRY_CARE_SKILL, locale)!);
   lead.soul += `\n\n${profile.name}\n${handoff}`;
-  const agents = [lead, ...profile.roles.map((role) => agent(role.slug, industryRoleBot(profile, role)))];
+  const agents = [lead, ...profile.roles.map((role) => agent(role.slug, industryRoleBot(profile, role, locale)))];
   return parsePackageDocument({
     format: "openmaus.package", version: 2,
     package: {
-      id: slug, release: "1.0.0", name: teamName(profile), tagline: profile.description, summary: profile.description,
-      category: profile.name, author: { name: "Limix Bot" }, license: "Apache-2.0",
-      outcomes: ["Bàn giao đúng bộ phận và phản hồi khách từ dữ kiện đã xác minh."], setupMinutes: 5,
+      id: slug, release: "1.0.0", name: label.name, tagline: label.summary, summary: label.summary,
+      category: label.category, author: { name: "Limix Bot" }, license: "Apache-2.0",
+      outcomes: [words.supportDescription], setupMinutes: 5,
       requirements: { apps: [], capabilities: [] },
-      team: { name: teamName(profile), brief: handoff },
+      team: { name: label.name, brief: handoff },
       agents,
-      rooms: [{ key: "care-desk", name: `Tiếp nhận · ${profile.name}`, members: agents.map((a) => a.key),
+      rooms: [{ key: "care-desk", name: `${words.intake} · ${label.category}`, members: agents.map((a) => a.key),
         bulletin: handoff, defaultResponder: { kind: "agent", agent: lead.key } }],
-      playbooks: [{ key: "handoff", name: "Tiếp nhận và bàn giao", summary: profile.description,
-        triggers: ["chuyển bộ phận", "bàn giao ca", "cần người duyệt"], instructions: handoff }],
+      playbooks: [{ key: "handoff", name: words.intake, summary: label.summary,
+        triggers: ["department transfer", "shift handoff", "approval required"], instructions: handoff }],
     },
   });
 }

@@ -217,7 +217,7 @@ export function createTeamRoutes(deps: TeamRouteDeps): RouteHandler {
     m = path.match(/^\/api\/team-library\/teams\/([a-z0-9][a-z0-9-]*)$/);
     if (m && method === "GET") {
       try {
-        return json(res, 200, await fetchLibraryTeam(m[1]));
+        return json(res, 200, industryTeam(m[1], url.searchParams.get("locale") ?? "en") ?? await fetchLibraryTeam(m[1]));
       } catch (error) {
         const status = (error as { status?: number }).status === 404 ? 404 : 502;
         return json(res, status, { error: error instanceof Error ? error.message : "The team could not be loaded" });
@@ -338,7 +338,7 @@ export function createTeamRoutes(deps: TeamRouteDeps): RouteHandler {
       }
       const body = await readBody(req, MAX_TEAM_BACKUP_BYTES);
       const builtInSlug = url.searchParams.get("builtInTeam");
-      const localTeam = builtInSlug === null ? undefined : industryTeam(builtInSlug);
+      const localTeam = builtInSlug === null ? undefined : industryTeam(builtInSlug, url.searchParams.get("locale") ?? "en");
       if (builtInSlug !== null && (!localTeam || importMode !== "add" || !isDeepStrictEqual(body, localTeam))) {
         return json(res, 409, { error: "The built-in team differs from this preview. Open its card again." });
       }

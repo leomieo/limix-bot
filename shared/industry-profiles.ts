@@ -6,6 +6,7 @@ export interface IndustryRole {
   title: string;
   description: string;
   instructions: string;
+  vi: { name: string; title: string; description: string };
   inputs: string;
   handoff: string;
 }
@@ -14,6 +15,7 @@ export interface IndustryProfile {
   slug: string;
   name: string;
   description: string;
+  vi: { name: string; description: string };
   roles: readonly IndustryRole[];
 }
 

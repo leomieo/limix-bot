@@ -1,6 +1,8 @@
 // The community templates catalog (/api/team-library/catalog). Its names and
 // summaries come in English; the built-in teams show in the app's language.
-import { t } from "./i18n";
+import { industryTeamLabel } from "../../shared/industry-display";
+import { INDUSTRY_PROFILES } from "../../shared/industry-profiles";
+import { activeLocale, t } from "./i18n";
 import type { LocaleKey } from "@/locales";
 
 export interface TeamCatalogEntry {
@@ -36,6 +38,8 @@ const CATALOG_COPY: Record<string, string> = {
 };
 
 export function catalogCopy(entry: TeamCatalogEntry): TeamCatalogEntry {
+  const profile = entry.builtIn && INDUSTRY_PROFILES.find(p => `industry-${p.slug}` === entry.slug);
+  if (profile) return { ...entry, ...industryTeamLabel(profile, activeLocale()) };
   const id = CATALOG_COPY[entry.name.trim().toLowerCase()];
   return id ? { ...entry, name: t(`templates.catalog.${id}.name` as LocaleKey), summary: t(`templates.catalog.${id}.summary` as LocaleKey), outcome: entry.outcome ? t(`templates.catalog.${id}.outcome` as LocaleKey) : undefined } : entry;
 }

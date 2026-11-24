@@ -1,0 +1,333 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://limixmedia.local/schemas/bot-spec/v1.1",
+  "title": "Limix Bot Factory BotSpec v1.1 - Hybrid Skills required (draft only)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "template_id",
+    "template_version",
+    "id",
+    "display_name",
+    "tenant_id",
+    "summary",
+    "persona",
+    "channels",
+    "knowledge",
+    "tools",
+    "model",
+    "limits",
+    "security",
+    "lifecycle",
+    "skills_policy"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.1"
+    },
+    "id": {
+      "$ref": "#/$defs/slug"
+    },
+    "tenant_id": {
+      "$ref": "#/$defs/slug"
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 120
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "persona": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "language",
+        "style"
+      ],
+      "properties": {
+        "role": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 600
+        },
+        "language": {
+          "enum": [
+            "vi",
+            "en",
+            "vi-en"
+          ]
+        },
+        "style": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 300
+        }
+      }
+    },
+    "channels": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "credential_ref"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "web",
+              "telegram",
+              "zalo",
+              "facebook"
+            ]
+          },
+          "credential_ref": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "pattern": "^cred:[a-z][a-z0-9_.-]{0,79}$"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "knowledge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "collections",
+        "require_citations"
+      ],
+      "properties": {
+        "collections": {
+          "type": "array",
+          "maxItems": 24,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+          }
+        },
+        "require_citations": {
+          "type": "boolean"
+        }
+      }
+    },
+    "tools": {
+      "type": "array",
+      "maxItems": 24,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "approval"
+        ],
+        "properties": {
+          "name": {
+            "enum": [
+              "knowledge.search",
+              "catalog.search",
+              "orders.lookup",
+              "orders.create",
+              "tickets.create",
+              "payments.refund",
+              "calendar.availability",
+              "calendar.booking.create",
+              "web.search.public",
+              "social.post.draft",
+              "social.post.publish"
+            ]
+          },
+          "approval": {
+            "enum": [
+              "none",
+              "human"
+            ]
+          }
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier",
+        "fallback_tier",
+        "max_context_tokens"
+      ],
+      "properties": {
+        "tier": {
+          "enum": [
+            "economy",
+            "balanced",
+            "reasoning"
+          ]
+        },
+        "fallback_tier": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "enum": [
+                "economy",
+                "balanced",
+                "reasoning"
+              ]
+            }
+          ]
+        },
+        "max_context_tokens": {
+          "type": "integer",
+          "minimum": 512,
+          "maximum": 200000
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_steps",
+        "max_tool_calls",
+        "timeout_seconds",
+        "max_output_tokens",
+        "max_cost_usd"
+      ],
+      "properties": {
+        "max_steps": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "max_tool_calls": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 200
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 3600
+        },
+        "max_output_tokens": {
+          "type": "integer",
+          "minimum": 64,
+          "maximum": 64000
+        },
+        "max_cost_usd": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "security": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "require_verified_identity",
+        "memory_scope",
+        "allow_arbitrary_code",
+        "allow_autonomous_publish"
+      ],
+      "properties": {
+        "require_verified_identity": {
+          "type": "boolean"
+        },
+        "memory_scope": {
+          "enum": [
+            "tenant_bot_customer",
+            "tenant_bot"
+          ]
+        },
+        "allow_arbitrary_code": {
+          "const": false
+        },
+        "allow_autonomous_publish": {
+          "const": false
+        }
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "const": "draft"
+        }
+      }
+    },
+    "template_id": {
+      "$ref": "#/$defs/slug"
+    },
+    "template_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "skills_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "core_locale",
+        "user_locale",
+        "core_entrypoint",
+        "vietnamese_layer",
+        "core_authoritative",
+        "load_mode",
+        "external_skill_policy"
+      ],
+      "properties": {
+        "format": {
+          "const": "hybrid-en-core-vi-layer/v1"
+        },
+        "core_locale": {
+          "const": "en"
+        },
+        "user_locale": {
+          "const": "vi"
+        },
+        "core_entrypoint": {
+          "const": "SKILL.md"
+        },
+        "vietnamese_layer": {
+          "const": "references/vi.md"
+        },
+        "core_authoritative": {
+          "const": true
+        },
+        "load_mode": {
+          "const": "progressive"
+        },
+        "external_skill_policy": {
+          "const": "reviewed_only"
+        }
+      },
+      "description": "Required hybrid English Core + Vietnamese Layer skill contract. Locale is independent of persona reply language."
+    }
+  },
+  "$defs": {
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,47}$"
+    }
+  },
+  "description": "Backend must verify tenant identity, tool scopes and integration binding independently of this schema."
+}

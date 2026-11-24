@@ -102,7 +102,7 @@ export function createBotCreateRoutes(deps: BotCreateRouteDeps): RouteHandler {
       if ("error" in kept) return json(res, kept.error.includes("already") ? 409 : 400, { error: kept.error });
       const { id: _id, threadId: _threadId, ...rest } = body;
       body = rest;
-      const industry = typeof body.industryTemplate === "string" ? industryTemplate(body.industryTemplate) : undefined;
+      const industry = typeof body.industryTemplate === "string" ? industryTemplate(body.industryTemplate, typeof body.templateLocale === "string" ? body.templateLocale : "en") : undefined;
       if (body.industryTemplate !== undefined && !industry) return json(res, 400, { error: "Unknown built-in industry template" });
       if (industry && body.preset !== undefined) return json(res, 400, { error: "Choose one bot template" });
       if (industry && auth.kind === "session" && !auth.scopes.includes("admin")) {

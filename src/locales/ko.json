@@ -1,4 +1,8 @@
 {
+  "helperIntro.templates.support": "고객 지원 봇 미리 보기",
+  "helperIntro.templates.team": "업종에 맞는 팀 찾기",
+  "helperIntro.templates.department": "부서별 봇 선택",
+  "helperIntro.templates.group": "봇 및 팀 템플릿",
   "voice.gemini.keyPlaceholder": "Google AI Studio API 키를 붙여넣으세요",
   "voice.gemini.model": "Gemini 음성 합성 모델",
   "keys.label.geminiTts": "Gemini 음성 합성 API 키",

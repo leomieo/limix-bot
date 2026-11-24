@@ -328,8 +328,8 @@ export function readyBot(id: string): ReadyBot | undefined {
   return industryTemplate(id) ?? READY_BOTS.find((bot) => bot.id === id);
 }
 
-export function readyBotTemplate(defaults: NewBotDefaults, bot: ReadyBot): NewBotDefaults {
-  const industry = industryTemplate(bot.id);
+export function readyBotTemplate(defaults: NewBotDefaults, bot: ReadyBot, locale = "en"): NewBotDefaults {
+  const industry = industryTemplate(bot.id, locale);
   const template: NewBotDefaults = industry ? {
     profile: { ...industryBotSettings(), ...(defaults.profile.modelSelection ? { modelSelection: structuredClone(defaults.profile.modelSelection) } : {}) },
     skills: [], routines: [], memory: {},

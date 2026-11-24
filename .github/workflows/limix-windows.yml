@@ -89,7 +89,7 @@ jobs:
         run: |
           res=release/win-unpacked/resources
           fail=0
-          for f in server/index.js server/desktop-entry.mjs ui/index.html cloudflared/cloudflared.exe app-update.yml limix-runtime/python/python.exe limix-runtime/python/python3.exe limix-runtime/uv/uv.exe skills/ui-ux-pro-max/SKILL.md skills/agent-reach/SKILL.md skills/rea-video/SKILL.md skills/reverse-engineer-anything/{SKILL.md,manifest.json,LICENSE,references/evidence-workflows.md}; do
+          for f in server/index.js server/desktop-entry.mjs ui/index.html cloudflared/cloudflared.exe app-update.yml limix-runtime/python/python.exe limix-runtime/python/python3.exe limix-runtime/uv/uv.exe skills/limix-bot-factory/{SKILL.md,scripts/mcp_server.py,scripts/factorylib/stdio.py} skills/ui-ux-pro-max/SKILL.md skills/agent-reach/SKILL.md skills/rea-video/SKILL.md skills/reverse-engineer-anything/{SKILL.md,manifest.json,LICENSE,references/evidence-workflows.md}; do
             [ -f "$res/$f" ] || { echo "::error::missing $res/$f"; fail=1; }
           done
           [ -f "release/win-unpacked/Limix Bot.exe" ] || { echo "::error::missing Limix Bot.exe"; fail=1; }

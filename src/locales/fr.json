@@ -1,4 +1,8 @@
 {
+  "helperIntro.templates.support": "Découvrir le bot de service client",
+  "helperIntro.templates.team": "Trouver une équipe pour mon secteur",
+  "helperIntro.templates.department": "Choisir un bot par service",
+  "helperIntro.templates.group": "Modèles de bots et d’équipes",
   "voice.gemini.keyPlaceholder": "Collez votre clé API Google AI Studio",
   "voice.gemini.model": "Modèle de synthèse vocale Gemini",
   "keys.label.geminiTts": "Clé API de synthèse vocale Gemini",

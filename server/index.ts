@@ -230,6 +230,7 @@ import {
   isRemoteMcpServer,
   parseStoredMcpServer,
 } from "./mcp-registry.ts";
+import { FACTORY, factoryMount } from "./limix-factory.ts";
 import { industryGuestFacts, isIndustryCareBot, withIndustryCareMcp } from "./industry-care.ts";
 import { attachCustomMcp } from "./mcp-result-budget.ts"; import { mcpToolProblem } from "./mcp-failure.ts";
 import { MCP_OAUTH_CALLBACK_PATH, McpOAuthManager } from "./mcp-oauth.ts";
@@ -7999,7 +8000,8 @@ async function beginTurn(
 
       const integrations: NonNullable<Parameters<typeof instance.adapter.sendTurn>[0]["integrations"]> = {};
       let browser: Awaited<ReturnType<typeof browserIntegration>> = null;
-      const skills = limixBundledFor(bot.id, availableSkills()), phoneOffered = usbPhoneOffered(instance, skills) && !proactive.fence.confines(threadId) && !botApiThread(threadId);
+      const factory = factoryMount(bot, !guestConfined && !CLOUD_TEAM && !botBox.enabled() && !proactive.fence.confines(threadId));
+      const skills = limixBundledFor(bot.id, availableSkills(), !!factory[FACTORY]), phoneOffered = usbPhoneOffered(instance, skills) && !proactive.fence.confines(threadId) && !botApiThread(threadId);
       const selectedSkills = limixSelectBundled(
         providerText,
         [
@@ -8015,7 +8017,7 @@ async function beginTurn(
       // User MCP servers' tools are never pre-allowed: every call rides the normal permission flow.
       if (instance.adapter.capabilities.customMcp === true && !proactive.fence.confines(threadId) && !botApiThread(threadId)) {
         const custom = await mcpServersHost.prepare(bot).then(() => teamConnections.turnMcp(bot, threadId, dispatchClaimId));
-        attachCustomMcp(integrations, withIndustryCareMcp(bot, { ...custom, ...lentMcp.mounts(bot, { botId: bot.id, threadId, generation: dispatchClaimId }) }, servers => managedPolicy.filterMcp(servers), botBox.enabled()), cfg, { botId: bot.id, threadId });
+        attachCustomMcp(integrations, withIndustryCareMcp(bot, { ...custom, ...lentMcp.mounts(bot, { botId: bot.id, threadId, generation: dispatchClaimId }), ...managedPolicy.filterMcp(factory) }, servers => managedPolicy.filterMcp(servers), botBox.enabled()), cfg, { botId: bot.id, threadId });
         if (Object.keys(custom).length) Object.assign(integrations, chatAppsMcp.turnMounts(custom, bot.toolScope));
       }
       if (!directTurnClaimIsCurrent(bot.id, dispatchClaimId, threadId)) throw new DirectTurnSetupCancelled("turn stopped while its tools were prepared"); const worksInWorkspace = supportsWorkspaceFiles(instance.driverKind);

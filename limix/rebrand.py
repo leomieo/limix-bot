@@ -2330,7 +2330,17 @@ for rel, marker in [("electron/main.mjs", "limix-gateway"), ("electron/preload.c
     if marker in (ROOT / rel).read_text(encoding="utf-8"):
         raise RuntimeError(f"Messaging gateway still wired in {rel} ({marker}): update limix/patches/messaging-module.json")
 
-for feature in ("industry-customer-care", "assistant-template-suggestions"):
+# Restore the preceding template layer before replaying its dependent changes.
+hybrid_edits = json.loads((ROOT / "limix/patches/hybrid-factory.json").read_text(encoding="utf-8"))
+for rel, edits in hybrid_edits.items():
+    def preceding_layer(source, edits=edits):
+        for patch in reversed(edits):
+            if patch["after"] in source:
+                source = source.replace(patch["after"], patch["before"], 1)
+        return source
+    edit(rel, preceding_layer)
+
+for feature in ("industry-customer-care", "assistant-template-suggestions", "hybrid-factory"):
     for rel, edits in json.loads((ROOT / f"limix/patches/{feature}.json").read_text(encoding="utf-8")).items():
         def apply_feature(s, edits=edits, rel=rel):
             for patch in edits:

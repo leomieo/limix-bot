@@ -1,4 +1,8 @@
 {
+  "helperIntro.templates.support": "预览客服机器人",
+  "helperIntro.templates.team": "查找适合本行业的团队",
+  "helperIntro.templates.department": "选择部门机器人",
+  "helperIntro.templates.group": "机器人与团队模板",
   "voice.gemini.keyPlaceholder": "粘贴你的 Google AI Studio API 密钥",
   "voice.gemini.model": "Gemini 语音合成模型",
   "keys.label.geminiTts": "Gemini 语音合成 API 密钥",

@@ -1,0 +1,18 @@
+{
+  "id": "limix-bot-factory",
+  "name": "Limix Bot Factory",
+  "version": "1.0.0",
+  "description": "Build and evaluate draft bot templates and Hybrid skills.",
+  "defaultEnabled": true,
+  "triggerTerms": [
+    "bot template",
+    "build a bot",
+    "bot factory",
+    "hybrid skill",
+    "tạo bot",
+    "mẫu bot",
+    "bot mẫu",
+    "tạo kỹ năng"
+  ],
+  "requiredCapabilities": []
+}

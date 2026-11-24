@@ -1,4 +1,8 @@
 {
+  "helperIntro.templates.support": "ग्राहक सहायता बॉट देखें",
+  "helperIntro.templates.team": "अपने उद्योग के लिए टीम खोजें",
+  "helperIntro.templates.department": "विभाग के लिए बॉट चुनें",
+  "helperIntro.templates.group": "बॉट और टीम के नमूने",
   "voice.gemini.keyPlaceholder": "अपनी Google AI Studio API कुंजी पेस्ट करें",
   "voice.gemini.model": "Gemini वाक् मॉडल",
   "keys.label.geminiTts": "Gemini वाक् API कुंजी",

@@ -1,4 +1,8 @@
 {
+  "helperIntro.templates.support": "カスタマーサポートボットを見る",
+  "helperIntro.templates.team": "業種に合うチームを探す",
+  "helperIntro.templates.department": "部門別ボットを選ぶ",
+  "helperIntro.templates.group": "ボットとチームのテンプレート",
   "connectedWorkspaces.localTitle": "このコンピューターの環境",
   "connectedWorkspaces.missing": "見つかりません",
   "connectedWorkspaces.current": "使用中",

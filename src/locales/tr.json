@@ -1,4 +1,8 @@
 {
+  "helperIntro.templates.support": "Müşteri hizmetleri botunu incele",
+  "helperIntro.templates.team": "Sektörüme uygun ekip bul",
+  "helperIntro.templates.department": "Departman botu seç",
+  "helperIntro.templates.group": "Bot ve ekip şablonları",
   "voice.gemini.keyPlaceholder": "Google AI Studio API anahtarınızı yapıştırın",
   "voice.gemini.model": "Gemini konuşma modeli",
   "keys.label.geminiTts": "Gemini konuşma API anahtarı",

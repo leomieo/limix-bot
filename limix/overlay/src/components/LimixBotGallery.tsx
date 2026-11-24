@@ -9,7 +9,8 @@ import { READY_BOT_CATEGORIES, READY_BOTS, readyBot, readyBotCopy, type ReadyBot
 import { INDUSTRY_BOTS, INDUSTRY_CARE_SKILL, industryTemplate } from "../../shared/industry-templates";
 import { INDUSTRY_PROFILES } from "../../shared/industry-profiles";
 import { cn } from "@/lib/cn";
-import { t } from "@/lib/i18n";
+import { industryLabel } from "../../shared/industry-display";
+import { activeLocale, t } from "@/lib/i18n";
 import type { LocaleKey } from "@/locales";
 
 /** A template's own skills go on the new bot from the store; one not installed on this computer is skipped. */
@@ -50,6 +51,7 @@ interface Card {
 }
 
 function builtInCard(bot: ReadyBot): Card {
+  bot = industryTemplate(bot.id, activeLocale()) ?? bot;
   const copy = readyBotCopy(bot);
   return { id: bot.id, name: bot.name, title: copy.title, category: bot.category, description: copy.description, try: copy.tryAsking,
     look: bot.look, apps: bot.apps, routines: bot.routines?.length ?? 0, builtIn: true };
@@ -115,7 +117,7 @@ export function LimixBotGallery({ search, onDialog, onAdded, revision = 0, sugge
   const [details, setDetails] = useState<{ card: Card; bot?: ReadyBot & { skills?: string[] }; error?: string } | null>(null);
   const showDetails = (card: Card) => {
     onDialog(true);
-    if (card.builtIn) { setDetails({ card, bot: readyBot(card.id) }); return; }
+    if (card.builtIn) { setDetails({ card, bot: industryTemplate(card.id, activeLocale()) ?? readyBot(card.id) }); return; }
     setDetails({ card });
     api<{ bot: ReadyBot & { skills?: string[] } }>(`/api/limix/bots/${card.id}`).then(
       ({ bot }) => setDetails((open) => (open?.card.id === card.id ? { card, bot } : open)),
@@ -149,7 +151,10 @@ export function LimixBotGallery({ search, onDialog, onAdded, revision = 0, sugge
     }
   };
 
-  const visible = cards.filter(card => {
+  const visible = cards.map(card => {
+    const bot = card.builtIn && industryTemplate(card.id);
+    return bot ? builtInCard(bot) : card;
+  }).filter(card => {
     if (suggestion === "support") return card.builtIn && card.id === INDUSTRY_CARE_SKILL && matches(card, search);
     if (suggestion === "department" && (!card.builtIn || card.id === INDUSTRY_CARE_SKILL || !industryTemplate(card.id))) return false;
     return (!category || card.category === category) && matches(card, search)
@@ -174,7 +179,7 @@ export function LimixBotGallery({ search, onDialog, onAdded, revision = 0, sugge
         className="rounded-full border border-hairline bg-panel px-3 py-1 text-[13px] text-ink"
         onChange={(event) => { setIndustry(event.target.value); setCategory(null); }}>
         <option value="">{lx("Tất cả ngành", "All industries")}</option>
-        {INDUSTRY_PROFILES.map((profile) => <option key={profile.slug} value={profile.slug}>{profile.name}</option>)}
+        {INDUSTRY_PROFILES.map((profile) => <option key={profile.slug} value={profile.slug}>{industryLabel(profile, activeLocale()).name}</option>)}
       </select>}
     </div>
     {error && <p role="alert" className="mb-3 rounded-xl bg-danger/10 px-3 py-2 text-[13px] text-danger">{error}</p>}

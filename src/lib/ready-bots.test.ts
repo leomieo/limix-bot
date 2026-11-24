@@ -104,13 +104,14 @@ describe("matchesReadyBot", () => {
 });
 
 describe("readyBotCopy", () => {
-  it("keeps English template fields and Vietnamese descriptions across app locales", () => {
+  it("uses the active language for known templates and keeps supplied text for unknown ones", () => {
     for (const bot of READY_BOTS) for (const field of ["title", "description", "try"]) expect(Object.hasOwn(en, `readyBots.bot.${bot.id}.${field}`), `${bot.id}.${field}`).toBe(true);
     const unlisted = { ...readyBot("humanizer")!, id: "not-in-the-catalog", title: "Its title", description: "Its words", tryAsking: ["Its ask"] };
     try {
       setLocale("pt-br");
       expect(readyBotCopy(unlisted)).toEqual({ title: "Its title", description: "Its words", tryAsking: "Its ask" });
-      expect(readyBotCopy(readyBot("humanizer")!).title).toBe(readyBot("humanizer")!.title);
+      setLocale("en");
+      expect(readyBotCopy(readyBot("humanizer")!).description).toBe(en["readyBots.bot.humanizer.description"]);
     } finally {
       setLocale("en");
     }

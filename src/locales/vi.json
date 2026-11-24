@@ -1,4 +1,5 @@
 {
+  "server.peerResend.failed": "Không thể gửi lại yêu cầu cho AI dự phòng. Chi tiết: {detail}",
   "chat.channel.title": "Cuộc trò chuyện từ kênh kết nối",
   "chat.channel.readOnly": "Tin nhắn trong cuộc trò chuyện này đến từ kênh đã kết nối. Hãy cấu hình bot trong cuộc trò chuyện nội bộ riêng.",
   "chat.channel.openInternal": "Mở chat nội bộ",

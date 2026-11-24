@@ -1,0 +1,57 @@
+{
+  "catalog_version": "1.0",
+  "locale": "vi",
+  "status": "design_examples_not_connected",
+  "cards": [
+    {
+      "id": "customer-support",
+      "category": "service",
+      "title": "Chăm sóc khách hàng",
+      "icon": "headset",
+      "description": "FAQ, chính sách, chuyển nhân viên"
+    },
+    {
+      "id": "sales-advisor",
+      "category": "commerce",
+      "title": "Tư vấn bán hàng",
+      "icon": "shopping-bag",
+      "description": "Tư vấn sản phẩm và hỗ trợ lên đơn"
+    },
+    {
+      "id": "order-tracking",
+      "category": "commerce",
+      "title": "Tra cứu đơn hàng",
+      "icon": "package",
+      "description": "Tra cứu sau xác thực"
+    },
+    {
+      "id": "appointment-booking",
+      "category": "service",
+      "title": "Đặt lịch",
+      "icon": "calendar-days",
+      "description": "Kiểm tra lịch và xác nhận đặt chỗ"
+    },
+    {
+      "id": "research-assistant",
+      "category": "knowledge",
+      "title": "Nghiên cứu",
+      "icon": "book-open",
+      "description": "Tổng hợp thông tin có nguồn"
+    },
+    {
+      "id": "social-content",
+      "category": "marketing",
+      "title": "Nội dung mạng xã hội",
+      "icon": "megaphone",
+      "description": "Soạn nội dung và duyệt trước khi đăng"
+    },
+    {
+      "id": "custom-agent",
+      "category": "custom",
+      "title": "Bot Tùy chỉnh",
+      "icon": "settings-2",
+      "description": "Tạo mẫu mới từ yêu cầu"
+    }
+  ],
+  "skills_policy": "hybrid-en-core-vi-layer/v1"
+}

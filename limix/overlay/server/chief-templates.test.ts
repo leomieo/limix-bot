@@ -17,13 +17,13 @@ describe("the Chief's search of the bot and team template libraries", () => {
     github.down.teams = true;
     for (const profile of INDUSTRY_PROFILES) {
       const slug = `industry-${profile.slug}`;
-      const found = await chief.search(`Tôi muốn nhóm bot cho ngành ${profile.name}`);
+      const found = await chief.search(`Tôi muốn nhóm bot cho ngành ${profile.vi.name}`);
       expect(found.results[0], profile.name).toMatchObject({ id: `team:${slug}`, source: "builtin", roles: 4, gallery: { id: slug, kind: "team" } });
       expect(found.unavailable).toEqual(["bots", "teams"]);
       expect(found.results.filter(item => item.id === `team:${slug}`)).toHaveLength(1);
       for (const role of profile.roles) {
         const roleId = `${slug}-${role.slug}`;
-        const result = await chief.search(`Tôi cần bot phòng ban ${role.name} cho ngành ${profile.name}`);
+        const result = await chief.search(`Tôi cần bot phòng ban ${role.vi.name} cho ngành ${profile.vi.name}`);
         expect(result.results[0], roleId).toMatchObject({ id: `builtin:${roleId}`, gallery: { id: roleId, kind: "bot" } });
       }
     }

@@ -1,4 +1,8 @@
 {
+  "helperIntro.templates.support": "Переглянути бота служби підтримки",
+  "helperIntro.templates.team": "Знайти команду для моєї галузі",
+  "helperIntro.templates.department": "Вибрати бота для відділу",
+  "helperIntro.templates.group": "Шаблони ботів і команд",
   "voice.gemini.keyPlaceholder": "Вставте свій API-ключ Google AI Studio",
   "voice.gemini.model": "Модель синтезу мовлення Gemini",
   "keys.label.geminiTts": "API-ключ синтезу мовлення Gemini",

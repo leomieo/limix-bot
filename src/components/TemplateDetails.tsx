@@ -1,3 +1,4 @@
+import { activeLocale } from "@/lib/i18n";
 // "Xem thêm" on a bot template or a team template: everything the template brings, laid out the same way for each, so a
 // person can compare two before pressing "Dùng mẫu". Nothing is created here.
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -72,7 +73,7 @@ export function TeamTemplateDetails({ entry, onUse, onClose }: { entry: TeamCata
   const [error, setError] = useState("");
   useEffect(() => {
     let live = true;
-    api(`/api/team-library/teams/${entry.slug}`).then((manifest) => { if (live) setTeam(teamImportPreview(manifest)); },
+    api(`/api/team-library/teams/${entry.slug}${entry.builtIn ? `?locale=${activeLocale()}` : ""}`).then((manifest) => { if (live) setTeam(teamImportPreview(manifest)); },
       (cause: unknown) => { if (live) setError(cause instanceof Error ? cause.message : String(cause)); });
     return () => { live = false; };
   }, [entry.slug]);
@@ -83,7 +84,7 @@ export function TeamTemplateDetails({ entry, onUse, onClose }: { entry: TeamCata
   ];
   return <TemplateDetails
     title={copy.name}
-    subtitle={entry.category}
+    subtitle={copy.category}
     loading={!team && !error}
     error={error}
     sections={[

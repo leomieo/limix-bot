@@ -1,3 +1,4 @@
+import { activeLocale } from "@/lib/i18n";
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Plus, Trash2, X } from "lucide-react";
 import { api, BotEditorStore, useStore, type Bot } from "@/state/store";
@@ -89,7 +90,7 @@ function NewBotEditor({ defaultsMode = false, onClose, onCreated, readyBotId, re
         if (cancelled) return;
         const defaults = startingTemplate(result, !defaultsMode);
         const ready = defaultsMode ? undefined : readyBotData ?? (readyBotId ? readyBot(readyBotId) : undefined);
-        const next = new BotCreationDraft(ready ? readyBotTemplate(defaults, ready) : defaults, () => render(value => value + 1));
+        const next = new BotCreationDraft(ready ? readyBotTemplate(defaults, ready, activeLocale()) : defaults, () => render(value => value + 1));
         if (ready && readyBot(ready.id)) next.role = ready.id;
         setDraft(next);
         setReady(true);

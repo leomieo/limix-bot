@@ -1,3 +1,15 @@
+Limix Bot 0.3.101
+
+## Tiếng Việt
+
+- Xem 30 mẫu bot phòng ban, 10 nhóm theo ngành và Siêu bot CSKH bằng ngôn ngữ của ứng dụng.
+- Nhờ Trợ Lý Limix tạo bản nháp bot hoặc kỹ năng, kiểm tra quyền và đánh giá bản nháp trước khi sử dụng.
+
+## English
+
+- Browse 30 department bot templates, 10 industry teams and the customer care specialist in your app language.
+- Ask the Limix assistant to draft bots and skills, check permissions and evaluate a draft before using it.
+
 Limix Bot 0.3.100
 
 ## Tiếng Việt

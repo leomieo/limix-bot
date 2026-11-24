@@ -1,3 +1,4 @@
+import { activeLocale } from "@/lib/i18n";
 import { track } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
@@ -271,7 +272,7 @@ export function TeamLibraryPanel({
     setBusySlug(entry.slug);
     setError("");
     try {
-      const preview = teamImportPreview(await api(`/api/team-library/teams/${entry.slug}`));
+      const preview = teamImportPreview(await api(`/api/team-library/teams/${entry.slug}${entry.builtIn ? `?locale=${activeLocale()}` : ""}`));
       previewManifest(entry.builtIn ? { ...preview, builtInTeam: entry.slug } : preview, "library");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));

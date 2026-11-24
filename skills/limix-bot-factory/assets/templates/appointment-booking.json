@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.1",
+  "id": "appointment-booking",
+  "display_name": "Bot Đặt lịch",
+  "tenant_id": "demo-tenant",
+  "summary": "Check appointment availability and request a supervised booking confirmation.",
+  "persona": {
+    "role": "Offer available schedules and confirm bookings only after explicit approval.",
+    "language": "vi",
+    "style": "Natural Vietnamese, precise, and concise."
+  },
+  "channels": [
+    {
+      "kind": "web",
+      "credential_ref": null
+    }
+  ],
+  "knowledge": {
+    "collections": [],
+    "require_citations": true
+  },
+  "tools": [
+    {
+      "name": "calendar.availability",
+      "approval": "none"
+    },
+    {
+      "name": "calendar.booking.create",
+      "approval": "human"
+    }
+  ],
+  "model": {
+    "tier": "balanced",
+    "fallback_tier": "balanced",
+    "max_context_tokens": 8192
+  },
+  "limits": {
+    "max_steps": 12,
+    "max_tool_calls": 8,
+    "timeout_seconds": 90,
+    "max_output_tokens": 1500,
+    "max_cost_usd": 0.1
+  },
+  "security": {
+    "require_verified_identity": true,
+    "memory_scope": "tenant_bot_customer",
+    "allow_arbitrary_code": false,
+    "allow_autonomous_publish": false
+  },
+  "lifecycle": {
+    "status": "draft"
+  },
+  "template_id": "appointment-booking",
+  "template_version": "1.1.0",
+  "skills_policy": {
+    "format": "hybrid-en-core-vi-layer/v1",
+    "core_locale": "en",
+    "user_locale": "vi",
+    "core_entrypoint": "SKILL.md",
+    "vietnamese_layer": "references/vi.md",
+    "core_authoritative": true,
+    "load_mode": "progressive",
+    "external_skill_policy": "reviewed_only"
+  }
+}

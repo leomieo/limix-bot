@@ -87,14 +87,14 @@ export function createBotSkillsRoutes(deps: BotSkillsRouteDeps): RouteHandler {
         const names = new Set(skills.map((skill) => skill.name));
         return json(res, 200, {
           skills: [...skills, ...listBotSkills(bot, threadId).filter((skill) => !names.has(skill.name)),
-            ...limixBundledListings(bot.id).filter((skill) => !names.has(skill.name) && !listBotSkills(bot, threadId).some((other) => other.name === skill.name))],
+            ...limixBundledListings(bot.id, !!bot.defaultBot).filter((skill) => !names.has(skill.name) && !listBotSkills(bot, threadId).some((other) => other.name === skill.name))],
           library,
           assignedSkills: store.bot(m[1])!.assignedSkills,
           staged: listStagedSkillWrites(m[1]).map(stagedSkillListing),
         });
       }
       return json(res, 200, {
-        skills: [...listBotSkills(bot, threadId), ...limixBundledListings(bot.id)],
+        skills: [...listBotSkills(bot, threadId), ...limixBundledListings(bot.id, !!bot.defaultBot)],
         staged: listStagedSkillWrites(m[1]).map(stagedSkillListing),
       });
     }

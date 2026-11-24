@@ -1,4 +1,8 @@
 {
+  "helperIntro.templates.support": "預覽客服機器人",
+  "helperIntro.templates.team": "尋找適合本產業的團隊",
+  "helperIntro.templates.department": "選擇部門機器人",
+  "helperIntro.templates.group": "機器人與團隊範本",
   "connectedWorkspaces.localTitle": "這台電腦上的環境",
   "connectedWorkspaces.missing": "遺失",
   "connectedWorkspaces.current": "目前",

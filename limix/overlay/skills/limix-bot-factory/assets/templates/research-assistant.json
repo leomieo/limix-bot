@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.1",
+  "id": "research-assistant",
+  "display_name": "Bot Nghiên cứu",
+  "tenant_id": "demo-tenant",
+  "summary": "Research public information and internal approved documents with citations.",
+  "persona": {
+    "role": "Collect verifiable sources, cite evidence and mark uncertainty.",
+    "language": "vi",
+    "style": "Natural Vietnamese, precise, and concise."
+  },
+  "channels": [
+    {
+      "kind": "web",
+      "credential_ref": null
+    }
+  ],
+  "knowledge": {
+    "collections": [
+      "approved-research"
+    ],
+    "require_citations": true
+  },
+  "tools": [
+    {
+      "name": "knowledge.search",
+      "approval": "none"
+    },
+    {
+      "name": "web.search.public",
+      "approval": "none"
+    }
+  ],
+  "model": {
+    "tier": "balanced",
+    "fallback_tier": "balanced",
+    "max_context_tokens": 8192
+  },
+  "limits": {
+    "max_steps": 12,
+    "max_tool_calls": 8,
+    "timeout_seconds": 90,
+    "max_output_tokens": 1500,
+    "max_cost_usd": 0.1
+  },
+  "security": {
+    "require_verified_identity": false,
+    "memory_scope": "tenant_bot_customer",
+    "allow_arbitrary_code": false,
+    "allow_autonomous_publish": false
+  },
+  "lifecycle": {
+    "status": "draft"
+  },
+  "template_id": "research-assistant",
+  "template_version": "1.1.0",
+  "skills_policy": {
+    "format": "hybrid-en-core-vi-layer/v1",
+    "core_locale": "en",
+    "user_locale": "vi",
+    "core_entrypoint": "SKILL.md",
+    "vietnamese_layer": "references/vi.md",
+    "core_authoritative": true,
+    "load_mode": "progressive",
+    "external_skill_policy": "reviewed_only"
+  }
+}

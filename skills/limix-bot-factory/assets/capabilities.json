@@ -1,0 +1,102 @@
+{
+  "catalog_version": "1.0",
+  "status": "reference_catalog_only",
+  "description": "Tools and channels are declared only. Their real Limix runtime bindings are not verified.",
+  "channels": {
+    "web": {
+      "requires_credentials": false,
+      "runtime_binding": "unverified"
+    },
+    "telegram": {
+      "requires_credentials": true,
+      "runtime_binding": "unverified"
+    },
+    "zalo": {
+      "requires_credentials": true,
+      "runtime_binding": "unverified"
+    },
+    "facebook": {
+      "requires_credentials": true,
+      "runtime_binding": "unverified"
+    }
+  },
+  "tools": {
+    "knowledge.search": {
+      "risk": "read",
+      "requires_verified_identity": false,
+      "requires_human_approval": false,
+      "runtime_binding": "unverified"
+    },
+    "catalog.search": {
+      "risk": "read",
+      "requires_verified_identity": false,
+      "requires_human_approval": false,
+      "runtime_binding": "unverified"
+    },
+    "orders.lookup": {
+      "risk": "read_private",
+      "requires_verified_identity": true,
+      "requires_human_approval": false,
+      "runtime_binding": "unverified"
+    },
+    "orders.create": {
+      "risk": "write_sensitive",
+      "requires_verified_identity": true,
+      "requires_human_approval": true,
+      "runtime_binding": "unverified"
+    },
+    "tickets.create": {
+      "risk": "write_low",
+      "requires_verified_identity": false,
+      "requires_human_approval": false,
+      "runtime_binding": "unverified"
+    },
+    "payments.refund": {
+      "risk": "write_sensitive",
+      "requires_verified_identity": true,
+      "requires_human_approval": true,
+      "runtime_binding": "unverified"
+    },
+    "calendar.availability": {
+      "risk": "read",
+      "requires_verified_identity": false,
+      "requires_human_approval": false,
+      "runtime_binding": "unverified"
+    },
+    "calendar.booking.create": {
+      "risk": "write_sensitive",
+      "requires_verified_identity": true,
+      "requires_human_approval": true,
+      "runtime_binding": "unverified"
+    },
+    "web.search.public": {
+      "risk": "read_external",
+      "requires_verified_identity": false,
+      "requires_human_approval": false,
+      "runtime_binding": "unverified"
+    },
+    "social.post.draft": {
+      "risk": "write_low",
+      "requires_verified_identity": false,
+      "requires_human_approval": false,
+      "runtime_binding": "unverified"
+    },
+    "social.post.publish": {
+      "risk": "write_sensitive",
+      "requires_verified_identity": false,
+      "requires_human_approval": true,
+      "runtime_binding": "unverified"
+    }
+  },
+  "model_tiers": {
+    "economy": {
+      "intent": "classification, simple FAQ, low-cost dialogs"
+    },
+    "balanced": {
+      "intent": "general conversation and retrieval"
+    },
+    "reasoning": {
+      "intent": "complex customer resolution and analysis"
+    }
+  }
+}

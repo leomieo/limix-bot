@@ -1,0 +1,59 @@
+{
+  "bot_id": "sample-store-bot",
+  "checks": {
+    "draft_only": true,
+    "hybrid_skills_enforced": true,
+    "known_channels": true,
+    "known_tools": true
+  },
+  "deployment_blockers": [
+    "Limix runtime adapter and owner approval are not configured or verified."
+  ],
+  "deployment_ready": false,
+  "errors": [],
+  "note": "A structural plan is not evidence of a live Limix Bot integration.",
+  "requested_capabilities": [
+    {
+      "binding": "unverified",
+      "credential_ref_set": false,
+      "name": "web",
+      "type": "channel"
+    },
+    {
+      "binding": "unverified",
+      "human_approval": false,
+      "name": "knowledge.search",
+      "type": "tool"
+    },
+    {
+      "binding": "unverified",
+      "human_approval": false,
+      "name": "tickets.create",
+      "type": "tool"
+    },
+    {
+      "binding": "unverified",
+      "name": "faq",
+      "type": "knowledge"
+    },
+    {
+      "binding": "unverified",
+      "name": "store-policies",
+      "type": "knowledge"
+    }
+  ],
+  "skills_policy": {
+    "core_authoritative": true,
+    "core_entrypoint": "SKILL.md",
+    "core_locale": "en",
+    "external_skill_policy": "reviewed_only",
+    "format": "hybrid-en-core-vi-layer/v1",
+    "load_mode": "progressive",
+    "user_locale": "vi",
+    "vietnamese_layer": "references/vi.md"
+  },
+  "template_id": "customer-support",
+  "template_version": "1.0.0",
+  "tenant_id": "demo-store",
+  "valid": true
+}

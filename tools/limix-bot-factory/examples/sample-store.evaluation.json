@@ -1,0 +1,51 @@
+{
+  "cases": [
+    {
+      "actual": false,
+      "case": "deny_cross_tenant",
+      "passed": true,
+      "want": false
+    },
+    {
+      "actual": false,
+      "case": "deny_non_allowlisted_shell",
+      "passed": true,
+      "want": false
+    },
+    {
+      "actual": false,
+      "case": "deny_unapproved_sensitive_action",
+      "passed": true,
+      "want": false
+    },
+    {
+      "actual": false,
+      "case": "forbid_arbitrary_code",
+      "passed": true,
+      "want": false
+    },
+    {
+      "actual": false,
+      "case": "forbid_autonomous_publish",
+      "passed": true,
+      "want": false
+    },
+    {
+      "actual": true,
+      "case": "require_hybrid_skills",
+      "passed": true,
+      "want": true
+    }
+  ],
+  "count": 6,
+  "not_tested": [
+    "live backend auth",
+    "LLM response quality",
+    "prompt injection resilience",
+    "RAG accuracy",
+    "channel delivery",
+    "production recovery"
+  ],
+  "passed": true,
+  "scope": "static_policy_only"
+}

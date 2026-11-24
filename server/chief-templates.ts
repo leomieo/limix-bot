@@ -144,7 +144,7 @@ export function createChiefTemplates(sources: ChiefTemplateSources = githubSourc
     const wantsRole = /\b(phong ban|ban be|bo phan|department)\b/u.test(phrase);
     industryTeamCatalog.forEach((team, order) => {
       const gallery = { kind: "team", id: team.slug, name: team.name } as const;
-      const relevance = score(wanted, team.slug, team.name, team.summary);
+      const relevance = score(wanted, team.slug, team.name, team.summary, INDUSTRY_PROFILES[order]?.vi.name, INDUSTRY_PROFILES[order]?.vi.description);
       scored.push({ order: 300 + order, score: relevance + (wantsTeam && (relevance || !wanted.length) ? 3 : 0),
         hit: { id: `team:${team.slug}`, source: "builtin", kind: "team", name: team.name, description: team.summary,
           category: team.category, roles: team.members, apps: [], gallery } });
@@ -152,8 +152,9 @@ export function createChiefTemplates(sources: ChiefTemplateSources = githubSourc
     INDUSTRY_BOTS.forEach((bot, order) => {
       const gallery = { kind: "bot", id: bot.id, name: bot.name } as const;
       const superSupport = bot.id === SUPER_SUPPORT_BOT.id;
-      const relevance = score(wanted, bot.id, bot.name, bot.title, bot.description, superSupport ? "Zalo Facebook Messenger Telegram customer service omnichannel" : undefined);
-      const named = phrase.includes(fold(bot.name));
+      const vi = industryTemplate(bot.id, "vi")!;
+      const relevance = score(wanted, bot.id, bot.name, bot.title, bot.description, vi.name, vi.title, vi.description, superSupport ? "Zalo Facebook Messenger Telegram customer service omnichannel" : undefined);
+      const named = phrase.includes(fold(bot.name)) || phrase.includes(fold(vi.name));
       scored.push({ order: 400 + order, score: relevance + (named ? 5 : 0) + (wantsRole && !superSupport && (relevance || !wanted.length) ? 2 : 0),
         hit: { id: `builtin:${bot.id}`, source: "builtin", kind: "bot", name: bot.name, title: bot.title, description: bot.description, apps: [], gallery } });
     });

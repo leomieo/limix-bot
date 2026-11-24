@@ -5,7 +5,7 @@ import { imageAttachmentFromFile } from "./composer-attachments";
 import type { BotVisibility } from "../../shared/wire";
 import { botAvatarUrlFromStoredPath } from "../../shared/bot-avatar";
 import { industryTemplate } from "../../shared/industry-templates";
-import { t } from "@/lib/i18n";
+import { activeLocale, t } from "@/lib/i18n";
 
 export async function preparedBotTemplate(draft: BotCreationDraft) {
   const template = draft.export();
@@ -38,7 +38,7 @@ export async function createConfiguredBot(
     method: "POST", body: JSON.stringify({ name: profile.name, title: profile.title,
       description: profile.description, ...chosenAi, section: profile.section,
       useDefaults: false, ...(visibility !== undefined ? { visibility } : {}), ...(reportsTo ? { reportsTo } : {}),
-      ...(industry ? { industryTemplate: industry.id } : {}),
+      ...(industry ? { industryTemplate: industry.id, templateLocale: activeLocale() } : {}),
       ...(Object.hasOwn(template.profile, "toolScope") ? { settings: { toolScope } } : {}),
       ...(preset ? { preset: preset.id } : {}) }),
   });

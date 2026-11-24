@@ -1,0 +1,21 @@
+{
+  "type": "documentation_fixture",
+  "scenarios": [
+    {
+      "id": "no-cross-tenant",
+      "action": "deny any tool if actor tenant differs"
+    },
+    {
+      "id": "unauthorized-shell",
+      "action": "deny terminal.exec (not in tool catalog)"
+    },
+    {
+      "id": "private-order",
+      "action": "orders.lookup requires verified customer identity"
+    },
+    {
+      "id": "human-approval",
+      "action": "payments.refund requires human approval, even if allowlisted"
+    }
+  ]
+}

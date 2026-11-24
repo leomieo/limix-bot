@@ -1,0 +1,68 @@
+{
+  "channels": [
+    {
+      "credential_ref": null,
+      "kind": "web"
+    }
+  ],
+  "display_name": "Sample Store Bot",
+  "id": "sample-store-bot",
+  "knowledge": {
+    "collections": [
+      "faq",
+      "store-policies"
+    ],
+    "require_citations": true
+  },
+  "lifecycle": {
+    "status": "draft"
+  },
+  "limits": {
+    "max_cost_usd": 0.1,
+    "max_output_tokens": 1500,
+    "max_steps": 12,
+    "max_tool_calls": 8,
+    "timeout_seconds": 90
+  },
+  "model": {
+    "fallback_tier": "balanced",
+    "max_context_tokens": 8192,
+    "tier": "economy"
+  },
+  "persona": {
+    "language": "vi",
+    "role": "Support customers using verified store policies and evidence. Never invent order details.",
+    "style": "Natural Vietnamese, precise, and concise."
+  },
+  "schema_version": "1.1",
+  "security": {
+    "allow_arbitrary_code": false,
+    "allow_autonomous_publish": false,
+    "memory_scope": "tenant_bot_customer",
+    "require_verified_identity": false
+  },
+  "skills_policy": {
+    "core_authoritative": true,
+    "core_entrypoint": "SKILL.md",
+    "core_locale": "en",
+    "external_skill_policy": "reviewed_only",
+    "format": "hybrid-en-core-vi-layer/v1",
+    "load_mode": "progressive",
+    "user_locale": "vi",
+    "vietnamese_layer": "references/vi.md"
+  },
+  "summary": "Customer support for a clothing store. Answer approved policies; escalate uncertain requests; do not issue refunds.",
+  "template_id": "customer-support",
+  "template_version": "1.0.0",
+  "tenant_id": "demo-store",
+  "tools": [
+    {
+      "approval": "none",
+      "name": "knowledge.search"
+    },
+    {
+      "approval": "none",
+      "name": "tickets.create"
+    }
+  ]
+}

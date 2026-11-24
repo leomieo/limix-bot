@@ -1,0 +1,192 @@
+{
+  ".github/workflows/limix-windows.yml": [
+    {
+      "before": "          res=release/win-unpacked/resources\n          fail=0\n          for f in server/index.js server/desktop-entry.mjs ui/index.html cloudflared/cloudflared.exe app-update.yml limix-runtime/python/python.exe limix-runtime/python/python3.exe limix-runtime/uv/uv.exe skills/ui-ux-pro-max/SKILL.md skills/agent-reach/SKILL.md skills/rea-video/SKILL.md skills/reverse-engineer-anything/{SKILL.md,manifest.json,LICENSE,references/evidence-workflows.md}; do\n            [ -f \"$res/$f\" ] || { echo \"::error::missing $res/$f\"; fail=1; }\n          done\n",
+      "after": "          res=release/win-unpacked/resources\n          fail=0\n          for f in server/index.js server/desktop-entry.mjs ui/index.html cloudflared/cloudflared.exe app-update.yml limix-runtime/python/python.exe limix-runtime/python/python3.exe limix-runtime/uv/uv.exe skills/limix-bot-factory/{SKILL.md,scripts/mcp_server.py,scripts/factorylib/stdio.py} skills/ui-ux-pro-max/SKILL.md skills/agent-reach/SKILL.md skills/rea-video/SKILL.md skills/reverse-engineer-anything/{SKILL.md,manifest.json,LICENSE,references/evidence-workflows.md}; do\n            [ -f \"$res/$f\" ] || { echo \"::error::missing $res/$f\"; fail=1; }\n          done\n"
+    }
+  ],
+  "server/index.ts": [
+    {
+      "before": "  parseStoredMcpServer,\n} from \"./mcp-registry.ts\";\nimport { industryGuestFacts, isIndustryCareBot, withIndustryCareMcp } from \"./industry-care.ts\";\nimport { attachCustomMcp } from \"./mcp-result-budget.ts\"; import { mcpToolProblem } from \"./mcp-failure.ts\";\n",
+      "after": "  parseStoredMcpServer,\n} from \"./mcp-registry.ts\";\nimport { FACTORY, factoryMount } from \"./limix-factory.ts\";\nimport { industryGuestFacts, isIndustryCareBot, withIndustryCareMcp } from \"./industry-care.ts\";\nimport { attachCustomMcp } from \"./mcp-result-budget.ts\"; import { mcpToolProblem } from \"./mcp-failure.ts\";\n"
+    },
+    {
+      "before": "      const integrations: NonNullable<Parameters<typeof instance.adapter.sendTurn>[0][\"integrations\"]> = {};\n      let browser: Awaited<ReturnType<typeof browserIntegration>> = null;\n      const skills = limixBundledFor(bot.id, availableSkills()), phoneOffered = usbPhoneOffered(instance, skills) && !proactive.fence.confines(threadId) && !botApiThread(threadId);\n      const selectedSkills = limixSelectBundled(\n        providerText,\n",
+      "after": "      const integrations: NonNullable<Parameters<typeof instance.adapter.sendTurn>[0][\"integrations\"]> = {};\n      let browser: Awaited<ReturnType<typeof browserIntegration>> = null;\n      const factory = factoryMount(bot, !guestConfined && !CLOUD_TEAM && !botBox.enabled() && !proactive.fence.confines(threadId));\n      const skills = limixBundledFor(bot.id, availableSkills(), !!factory[FACTORY]), phoneOffered = usbPhoneOffered(instance, skills) && !proactive.fence.confines(threadId) && !botApiThread(threadId);\n      const selectedSkills = limixSelectBundled(\n        providerText,\n"
+    },
+    {
+      "before": "      if (instance.adapter.capabilities.customMcp === true && !proactive.fence.confines(threadId) && !botApiThread(threadId)) {\n        const custom = await mcpServersHost.prepare(bot).then(() => teamConnections.turnMcp(bot, threadId, dispatchClaimId));\n        attachCustomMcp(integrations, withIndustryCareMcp(bot, { ...custom, ...lentMcp.mounts(bot, { botId: bot.id, threadId, generation: dispatchClaimId }) }, servers => managedPolicy.filterMcp(servers), botBox.enabled()), cfg, { botId: bot.id, threadId });\n        if (Object.keys(custom).length) Object.assign(integrations, chatAppsMcp.turnMounts(custom, bot.toolScope));\n      }\n",
+      "after": "      if (instance.adapter.capabilities.customMcp === true && !proactive.fence.confines(threadId) && !botApiThread(threadId)) {\n        const custom = await mcpServersHost.prepare(bot).then(() => teamConnections.turnMcp(bot, threadId, dispatchClaimId));\n        attachCustomMcp(integrations, withIndustryCareMcp(bot, { ...custom, ...lentMcp.mounts(bot, { botId: bot.id, threadId, generation: dispatchClaimId }), ...managedPolicy.filterMcp(factory) }, servers => managedPolicy.filterMcp(servers), botBox.enabled()), cfg, { botId: bot.id, threadId });\n        if (Object.keys(custom).length) Object.assign(integrations, chatAppsMcp.turnMounts(custom, bot.toolScope));\n      }\n"
+    }
+  ],
+  "server/routes/bot-skills.ts": [
+    {
+      "before": "        return json(res, 200, {\n          skills: [...skills, ...listBotSkills(bot, threadId).filter((skill) => !names.has(skill.name)),\n            ...limixBundledListings(bot.id).filter((skill) => !names.has(skill.name) && !listBotSkills(bot, threadId).some((other) => other.name === skill.name))],\n          library,\n          assignedSkills: store.bot(m[1])!.assignedSkills,\n",
+      "after": "        return json(res, 200, {\n          skills: [...skills, ...listBotSkills(bot, threadId).filter((skill) => !names.has(skill.name)),\n            ...limixBundledListings(bot.id, !!bot.defaultBot).filter((skill) => !names.has(skill.name) && !listBotSkills(bot, threadId).some((other) => other.name === skill.name))],\n          library,\n          assignedSkills: store.bot(m[1])!.assignedSkills,\n"
+    },
+    {
+      "before": "      }\n      return json(res, 200, {\n        skills: [...listBotSkills(bot, threadId), ...limixBundledListings(bot.id)],\n        staged: listStagedSkillWrites(m[1]).map(stagedSkillListing),\n      });\n",
+      "after": "      }\n      return json(res, 200, {\n        skills: [...listBotSkills(bot, threadId), ...limixBundledListings(bot.id, !!bot.defaultBot)],\n        staged: listStagedSkillWrites(m[1]).map(stagedSkillListing),\n      });\n"
+    }
+  ],
+  "server/routes/bots-create.ts": [
+    {
+      "before": "      const { id: _id, threadId: _threadId, ...rest } = body;\n      body = rest;\n      const industry = typeof body.industryTemplate === \"string\" ? industryTemplate(body.industryTemplate) : undefined;\n      if (body.industryTemplate !== undefined && !industry) return json(res, 400, { error: \"Unknown built-in industry template\" });\n      if (industry && body.preset !== undefined) return json(res, 400, { error: \"Choose one bot template\" });\n",
+      "after": "      const { id: _id, threadId: _threadId, ...rest } = body;\n      body = rest;\n      const industry = typeof body.industryTemplate === \"string\" ? industryTemplate(body.industryTemplate, typeof body.templateLocale === \"string\" ? body.templateLocale : \"en\") : undefined;\n      if (body.industryTemplate !== undefined && !industry) return json(res, 400, { error: \"Unknown built-in industry template\" });\n      if (industry && body.preset !== undefined) return json(res, 400, { error: \"Choose one bot template\" });\n"
+    }
+  ],
+  "server/routes/teams.ts": [
+    {
+      "before": "    if (m && method === \"GET\") {\n      try {\n        return json(res, 200, await fetchLibraryTeam(m[1]));\n      } catch (error) {\n        const status = (error as { status?: number }).status === 404 ? 404 : 502;\n",
+      "after": "    if (m && method === \"GET\") {\n      try {\n        return json(res, 200, industryTeam(m[1], url.searchParams.get(\"locale\") ?? \"en\") ?? await fetchLibraryTeam(m[1]));\n      } catch (error) {\n        const status = (error as { status?: number }).status === 404 ? 404 : 502;\n"
+    },
+    {
+      "before": "      const body = await readBody(req, MAX_TEAM_BACKUP_BYTES);\n      const builtInSlug = url.searchParams.get(\"builtInTeam\");\n      const localTeam = builtInSlug === null ? undefined : industryTeam(builtInSlug);\n      if (builtInSlug !== null && (!localTeam || importMode !== \"add\" || !isDeepStrictEqual(body, localTeam))) {\n        return json(res, 409, { error: \"The built-in team differs from this preview. Open its card again.\" });\n",
+      "after": "      const body = await readBody(req, MAX_TEAM_BACKUP_BYTES);\n      const builtInSlug = url.searchParams.get(\"builtInTeam\");\n      const localTeam = builtInSlug === null ? undefined : industryTeam(builtInSlug, url.searchParams.get(\"locale\") ?? \"en\");\n      if (builtInSlug !== null && (!localTeam || importMode !== \"add\" || !isDeepStrictEqual(body, localTeam))) {\n        return json(res, 409, { error: \"The built-in team differs from this preview. Open its card again.\" });\n"
+    }
+  ],
+  "src/components/NewBotDialog.tsx": [
+    {
+      "before": "import { useEffect, useRef, useState } from \"react\";\nimport { Loader2, Plus, Trash2, X } from \"lucide-react\";\n",
+      "after": "import { activeLocale } from \"@/lib/i18n\";\nimport { useEffect, useRef, useState } from \"react\";\nimport { Loader2, Plus, Trash2, X } from \"lucide-react\";\n"
+    },
+    {
+      "before": "        const defaults = startingTemplate(result, !defaultsMode);\n        const ready = defaultsMode ? undefined : readyBotData ?? (readyBotId ? readyBot(readyBotId) : undefined);\n        const next = new BotCreationDraft(ready ? readyBotTemplate(defaults, ready) : defaults, () => render(value => value + 1));\n        if (ready && readyBot(ready.id)) next.role = ready.id;\n        setDraft(next);\n",
+      "after": "        const defaults = startingTemplate(result, !defaultsMode);\n        const ready = defaultsMode ? undefined : readyBotData ?? (readyBotId ? readyBot(readyBotId) : undefined);\n        const next = new BotCreationDraft(ready ? readyBotTemplate(defaults, ready, activeLocale()) : defaults, () => render(value => value + 1));\n        if (ready && readyBot(ready.id)) next.role = ready.id;\n        setDraft(next);\n"
+    }
+  ],
+  "src/components/TemplateDetails.tsx": [
+    {
+      "before": "// \"Xem thêm\" on a bot template or a team template: everything the template brings, laid out the same way for each, so a\n// person can compare two before pressing \"Dùng mẫu\". Nothing is created here.\n",
+      "after": "import { activeLocale } from \"@/lib/i18n\";\n// \"Xem thêm\" on a bot template or a team template: everything the template brings, laid out the same way for each, so a\n// person can compare two before pressing \"Dùng mẫu\". Nothing is created here.\n"
+    },
+    {
+      "before": "  useEffect(() => {\n    let live = true;\n    api(`/api/team-library/teams/${entry.slug}`).then((manifest) => { if (live) setTeam(teamImportPreview(manifest)); },\n      (cause: unknown) => { if (live) setError(cause instanceof Error ? cause.message : String(cause)); });\n    return () => { live = false; };\n",
+      "after": "  useEffect(() => {\n    let live = true;\n    api(`/api/team-library/teams/${entry.slug}${entry.builtIn ? `?locale=${activeLocale()}` : \"\"}`).then((manifest) => { if (live) setTeam(teamImportPreview(manifest)); },\n      (cause: unknown) => { if (live) setError(cause instanceof Error ? cause.message : String(cause)); });\n    return () => { live = false; };\n"
+    },
+    {
+      "before": "  return <TemplateDetails\n    title={copy.name}\n    subtitle={entry.category}\n    loading={!team && !error}\n    error={error}\n",
+      "after": "  return <TemplateDetails\n    title={copy.name}\n    subtitle={copy.category}\n    loading={!team && !error}\n    error={error}\n"
+    }
+  ],
+  "src/lib/create-configured-bot.ts": [
+    {
+      "before": "import { botAvatarUrlFromStoredPath } from \"../../shared/bot-avatar\";\nimport { industryTemplate } from \"../../shared/industry-templates\";\nimport { t } from \"@/lib/i18n\";\n\nexport async function preparedBotTemplate(draft: BotCreationDraft) {\n",
+      "after": "import { botAvatarUrlFromStoredPath } from \"../../shared/bot-avatar\";\nimport { industryTemplate } from \"../../shared/industry-templates\";\nimport { activeLocale, t } from \"@/lib/i18n\";\n\nexport async function preparedBotTemplate(draft: BotCreationDraft) {\n"
+    },
+    {
+      "before": "      description: profile.description, ...chosenAi, section: profile.section,\n      useDefaults: false, ...(visibility !== undefined ? { visibility } : {}), ...(reportsTo ? { reportsTo } : {}),\n      ...(industry ? { industryTemplate: industry.id } : {}),\n      ...(Object.hasOwn(template.profile, \"toolScope\") ? { settings: { toolScope } } : {}),\n      ...(preset ? { preset: preset.id } : {}) }),\n",
+      "after": "      description: profile.description, ...chosenAi, section: profile.section,\n      useDefaults: false, ...(visibility !== undefined ? { visibility } : {}), ...(reportsTo ? { reportsTo } : {}),\n      ...(industry ? { industryTemplate: industry.id, templateLocale: activeLocale() } : {}),\n      ...(Object.hasOwn(template.profile, \"toolScope\") ? { settings: { toolScope } } : {}),\n      ...(preset ? { preset: preset.id } : {}) }),\n"
+    }
+  ],
+  "src/lib/team-catalog.ts": [
+    {
+      "before": "// The community templates catalog (/api/team-library/catalog). Its names and\n// summaries come in English; the built-in teams show in the app's language.\nimport { t } from \"./i18n\";\nimport type { LocaleKey } from \"@/locales\";\n\n",
+      "after": "// The community templates catalog (/api/team-library/catalog). Its names and\n// summaries come in English; the built-in teams show in the app's language.\nimport { industryTeamLabel } from \"../../shared/industry-display\";\nimport { INDUSTRY_PROFILES } from \"../../shared/industry-profiles\";\nimport { activeLocale, t } from \"./i18n\";\nimport type { LocaleKey } from \"@/locales\";\n\n"
+    },
+    {
+      "before": "\nexport function catalogCopy(entry: TeamCatalogEntry): TeamCatalogEntry {\n  const id = CATALOG_COPY[entry.name.trim().toLowerCase()];\n  return id ? { ...entry, name: t(`templates.catalog.${id}.name` as LocaleKey), summary: t(`templates.catalog.${id}.summary` as LocaleKey), outcome: entry.outcome ? t(`templates.catalog.${id}.outcome` as LocaleKey) : undefined } : entry;\n",
+      "after": "\nexport function catalogCopy(entry: TeamCatalogEntry): TeamCatalogEntry {\n  const profile = entry.builtIn && INDUSTRY_PROFILES.find(p => `industry-${p.slug}` === entry.slug);\n  if (profile) return { ...entry, ...industryTeamLabel(profile, activeLocale()) };\n  const id = CATALOG_COPY[entry.name.trim().toLowerCase()];\n  return id ? { ...entry, name: t(`templates.catalog.${id}.name` as LocaleKey), summary: t(`templates.catalog.${id}.summary` as LocaleKey), outcome: entry.outcome ? t(`templates.catalog.${id}.outcome` as LocaleKey) : undefined } : entry;\n"
+    }
+  ],
+  "src/lib/template-add.ts": [
+    {
+      "before": "import type { Routine } from \"@/lib/routines\";\nimport { api, type Action, type Bot, type Group } from \"@/state/store\";\n",
+      "after": "import { activeLocale } from \"@/lib/i18n\";\nimport type { Routine } from \"@/lib/routines\";\nimport { api, type Action, type Bot, type Group } from \"@/state/store\";\n"
+    },
+    {
+      "before": "/** The server installs a bundled toolkit only for the exact built-in package shown in the preview. */\nexport async function addTemplate(manifest: unknown, dispatch: (action: Action) => void, builtInTeam?: string): Promise<AddedTemplate> {\n  const target = builtInTeam ? `&builtInTeam=${encodeURIComponent(builtInTeam)}` : \"\";\n  const response = (await api(`/api/teams/import?mode=add${target}`, { method: \"POST\", body: JSON.stringify(manifest) })) as AddedTemplate;\n  for (const bot of response.bots) dispatch({ type: \"botAdded\", bot });\n",
+      "after": "/** The server installs a bundled toolkit only for the exact built-in package shown in the preview. */\nexport async function addTemplate(manifest: unknown, dispatch: (action: Action) => void, builtInTeam?: string): Promise<AddedTemplate> {\n  const target = builtInTeam ? `&builtInTeam=${encodeURIComponent(builtInTeam)}&locale=${activeLocale()}` : \"\";\n  const response = (await api(`/api/teams/import?mode=add${target}`, { method: \"POST\", body: JSON.stringify(manifest) })) as AddedTemplate;\n  for (const bot of response.bots) dispatch({ type: \"botAdded\", bot });\n"
+    }
+  ],
+  "src/locales/de.json": [
+    {
+      "before": "{\n  \"voice.gemini.keyPlaceholder\": \"Google AI Studio API-Schlüssel einfügen\",\n",
+      "after": "{\n  \"helperIntro.templates.support\": \"Kundenservice-Bot ansehen\",\n  \"helperIntro.templates.team\": \"Team für meine Branche finden\",\n  \"helperIntro.templates.department\": \"Abteilungsbot auswählen\",\n  \"helperIntro.templates.group\": \"Bot- und Teamvorlagen\",\n  \"voice.gemini.keyPlaceholder\": \"Google AI Studio API-Schlüssel einfügen\",\n"
+    }
+  ],
+  "src/locales/es.json": [
+    {
+      "before": "{\n  \"voice.gemini.keyPlaceholder\": \"Pega tu clave de API de Google AI Studio\",\n",
+      "after": "{\n  \"helperIntro.templates.support\": \"Ver el bot de atención al cliente\",\n  \"helperIntro.templates.team\": \"Buscar un equipo para mi sector\",\n  \"helperIntro.templates.department\": \"Elegir un bot de departamento\",\n  \"helperIntro.templates.group\": \"Plantillas de bots y equipos\",\n  \"voice.gemini.keyPlaceholder\": \"Pega tu clave de API de Google AI Studio\",\n"
+    }
+  ],
+  "src/locales/fr.json": [
+    {
+      "before": "{\n  \"voice.gemini.keyPlaceholder\": \"Collez votre clé API Google AI Studio\",\n",
+      "after": "{\n  \"helperIntro.templates.support\": \"Découvrir le bot de service client\",\n  \"helperIntro.templates.team\": \"Trouver une équipe pour mon secteur\",\n  \"helperIntro.templates.department\": \"Choisir un bot par service\",\n  \"helperIntro.templates.group\": \"Modèles de bots et d’équipes\",\n  \"voice.gemini.keyPlaceholder\": \"Collez votre clé API Google AI Studio\",\n"
+    }
+  ],
+  "src/locales/hi.json": [
+    {
+      "before": "{\n  \"voice.gemini.keyPlaceholder\": \"अपनी Google AI Studio API कुंजी पेस्ट करें\",\n",
+      "after": "{\n  \"helperIntro.templates.support\": \"ग्राहक सहायता बॉट देखें\",\n  \"helperIntro.templates.team\": \"अपने उद्योग के लिए टीम खोजें\",\n  \"helperIntro.templates.department\": \"विभाग के लिए बॉट चुनें\",\n  \"helperIntro.templates.group\": \"बॉट और टीम के नमूने\",\n  \"voice.gemini.keyPlaceholder\": \"अपनी Google AI Studio API कुंजी पेस्ट करें\",\n"
+    }
+  ],
+  "src/locales/it.json": [
+    {
+      "before": "{\n  \"voice.gemini.keyPlaceholder\": \"Incolla la tua chiave API di Google AI Studio\",\n",
+      "after": "{\n  \"helperIntro.templates.support\": \"Visualizza il bot del servizio clienti\",\n  \"helperIntro.templates.team\": \"Trova una squadra per il tuo settore\",\n  \"helperIntro.templates.department\": \"Scegli un bot per reparto\",\n  \"helperIntro.templates.group\": \"Modelli di bot e squadre\",\n  \"voice.gemini.keyPlaceholder\": \"Incolla la tua chiave API di Google AI Studio\",\n"
+    }
+  ],
+  "src/locales/ja.json": [
+    {
+      "before": "{\n  \"connectedWorkspaces.localTitle\": \"このコンピューターの環境\",\n",
+      "after": "{\n  \"helperIntro.templates.support\": \"カスタマーサポートボットを見る\",\n  \"helperIntro.templates.team\": \"業種に合うチームを探す\",\n  \"helperIntro.templates.department\": \"部門別ボットを選ぶ\",\n  \"helperIntro.templates.group\": \"ボットとチームのテンプレート\",\n  \"connectedWorkspaces.localTitle\": \"このコンピューターの環境\",\n"
+    }
+  ],
+  "src/locales/ko.json": [
+    {
+      "before": "{\n  \"voice.gemini.keyPlaceholder\": \"Google AI Studio API 키를 붙여넣으세요\",\n",
+      "after": "{\n  \"helperIntro.templates.support\": \"고객 지원 봇 미리 보기\",\n  \"helperIntro.templates.team\": \"업종에 맞는 팀 찾기\",\n  \"helperIntro.templates.department\": \"부서별 봇 선택\",\n  \"helperIntro.templates.group\": \"봇 및 팀 템플릿\",\n  \"voice.gemini.keyPlaceholder\": \"Google AI Studio API 키를 붙여넣으세요\",\n"
+    }
+  ],
+  "src/locales/pl.json": [
+    {
+      "before": "{\n  \"voice.gemini.keyPlaceholder\": \"Wklej swój klucz API Google AI Studio\",\n",
+      "after": "{\n  \"helperIntro.templates.support\": \"Zobacz bota do obsługi klienta\",\n  \"helperIntro.templates.team\": \"Znajdź zespół dla swojej branży\",\n  \"helperIntro.templates.department\": \"Wybierz bota dla działu\",\n  \"helperIntro.templates.group\": \"Szablony botów i zespołów\",\n  \"voice.gemini.keyPlaceholder\": \"Wklej swój klucz API Google AI Studio\",\n"
+    }
+  ],
+  "src/locales/pt-br.json": [
+    {
+      "before": "{\n  \"voice.gemini.keyPlaceholder\": \"Cole sua chave de API do Google AI Studio\",\n",
+      "after": "{\n  \"helperIntro.templates.support\": \"Ver o bot de atendimento ao cliente\",\n  \"helperIntro.templates.team\": \"Encontrar uma equipe para meu setor\",\n  \"helperIntro.templates.department\": \"Escolher um bot por departamento\",\n  \"helperIntro.templates.group\": \"Modelos de bots e equipes\",\n  \"voice.gemini.keyPlaceholder\": \"Cole sua chave de API do Google AI Studio\",\n"
+    }
+  ],
+  "src/locales/ru.json": [
+    {
+      "before": "{\n  \"voice.gemini.keyPlaceholder\": \"Вставьте свой API-ключ Google AI Studio\",\n",
+      "after": "{\n  \"helperIntro.templates.support\": \"Посмотреть бота службы поддержки\",\n  \"helperIntro.templates.team\": \"Найти команду для моей отрасли\",\n  \"helperIntro.templates.department\": \"Выбрать бота для отдела\",\n  \"helperIntro.templates.group\": \"Шаблоны ботов и команд\",\n  \"voice.gemini.keyPlaceholder\": \"Вставьте свой API-ключ Google AI Studio\",\n"
+    }
+  ],
+  "src/locales/tr.json": [
+    {
+      "before": "{\n  \"voice.gemini.keyPlaceholder\": \"Google AI Studio API anahtarınızı yapıştırın\",\n",
+      "after": "{\n  \"helperIntro.templates.support\": \"Müşteri hizmetleri botunu incele\",\n  \"helperIntro.templates.team\": \"Sektörüme uygun ekip bul\",\n  \"helperIntro.templates.department\": \"Departman botu seç\",\n  \"helperIntro.templates.group\": \"Bot ve ekip şablonları\",\n  \"voice.gemini.keyPlaceholder\": \"Google AI Studio API anahtarınızı yapıştırın\",\n"
+    }
+  ],
+  "src/locales/uk.json": [
+    {
+      "before": "{\n  \"voice.gemini.keyPlaceholder\": \"Вставте свій API-ключ Google AI Studio\",\n",
+      "after": "{\n  \"helperIntro.templates.support\": \"Переглянути бота служби підтримки\",\n  \"helperIntro.templates.team\": \"Знайти команду для моєї галузі\",\n  \"helperIntro.templates.department\": \"Вибрати бота для відділу\",\n  \"helperIntro.templates.group\": \"Шаблони ботів і команд\",\n  \"voice.gemini.keyPlaceholder\": \"Вставте свій API-ключ Google AI Studio\",\n"
+    }
+  ],
+  "src/locales/vi.json": [
+    {
+      "before": "{\n  \"chat.channel.title\": \"Cuộc trò chuyện từ kênh kết nối\",\n",
+      "after": "{\n  \"server.peerResend.failed\": \"Không thể gửi lại yêu cầu cho AI dự phòng. Chi tiết: {detail}\",\n  \"chat.channel.title\": \"Cuộc trò chuyện từ kênh kết nối\",\n"
+    }
+  ],
+  "src/locales/zh-tw.json": [
+    {
+      "before": "{\n  \"connectedWorkspaces.localTitle\": \"這台電腦上的環境\",\n",
+      "after": "{\n  \"helperIntro.templates.support\": \"預覽客服機器人\",\n  \"helperIntro.templates.team\": \"尋找適合本產業的團隊\",\n  \"helperIntro.templates.department\": \"選擇部門機器人\",\n  \"helperIntro.templates.group\": \"機器人與團隊範本\",\n  \"connectedWorkspaces.localTitle\": \"這台電腦上的環境\",\n"
+    }
+  ],
+  "src/locales/zh.json": [
+    {
+      "before": "{\n  \"voice.gemini.keyPlaceholder\": \"粘贴你的 Google AI Studio API 密钥\",\n",
+      "after": "{\n  \"helperIntro.templates.support\": \"预览客服机器人\",\n  \"helperIntro.templates.team\": \"查找适合本行业的团队\",\n  \"helperIntro.templates.department\": \"选择部门机器人\",\n  \"helperIntro.templates.group\": \"机器人与团队模板\",\n  \"voice.gemini.keyPlaceholder\": \"粘贴你的 Google AI Studio API 密钥\",\n"
+    }
+  ]
+}
