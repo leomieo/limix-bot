@@ -6917,7 +6917,7 @@
   "templates.tryDifferentSearch": "换个关键词试试。",
   "templates.bringYourOwn": "使用自己的团队",
   "templates.chooseFile": "选择备份文件或团队文件",
-  "templates.dropFile": "将 .mausbackup.json、BotMRR 的 .md 或旧版 .mausteam.json 拖到这里。添加任何内容前，你都可以先预览。",
+  "templates.dropFile": "将 .limixbot.json、BotMRR 的 .md 或.limixteam.json 拖到这里。添加任何内容前，你都可以先预览。",
   "templates.loadGithub": "从 GitHub 加载",
   "templates.githubHint": "粘贴公开仓库地址或团队 JSON 的直链。",
   "templates.githubPlaceholder": "github.com/owner/repo",

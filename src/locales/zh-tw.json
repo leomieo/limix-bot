@@ -7154,7 +7154,7 @@
   "templates.tryDifferentSearch": "請試試其他搜尋字詞。",
   "templates.bringYourOwn": "匯入你自己的團隊",
   "templates.chooseFile": "選擇備份或團隊檔案",
-  "templates.dropFile": "把 .mausbackup.json、BotMRR .md 或舊版 .mausteam.json 拖放到這裡。加入任何內容前，你都會先看到預覽。",
+  "templates.dropFile": "把 .limixbot.json、BotMRR .md 或.limixteam.json 拖放到這裡。加入任何內容前，你都會先看到預覽。",
   "templates.loadGithub": "從 GitHub 載入",
   "templates.githubHint": "貼上公開儲存庫或團隊 JSON 的直接連結。",
   "templates.githubPlaceholder": "github.com/owner/repo",

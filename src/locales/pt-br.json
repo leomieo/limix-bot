@@ -7180,7 +7180,7 @@
   "templates.tryDifferentSearch": "Tente outra busca.",
   "templates.bringYourOwn": "Traga sua própria equipe",
   "templates.chooseFile": "Escolher um arquivo de backup ou de equipe",
-  "templates.dropFile": "Solte aqui um arquivo .mausbackup.json, BotMRR .md ou no formato antigo .mausteam.json. Você verá uma prévia antes de adicionar qualquer coisa.",
+  "templates.dropFile": "Solte aqui um arquivo .limixbot.json, BotMRR .md ou um .limixteam.json. Você verá uma prévia antes de adicionar qualquer coisa.",
   "templates.loadGithub": "Carregar do GitHub",
   "templates.githubHint": "Cole o link de um repositório público ou um link direto para o JSON da equipe.",
   "templates.githubPlaceholder": "github.com/owner/repo",

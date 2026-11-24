@@ -6023,7 +6023,7 @@
   "templates.tryDifferentSearch": "Prova un'altra ricerca.",
   "templates.bringYourOwn": "Porta il tuo team",
   "templates.chooseFile": "Scegli un file di backup o di team",
-  "templates.dropFile": "Trascina qui un .mausbackup.json, un .md BotMRR o un .mausteam.json precedente. Vedrai l'anteprima prima che si aggiunga qualcosa.",
+  "templates.dropFile": "Trascina qui un .limixbot.json, un .md BotMRR o un .limixteam.json. Vedrai l'anteprima prima che si aggiunga qualcosa.",
   "templates.loadGithub": "Carica da GitHub",
   "templates.githubHint": "Incolla un repository pubblico o un link diretto al JSON del team.",
   "templates.githubUrl": "URL del team su GitHub",

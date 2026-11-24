@@ -7645,7 +7645,7 @@
   "templates.tryDifferentSearch": "Try a different search.",
   "templates.bringYourOwn": "Bring your own team",
   "templates.chooseFile": "Choose a backup or team file",
-  "templates.dropFile": "Drop a .mausbackup.json, BotMRR .md or legacy .mausteam.json here. You’ll preview it before anything is added.",
+  "templates.dropFile": "Drop a .limixbot.json backup, a .limixteam.json team file, or a BotMRR .md file here. You can preview it before importing.",
   "templates.loadGithub": "Load from GitHub",
   "templates.githubHint": "Paste a public repo or a direct team JSON link.",
   "templates.githubPlaceholder": "github.com/owner/repo",

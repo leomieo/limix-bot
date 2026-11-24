@@ -6240,7 +6240,7 @@
   "templates.tryDifferentSearch": "Попробуйте изменить условия поиска.",
   "templates.bringYourOwn": "Добавьте свою команду",
   "templates.chooseFile": "Выберите файл резервной копии или команды",
-  "templates.dropFile": "Перетащите сюда файл .mausbackup.json, BotMRR .md или устаревший .mausteam.json. Перед добавлением вы сможете просмотреть содержимое.",
+  "templates.dropFile": "Перетащите сюда файл .limixbot.json, BotMRR .md или .limixteam.json. Перед добавлением вы сможете просмотреть содержимое.",
   "templates.loadGithub": "Загрузить с GitHub",
   "templates.githubHint": "Вставьте ссылку на публичный репозиторий или прямой путь к JSON команды.",
   "templates.githubPlaceholder": "github.com/owner/repo",

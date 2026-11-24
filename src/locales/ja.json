@@ -6955,7 +6955,7 @@
   "templates.tryDifferentSearch": "別の検索語をお試しください。",
   "templates.bringYourOwn": "自分のチームを取り込む",
   "templates.chooseFile": "バックアップまたはチームファイルを選択",
-  "templates.dropFile": ".mausbackup.json、BotMRRの.md、または従来の.mausteam.jsonをここにドロップしてください。何かが追加される前に、プレビューを確認できます。",
+  "templates.dropFile": ".limixbot.json、BotMRRの.md、または.limixteam.jsonをここにドロップしてください。何かが追加される前に、プレビューを確認できます。",
   "templates.loadGithub": "GitHubから読み込む",
   "templates.githubHint": "公開リポジトリ、またはチームのJSONへの直接リンクを貼り付けてください。",
   "templates.githubPlaceholder": "github.com/owner/repo",

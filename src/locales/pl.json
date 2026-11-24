@@ -6150,7 +6150,7 @@
   "templates.tryDifferentSearch": "Spróbuj innego wyszukiwania.",
   "templates.bringYourOwn": "Dodaj własny zespół",
   "templates.chooseFile": "Wybierz plik kopii zapasowej lub zespołu",
-  "templates.dropFile": "Przeciągnij tutaj .mausbackup.json, BotMRR .md lub starszy .mausteam.json. Zobaczysz podgląd, zanim cokolwiek zostanie dodane.",
+  "templates.dropFile": "Przeciągnij tutaj .limixbot.json, BotMRR .md lub .limixteam.json. Zobaczysz podgląd, zanim cokolwiek zostanie dodane.",
   "templates.loadGithub": "Wczytaj z GitHub",
   "templates.githubHint": "Wklej publiczne repozytorium lub bezpośredni link do JSON zespołu.",
   "templates.githubPlaceholder": "github.com/owner/repo",

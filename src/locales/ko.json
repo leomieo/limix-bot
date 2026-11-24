@@ -6707,7 +6707,7 @@
   "templates.tryDifferentSearch": "다른 검색어를 써 보세요.",
   "templates.bringYourOwn": "내 팀 가져오기",
   "templates.chooseFile": "백업 또는 팀 파일 선택",
-  "templates.dropFile": ".mausbackup.json, BotMRR .md 또는 이전 .mausteam.json을 여기에 끌어다 놓으세요. 추가하기 전에 미리 볼 수 있어요.",
+  "templates.dropFile": ".limixbot.json, BotMRR .md 또는 .limixteam.json을 여기에 끌어다 놓으세요. 추가하기 전에 미리 볼 수 있어요.",
   "templates.loadGithub": "GitHub에서 불러오기",
   "templates.githubHint": "공개 저장소나 팀 JSON 직접 링크를 붙여 넣으세요.",
   "templates.githubPlaceholder": "github.com/owner/repo",

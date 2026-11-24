@@ -7644,7 +7644,7 @@
   "templates.tryDifferentSearch": "Hãy thử từ khóa khác.",
   "templates.bringYourOwn": "Mang nhóm của riêng bạn",
   "templates.chooseFile": "Chọn tệp sao lưu hoặc tệp nhóm",
-  "templates.dropFile": "Thả tệp .mausbackup.json, BotMRR .md hoặc .mausteam.json cũ vào đây. Bạn sẽ được xem trước rồi mới thêm.",
+  "templates.dropFile": "Thả tệp sao lưu .limixbot.json, tệp nhóm .limixteam.json hoặc tệp BotMRR .md vào đây. Bạn có thể xem trước khi nhập.",
   "templates.loadGithub": "Nạp từ GitHub",
   "templates.githubHint": "Dán một repo công khai hoặc liên kết trực tiếp tới tệp JSON của nhóm.",
   "templates.githubPlaceholder": "github.com/owner/repo",

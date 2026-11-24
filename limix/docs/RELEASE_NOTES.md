@@ -1,3 +1,13 @@
+Limix Bot 0.3.99
+
+## Tiếng Việt
+
+- Mục **Bản mẫu → Nhập** dùng tên .limixbot.json cho tệp sao lưu và .limixteam.json cho tệp nhóm. Bạn vẫn có thể nhập và xem trước tệp từ phiên bản cũ.
+
+## English
+
+- **Templates → Import** shows .limixbot.json for backups and .limixteam.json for team files. You can still import and preview files from earlier versions.
+
 Limix Bot 0.3.98
 
 ## Tiếng Việt

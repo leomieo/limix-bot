@@ -45,14 +45,14 @@ function text(value: unknown, field: string, max: number): string {
   return normalized;
 }
 
-function relativeFile(value: unknown, field: string, suffix: string, prefix: string): string {
+function relativeFile(value: unknown, field: string, suffix: string | readonly string[], prefix: string): string {
   const path = text(value, field, 300);
   if (
     path.startsWith("/") ||
     path.includes("\\") ||
     path.split("/").some((part) => !part || part === "." || part === "..") ||
     !path.startsWith(prefix) ||
-    !path.endsWith(suffix)
+    !(typeof suffix === "string" ? path.endsWith(suffix) : suffix.some((ending) => path.endsWith(ending)))
   ) {
     throw new Error(`${field} is not a safe catalog path`);
   }
@@ -96,7 +96,7 @@ export function parseTeamCatalog(value: unknown): TeamCatalog {
       ...(raw.package !== undefined
         ? { package: relativeFile(raw.package, `${field}.package`, ".md", "packages/") }
         : {}),
-      manifest: relativeFile(raw.manifest, `${field}.manifest`, ".mausteam.json", prefix),
+      manifest: relativeFile(raw.manifest, `${field}.manifest`, [".limixteam.json", ".mausteam.json"], prefix),
       readme: relativeFile(raw.readme, `${field}.readme`, "README.md", prefix),
       members:
         typeof raw.members === "number" && Number.isSafeInteger(raw.members) && raw.members > 0 && raw.members <= 200
@@ -217,7 +217,7 @@ function safeSegment(value: string): boolean {
   return /^[A-Za-z0-9._-]+$/.test(value) && value !== "." && value !== "..";
 }
 
-/** Public GitHub Markdown playbooks and legacy JSON team files only; other hosts never reach server fetch. */
+/** Public GitHub Markdown playbooks and JSON team files only; other hosts never reach server fetch. */
 export function githubManifestUrls(input: string): string[] {
   let url: URL;
   try {
@@ -237,9 +237,11 @@ export function githubManifestUrls(input: string): string[] {
       return [
         `https://raw.githubusercontent.com/${owner}/${repo}/main/botmrr.md`,
         `https://raw.githubusercontent.com/${owner}/${repo}/main/team.md`,
+        `https://raw.githubusercontent.com/${owner}/${repo}/main/team.limixteam.json`,
         `https://raw.githubusercontent.com/${owner}/${repo}/main/team.mausteam.json`,
         `https://raw.githubusercontent.com/${owner}/${repo}/master/botmrr.md`,
         `https://raw.githubusercontent.com/${owner}/${repo}/master/team.md`,
+        `https://raw.githubusercontent.com/${owner}/${repo}/master/team.limixteam.json`,
         `https://raw.githubusercontent.com/${owner}/${repo}/master/team.mausteam.json`,
       ];
     }
@@ -255,7 +257,7 @@ export function githubManifestUrls(input: string): string[] {
     return [`https://raw.githubusercontent.com/${parts.join("/")}`];
   }
 
-  throw new Error("Paste a GitHub repository, Markdown playbook, or legacy JSON team link");
+  throw new Error("Paste a GitHub repository, Markdown playbook, or JSON team link");
 }
 
 export async function fetchGithubTeam(input: string, fetcher: Fetcher = fetch): Promise<ParsedShareableTeam> {

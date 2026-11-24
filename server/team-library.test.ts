@@ -38,7 +38,7 @@ const catalog = {
       name: "Engineering Team",
       summary: "Plan and ship software.",
       category: "Engineering",
-      manifest: "teams/engineering/team.mausteam.json",
+      manifest: "teams/engineering/team.limixteam.json",
       readme: "teams/engineering/README.md",
       members: 1,
       skills: ["teams/engineering/skills/release/SKILL.md"],
@@ -69,7 +69,7 @@ describe("team library", () => {
     const fetcher = vi.fn(async (url: string | URL | Request) => {
       const target = String(url);
       if (target === TEAM_LIBRARY_CATALOG_URL) return response(catalog);
-      if (target === `${TEAM_LIBRARY_RAW_ROOT}/teams/engineering/team.mausteam.json`) return response(manifest);
+      if (target === `${TEAM_LIBRARY_RAW_ROOT}/teams/engineering/team.limixteam.json`) return response(manifest);
       return response({}, 404);
     }) as unknown as typeof fetch;
 
@@ -83,9 +83,11 @@ describe("team library", () => {
     expect(githubManifestUrls("https://github.com/acme/team")).toEqual([
       "https://raw.githubusercontent.com/acme/team/main/botmrr.md",
       "https://raw.githubusercontent.com/acme/team/main/team.md",
+      "https://raw.githubusercontent.com/acme/team/main/team.limixteam.json",
       "https://raw.githubusercontent.com/acme/team/main/team.mausteam.json",
       "https://raw.githubusercontent.com/acme/team/master/botmrr.md",
       "https://raw.githubusercontent.com/acme/team/master/team.md",
+      "https://raw.githubusercontent.com/acme/team/master/team.limixteam.json",
       "https://raw.githubusercontent.com/acme/team/master/team.mausteam.json",
     ]);
     expect(githubManifestUrls("https://github.com/acme/team/blob/main/presets/seo.mausteam.json")).toEqual([
@@ -108,7 +110,7 @@ describe("team library", () => {
     const loaded = await fetchGithubTeam("https://github.com/acme/team", fetcher);
     if (loaded.format !== "openmaus.team") throw new Error("expected a legacy team");
     expect(loaded.team.members[0]?.name).toBe("Ada");
-    expect(fetcher).toHaveBeenCalledTimes(6);
+    expect(fetcher).toHaveBeenCalledTimes(8);
   });
 
   it("loads a shared team file (package v2) from GitHub as a file, without its claimed publisher", async () => {
@@ -141,7 +143,7 @@ describe("the team library as a Chief of Staff reads it", () => {
   const fetcher = vi.fn(async (url: string | URL | Request) => {
     const target = String(url).slice(TEAM_LIBRARY_RAW_ROOT.length + 1);
     if (String(url) === TEAM_LIBRARY_CATALOG_URL) return response(library);
-    if (target === "teams/engineering/team.mausteam.json") return response(manifest);
+    if (target === "teams/engineering/team.limixteam.json") return response(manifest);
     if (target === "packages/signal-desk.md") return new Response(fixture("legacy-botmrr.v1.md"));
     if (target === "teams/sales-desk/team.mausteam.json") return new Response(fixture("full-team.v2.json"));
     if (target === "teams/long/team.mausteam.json") return response(long);
