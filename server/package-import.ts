@@ -15,6 +15,8 @@ import { importedMemberProfile, type ParsedTeamManifest, type TeamManifestMember
 import { takeImportName } from "../shared/import-name.ts";
 import { decodeBase64, type PackageAgent, type PackageDocument, type PackageTrust } from "../shared/package-format.ts";
 import type { BotVisibility, ModelSelection } from "../shared/wire.ts";
+import { industryBotSettings } from "../shared/industry-templates.ts";
+import { enableIndustryCare } from "./industry-care.ts";
 
 export const NO_BOTS_MESSAGE = "This package has no bots. Add it from your organization's shelf, or update Limix Bot.";
 export const NO_PRESETS_MESSAGE = "This file has no bots or preset bots to add. Its skills can be added from your organization's shelf.";
@@ -86,6 +88,8 @@ export interface PackageImportOptions {
   room?: string;
   /** Who may see the new bots: the admin's choice, never the file's. */
   visibility?: BotVisibility;
+  /** Set only for an explicitly selected, server-generated industry package. */
+  builtInIndustry?: boolean;
   org?: OrgImportContext;
 }
 
@@ -297,6 +301,7 @@ function runImport(source: ImportSource, options: PackageImportOptions, deps: Pa
           ...importedMemberProfile(member, takenNames),
           modelSelection: selection,
           section,
+          ...(options.builtInIndustry ? { toolScope: industryBotSettings().toolScope } : {}),
           ...(options.visibility ? { visibility: options.visibility } : {}),
         },
         { seedMessages: false },
@@ -332,6 +337,7 @@ function runImport(source: ImportSource, options: PackageImportOptions, deps: Pa
       store.patchBot(created.id, {
         composio: false,
         connectorTools: {},
+        ...(options.builtInIndustry ? industryBotSettings() : {}),
         // The publisher's choice, with no card: recording only keeps evidence in this workspace.
         ...(agent?.recordBrowserSteps === true ? { recordBrowserSteps: true } : {}),
         ...(playbooks.length ? { playbooks } : {}),
@@ -339,6 +345,7 @@ function runImport(source: ImportSource, options: PackageImportOptions, deps: Pa
         ...(agent?.connections ? { mcpServers: agent.connections.flatMap((key) => serverForKey.has(key) ? [serverForKey.get(key)!] : []) } : {}),
         ...avatar,
       });
+      if (options.builtInIndustry) enableIndustryCare(created.id);
       for (const skillName of agent?.skills ?? []) {
         const skill = skillByName.get(skillName);
         if (!skill) throw new Error(`Package skill "${skillName}" is unavailable`);

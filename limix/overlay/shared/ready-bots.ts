@@ -1,5 +1,6 @@
 import type { BotRoutineTemplate, NewBotDefaults } from "./new-bot-defaults.ts";
 import type { TemplateMascotLook } from "./template-mascot.ts";
+import { industryBotSettings, industryTemplate } from "./industry-templates.ts";
 
 export type ReadyBotCategory = "everyday" | "work" | "writing" | "design" | "sales" | "personal";
 
@@ -324,12 +325,16 @@ export const READY_BOTS: ReadyBot[] = [
 export const CLASSIC_ROLE_IDS = ["assistant", "inbox", "research", "coder", "community", "ops"] as const;
 
 export function readyBot(id: string): ReadyBot | undefined {
-  return READY_BOTS.find((bot) => bot.id === id);
+  return industryTemplate(id) ?? READY_BOTS.find((bot) => bot.id === id);
 }
 
-/** Only who the bot is changes: model, approval level, computer, folder, apps and permissions stay the person's own. */
 export function readyBotTemplate(defaults: NewBotDefaults, bot: ReadyBot): NewBotDefaults {
-  const template = structuredClone(defaults);
+  const industry = industryTemplate(bot.id);
+  const template: NewBotDefaults = industry ? {
+    profile: { ...industryBotSettings(), ...(defaults.profile.modelSelection ? { modelSelection: structuredClone(defaults.profile.modelSelection) } : {}) },
+    skills: [], routines: [], memory: {},
+  } : structuredClone(defaults);
+  bot = industry ?? bot;
   template.profile = {
     ...template.profile,
     name: bot.name,

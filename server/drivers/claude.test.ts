@@ -871,6 +871,14 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     expect(refused).toContain("too old to run this turn without a shell");
   });
 
+  it("stops an operator turn if the CLI advertises native tools despite a MCP-only scope", async () => {
+    await create(undefined, { FAKE_CLAUDE_VERSION: "2.1.284", FAKE_CLAUDE_KEEP_BASH: "1" });
+    await instance.adapter.sendTurn({ threadId: "scope-kept-native", text: "Fixture", toolScope: { allow: ["mcp:industry-care:care_lookup"] } });
+    await recorder.until(event => event.type === "turn.completed");
+    expect(recorder.events).toContainEqual(expect.objectContaining({ type: "turn.completed", ok: false }));
+    expect(recorder.events).toContainEqual(expect.objectContaining({ type: "runtime.error", message: expect.stringContaining("built-in tool") }));
+  });
+
   it("keeps a workspace Anthropic key set on purpose while still dropping one from the parent env", async () => {
     await create(undefined, { ANTHROPIC_API_KEY: "sk-ant-workspace-fixture" });
     const dump = join(scratch, "dump-workspace-key.json");

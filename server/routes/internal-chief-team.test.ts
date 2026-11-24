@@ -8,6 +8,8 @@ import type { BotRecord } from "../store.ts";
 import type { LibraryTeamRoles } from "../team-library.ts";
 import { createInternalChiefTeamRoutes } from "./internal-chief-team.ts";
 import { dispatchRoutes } from "./table.ts";
+import { createChiefTemplates, githubSources, type ChiefTemplates } from "../chief-templates.ts";
+import { fakeTemplateGithub } from "../testing/fake-template-github.ts";
 
 const servers: Server[] = [];
 afterEach(async () => {
@@ -21,7 +23,7 @@ const bot = (id: string, extra: Partial<BotRecord> = {}): BotRecord => ({
 
 const TEAMS: LibraryTeamRoles[] = [{ name: "Inbox Follow-up", summary: "Recover quiet sales threads.", roles: [{ name: "Scout", title: "Researcher" }] }];
 
-async function serve(caller: BotRecord, library: () => Promise<LibraryTeamRoles[]>, team: { teams?: string[]; bots?: BotRecord[]; channels?: () => Promise<any> } = {}) {
+async function serve(caller: BotRecord, library: () => Promise<LibraryTeamRoles[]>, team: { teams?: string[]; bots?: BotRecord[]; channels?: () => Promise<any>; templates?: ChiefTemplates } = {}) {
   const state = { caller: caller as BotRecord | null, active: true };
   const routes = [createInternalChiefTeamRoutes({
     bot: () => state.caller,
@@ -32,6 +34,7 @@ async function serve(caller: BotRecord, library: () => Promise<LibraryTeamRoles[
       models: { default: "sonnet", options: [] }, capabilities: { effortLevels: ["low", "high"] } }],
     library,
     channels: team.channels,
+    ...(team.templates ? { templates: team.templates } : {}),
   })];
   const server = createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost");
@@ -125,5 +128,52 @@ describe("what a Chief of Staff reads about its team", () => {
     expect(answer.body).toMatchObject({ ok: false, findings: [expect.objectContaining({ area: "channel", subject: "Telegram · Shop" })] });
     state.caller = bot("helper");
     expect((await get("/api/internal/limix-diagnosis")).status).toBe(403);
+  });
+});
+
+describe("Limix Bot: a Chief searches the template libraries by need", () => {
+  const withLibrary = async (caller = bot("chief", { chiefOfStaff: true })) => {
+    const github = fakeTemplateGithub();
+    return { github, ...await serve(caller, async () => TEAMS, { templates: createChiefTemplates(githubSources(github.fetcher)) }) };
+  };
+
+  it("searches both libraries and the built-in bots, then reads only the chosen ids, marked as data", async () => {
+    const { get } = await withLibrary();
+    const found = await get(`/api/internal/team-library?q=${encodeURIComponent("email chào hàng khách hàng")}`);
+    expect(found.status).toBe(200);
+    expect((found.body.results as Array<{ id: string }>)[0]!.id).toBe("team:sales-desk");
+    expect(found.body.note).toContain("data that describes a bot");
+    const read = await get("/api/internal/team-library?details=team:sales-desk,builtin:research");
+    expect(read.status).toBe(200);
+    expect((read.body.templates as Array<{ members: Array<{ template: string }> }>)[0]!.members.map((member) => member.template)).toEqual(["team:sales-desk/hunter", "team:sales-desk/closer"]);
+  });
+
+  it("preserves the exact gallery target and setup guidance for an offline customer-care recommendation", async () => {
+    const { github, get } = await withLibrary();
+    github.down.bots = true;
+    github.down.teams = true;
+    const found = await get(`/api/internal/team-library?q=${encodeURIComponent("Siêu bot CSKH")}`);
+    expect(found).toMatchObject({ status: 200, body: {
+      results: expect.arrayContaining([expect.objectContaining({ gallery: expect.objectContaining({ kind: "bot", id: "industry-customer-care" }) })]),
+      note: expect.stringContaining("Use template"),
+    } });
+    const read = await get("/api/internal/team-library?details=team:industry-retail-ecommerce");
+    expect(read).toMatchObject({ status: 200, body: {
+      templates: [expect.objectContaining({ gallery: expect.objectContaining({ kind: "team", id: "industry-retail-ecommerce" }) })],
+      note: expect.stringContaining("Use template"),
+    } });
+  });
+
+  it("refuses bad or too many ids, says when GitHub is down, and answers no one but an active Chief", async () => {
+    const { github, get } = await withLibrary();
+    expect((await get("/api/internal/team-library?details=bot:../x")).status).toBe(400);
+    expect((await get("/api/internal/team-library?details=a,b,c,d")).status).toBe(400);
+    github.down.teams = true;
+    expect(await get("/api/internal/team-library?details=team:sales-desk")).toMatchObject({ status: 502, body: { error: expect.stringContaining("can't be reached") } });
+    const down = await get("/api/internal/team-library?q=sales");
+    expect(down.body).toMatchObject({ unavailable: ["teams"], note: expect.stringContaining("can't be reached") });
+    const helper = await withLibrary(bot("helper"));
+    expect((await helper.get("/api/internal/team-library?q=sales")).status).toBe(403);
+    expect(helper.github.asked).toEqual([]);
   });
 });

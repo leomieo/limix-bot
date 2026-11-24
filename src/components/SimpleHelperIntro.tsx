@@ -14,6 +14,7 @@ import { joinedCorners, SIMPLE_BOT_BUBBLE, SIMPLE_BUBBLE_MAX } from "./chat-bubb
 import { loadAppCards } from "./bot-settings/useBotApps";
 import { engineReady } from "./EngineLibrary";
 import { IntroChips } from "./HelperSetup";
+import { HelperTemplateSuggestions } from "./HelperTemplateSuggestions";
 import { usePrefersReducedMotion } from "./mascot-clock";
 import { preloadConnectedApps } from "@/lib/connected-apps";
 
@@ -189,6 +190,7 @@ export function SimpleHelperIntro({ botId, threadId, message, answered, followup
         </div>
       )}
       <IntroChips chips={chips} />
+      {!answered && shown >= ALL && facts && <HelperTemplateSuggestions />}
     </div>
   );
 }

@@ -496,7 +496,10 @@ export async function callTool(called: string, input: Json, context: ToolCallCon
     return { text: JSON.stringify(await api("/api/internal/limix-diagnosis")) };
   }
   if (name === "list_team_library") {
-    return { text: JSON.stringify(await api("/api/internal/team-library")) };
+    const details = Array.isArray(args.details) ? args.details.filter((id): id is string => typeof id === "string" && id.trim().length > 0).slice(0, 3) : [];
+    const query = typeof args.query === "string" ? args.query.trim().slice(0, 200) : "";
+    const params = details.length ? `?details=${encodeURIComponent(details.join(","))}` : query ? `?q=${encodeURIComponent(query)}` : "";
+    return { text: JSON.stringify(await api(`/api/internal/team-library${params}`)) };
   }
   if (name === "propose_team_setup" || name === "propose_bot_deletion") {
     const deleting = name === "propose_bot_deletion";

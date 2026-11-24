@@ -29,6 +29,7 @@ import { nextRename } from "@/lib/rename";
 import { useDesktopCapabilities, windowFramed } from "./DesktopCapabilities";
 import { MIN_QUERY, SearchResults } from "./SearchResults";
 import { ShareTeamDialog, TeamLibraryPanel } from "./lazy-screens";
+import { onIndustrySuggestions, type IndustrySuggestion } from "@/lib/industry-suggestions";
 import { SidebarNewChatPanel } from "./SidebarNewChatPanel";
 import { openCommandPalette } from "./CommandPalette";
 import { TeamSettingsDialog } from "./TeamSettingsDialog";
@@ -992,6 +993,8 @@ export function Sidebar({ open, onClose, collapseToIcons = false }: {
   const [newTaskFolderBotId, setNewTaskFolderBotId] = useState<string | null>(null);
   const newTaskFolderBot = state.bots.find((bot) => bot.id === newTaskFolderBotId);
   const [teamLibraryOpen, setTeamLibraryOpen] = useState(false);
+  const [industrySuggestion, setIndustrySuggestion] = useState<IndustrySuggestion>();
+  const industryTrigger = useRef<HTMLButtonElement | null>(null);
   const [teamInstallUrl, setTeamInstallUrl] = useState<string | null>(null);
   const [archivedBotsOpen, setArchivedBotsOpen] = useState(false);
   const [teamFeedback, setTeamFeedback] = useState<{
@@ -1042,8 +1045,19 @@ export function Sidebar({ open, onClose, collapseToIcons = false }: {
   usePopoverDismiss(plusOpen, plusMenuRef, () => setPlusOpen(false));
 
   useEffect(() => {
+    if (remoteClient || teamSettingsAllowed === false) return;
+    return onIndustrySuggestions(({ kind, trigger }) => {
+      industryTrigger.current = trigger ?? null;
+      setTeamInstallUrl(null);
+      setIndustrySuggestion(kind);
+      setTeamLibraryOpen(true);
+    });
+  }, [remoteClient, teamSettingsAllowed]);
+
+  useEffect(() => {
     if (remoteClient) return;
     return window.ogb?.onPackageInstall?.((url) => {
+      setIndustrySuggestion(undefined);
       setTeamInstallUrl(url);
       setTeamLibraryOpen(true);
     });
@@ -1222,7 +1236,7 @@ export function Sidebar({ open, onClose, collapseToIcons = false }: {
           </button>}
           {!remoteClient && <>
           {teamSettingsAllowed !== false && <button
-            onClick={() => { setPlusOpen(false); setTeamLibraryOpen(true); }}
+            onClick={() => { setPlusOpen(false); setIndustrySuggestion(undefined); setTeamLibraryOpen(true); }}
             role="menuitem"
             className={plusItem}
           >
@@ -1652,7 +1666,9 @@ export function Sidebar({ open, onClose, collapseToIcons = false }: {
       )}
       {!remoteClient && teamLibraryOpen && (
         <TeamLibraryPanel
-          returnFocusRef={importReturnRef}
+          key={industrySuggestion ?? "library"}
+          initialIndustrySuggestion={industrySuggestion}
+          returnFocusRef={industrySuggestion ? industryTrigger : importReturnRef}
           initialUrl={teamInstallUrl ?? undefined}
           onClose={() => {
             setTeamLibraryOpen(false);

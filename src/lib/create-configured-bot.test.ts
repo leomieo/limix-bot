@@ -37,6 +37,17 @@ describe("configured bot creation", () => {
     expect(f.bodies[0]).toMatchObject({ visibility: "admins", useDefaults: false });
   });
 
+  it("installs the selected local industry toolkit in the initial create request", async () => {
+    const f = fixture("ask");
+    f.draft.chooseRole("industry-customer-care");
+    await createConfiguredBot(f.draft, f.request, persistBotUpdate, f.approvals);
+    expect(f.bodies[0]).toMatchObject({ industryTemplate: "industry-customer-care", useDefaults: false });
+    const classic = fixture("ask");
+    classic.draft.chooseRole("assistant");
+    await createConfiguredBot(classic.draft, classic.request, persistBotUpdate, classic.approvals);
+    expect(classic.bodies[0]).not.toHaveProperty("industryTemplate");
+  });
+
   it("names who a new team bot reports to in the creation request, and nobody anywhere else", async () => {
     const team = fixture("ask");
     await createConfiguredBot(team.draft, team.request, persistBotUpdate, team.approvals, undefined, "bob@acme.test");

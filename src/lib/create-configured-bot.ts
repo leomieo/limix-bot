@@ -4,6 +4,7 @@ import type { BotCreationDraft } from "./bot-creation-draft";
 import { imageAttachmentFromFile } from "./composer-attachments";
 import type { BotVisibility } from "../../shared/wire";
 import { botAvatarUrlFromStoredPath } from "../../shared/bot-avatar";
+import { industryTemplate } from "../../shared/industry-templates";
 import { t } from "@/lib/i18n";
 
 export async function preparedBotTemplate(draft: BotCreationDraft) {
@@ -31,11 +32,13 @@ export async function createConfiguredBot(
   const { chiefOfStaff, managedSections, toolScope, modelSelection, ...profile } = template.profile;
   if (!profile.name?.trim()) throw new Error(t("newBot.nameRequired"));
   const preset = draft.preset;
+  const industry = !preset && draft.role ? industryTemplate(draft.role) : undefined;
   const chosenAi = modelSelection?.instanceId && modelSelection.model ? { modelSelection, requireAvailableModel: true } : {};
   const response = await request<{ bot: Bot; paused?: true }>("/api/bots", {
     method: "POST", body: JSON.stringify({ name: profile.name, title: profile.title,
       description: profile.description, ...chosenAi, section: profile.section,
       useDefaults: false, ...(visibility !== undefined ? { visibility } : {}), ...(reportsTo ? { reportsTo } : {}),
+      ...(industry ? { industryTemplate: industry.id } : {}),
       ...(Object.hasOwn(template.profile, "toolScope") ? { settings: { toolScope } } : {}),
       ...(preset ? { preset: preset.id } : {}) }),
   });

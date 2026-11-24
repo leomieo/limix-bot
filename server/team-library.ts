@@ -2,6 +2,7 @@ import { parseJson, type JsonValue } from "./schema.ts";
 import { isBotPackage, parseBotPackage, parsePackageDocument, upgradeV1, type PackageDocument, type ParsedBotPackage } from "./bot-package.ts";
 import { PACKAGE_V1_VERSION } from "../shared/package-format.ts";
 import { parseTeamManifest, type ParsedTeamManifest } from "./team-manifest.ts";
+import { industryTeam, industryTeamCatalog } from "./industry-teams.ts";
 
 export const TEAM_LIBRARY_REPOSITORY = "https://github.com/leomieo/limix-bot-teams";
 export const TEAM_LIBRARY_RAW_ROOT = "https://raw.githubusercontent.com/leomieo/limix-bot-teams/main";
@@ -20,7 +21,8 @@ export interface TeamCatalogEntry {
   featured?: boolean;
   package?: string;
   manifest: string;
-  readme: string;
+  readme?: string;
+  builtIn?: true;
   members: number;
   skills: string[];
   requires: { apps: string[] };
@@ -31,6 +33,7 @@ export interface TeamCatalog {
   version: 1;
   repositoryUrl: typeof TEAM_LIBRARY_REPOSITORY;
   teams: TeamCatalogEntry[];
+  communityAvailable?: false;
 }
 
 type Fetcher = typeof fetch;
@@ -153,8 +156,21 @@ async function fetchText(url: string, maxBytes: number, fetcher: Fetcher): Promi
   return raw;
 }
 
-export async function fetchTeamCatalog(fetcher: Fetcher = fetch): Promise<TeamCatalog> {
+async function communityCatalog(fetcher: Fetcher): Promise<TeamCatalog> {
   return parseTeamCatalog(await fetchJson(TEAM_LIBRARY_CATALOG_URL, MAX_CATALOG_BYTES, fetcher));
+}
+
+export async function fetchTeamCatalog(fetcher: Fetcher = fetch): Promise<TeamCatalog> {
+  const local: TeamCatalog = {
+    format: "openmaus.catalog", version: 1, repositoryUrl: TEAM_LIBRARY_REPOSITORY, teams: industryTeamCatalog,
+  };
+  try {
+    const remote = await communityCatalog(fetcher);
+    const reserved = new Set(industryTeamCatalog.map((team) => team.slug));
+    return { ...local, teams: [...industryTeamCatalog, ...remote.teams.filter((team) => !reserved.has(team.slug))] };
+  } catch {
+    return { ...local, communityAvailable: false };
+  }
 }
 
 export type ParsedShareableTeam = ParsedTeamManifest | ParsedBotPackage | PackageDocument;
@@ -174,7 +190,9 @@ async function fetchShareable(url: string, fetcher: Fetcher): Promise<ParsedShar
 
 export async function fetchLibraryTeam(slug: string, fetcher: Fetcher = fetch): Promise<ParsedShareableTeam> {
   if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) throw new Error("That team name is invalid");
-  const catalog = await fetchTeamCatalog(fetcher);
+  const local = industryTeam(slug);
+  if (local) return local;
+  const catalog = await communityCatalog(fetcher);
   const entry = catalog.teams.find((team) => team.slug === slug);
   if (!entry) throw Object.assign(new Error("That library team was not found"), { status: 404 });
   return fetchShareable(`${TEAM_LIBRARY_RAW_ROOT}/${entry.package ?? entry.manifest}`, fetcher);
@@ -209,7 +227,8 @@ export async function libraryTeamRoles(fetcher: Fetcher = fetch): Promise<Librar
   return Promise.all(catalog.teams.slice(0, MAX_CHIEF_TEAMS).map(async (entry) => ({
     name: entry.name,
     summary: entry.summary,
-    roles: await fetchShareable(`${TEAM_LIBRARY_RAW_ROOT}/${entry.package ?? entry.manifest}`, fetcher).then(libraryRoles, () => []),
+    roles: entry.builtIn ? libraryRoles(industryTeam(entry.slug)!) :
+      await fetchShareable(`${TEAM_LIBRARY_RAW_ROOT}/${entry.package ?? entry.manifest}`, fetcher).then(libraryRoles, () => []),
   })));
 }
 

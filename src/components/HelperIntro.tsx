@@ -5,6 +5,7 @@ import { useAdvancedMode } from "@/lib/interface-mode";
 import type { LocaleKey } from "@/locales";
 import { useStore, type Message } from "@/state/store";
 import { HelperSetup } from "./HelperSetup";
+import { HelperTemplateSuggestions } from "./HelperTemplateSuggestions";
 import { SimpleHelperIntro } from "./SimpleHelperIntro";
 
 export const HELPER_ASK_KEYS: readonly LocaleKey[] = [
@@ -44,6 +45,7 @@ function AdvancedHelperIntro({ botId, threadId, message, answered }: IntroProps)
         {!answered && <p className="mt-1 text-ink-secondary">{t("helperIntro.try")}</p>}
       </div>
       {!answered && <HelperSetup />}
+      {!answered && <HelperTemplateSuggestions />}
       {!answered && (
         <div role="group" aria-label={t("helperIntro.asks")} className="flex max-w-full flex-wrap items-center gap-1.5">
           {HELPER_ASK_KEYS.map((key) => (

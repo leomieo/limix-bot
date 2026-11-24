@@ -6,11 +6,14 @@ import {
   TEAM_LIBRARY_CATALOG_URL,
   TEAM_LIBRARY_RAW_ROOT,
   fetchGithubTeam,
+  fetchTeamCatalog,
   fetchLibraryTeam,
   githubManifestUrls,
   libraryTeamRoles,
   parseTeamCatalog,
 } from "./team-library.ts";
+import { industryTeamCatalog } from "./industry-teams.ts";
+import { INDUSTRY_PROFILES } from "../shared/industry-profiles.ts";
 
 const manifest = {
   format: "openmaus.team",
@@ -55,6 +58,29 @@ function response(value: unknown, status = 200): Response {
 }
 
 describe("team library", () => {
+  it("serves all ten industry teams offline and reserves their slugs when the community is online", async () => {
+    const offline = vi.fn(async () => response({}, 503)) as unknown as typeof fetch;
+    const bundled = await fetchTeamCatalog(offline);
+    expect(bundled.communityAvailable).toBe(false);
+    expect(bundled.teams).toHaveLength(10);
+    for (const profile of INDUSTRY_PROFILES) {
+      const slug = `industry-${profile.slug}`;
+      const entry = bundled.teams.find((item) => item.slug === slug);
+      expect(entry).toMatchObject({ members: 4, builtIn: true, skills: ["industry-customer-care"] });
+      const doc = await fetchLibraryTeam(slug, offline);
+      if (doc.format !== "openmaus.package" || doc.version !== 2) throw new Error("Expected a v2 industry package");
+      const pkg = doc.package;
+      expect(pkg.agents.map((a) => a.key)).toEqual(["care", ...profile.roles.map((role) => role.slug)]);
+      expect(pkg.rooms?.[0]).toMatchObject({ members: pkg.agents.map((a) => a.key), defaultResponder: { kind: "agent", agent: "care" } });
+      expect(pkg.team?.leader).toBeUndefined();
+    }
+    expect(offline).toHaveBeenCalledTimes(1);
+    const slug = bundled.teams[0]!.slug;
+    const impostor = { ...catalog.teams[0], slug, skills: [], manifest: `teams/${slug}/team.mausteam.json`, readme: `teams/${slug}/README.md` };
+    const online = await fetchTeamCatalog(async () => response({ ...catalog, teams: [impostor, ...catalog.teams] }));
+    expect(online.teams.filter((team) => team.slug === slug)).toEqual([bundled.teams[0]]);
+    expect(online.teams.at(-1)?.slug).toBe("engineering");
+  });
   it("validates catalog paths and adds the trusted repository URL", () => {
     const parsed = parseTeamCatalog(catalog);
     expect(parsed.repositoryUrl).toBe("https://github.com/leomieo/limix-bot-teams");
@@ -151,7 +177,8 @@ describe("the team library as a Chief of Staff reads it", () => {
   }) as unknown as typeof fetch;
 
   it("lists every ready-made team with its summary and roles, marks the team's own lead, and keeps a team whose file is missing", async () => {
-    const teams = await libraryTeamRoles(fetcher);
+    const all = await libraryTeamRoles(fetcher);
+    const teams = all.slice(industryTeamCatalog.length);
     expect(teams.slice(0, 4)).toEqual([
       { name: "Engineering Team", summary: "Plan and ship software.", roles: [{ name: "Ada", title: "Tech Lead", does: "Coordinates the work" }] },
       { name: "Signal Desk", summary: "Find and explain the signal.", roles: [
@@ -171,7 +198,9 @@ describe("the team library as a Chief of Staff reads it", () => {
     expect(does.endsWith("…")).toBe(true);
   });
 
-  it("fails when the catalog itself can't be read", async () => {
-    await expect(libraryTeamRoles(vi.fn(async () => response({}, 503)) as unknown as typeof fetch)).rejects.toThrow("HTTP 503");
+  it("retains the built-in roles when the remote catalog can't be read", async () => {
+    const teams = await libraryTeamRoles(async () => response({}, 503));
+    expect(teams.map((team) => team.name)).toEqual(industryTeamCatalog.map((team) => team.name));
+    expect(teams.every((team) => team.roles.length === 4)).toBe(true);
   });
 });

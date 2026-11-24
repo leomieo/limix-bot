@@ -2221,11 +2221,19 @@ for rel, edits in json.loads((ROOT / "limix/patches/managed-beta.json").read_tex
         return s
     edit(rel, managed_beta_patch)
 
+suggestion_edits = json.loads((ROOT / "limix/patches/assistant-template-suggestions.json").read_text(encoding="utf-8"))
 for rel, edits in json.loads((ROOT / "limix/patches/assistant-proposals.json").read_text(encoding="utf-8")).items():
-    def assistant_proposals_patch(s, edits=edits):
+    def assistant_proposals_patch(s, edits=edits, rel=rel):
+        prior = s
+        for later in reversed(suggestion_edits.get(rel, [])):
+            if prior.count(later["after"]) == 1:
+                prior = prior.replace(later["after"], later["before"], 1)
         for patch in edits:
-            if patch["after"] not in s:
-                s = must(s, patch["before"], patch["after"])
+            if patch["after"] in s or patch["after"] in prior:
+                continue
+            if patch["before"] not in s and patch["before"] in prior:
+                continue
+            s = must(s, patch["before"], patch["after"])
         return s
     edit(rel, assistant_proposals_patch)
 
@@ -2310,3 +2318,15 @@ for rel, marker in [("electron/main.mjs", "limix-gateway"), ("electron/preload.c
                     ("server/bot-api-host.ts", "limix-owner-lane"), ("server/index.ts", "limix-channel"), ("electron/main.mjs", "LIMIX_OWNER_LANE_TOKEN")]:
     if marker in (ROOT / rel).read_text(encoding="utf-8"):
         raise RuntimeError(f"Messaging gateway still wired in {rel} ({marker}): update limix/patches/messaging-module.json")
+
+for feature in ("industry-customer-care", "assistant-template-suggestions"):
+    for rel, edits in json.loads((ROOT / f"limix/patches/{feature}.json").read_text(encoding="utf-8")).items():
+        def apply_feature(s, edits=edits, rel=rel):
+            for patch in edits:
+                if patch["after"] in s:
+                    continue
+                if s.count(patch["before"]) != 1:
+                    raise RuntimeError(f"Template patch drift: {rel}")
+                s = s.replace(patch["before"], patch["after"], 1)
+            return s
+        edit(rel, apply_feature)

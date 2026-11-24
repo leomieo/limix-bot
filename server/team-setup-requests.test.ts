@@ -10,8 +10,10 @@ import { hasTeamAuthority } from "./peer-roster.ts";
 import type { BotRecord, OptionCardData } from "./store.ts";
 import type { TeamSetupRequest, TeamSetupResult } from "../shared/team-setup.ts";
 import type { DirectApply } from "./direct-apply.ts";
+import { createChiefTemplates, githubSources } from "./chief-templates.ts";
+import { fakeTemplateGithub } from "./testing/fake-template-github.ts";
 
-function harness(caps?: Record<string, { driverKind: string; agentsMcp: boolean }>, createRoom?: (request: TeamSetupRequest, botIds: string[]) => { id: string; name: string }) {
+function harness(caps?: Record<string, { driverKind: string; agentsMcp: boolean }>, createRoom?: (request: TeamSetupRequest, botIds: string[]) => { id: string; name: string }, templates?: ConstructorParameters<typeof TeamSetupRequestService>[0]["templates"]) {
   const bots: BotRecord[] = [];
   const messages: Array<{ id: string; role?: string; card?: OptionCardData }> = [];
   const teams = ["", "Work", "Engineering", "Private"];
@@ -57,6 +59,7 @@ function harness(caps?: Record<string, { driverKind: string; agentsMcp: boolean 
     },
     ...(caps ? { driverCapabilities: (instanceId: string) => caps[instanceId] } : {}),
     ...(createRoom ? { createRoom } : {}),
+    ...(templates ? { templates } : {}),
   });
   const propose = (operations: unknown[], newTeams: string[] = []) => service.propose({ botId: chief.id, threadId: chief.threadId, plan: { reason: "Requested specialist setup", operations, newTeams } });
   const submit = (operations: unknown[], newTeams: string[] = []) => service.submit({ botId: chief.id, threadId: chief.threadId, plan: { reason: "Requested specialist setup", operations, newTeams } });
@@ -649,6 +652,19 @@ describe("a Chief making bots, whatever the plan", () => {
 describe("assistant proposals with ready-made bots and a group chat", () => {
   const plan = (operations: unknown[], room?: unknown) => ({ reason: "The person asked for help", operations, ...(room ? { room } : {}) });
 
+  it("directs standalone and saved industry requests to the reviewed gallery without creating a partial bot", async () => {
+    const h = harness();
+    for (const template of ["industry-customer-care", "builtin:industry-customer-care", "team:industry-retail-ecommerce"]) {
+      expect(() => h.propose([{ action: "create", key: "care", template }])).toThrow(expect.objectContaining({ status: 409 }));
+    }
+    expect(h.messages).toHaveLength(0);
+    const proposal = h.propose([{ action: "create", key: "care", template: "research" }]);
+    const saved = h.messages[0]!.card!.teamSetupRequest!;
+    saved.operations[0]!.template = { id: "builtin:industry-customer-care", name: "Siêu bot CSKH", source: "builtin", apps: [] };
+    expect((await h.resolve(proposal.requestId))?.result).toMatchObject({ state: "cancelled", bots: [], error: expect.stringContaining("Siêu bot CSKH") });
+    expect(h.apply).not.toHaveBeenCalled();
+  });
+
   it("fills a ready-made bot's profile, keeps fields the assistant gave, and defaults the model to the assistant's", () => {
     const h = harness();
     const proposed = h.service.propose({ botId: h.chief.id, threadId: h.chief.threadId, plan: plan([{ action: "create", key: "Scout", template: "research", fields: { name: "Tìm Tin" } }]) });
@@ -656,7 +672,7 @@ describe("assistant proposals with ready-made bots and a group chat", () => {
     expect(request.operations[0]!.fields).toMatchObject({ name: "Tìm Tin", title: "Researcher", modelSelection: h.chief.modelSelection });
     expect(request.operations[0]!.fields.soul).toBeTruthy();
     expect(proposed.detail).toContain("Create @Tìm Tin");
-    expect(() => h.service.propose({ botId: h.chief.id, threadId: h.chief.threadId, plan: plan([{ action: "create", key: "X", template: "no-such" }]) })).toThrow(/Unknown ready-made bot/);
+    expect(() => h.service.propose({ botId: h.chief.id, threadId: h.chief.threadId, plan: plan([{ action: "create", key: "X", template: "no-such" }]) })).toThrow(/Unknown template/);
   });
 
   it("offers a group chat only where one can be made, with members from the plan or the team", () => {
@@ -689,5 +705,74 @@ describe("assistant proposals with ready-made bots and a group chat", () => {
     const result = (await h.service.resolve({ botId: h.chief.id, threadId: h.chief.threadId, requestId: third.requestId, behavior: "allow" }))!.result;
     expect(result).toMatchObject({ state: "applied", room: null, error: expect.stringContaining("the group chat could not be created: room limit reached") });
     expect(result.bots).toHaveLength(1);
+  });
+});
+
+describe("Limix Bot: proposals from the GitHub bot and team libraries", () => {
+  const withLibrary = () => {
+    const github = fakeTemplateGithub();
+    const h = harness(undefined, () => ({ id: "room-1", name: "Sales" }), createChiefTemplates(githubSources(github.fetcher)));
+    const submit = (operations: unknown[], room?: unknown) => h.service.submit({ botId: h.chief.id, threadId: h.chief.threadId,
+      plan: { reason: "The person described what they need", operations, ...(room ? { room } : {}) } });
+    return { github, h, submit };
+  };
+
+  it("proposes the chosen single bot with its template named on the card, its apps only suggested, and creates it on approval", async () => {
+    const { h, submit } = withLibrary();
+    const proposed = await submit([{ action: "create", key: "seo", template: "bot:seo-writer", fields: { section: "Work" } }]);
+    expect(proposed).toMatchObject({ state: "pending", applied: false });
+    expect(proposed.detail).toContain('Template: "Bút SEO" from the GitHub bot library (bot:seo-writer).');
+    expect(proposed.detail).toContain("Suggested apps, not connected by this setup: wordpress.");
+    const request = h.messages.at(-1)!.card!.teamSetupRequest!;
+    expect(request.operations[0]).toMatchObject({ template: { id: "bot:seo-writer", source: "github-bot", apps: ["wordpress"] }, fields: { name: "Bút SEO", title: "Người viết bài SEO" } });
+    expect(Object.keys(request.operations[0]!.fields).sort()).toEqual(["description", "modelSelection", "name", "section", "soul", "title"]);
+    expect(h.apply).not.toHaveBeenCalled();
+    expect((await h.resolve(proposed.requestId))?.result.state).toBe("applied");
+    expect(h.apply).toHaveBeenCalledOnce();
+    const made = h.store.bots.find((bot) => bot.name === "Bút SEO")!;
+    expect(made.title).toBe("Người viết bài SEO");
+    expect([made.approvalMode, made.autoApprove, made.approvalGrant]).toEqual([undefined, undefined, undefined]);
+  });
+
+  it("proposes a ready-made team role by role with a group chat, and creates nothing when the person declines", async () => {
+    const { h, submit } = withLibrary();
+    const proposed = await submit([
+      { action: "create", key: "hunter", template: "team:sales-desk/hunter", fields: { section: "Work" } },
+      { action: "create", key: "closer", template: "team:sales-desk/closer", fields: { section: "Work" } },
+    ], { name: "Sales" });
+    expect(proposed.detail).toContain('Template: "Phòng Bán Hàng · Săn Khách" from the GitHub team library (team:sales-desk/hunter).');
+    expect(proposed.detail).toContain('Template: "Phòng Bán Hàng · Chốt Đơn" from the GitHub team library (team:sales-desk/closer).');
+    const before = h.store.bots.length;
+    expect((await h.resolve(proposed.requestId, "deny"))?.result.state).toBe("denied");
+    expect(h.apply).not.toHaveBeenCalled();
+    expect(h.store.bots.length).toBe(before);
+  });
+
+  it("combines templates from both libraries with a built-in and a custom bot in one card", async () => {
+    const { h, submit } = withLibrary();
+    const proposed = await submit([
+      { action: "create", key: "hunter", template: "team:sales-desk/hunter", fields: { section: "Work" } },
+      { action: "create", key: "mail", template: "bot:inbox-helper", fields: { name: "Thư Ký", section: "Work" } },
+      { action: "create", key: "scout", template: "builtin:research", fields: { section: "Work" } },
+      specialist("Quill", "Work"),
+    ]);
+    const ops = h.messages.at(-1)!.card!.teamSetupRequest!.operations;
+    expect(ops.map((op) => op.template?.id ?? null)).toEqual(["team:sales-desk/hunter", "bot:inbox-helper", "builtin:research", null]);
+    expect(ops[1]!.fields.name).toBe("Thư Ký");
+    expect(proposed.detail).not.toContain("Template: \"Quill\"");
+    const names = (await h.resolve(proposed.requestId))?.result.bots.map((bot) => bot.name);
+    expect(names).toHaveLength(4);
+    expect(names).toEqual(expect.arrayContaining(["Săn Khách", "Thư Ký", "Quill"]));
+  });
+
+  it("refuses a malformed or unknown id with nothing shown, and says so when GitHub can't be reached", async () => {
+    const { github, h, submit } = withLibrary();
+    for (const template of ["bot:../x", "bot:ghost", "team:sales-desk", "team:sales-desk/ghost", "https://evil.example/bot.json"]) {
+      await expect(submit([{ action: "create", key: "x", template, fields: { section: "Work" } }]), template).rejects.toMatchObject({ status: 400 });
+    }
+    github.down.bots = true;
+    await expect(submit([{ action: "create", key: "seo", template: "bot:seo-writer", fields: { section: "Work" } }])).rejects.toMatchObject({ status: 502, message: expect.stringContaining("can't be reached") });
+    expect(h.messages).toEqual([]);
+    expect((await submit([{ action: "create", key: "scout", template: "builtin:research", fields: { section: "Work" } }])).state).toBe("pending");
   });
 });

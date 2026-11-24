@@ -47,6 +47,7 @@ export interface BotApiTurnOptions {
 }
 
 export interface BotApiHostDeps {
+  careFacts?(botId: string, message: string): Promise<string | undefined>;
   store: Pick<Store, "bot" | "taskByThread" | "createTask" | "patchTask" | "appendMessage" | "messagesFor" | "onChange">;
   startTurn(botId: string, text: string, opts: BotApiTurnOptions): Promise<unknown>;
   threadBusy(botId: string, threadId: string): boolean;
@@ -205,9 +206,10 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     let dispatchError: string | undefined;
     markRunning(botId, threadId, true);
     try {
-      const publicLookup = channel ? await channelPublicLookup(message, previousGuestText) : undefined;
+      const careFacts = await deps.careFacts?.(botId, message);
+      const publicLookup = channel && careFacts === undefined ? await channelPublicLookup(message, previousGuestText) : undefined;
       channel?.delivery?.signal.throwIfAborted();
-      await deps.startTurn(botId, mediaPrompt(botApiPrompt(message, receivedAt, { guestChannel: Boolean(channel), publicLookup }), channel?.attachment), {
+      await deps.startTurn(botId, mediaPrompt(botApiPrompt(message, receivedAt, { guestChannel: Boolean(channel), publicLookup, careFacts }), channel?.attachment), {
         threadId, automationSource: "api", unattended: true, userMessage,
         onSettled: (outcome) => { settled = outcome; markRunning(botId, threadId!, false); },
         onDispatchError: (message) => { dispatchError = message; markRunning(botId, threadId!, false); },

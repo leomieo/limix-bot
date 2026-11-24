@@ -16,6 +16,7 @@ import { catalogCopy, catalogMatches, type TeamCatalog, type TeamCatalogEntry } 
 
 import { TEAM_GLYPHS, TeamImportDetails } from "./TeamImportDetails";
 import { LimixBotGallery, refreshTemplateBots } from "./LimixBotGallery";
+import type { IndustrySuggestion } from "@/lib/industry-suggestions";
 import { LimixResizeHandles } from "./LimixResizeHandles";
 import { ShareTeamDialog } from "./ShareTeamDialog";
 import { OrgLibraryTab } from "./TeamLibraryPanelOrg";
@@ -92,16 +93,19 @@ export function TeamLibraryPanel({
   onImported,
   returnFocusRef,
   initialUrl,
+  initialIndustrySuggestion,
 }: {
   onClose: () => void;
   onImported: (result: TeamImportResult) => void;
   returnFocusRef: React.RefObject<HTMLButtonElement | null>;
   initialUrl?: string;
+  initialIndustrySuggestion?: IndustrySuggestion;
 }) {
   const { state, dispatch } = useStore();
   const dialogRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [tab, setTab] = useState<TeamTab>("explore");
+  const [tab, setTab] = useState<TeamTab>(initialIndustrySuggestion === "team" ? "teams" : "explore");
+  const [suggestion, setSuggestion] = useState(initialIndustrySuggestion);
   const [catalog, setCatalog] = useState<TeamCatalog | null>(null);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [catalogError, setCatalogError] = useState("");
@@ -111,7 +115,7 @@ export function TeamLibraryPanel({
   const [botRevision, setBotRevision] = useState(0);
   const catalogRequest = useRef(0);
   const [busySlug, setBusySlug] = useState<string | null>(null);
-  const [pending, setPending] = useState<PendingTeamImport | null>(null);
+  const [pending, setPending] = useState<(PendingTeamImport & { builtInTeam?: string }) | null>(null);
   const [source, setSource] = useState<ImportSource>("file");
   const [githubUrl, setGithubUrl] = useState("");
   const [githubLoading, setGithubLoading] = useState(false);
@@ -136,7 +140,7 @@ export function TeamLibraryPanel({
   const [orgNotice, setOrgNotice] = useState("");
   const [orgError, setOrgError] = useState("");
   const [pendingOrg, setPendingOrg] = useState<OrgLibraryPackage | null>(null);
-  const tabChosen = useRef(false);
+  const tabChosen = useRef(Boolean(initialIndustrySuggestion));
   // Monotonic scout token: a late response from an older scout must never overwrite a newer one's state.
   const scoutRequest = useRef(0);
 
@@ -153,7 +157,7 @@ export function TeamLibraryPanel({
       // SAFETY: this endpoint is owned by the app and returns TeamCatalog.
       const next = (await api(`/api/team-library/catalog${fresh ? "?fresh=1" : ""}`)) as TeamCatalog;
       if (request === catalogRequest.current) setCatalog(next);
-      return true;
+      return next.communityAvailable !== false;
     } catch (cause) {
       if (request === catalogRequest.current) setCatalogError(cause instanceof Error ? cause.message : String(cause));
       return false;
@@ -242,7 +246,7 @@ export function TeamLibraryPanel({
     return () => window.removeEventListener("keydown", onKeyDown, true);
   }, [importing, onClose, pending, sharing, nestedDialog]);
 
-  const previewManifest = (preview: PendingTeamImport, nextSource: ImportSource) => {
+  const previewManifest = (preview: PendingTeamImport & { builtInTeam?: string }, nextSource: ImportSource) => {
     setPending(preview);
     setSource(nextSource);
     setError("");
@@ -267,7 +271,8 @@ export function TeamLibraryPanel({
     setBusySlug(entry.slug);
     setError("");
     try {
-      previewManifest(teamImportPreview(await api(`/api/team-library/teams/${entry.slug}`)), "library");
+      const preview = teamImportPreview(await api(`/api/team-library/teams/${entry.slug}`));
+      previewManifest(entry.builtIn ? { ...preview, builtInTeam: entry.slug } : preview, "library");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
@@ -310,7 +315,7 @@ export function TeamLibraryPanel({
     setImporting(true);
     setError("");
     try {
-      const response = await addTemplate(pending.manifest, dispatch);
+      const response = await addTemplate(pending.manifest, dispatch, pending.builtInTeam);
       track("team_imported", { members: response.bots.length, source, mode: "add", format: pending.kind });
       onImported({
         name: pending.name,
@@ -469,7 +474,7 @@ export function TeamLibraryPanel({
   };
 
   const normalizedSearch = search.trim().toLowerCase();
-  const visibleTeams = (catalog?.teams ?? []).filter((entry) => !normalizedSearch || catalogMatches(entry, normalizedSearch));
+  const visibleTeams = (catalog?.teams ?? []).filter((entry) => (suggestion !== "team" || entry.builtIn) && (!normalizedSearch || catalogMatches(entry, normalizedSearch)));
 
   return createPortal(
     // Dim only: a full-window backdrop blur is redrawn every frame without a GPU and keeps the page laggy while it is open.
@@ -547,6 +552,7 @@ export function TeamLibraryPanel({
           <>
             <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-6 sm:px-8">
               <TeamImportDetails pending={pending} importedNames={importedNames} org={pendingOrg !== null} />
+              {pending.builtInTeam && <p className="mt-3 text-[13px] text-ink-secondary">{lx("Mỗi thành viên có kỹ năng CSKH, công cụ phân loại yêu cầu và tra danh mục công khai riêng. Kết nối kênh và nạp dữ liệu của doanh nghiệp sau khi tạo.", "Each member gets the customer-care skill, ticket triage and its own public catalog lookup. Set up your business data and channels after creation.")}</p>}
               {error && <div role="alert" className="mt-4 rounded-lg bg-danger/10 px-3 py-2 text-[13px] text-danger">{error}</div>}
             </div>
 
@@ -701,6 +707,12 @@ export function TeamLibraryPanel({
             {(refreshNotice || refreshError) && <p role={refreshError ? "alert" : "status"} className={cn("px-6 pb-2 text-[13px] sm:px-8", refreshError ? "text-danger" : "text-ink-secondary")}>{refreshError || refreshNotice}</p>}
 
             <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-7 pt-5 sm:px-8">
+              {suggestion && ((suggestion === "team" && tab === "teams") || (suggestion !== "team" && tab === "explore")) && (
+                <button type="button" onClick={() => setSuggestion(undefined)}
+                  className="mb-3 text-[13px] text-ink-secondary underline hover:text-ink">
+                  {lx("Xem tất cả mẫu", "Browse all templates")}
+                </button>
+              )}
               {tab === "org" && orgListing?.organization && (
                 <OrgLibraryTab
                   listing={orgListing as OrgLibraryListing & { organization: { id: string; name: string } }}
@@ -712,7 +724,7 @@ export function TeamLibraryPanel({
                 />
               )}
               {tab === "explore" && (
-                <LimixBotGallery revision={botRevision} search={search} onDialog={setNestedDialog} onAdded={onClose} />
+                <LimixBotGallery revision={botRevision} search={search} suggestion={suggestion === "team" ? undefined : suggestion} onDialog={setNestedDialog} onAdded={onClose} />
               )}
               {tab === "teams" && (
                 <div>
@@ -728,6 +740,7 @@ export function TeamLibraryPanel({
                       <button onClick={() => void loadCatalog()} className="mt-3 rounded-full bg-raised px-3.5 py-2 text-ink hover:bg-raised-hover">{t("common.tryAgain")}</button>
                     </div>
                   )}
+                  {!catalogLoading && catalog?.communityAvailable === false && <p role="status" className="mb-4 text-[13px] text-ink-secondary">{lx("Đang hiển thị các nhóm có sẵn trong Limix Bot. Thư viện cộng đồng chưa kết nối được.", "Showing built-in Limix Bot teams. The community library is currently unavailable.")}</p>}
                   {!catalogLoading && catalog && (
                     <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,360px),1fr))] gap-x-10">
                       {visibleTeams.map((entry, index) => {
@@ -774,7 +787,7 @@ export function TeamLibraryPanel({
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".md,.json,text/markdown,application/json"
+                    accept=".md,.json,.mausbackup.json,.mausteam.json,text/markdown,application/json"
                     className="hidden"
                     onChange={(event) => {
                       const file = event.currentTarget.files?.[0];

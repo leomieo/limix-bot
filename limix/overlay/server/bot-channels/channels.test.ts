@@ -284,7 +284,7 @@ it("signs Zalo in by QR, answers direct messages and mentions, and reports a ses
     },
   };
   const load = async () => client;
-  const { asks, route } = host(zaloAdapter(load), { zalo: zaloLogin(load) }, (input) => {
+  const { asks, route } = host({ ...zaloAdapter(load), paceMs: [1, 3] }, { zalo: zaloLogin(load) }, (input) => {
     if (input.text !== "hi" && input.text !== "báo cáo") return;
     expect(input.owner).toBe(false);
     if (input.text === "hi") return "Đã nhận được tin nhắn “hi”.";

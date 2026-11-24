@@ -4,9 +4,14 @@ import { narrowsNativeTools, parseToolScope, type ToolScope } from "./tool-scope
 export const TOOL_SCOPE_SUPPORT = {
   grok: "native-and-mcp", grokAgent: "native-and-mcp", piAgent: "native-and-mcp",
   "openai-compat": "native-and-mcp", mistral: "native-and-mcp", minimax: "native-and-mcp", cerebras: "native-and-mcp", groq: "native-and-mcp", greenference: "native-and-mcp", modelgo: "native-and-mcp", meta: "native-and-mcp",
-  claudeAgent: "mcp", codex: "mcp", geminiAgent: "mcp", kimiAgent: "mcp", droidAgent: "mcp",
+  claudeAgent: "mcp-with-native-off", codex: "mcp", geminiAgent: "mcp", kimiAgent: "mcp", droidAgent: "mcp",
   cursorAgent: "mcp", opencodeGo: "mcp", qwenAgent: "mcp", hermesAgent: "mcp", clineAgent: "mcp", copilotAgent: "mcp", commandCodeAgent: "mcp", kiroAgent: "mcp", deepseekAgent: "mcp", customAcp: "mcp", antigravityAgent: "mcp", museCode: "mcp",
 } as const;
+
+export function disablesAllNativeTools(scope: ToolScope | undefined): boolean {
+  return scope?.deny?.includes("native:*") === true ||
+    (scope?.allow !== undefined && scope.allow.every(selector => !selector.startsWith("native:")));
+}
 
 export function assertToolScopeSupported(engine: string, value: unknown): ToolScope | undefined {
   const parsed = parseToolScope(value);
@@ -16,7 +21,7 @@ export function assertToolScopeSupported(engine: string, value: unknown): ToolSc
   if (parsed.scope !== undefined && support !== "native-and-mcp") {
     if (support === undefined) {
       if (parsed.scope.allow !== undefined || parsed.scope.deny?.length) throw new Error(`${engine}: tool selection is not supported by this engine. Choose a supported engine.`);
-    } else if (narrowsNativeTools(parsed.scope)) {
+    } else if (narrowsNativeTools(parsed.scope) && !(support === "mcp-with-native-off" && disablesAllNativeTools(parsed.scope))) {
       throw new Error(`${engine}: native tool selection is not supported by this engine. Keep native:* in the selection or choose a supported engine.`);
     }
   }

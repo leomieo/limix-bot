@@ -18,6 +18,8 @@ export interface TeamSetupOperation {
   threadId?: string;
   fields: TeamSetupFields;
   expectedRevision?: string;
+  /** Create only: the ready-made template the fields came from, shown on the card so the person can check it. */
+  template?: { id: string; name: string; source: "builtin" | "github-bot" | "github-team"; apps: string[] };
 }
 
 export interface TeamSetupResult {

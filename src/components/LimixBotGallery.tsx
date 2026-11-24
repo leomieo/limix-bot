@@ -5,7 +5,9 @@ import { TemplateDetails } from "./TemplateDetails";
 import { stoppedAtBotLimit } from "@/lib/bot-limit";
 import { MausAvatar } from "./Avatar";
 import { NewBotDialog } from "./lazy-screens";
-import { READY_BOT_CATEGORIES, READY_BOTS, readyBotCopy, type ReadyBot, type ReadyBotCategory } from "@/lib/ready-bots";
+import { READY_BOT_CATEGORIES, READY_BOTS, readyBot, readyBotCopy, type ReadyBot, type ReadyBotCategory } from "@/lib/ready-bots";
+import { INDUSTRY_BOTS, INDUSTRY_CARE_SKILL, industryTemplate } from "../../shared/industry-templates";
+import { INDUSTRY_PROFILES } from "../../shared/industry-profiles";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
 import type { LocaleKey } from "@/locales";
@@ -47,18 +49,25 @@ interface Card {
   builtIn: boolean;
 }
 
-const builtInCards = (): Card[] => READY_BOTS.map((bot) => {
+function builtInCard(bot: ReadyBot): Card {
   const copy = readyBotCopy(bot);
   return { id: bot.id, name: bot.name, title: copy.title, category: bot.category, description: copy.description, try: copy.tryAsking,
     look: bot.look, apps: bot.apps, routines: bot.routines?.length ?? 0, builtIn: true };
-});
+}
+
+export function templateCards(bots: Omit<Card, "builtIn">[]): Card[] {
+  const general = bots.length
+    ? bots.filter((bot) => !industryTemplate(bot.id)).map((bot) => ({ ...bot, builtIn: false }))
+    : READY_BOTS.map(builtInCard);
+  return [...INDUSTRY_BOTS.map(builtInCard), ...general];
+}
 
 let remembered: Card[] | null = null;
 
 export async function refreshTemplateBots(): Promise<number> {
   const { bots } = await api<{ bots: Omit<Card, "builtIn">[] }>("/api/limix/bots/refresh", { method: "POST" });
-  remembered = bots.length ? bots.map((bot) => ({ ...bot, builtIn: false })) : null;
-  return bots.length;
+  remembered = bots.length ? templateCards(bots) : null;
+  return (remembered ?? templateCards([])).length;
 }
 
 const matches = (card: Card, query: string) => {
@@ -66,16 +75,18 @@ const matches = (card: Card, query: string) => {
   return !needle || [card.name, card.title, card.description, card.category].some((field) => field.toLowerCase().includes(needle));
 };
 
-export function LimixBotGallery({ search, onDialog, onAdded, revision = 0 }: {
+export function LimixBotGallery({ search, onDialog, onAdded, revision = 0, suggestion }: {
   search: string;
   revision?: number;
+  suggestion?: "department" | "support";
   /** The New bot dialog is open over Templates, so Templates must leave its keys alone. */
   onDialog: (open: boolean) => void;
   onAdded: (bot: Bot) => void;
 }) {
   const { state, dispatch } = useStore();
   const [category, setCategory] = useState<ReadyBotCategory | null>(null);
-  const [cards, setCards] = useState<Card[] | null>(remembered);
+  const [industry, setIndustry] = useState("");
+  const [cards, setCards] = useState<Card[]>(() => remembered ?? templateCards([]));
   const [offline, setOffline] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -83,7 +94,7 @@ export function LimixBotGallery({ search, onDialog, onAdded, revision = 0 }: {
 
   useEffect(() => {
     if (revision > 0) {
-      setCards(remembered ?? builtInCards());
+      setCards(remembered ?? templateCards([]));
       setOffline(false);
       return;
     }
@@ -91,12 +102,12 @@ export function LimixBotGallery({ search, onDialog, onAdded, revision = 0 }: {
     api<{ bots: Omit<Card, "builtIn">[] }>("/api/limix/bots")
       .then(({ bots }) => {
         if (!live) return;
-        const next = bots.length ? bots.map((bot) => ({ ...bot, builtIn: false })) : builtInCards();
+        const next = templateCards(bots);
         remembered = bots.length ? next : null;
         setCards(next);
         setOffline(false);
       })
-      .catch(() => { if (live) { setCards(remembered ?? builtInCards()); setOffline(!remembered); } });
+      .catch(() => { if (live) { setCards(remembered ?? templateCards([])); setOffline(!remembered); } });
     return () => { live = false; };
   }, [revision]);
 
@@ -104,7 +115,7 @@ export function LimixBotGallery({ search, onDialog, onAdded, revision = 0 }: {
   const [details, setDetails] = useState<{ card: Card; bot?: ReadyBot & { skills?: string[] }; error?: string } | null>(null);
   const showDetails = (card: Card) => {
     onDialog(true);
-    if (card.builtIn) { setDetails({ card, bot: READY_BOTS.find((bot) => bot.id === card.id) }); return; }
+    if (card.builtIn) { setDetails({ card, bot: readyBot(card.id) }); return; }
     setDetails({ card });
     api<{ bot: ReadyBot & { skills?: string[] } }>(`/api/limix/bots/${card.id}`).then(
       ({ bot }) => setDetails((open) => (open?.card.id === card.id ? { card, bot } : open)),
@@ -116,7 +127,15 @@ export function LimixBotGallery({ search, onDialog, onAdded, revision = 0 }: {
     if (busy || stoppedAtBotLimit(state)) return;
     setError("");
     // A paired device may not read the host's New bot defaults that the review is filled from.
-    if (window.ogb?.remoteClient?.active) { dispatch({ type: "newBot", onCreated: onAdded }); return; }
+    if (window.ogb?.remoteClient?.active) {
+      if (industryTemplate(card.id)) {
+        onDialog(false);
+        setError(lx("Hãy mở mẫu này trên máy chủ Limix Bot để cài bộ công cụ CSKH.", "Open this template on the Limix Bot host to install its customer care tools."));
+      } else {
+        dispatch({ type: "newBot", onCreated: onAdded });
+      }
+      return;
+    }
     if (card.builtIn) { setAdding({ id: card.id }); onDialog(true); return; }
     setBusy(card.id);
     try {
@@ -130,11 +149,13 @@ export function LimixBotGallery({ search, onDialog, onAdded, revision = 0 }: {
     }
   };
 
-  if (!cards) {
-    return <div className="mb-8 flex items-center gap-2 py-6 text-[13px] text-ink-secondary"><Loader2 size={15} className="animate-spin" />{t("templates.loading")}</div>;
-  }
-  const visible = cards.filter((card) => (!category || card.category === category) && matches(card, search));
-  if (search.trim() && visible.length === 0) return null;
+  const visible = cards.filter(card => {
+    if (suggestion === "support") return card.builtIn && card.id === INDUSTRY_CARE_SKILL && matches(card, search);
+    if (suggestion === "department" && (!card.builtIn || card.id === INDUSTRY_CARE_SKILL || !industryTemplate(card.id))) return false;
+    return (!category || card.category === category) && matches(card, search)
+      && (!industry || (card.builtIn && (card.id === INDUSTRY_CARE_SKILL || card.id.startsWith(`industry-${industry}-`))));
+  });
+  if (!industry && search.trim() && visible.length === 0) return null;
   return <section className="mb-8" aria-labelledby="ready-bots-title">
     <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
       <h3 id="ready-bots-title" className="text-[12px] font-medium text-ink-secondary">{t("readyBots.title")}</h3>
@@ -143,12 +164,18 @@ export function LimixBotGallery({ search, onDialog, onAdded, revision = 0 }: {
       </div>
     </div>
     <div className="mb-3 mt-2 flex flex-wrap gap-1.5" role="group" aria-label={t("readyBots.categories")}>
-      {[null, ...READY_BOT_CATEGORIES].map((value) => <button key={value ?? "all"} type="button" aria-pressed={category === value}
-        onClick={() => setCategory(value)}
+      {!suggestion && [null, ...READY_BOT_CATEGORIES].map((value) => <button key={value ?? "all"} type="button" aria-pressed={category === value}
+        onClick={() => { setCategory(value); setIndustry(""); }}
         className={cn("rounded-full px-3 py-1 text-[13px] transition-colors",
           category === value ? "bg-ink text-panel" : "bg-raised/70 text-ink-secondary hover:text-ink")}>
         {value ? t(CATEGORY_KEYS[value]) : t("readyBots.all")}
       </button>)}
+      {suggestion !== "support" && <select value={industry} aria-label={lx("Lọc mẫu bot theo ngành", "Filter bot templates by industry")}
+        className="rounded-full border border-hairline bg-panel px-3 py-1 text-[13px] text-ink"
+        onChange={(event) => { setIndustry(event.target.value); setCategory(null); }}>
+        <option value="">{lx("Tất cả ngành", "All industries")}</option>
+        {INDUSTRY_PROFILES.map((profile) => <option key={profile.slug} value={profile.slug}>{profile.name}</option>)}
+      </select>}
     </div>
     {error && <p role="alert" className="mb-3 rounded-xl bg-danger/10 px-3 py-2 text-[13px] text-danger">{error}</p>}
     <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,280px),1fr))] gap-3">
@@ -188,7 +215,9 @@ export function LimixBotGallery({ search, onDialog, onAdded, revision = 0 }: {
         { label: lx("Bot này làm gì", "What it does"), body: details.bot?.description ?? details.card.description },
         { label: lx("Cách bot làm việc", "How it works"), body: details.bot?.soul ?? "" },
         { label: lx("Bạn có thể hỏi", "Things to ask"), body: details.bot?.tryAsking ?? [details.card.try] },
-        { label: lx("Kỹ năng đi kèm", "Skills included"), body: details.bot?.skills ?? [] },
+        { label: lx("Kỹ năng đi kèm", "Skills included"), body: industryTemplate(details.card.id) ? [INDUSTRY_CARE_SKILL] : details.bot?.skills ?? [] },
+        { label: lx("Kênh chăm sóc khách hàng", "Customer service channels"), body: industryTemplate(details.card.id)
+          ? lx("Sau khi tạo bot, mở Cài đặt của bot để kết nối Zalo, Facebook Page, Messenger hoặc Telegram.", "After creating the bot, open its settings to connect Zalo, a Facebook Page, Messenger or Telegram.") : "" },
         { label: lx("Ứng dụng nên kết nối", "Apps it works with"), body: (details.bot?.apps ?? details.card.apps).map((app) => APP_LABELS[app] ?? app) },
         { label: lx("Lịch định kỳ (tạo ở trạng thái tạm dừng)", "Routines (created paused)"), body: (details.bot?.routines ?? []).map((routine) => routine.schedule && "time" in routine.schedule && routine.schedule.time ? `${routine.name} · ${routine.schedule.time}` : routine.name) },
       ]}

@@ -546,7 +546,7 @@ const mcpStatus = () => process.env.FAKE_CLAUDE_MCP_FAILED
   ? { mcp_servers: process.env.FAKE_CLAUDE_MCP_FAILED.split(",").map((name) => ({ name, status: "failed" })) }
   : {};
 const toolsFlag = argAfter("--tools");
-const tools = [...new Set([...(toolsFlag ? toolsFlag.split(",") : ["Bash", "Read", "Edit", "Write", "Glob", "Grep", "WebFetch", "WebSearch"]),
+const tools = [...new Set([...(toolsFlag !== null ? toolsFlag.split(",").filter(Boolean) : ["Bash", "Read", "Edit", "Write", "Glob", "Grep", "WebFetch", "WebSearch"]),
   ...(process.env.FAKE_CLAUDE_KEEP_BASH === "1" ? ["Bash"] : [])])];
 let launchFiles: Record<string, unknown> | null = null;
 let turnRunning = false;

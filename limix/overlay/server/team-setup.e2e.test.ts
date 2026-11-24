@@ -33,8 +33,6 @@ it("the assistant proposes custom and ready-made bots with an optional group cha
     const groups = async () => (await control("channels")).channels as any[];
     const initialBotIds = new Set((await state()).map((bot: any) => bot.id));
     const created = async () => (await state()).filter((bot: any) => !initialBotIds.has(bot.id));
-    let previousPid: number | undefined;
-    const pid = () => existsSync(fixture.fixtureDumpPath) ? JSON.parse(readFileSync(fixture.fixtureDumpPath, "utf8")).pid as number : undefined;
     const idle = async () => {
       writeFileSync(gate, "finish");
       // A decision resumes the assistant once, a moment after the card settles: wait for that turn too.
@@ -42,13 +40,16 @@ it("the assistant proposes custom and ready-made bots with an optional group cha
         await expect.poll(async () => !(await state()).find((bot: any) => bot.id === chief.id).busy, { timeout: 20_000 }).toBe(true);
         await new Promise((resolve) => setTimeout(resolve, 1_500));
       }
-      previousPid = pid();
+    };
+    const currentDump = async (text: string) => {
+      await expect.poll(() => existsSync(fixture.fixtureDumpPath) &&
+        JSON.stringify(JSON.parse(readFileSync(fixture.fixtureDumpPath, "utf8")).prompt).includes(text), { timeout: 15_000 }).toBe(true);
+      return JSON.parse(readFileSync(fixture.fixtureDumpPath, "utf8"));
     };
     const start = async (text: string) => {
       if (existsSync(gate)) unlinkSync(gate);
       await control("send", "--bot", chief.id, "--task", chief.threadId, "--text", text);
-      await expect.poll(() => pid() !== undefined && pid() !== previousPid, { timeout: 15_000 }).toBe(true);
-      const dump = JSON.parse(readFileSync(fixture.fixtureDumpPath, "utf8")); previousPid = dump.pid;
+      const dump = await currentDump(text);
       return dump.mcpConfig.mcpServers.agents.env.OMB_COMMS_TOKEN as string;
     };
     const card = async (requestId: string, threadId = chief.threadId) =>
@@ -58,6 +59,19 @@ it("the assistant proposes custom and ready-made bots with an optional group cha
     let token = await start("Clive, I need help writing posts and a researcher. Use a ready-made bot where one fits.");
     const library = await api("GET", "/api/internal/team-library", undefined, 200, token);
     expect(library.botTemplates.map((bot: any) => bot.id)).toContain("research");
+    const suggested = await api("GET", `/api/internal/team-library?q=${encodeURIComponent("Gợi ý nhóm bot cho ngành bán lẻ và thương mại điện tử")}`, undefined, 200, token);
+    expect(suggested.results[0]).toMatchObject({
+      id: "team:industry-retail-ecommerce", source: "builtin", gallery: { kind: "team", id: "industry-retail-ecommerce" },
+    });
+    const industry = await api("GET", "/api/internal/team-library?details=builtin:industry-customer-care,team:industry-retail-ecommerce", undefined, 200, token);
+    expect(industry.templates.map((item: { gallery: { kind: string; id: string } }) => [item.gallery.kind, item.gallery.id])).toEqual([
+      ["bot", "industry-customer-care"], ["team", "industry-retail-ecommerce"],
+    ]);
+    const reviewed = await api("POST", "/api/internal/team-setup-requests", {
+      plan: { reason: "Choose the customer-care template", operations: [{ action: "create", key: "care", template: "builtin:industry-customer-care" }] },
+    }, 400, token);
+    expect(reviewed.error).toContain("Siêu bot CSKH");
+    expect(new Set((await state()).map((bot: { id: string }) => bot.id))).toEqual(initialBotIds);
     expect(await api("POST", "/api/internal/create-bot", { name: "Direct", role: "Direct", instructions: "Skip the card." }, 201, token)).toMatchObject({ state: "pending", applied: false });
     await api("POST", "/api/internal/team-setup-requests", { plan: { reason: "x", operations: [{ action: "create", key: "Ghost", template: "no-such-bot" }] } }, 400, token);
     const plan = { reason: "Writing and research help, as asked", operations: [
@@ -114,8 +128,7 @@ it("the assistant proposes custom and ready-made bots with an optional group cha
     // Asked inside a group chat, the proposal card appears in that chat.
     if (existsSync(gate)) unlinkSync(gate);
     await control("send-channel", "--channel", room.id, "--task", room.activeTaskId ?? room.threadId, "--text", "@Clive Add a designer for this chat.");
-    await expect.poll(() => pid() !== previousPid, { timeout: 15_000 }).toBe(true);
-    const groupDump = JSON.parse(readFileSync(fixture.fixtureDumpPath, "utf8")); previousPid = groupDump.pid;
+    const groupDump = await currentDump("Add a designer for this chat.");
     const inRoom = await api("POST", "/api/internal/team-setup-requests", { plan: { reason: "Design help for this chat", operations: [{ action: "create", key: "Pixel", template: "design-critic" }] } },
       201, groupDump.mcpConfig.mcpServers.agents.env.OMB_COMMS_TOKEN);
     expect(inRoom.state).toBe("pending");

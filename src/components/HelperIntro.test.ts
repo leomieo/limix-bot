@@ -6,15 +6,22 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setWelcomingBot, stageIntro } from "@/lib/default-bot";
-import { setLocale, t } from "@/lib/i18n";
+import { loadLocale, setLocale, t } from "@/lib/i18n";
+import { onIndustrySuggestions } from "@/lib/industry-suggestions";
 import type { Bot, InstanceInfo, Message } from "@/state/store";
 import type { HelperFollowupFacts } from "../../shared/helper-followup";
 
 const f = vi.hoisted(() => ({
+  openTemplates: vi.fn(), admin: true, cloudSales: true,
   state: {} as Record<string, unknown>, dispatch: vi.fn(), advanced: false, local: false, reduced: false,
   services: {} as Record<string, { connected: boolean }>, phones: [] as unknown[], found: null as unknown, detect: vi.fn(),
   followups: [] as unknown[], saves: true, bots: 0, routines: 0,
 }));
+vi.mock("../../shared/limix-features", async original => ({
+  ...await original<typeof import("../../shared/limix-features")>(),
+  get LIMIX_CLOUD_SALES() { return f.cloudSales; },
+}));
+vi.mock("@/lib/use-owner-or-admin", () => ({ useOwnerOrAdmin: () => f.admin }));
 vi.mock("@/state/store", () => ({
   useStore: () => ({ state: f.state, dispatch: f.dispatch }),
   api: async (path: string, init?: { body?: string }) => {
@@ -28,7 +35,7 @@ vi.mock("@/state/store", () => ({
     return {};
   },
 }));
-vi.mock("./PluginsPanel", () => ({ preloadConnectedApps: async () => ({ services: f.services, authoritative: true }) }));
+vi.mock("@/lib/connected-apps", () => ({ preloadConnectedApps: async () => ({ services: f.services, authoritative: true }) }));
 vi.mock("./bot-settings/useBotApps", () => ({ loadAppCards: async () => new Map([["gmail", { label: "Gmail" }], ["github", { label: "GitHub" }]]) }));
 vi.mock("./Avatar", () => ({ BotAvatar: () => null }));
 vi.mock("./mascot-clock", () => ({ usePrefersReducedMotion: () => f.reduced }));
@@ -61,6 +68,7 @@ const intro: Message = { id: "intro", role: "bot", kind: "options", at: 1, helpe
 const saved = (facts: HelperFollowupFacts): Message => ({ id: "f", role: "bot", kind: "text", at: 2, text: "English", helperFollowup: facts });
 
 let host: HTMLDivElement, root: Root;
+let stopListening: () => void;
 const lines = () => [...host.querySelectorAll("[data-helper-line]")].map((node) => node.textContent);
 const chips = () => [...host.querySelectorAll<HTMLElement>("[data-helper-step]")].map((node) => node.dataset.helperStep);
 const settle = async () => { for (let i = 0; i < 6; i++) await act(async () => {}); };
@@ -75,6 +83,10 @@ const tick = async (ms: number) => {
 
 beforeEach(() => {
   setLocale("en");
+  f.openTemplates.mockReset();
+  stopListening = onIndustrySuggestions(f.openTemplates);
+  f.cloudSales = true;
+  f.admin = true;
   f.dispatch.mockReset();
   f.detect.mockReset();
   analytics.track.mockReset();
@@ -96,6 +108,7 @@ beforeEach(() => {
   root = createRoot(host);
 });
 afterEach(async () => {
+  stopListening();
   await act(async () => root.unmount());
   host.remove();
   vi.useRealTimers();
@@ -136,6 +149,23 @@ describe("what MausBot says first", () => {
 });
 
 describe("in the chat (Simple mode)", () => {
+  it.each([false, true])("opens each template picker in the current language without sending a chat message (advanced=%s)", async (advanced) => {
+    f.advanced = advanced;
+    f.cloudSales = false;
+    f.state = { ...f.state, bots: [maus({ chiefOfStaff: false })] };
+    await loadLocale("vi");
+    await show();
+    const options = [...host.querySelectorAll<HTMLButtonElement>("[data-helper-template]")];
+    expect(options.map(button => button.textContent)).toEqual(["Chọn bot cho phòng ban", "Tìm nhóm bot theo ngành", "Xem mẫu Siêu bot CSKH"]);
+    for (const button of options) {
+      await act(async () => { button.click(); });
+      expect(f.openTemplates).toHaveBeenLastCalledWith({ kind: button.dataset.helperTemplate, trigger: button });
+    }
+    expect(f.dispatch).not.toHaveBeenCalled();
+    await show(true, saved({ ai: "own", apps: [], bots: 0, routines: 0 }));
+    expect(host.querySelector("[data-helper-template]")).toBeNull();
+  });
+
   it("draws its lines and follow-up as the chat's own bubbles, with chips for only what is missing", async () => {
     f.services = { gmail: { connected: false } };
     await show(false, saved({ ai: "own", apps: [], bots: 0, routines: 0 }));

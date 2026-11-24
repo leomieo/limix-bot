@@ -37,7 +37,7 @@ import type {
 } from "../contracts.ts";
 import { appMountFor, customServerGate, gateQueryTools, gateServer, limitUngatedOutput } from "../mcp-gate-config.ts";
 import { canUseMcpServer } from "../../shared/tool-scope.ts";
-import { assertToolScopeSupported } from "../../shared/tool-scope-support.ts";
+import { assertToolScopeSupported, disablesAllNativeTools } from "../../shared/tool-scope-support.ts";
 import { newEventId, newId } from "../contracts.ts";
 import { askInputSummary, commandSummary, toolDetailPreview } from "../tool-summary.ts";
 import { classifyError, computeBackoff, interruptibleDelay, mayResendTurn, USAGE_LIMIT } from "./retry.ts";
@@ -1014,10 +1014,15 @@ export const ClaudeDriver: ProviderDriver<ClaudeConfig> = {
       if (turn.guestConfined && permissionMode !== "default") {
         throw new Error("A guest's turn on this Cloud runs only in Ask.");
       }
-      if (turn.guestConfined) args.push("--restricted", "--tools", GUEST_CLAUDE_TOOLS.join(","));
-      else if (config.tools !== undefined) args.push("--tools", config.tools.join(","));
+      if (turn.guestConfined) args.push("--restricted");
+      const nativeOff = disablesAllNativeTools(turn.toolScope);
+      const nativeTools = nativeOff ? [] : turn.guestConfined ? GUEST_CLAUDE_TOOLS : config.tools;
+      if (nativeTools !== undefined) args.push("--tools", nativeTools.join(","));
       const turnEnvironment = environment();
       await ensureCliVersion(turnEnvironment);
+      if (nativeOff && (cliVersion === null || !claudeCliSupports(cliVersion, "--tools"))) {
+        throw new Error("This Claude Code version cannot disable built-in tools. Update Claude Code to use this tool selection.");
+      }
       if (turn.guestConfined && !claudeCliSupports(cliVersion, "--restricted")) {
         throw new Error(withWhy("This Claude Code is too old to run this turn without a shell. Update Claude Code.", turn.confinedWhy));
       }
@@ -1443,6 +1448,12 @@ export const ClaudeDriver: ProviderDriver<ClaudeConfig> = {
             if (o.subtype === "init") {
               // A guest's CLI that kept a command-running tool is stopped before it does anything.
               const tools: unknown[] = Array.isArray(o.tools) ? o.tools : [];
+              if (nativeOff && (!Array.isArray(o.tools) || tools.some(tool => typeof tool !== "string" || !tool.startsWith("mcp__")))) {
+                emit({ ...base(threadId, currentTurnId()), type: "runtime.error", message: "Claude reported a built-in tool after native tools were disabled. The turn was stopped." });
+                session.closing = true;
+                stopSession(session);
+                break;
+              }
               if (session.turn?.input.guestConfined && (o.permissionMode !== "default" || tools.some((tool) => typeof tool === "string" && GUEST_FORBIDDEN_TOOLS.has(tool)))) {
                 emit({ ...base(threadId, currentTurnId()), type: "runtime.error", message: withWhy("This Claude Code kept its shell, so it can't run this turn. Update Claude Code.", session.turn?.input.confinedWhy) });
                 session.closing = true;

@@ -13,7 +13,8 @@ export interface TeamCatalogEntry {
   featured?: boolean;
   package?: string;
   manifest: string;
-  readme: string;
+  readme?: string;
+  builtIn?: true;
   members: number;
   skills: string[];
   requires: { apps: string[] };
@@ -22,6 +23,7 @@ export interface TeamCatalogEntry {
 export interface TeamCatalog {
   repositoryUrl: string;
   teams: TeamCatalogEntry[];
+  communityAvailable?: false;
 }
 
 const CATALOG_COPY: Record<string, string> = {

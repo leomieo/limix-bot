@@ -1,0 +1,254 @@
+{
+  "server/index.ts": [
+    {
+      "before": "} from \"./mcp-registry.ts\";\nimport { attachCustomMcp } from \"./mcp-result-budget.ts\"; import { mcpToolProblem } from \"./mcp-failure.ts\";\n",
+      "after": "} from \"./mcp-registry.ts\";\nimport { industryGuestFacts, isIndustryCareBot, withIndustryCareMcp } from \"./industry-care.ts\";\nimport { attachCustomMcp } from \"./mcp-result-budget.ts\"; import { mcpToolProblem } from \"./mcp-failure.ts\";\n"
+    },
+    {
+      "before": "} from \"./workspace.ts\";\nimport { listMemoryTopics, memoryDate, readMemoryFile, readMemoryTopic, writeMemoryFile, writeMemoryTopic } from \"./workspace.ts\";\nimport {\n",
+      "after": "} from \"./workspace.ts\";\nimport { ensureTaskWorkspace, listMemoryTopics, memoryDate, readMemoryFile, readMemoryTopic, writeMemoryFile, writeMemoryTopic } from \"./workspace.ts\";\nimport {\n"
+    },
+    {
+      "before": "  guestDrivenTurns.delete(threadId);\n  const guestConfined = cloudGuestDriven(threadId) || cloudGuestDrivenHandoff(opts?.coordination?.id) || botApiThread(threadId);\n",
+      "after": "  guestDrivenTurns.delete(threadId);\n  const careGuest = botApiThread(threadId) && isIndustryCareBot(bot);\n  const guestConfined = cloudGuestDriven(threadId) || cloudGuestDrivenHandoff(opts?.coordination?.id) || botApiThread(threadId);\n"
+    },
+    {
+      "before": "      const skillAuthoring = skillAuthoringEnabled(cfg) && agentsMounted;\n      const skillCommandText = supportsWorkspaceFiles(instance.driverKind)\n        ? skillsHost.expandSkillCommand(bot, threadId, providerText, instance, personLine ? activeMessages.filter((line) => skipTranscript.has(line.id)) : [], (personLine && !userMessage.relayed && !startedOutside(threadId)) || [\"schedule\", \"manual\", \"startup\"].includes(opts?.automationSource ?? \"\"))\n",
+      "after": "      const skillAuthoring = skillAuthoringEnabled(cfg) && agentsMounted;\n      const skillCommandText = !careGuest && supportsWorkspaceFiles(instance.driverKind)\n        ? skillsHost.expandSkillCommand(bot, threadId, providerText, instance, personLine ? activeMessages.filter((line) => skipTranscript.has(line.id)) : [], (personLine && !userMessage.relayed && !startedOutside(threadId)) || [\"schedule\", \"manual\", \"startup\"].includes(opts?.automationSource ?? \"\"))\n"
+    },
+    {
+      "before": "        const custom = await mcpServersHost.prepare(bot).then(() => teamConnections.turnMcp(bot, threadId, dispatchClaimId));\n        attachCustomMcp(integrations, { ...custom, ...lentMcp.mounts(bot, { botId: bot.id, threadId, generation: dispatchClaimId }) }, cfg, { botId: bot.id, threadId });\n        if (Object.keys(custom).length) Object.assign(integrations, chatAppsMcp.turnMounts(custom, bot.toolScope));\n",
+      "after": "        const custom = await mcpServersHost.prepare(bot).then(() => teamConnections.turnMcp(bot, threadId, dispatchClaimId));\n        attachCustomMcp(integrations, withIndustryCareMcp(bot, { ...custom, ...lentMcp.mounts(bot, { botId: bot.id, threadId, generation: dispatchClaimId }) }, servers => managedPolicy.filterMcp(servers), botBox.enabled()), cfg, { botId: bot.id, threadId });\n        if (Object.keys(custom).length) Object.assign(integrations, chatAppsMcp.turnMounts(custom, bot.toolScope));\n"
+    },
+    {
+      "before": "      if (!directTurnClaimIsCurrent(bot.id, dispatchClaimId, threadId)) throw new DirectTurnSetupCancelled(\"turn stopped while its tools were prepared\"); const worksInWorkspace = supportsWorkspaceFiles(instance.driverKind);\n      if (worksInWorkspace) {\n        ensureWorkspace(bot.id, appLanguage());\n",
+      "after": "      if (!directTurnClaimIsCurrent(bot.id, dispatchClaimId, threadId)) throw new DirectTurnSetupCancelled(\"turn stopped while its tools were prepared\"); const worksInWorkspace = supportsWorkspaceFiles(instance.driverKind);\n      if (worksInWorkspace && !careGuest) {\n        ensureWorkspace(bot.id, appLanguage());\n"
+    },
+    {
+      "before": "      }\n      const privateWorkspace = worksInWorkspace ? ensureTaskWorkspaceWithSkills(bot.id, threadId, skillsHost.turnImports(bot, threadId, instance)) : undefined;\n      const skillInstructions = renderSkillInstructions(selectedSkills, {\n",
+      "after": "      }\n      const privateWorkspace = !worksInWorkspace ? undefined : careGuest ? ensureTaskWorkspace(bot.id, threadId)\n        : ensureTaskWorkspaceWithSkills(bot.id, threadId, skillsHost.turnImports(bot, threadId, instance));\n      const skillInstructions = renderSkillInstructions(selectedSkills, {\n"
+    },
+    {
+      "before": "(providerText, store.bots) },\n      ].filter((part) => (apiFenced ? BOT_API_PARTS.has(part.id) : !confined || READ_AND_DRAFT_PARTS.has(part.id))), integrations.agents, { replyStyle: liveBot?.replyStyle ?? bot.replyStyle, rules: cfg.everyBotRules });\n      turnPromptBytes.set(threadId, { stable: Buffer.byteLength(prompt.stable), volatile: Buffer.byteLength(prompt.volatile) });\n      // Recall rides in front of this turn's message, never the system prompt, whose volatile half is re-sent whole on any change.\n      const recalled = autoRecallPrompt(bot, threadId, resolvedImages.text, {\n        // A routine run starts fresh, ",
+      "after": "(providerText, store.bots) },\n      ].filter((part) => (apiFenced ? BOT_API_PARTS.has(part.id) && !(careGuest && part.id === \"memory\") : !confined || READ_AND_DRAFT_PARTS.has(part.id))), integrations.agents, { replyStyle: liveBot?.replyStyle ?? bot.replyStyle, rules: careGuest ? undefined : cfg.everyBotRules });\n      turnPromptBytes.set(threadId, { stable: Buffer.byteLength(prompt.stable), volatile: Buffer.byteLength(prompt.volatile) });\n      // Recall rides in front of this turn's message, never the system prompt, whose volatile half is re-sent whole on any change.\n      const recalled = careGuest ? \"\" : autoRecallPrompt(bot, threadId, resolvedImages.text, {\n        // A routine run starts fresh, "
+    },
+    {
+      "before": "      const clock = takesTurnClock(userTurnText) ? turnClockLine(Date.now(), hostTimeZone()) + nearLimitNote(limitClock.limit(instanceId), engineName(instanceId), hostTimeZone()) : \"\";\n      const shareNote = skillsHost.shareNote(bot, threadId, Boolean(privateWorkspace));\n      const startupRecovery = (opts?.automaticRecoveryIndex ?? 0) < startupBackups(liveBot ?? bot, cfg.automaticRecovery).length;\n",
+      "after": "      const clock = takesTurnClock(userTurnText) ? turnClockLine(Date.now(), hostTimeZone()) + nearLimitNote(limitClock.limit(instanceId), engineName(instanceId), hostTimeZone()) : \"\";\n      const shareNote = skillsHost.shareNote(bot, threadId, Boolean(privateWorkspace) && !careGuest);\n      const startupRecovery = (opts?.automaticRecoveryIndex ?? 0) < startupBackups(liveBot ?? bot, cfg.automaticRecovery).length;\n"
+    },
+    {
+      "before": "SurfacePlan(bot, undefined, threadId, true)) ? { preloadBrowserTools: true } : {}),\n        ...skillsHost.turnSettings(bot, threadId, instance, managedPolicy.restrictsMcp()),\n        cwd, ...(worksInWorkspace || guestConfined || cloudGuestOpened(threadId) ? {} : { toolResultFolder: messageFileRootsForThread(bot.id, threadId).find((root) => root !== ATTACHMENTS_DIR) }),\n        botSettingsFile: botSettingsFile(bot),\n      }, (input) => quickFallback.sendTurn(instance, input, route.quickModel ? { model, own:",
+      "after": "SurfacePlan(bot, undefined, threadId, true)) ? { preloadBrowserTools: true } : {}),\n        ...(careGuest ? { mcpFromUserConfig: false } : skillsHost.turnSettings(bot, threadId, instance, managedPolicy.restrictsMcp())),\n        cwd, ...(worksInWorkspace || guestConfined || cloudGuestOpened(threadId) ? {} : { toolResultFolder: messageFileRootsForThread(bot.id, threadId).find((root) => root !== ATTACHMENTS_DIR) }),\n        ...(careGuest ? {} : { botSettingsFile: botSettingsFile(bot) }),\n      }, (input) => quickFallback.sendTurn(instance, input, route.quickModel ? { model, own:"
+    },
+    {
+      "before": "otId)?.name ?? \"the bot\" }); const botApi = createBotApiHost({ store, startTurn, threadBusy, canStart: (botId, threadId) => canAdmitDirectTurn(botId, threadId, false), canConfine: (botId",
+      "after": "otId)?.name ?? \"the bot\" }); const botApi = createBotApiHost({ store, startTurn, threadBusy, careFacts: (botId, message) => { const bot = store.bot(botId); return bot ? industryGuestFacts(bot, message, servers => managedPolicy.filterMcp(servers)) : Promise.resolve(undefined); }, canStart: (botId, threadId) => canAdmitDirectTurn(botId, threadId, false), canConfine: (botId"
+    },
+    {
+      "before": "  if (instance.adapter.capabilities.customMcp === true) {\n    const custom = { ...await mcpServersHost.prepare(bot).then(() => teamConnections.turnMcp(bot, threadId, internalGeneration)), ...lentMcp.mounts(bot, { botId: bot.id, threadId, generation: internalGeneration }) }; attachCustomMcp(integrations, custom, cfg, { botId: bot.id, threadId }); Object.assign(integrations, chatAppsMcp.turnMounts(custom, bot.toolScope));\n  }\n",
+      "after": "  if (instance.adapter.capabilities.customMcp === true) {\n    const custom = { ...await mcpServersHost.prepare(bot).then(() => teamConnections.turnMcp(bot, threadId, internalGeneration)), ...lentMcp.mounts(bot, { botId: bot.id, threadId, generation: internalGeneration }) };\n    attachCustomMcp(integrations, withIndustryCareMcp(bot, custom, servers => managedPolicy.filterMcp(servers), botBox.enabled()), cfg, { botId: bot.id, threadId });\n    Object.assign(integrations, chatAppsMcp.turnMounts(custom, bot.toolScope));\n  }\n"
+    }
+  ],
+  "server/drivers/claude.ts": [
+    {
+      "before": "import { canUseMcpServer } from \"../../shared/tool-scope.ts\";\nimport { assertToolScopeSupported } from \"../../shared/tool-scope-support.ts\";\nimport { newEventId, newId } from \"../contracts.ts\";\n",
+      "after": "import { canUseMcpServer } from \"../../shared/tool-scope.ts\";\nimport { assertToolScopeSupported, disablesAllNativeTools } from \"../../shared/tool-scope-support.ts\";\nimport { newEventId, newId } from \"../contracts.ts\";\n"
+    },
+    {
+      "before": "      }\n      if (turn.guestConfined) args.push(\"--restricted\", \"--tools\", GUEST_CLAUDE_TOOLS.join(\",\"));\n      else if (config.tools !== undefined) args.push(\"--tools\", config.tools.join(\",\"));\n      const turnEnvironment = environment();\n      await ensureCliVersion(turnEnvironment);\n      if (turn.guestConfined && !claudeCliSupports(cliVersion, \"--restricted\")) {\n",
+      "after": "      }\n      if (turn.guestConfined) args.push(\"--restricted\");\n      const nativeOff = disablesAllNativeTools(turn.toolScope);\n      const nativeTools = nativeOff ? [] : turn.guestConfined ? GUEST_CLAUDE_TOOLS : config.tools;\n      if (nativeTools !== undefined) args.push(\"--tools\", nativeTools.join(\",\"));\n      const turnEnvironment = environment();\n      await ensureCliVersion(turnEnvironment);\n      if (nativeOff && (cliVersion === null || !claudeCliSupports(cliVersion, \"--tools\"))) {\n        throw new Error(\"This Claude Code version cannot disable built-in tools. Update Claude Code to use this tool selection.\");\n      }\n      if (turn.guestConfined && !claudeCliSupports(cliVersion, \"--restricted\")) {\n"
+    },
+    {
+      "before": "              const tools: unknown[] = Array.isArray(o.tools) ? o.tools : [];\n              if (session.turn?.input.guestConfined && (o.permissionMode !== \"default\" || tools.some((tool) => typeof tool === \"string\" && GUEST_FORBIDDEN_TOOLS.has(tool)))) {\n",
+      "after": "              const tools: unknown[] = Array.isArray(o.tools) ? o.tools : [];\n              if (nativeOff && (!Array.isArray(o.tools) || tools.some(tool => typeof tool !== \"string\" || !tool.startsWith(\"mcp__\")))) {\n                emit({ ...base(threadId, currentTurnId()), type: \"runtime.error\", message: \"Claude reported a built-in tool after native tools were disabled. The turn was stopped.\" });\n                session.closing = true;\n                stopSession(session);\n                break;\n              }\n              if (session.turn?.input.guestConfined && (o.permissionMode !== \"default\" || tools.some((tool) => typeof tool === \"string\" && GUEST_FORBIDDEN_TOOLS.has(tool)))) {\n"
+    }
+  ],
+  "server/drivers/tool-scope-coverage.test.ts": [
+    {
+      "before": "    expect(() => assertToolScopeSupported(engine, { allow: \"all\" })).toThrow();\n    if (support === \"native-and-mcp\") {\n      expect(assertToolScopeSupported(engine, { allow: [] })).toEqual({ allow: [] });\n",
+      "after": "    expect(() => assertToolScopeSupported(engine, { allow: \"all\" })).toThrow();\n    if (support === \"mcp-with-native-off\") {\n      for (const scope of [{ allow: [] }, { allow: [\"mcp:docs:find\"] }, { deny: [\"native:*\"] }]) expect(assertToolScopeSupported(engine, scope)).toEqual(scope);\n      expect(() => assertToolScopeSupported(engine, { allow: [\"native:Read\"] })).toThrow(/not supported/);\n      expect(() => assertToolScopeSupported(engine, { deny: [\"native:Bash\"] })).toThrow(/not supported/);\n    } else if (support === \"native-and-mcp\") {\n      expect(assertToolScopeSupported(engine, { allow: [] })).toEqual({ allow: [] });\n"
+    }
+  ],
+  "shared/tool-scope-support.ts": [
+    {
+      "before": "rence: \"native-and-mcp\", modelgo: \"native-and-mcp\", meta: \"native-and-mcp\",\n  claudeAgent: \"mcp\", codex: \"mcp\", geminiAgent: \"mcp\", kimiAgent: \"mcp\", droidAgent: \"mcp\",\n  cursorAgent: \"mcp\", opencodeGo: \"mcp\", qwenAgent: \"mcp\", hermesAgent: \"mcp\", clineAgent: \"mcp\", copilotAgent: \"mcp\", commandCodeAgent: \"mcp\", kiroAgent: \"mcp\", deepseekAgent: \"mcp\", customAcp: \"mcp\", antigravityAgent: \"mcp\", museCode: \"mcp\",\n} as const;\n\n",
+      "after": "rence: \"native-and-mcp\", modelgo: \"native-and-mcp\", meta: \"native-and-mcp\",\n  claudeAgent: \"mcp-with-native-off\", codex: \"mcp\", geminiAgent: \"mcp\", kimiAgent: \"mcp\", droidAgent: \"mcp\",\n  cursorAgent: \"mcp\", opencodeGo: \"mcp\", qwenAgent: \"mcp\", hermesAgent: \"mcp\", clineAgent: \"mcp\", copilotAgent: \"mcp\", commandCodeAgent: \"mcp\", kiroAgent: \"mcp\", deepseekAgent: \"mcp\", customAcp: \"mcp\", antigravityAgent: \"mcp\", museCode: \"mcp\",\n} as const;\n\nexport function disablesAllNativeTools(scope: ToolScope | undefined): boolean {\n  return scope?.deny?.includes(\"native:*\") === true ||\n    (scope?.allow !== undefined && scope.allow.every(selector => !selector.startsWith(\"native:\")));\n}\n\n"
+    },
+    {
+      "before": "      if (parsed.scope.allow !== undefined || parsed.scope.deny?.length) throw new Error(`${engine}: tool selection is not supported by this engine. Choose a supported engine.`);\n    } else if (narrowsNativeTools(parsed.scope)) {\n      throw new Error(`${engine}: native tool selection is not supported by this engine. Keep native:* in the selection or choose a supported engine.`);\n",
+      "after": "      if (parsed.scope.allow !== undefined || parsed.scope.deny?.length) throw new Error(`${engine}: tool selection is not supported by this engine. Choose a supported engine.`);\n    } else if (narrowsNativeTools(parsed.scope) && !(support === \"mcp-with-native-off\" && disablesAllNativeTools(parsed.scope))) {\n      throw new Error(`${engine}: native tool selection is not supported by this engine. Keep native:* in the selection or choose a supported engine.`);\n"
+    }
+  ],
+  "server/routes/bots-create.ts": [
+    {
+      "before": "import type { WireBot } from \"../../shared/wire.ts\";\nimport { freshLook } from \"../bot-look.ts\";\n",
+      "after": "import type { WireBot } from \"../../shared/wire.ts\";\nimport { industryBotSettings, industryTemplate } from \"../../shared/industry-templates.ts\";\nimport { enableIndustryCare } from \"../industry-care.ts\";\nimport { freshLook } from \"../bot-look.ts\";\n"
+    },
+    {
+      "before": "      body = rest;\n      const template = resolveBotCreationDefaults(cfg.newBotDefaults, body);\n      const settings = template.profile;\n",
+      "after": "      body = rest;\n      const industry = typeof body.industryTemplate === \"string\" ? industryTemplate(body.industryTemplate) : undefined;\n      if (body.industryTemplate !== undefined && !industry) return json(res, 400, { error: \"Unknown built-in industry template\" });\n      if (industry && body.preset !== undefined) return json(res, 400, { error: \"Choose one bot template\" });\n      if (industry && auth.kind === \"session\" && !auth.scopes.includes(\"admin\")) {\n        return json(res, 403, { error: \"Installing an industry template requires the admin scope\" });\n      }\n      const template = resolveBotCreationDefaults(cfg.newBotDefaults, industry ? {\n        ...body, useDefaults: false, settings: {\n          name: industry.name, title: industry.title, description: industry.description, soul: industry.soul,\n          ...industry.look, ...industryBotSettings(),\n        },\n      } : body);\n      const settings = template.profile;\n"
+    },
+    {
+      "before": "        }\n      } catch (error) {\n",
+      "after": "        }\n        if (industry) enableIndustryCare(bot.id);\n      } catch (error) {\n"
+    }
+  ],
+  "src/lib/create-configured-bot.ts": [
+    {
+      "before": "import { botAvatarUrlFromStoredPath } from \"../../shared/bot-avatar\";\nimport { t } from \"@/lib/i18n\";\n",
+      "after": "import { botAvatarUrlFromStoredPath } from \"../../shared/bot-avatar\";\nimport { industryTemplate } from \"../../shared/industry-templates\";\nimport { t } from \"@/lib/i18n\";\n"
+    },
+    {
+      "before": "  const preset = draft.preset;\n  const chosenAi = modelSelection?.instanceId && modelSelection.model ? { modelSelection, requireAvailableModel: true } : {};\n",
+      "after": "  const preset = draft.preset;\n  const industry = !preset && draft.role ? industryTemplate(draft.role) : undefined;\n  const chosenAi = modelSelection?.instanceId && modelSelection.model ? { modelSelection, requireAvailableModel: true } : {};\n"
+    },
+    {
+      "before": "      useDefaults: false, ...(visibility !== undefined ? { visibility } : {}), ...(reportsTo ? { reportsTo } : {}),\n      ...(Object.hasOwn(template.profile, \"toolScope\") ? { settings: { toolScope } } : {}),\n",
+      "after": "      useDefaults: false, ...(visibility !== undefined ? { visibility } : {}), ...(reportsTo ? { reportsTo } : {}),\n      ...(industry ? { industryTemplate: industry.id } : {}),\n      ...(Object.hasOwn(template.profile, \"toolScope\") ? { settings: { toolScope } } : {}),\n"
+    }
+  ],
+  "src/lib/create-configured-bot.test.ts": [
+    {
+      "before": "    expect(f.bodies[0]).toMatchObject({ visibility: \"admins\", useDefaults: false });\n  });\n",
+      "after": "    expect(f.bodies[0]).toMatchObject({ visibility: \"admins\", useDefaults: false });\n  });\n\n  it(\"installs the selected local industry toolkit in the initial create request\", async () => {\n    const f = fixture(\"ask\");\n    f.draft.chooseRole(\"industry-customer-care\");\n    await createConfiguredBot(f.draft, f.request, persistBotUpdate, f.approvals);\n    expect(f.bodies[0]).toMatchObject({ industryTemplate: \"industry-customer-care\", useDefaults: false });\n    const classic = fixture(\"ask\");\n    classic.draft.chooseRole(\"assistant\");\n    await createConfiguredBot(classic.draft, classic.request, persistBotUpdate, classic.approvals);\n    expect(classic.bodies[0]).not.toHaveProperty(\"industryTemplate\");\n  });\n"
+    }
+  ],
+  "server/team-library.ts": [
+    {
+      "before": "import { parseTeamManifest, type ParsedTeamManifest } from \"./team-manifest.ts\";\n\n",
+      "after": "import { parseTeamManifest, type ParsedTeamManifest } from \"./team-manifest.ts\";\nimport { industryTeam, industryTeamCatalog } from \"./industry-teams.ts\";\n\n"
+    },
+    {
+      "before": "  manifest: string;\n  readme: string;\n  members: number;\n",
+      "after": "  manifest: string;\n  readme?: string;\n  builtIn?: true;\n  members: number;\n"
+    },
+    {
+      "before": "  teams: TeamCatalogEntry[];\n}\n",
+      "after": "  teams: TeamCatalogEntry[];\n  communityAvailable?: false;\n}\n"
+    },
+    {
+      "before": "\nexport async function fetchTeamCatalog(fetcher: Fetcher = fetch): Promise<TeamCatalog> {\n  return parseTeamCatalog(await fetchJson(TEAM_LIBRARY_CATALOG_URL, MAX_CATALOG_BYTES, fetcher));\n}\n",
+      "after": "\nasync function communityCatalog(fetcher: Fetcher): Promise<TeamCatalog> {\n  return parseTeamCatalog(await fetchJson(TEAM_LIBRARY_CATALOG_URL, MAX_CATALOG_BYTES, fetcher));\n}\n\nexport async function fetchTeamCatalog(fetcher: Fetcher = fetch): Promise<TeamCatalog> {\n  const local: TeamCatalog = {\n    format: \"openmaus.catalog\", version: 1, repositoryUrl: TEAM_LIBRARY_REPOSITORY, teams: industryTeamCatalog,\n  };\n  try {\n    const remote = await communityCatalog(fetcher);\n    const reserved = new Set(industryTeamCatalog.map((team) => team.slug));\n    return { ...local, teams: [...industryTeamCatalog, ...remote.teams.filter((team) => !reserved.has(team.slug))] };\n  } catch {\n    return { ...local, communityAvailable: false };\n  }\n}\n"
+    },
+    {
+      "before": "  if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) throw new Error(\"That team name is invalid\");\n  const catalog = await fetchTeamCatalog(fetcher);\n  const entry = catalog.teams.find((team) => team.slug === slug);\n",
+      "after": "  if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) throw new Error(\"That team name is invalid\");\n  const local = industryTeam(slug);\n  if (local) return local;\n  const catalog = await communityCatalog(fetcher);\n  const entry = catalog.teams.find((team) => team.slug === slug);\n"
+    },
+    {
+      "before": "    summary: entry.summary,\n    roles: await fetchShareable(`${TEAM_LIBRARY_RAW_ROOT}/${entry.package ?? entry.manifest}`, fetcher).then(libraryRoles, () => []),\n  })));\n",
+      "after": "    summary: entry.summary,\n    roles: entry.builtIn ? libraryRoles(industryTeam(entry.slug)!) :\n      await fetchShareable(`${TEAM_LIBRARY_RAW_ROOT}/${entry.package ?? entry.manifest}`, fetcher).then(libraryRoles, () => []),\n  })));\n"
+    }
+  ],
+  "server/team-library.test.ts": [
+    {
+      "before": "  fetchGithubTeam,\n  fetchLibraryTeam,\n",
+      "after": "  fetchGithubTeam,\n  fetchTeamCatalog,\n  fetchLibraryTeam,\n"
+    },
+    {
+      "before": "} from \"./team-library.ts\";\n\n",
+      "after": "} from \"./team-library.ts\";\nimport { industryTeamCatalog } from \"./industry-teams.ts\";\nimport { INDUSTRY_PROFILES } from \"../shared/industry-profiles.ts\";\n\n"
+    },
+    {
+      "before": "describe(\"team library\", () => {\n  it(\"validates catalog paths and adds the trusted repository URL\", () => {\n",
+      "after": "describe(\"team library\", () => {\n  it(\"serves all ten industry teams offline and reserves their slugs when the community is online\", async () => {\n    const offline = vi.fn(async () => response({}, 503)) as unknown as typeof fetch;\n    const bundled = await fetchTeamCatalog(offline);\n    expect(bundled.communityAvailable).toBe(false);\n    expect(bundled.teams).toHaveLength(10);\n    for (const profile of INDUSTRY_PROFILES) {\n      const slug = `industry-${profile.slug}`;\n      const entry = bundled.teams.find((item) => item.slug === slug);\n      expect(entry).toMatchObject({ members: 4, builtIn: true, skills: [\"industry-customer-care\"] });\n      const doc = await fetchLibraryTeam(slug, offline);\n      if (doc.format !== \"openmaus.package\" || doc.version !== 2) throw new Error(\"Expected a v2 industry package\");\n      const pkg = doc.package;\n      expect(pkg.agents.map((a) => a.key)).toEqual([\"care\", ...profile.roles.map((role) => role.slug)]);\n      expect(pkg.rooms?.[0]).toMatchObject({ members: pkg.agents.map((a) => a.key), defaultResponder: { kind: \"agent\", agent: \"care\" } });\n      expect(pkg.team?.leader).toBeUndefined();\n    }\n    expect(offline).toHaveBeenCalledTimes(1);\n    const slug = bundled.teams[0]!.slug;\n    const impostor = { ...catalog.teams[0], slug, skills: [], manifest: `teams/${slug}/team.mausteam.json`, readme: `teams/${slug}/README.md` };\n    const online = await fetchTeamCatalog(async () => response({ ...catalog, teams: [impostor, ...catalog.teams] }));\n    expect(online.teams.filter((team) => team.slug === slug)).toEqual([bundled.teams[0]]);\n    expect(online.teams.at(-1)?.slug).toBe(\"engineering\");\n  });\n  it(\"validates catalog paths and adds the trusted repository URL\", () => {\n"
+    },
+    {
+      "before": "  it(\"lists every ready-made team with its summary and roles, marks the team's own lead, and keeps a team whose file is missing\", async () => {\n    const teams = await libraryTeamRoles(fetcher);\n    expect(teams.slice(0, 4)).toEqual([\n",
+      "after": "  it(\"lists every ready-made team with its summary and roles, marks the team's own lead, and keeps a team whose file is missing\", async () => {\n    const all = await libraryTeamRoles(fetcher);\n    const teams = all.slice(industryTeamCatalog.length);\n    expect(teams.slice(0, 4)).toEqual([\n"
+    },
+    {
+      "before": "\n  it(\"fails when the catalog itself can't be read\", async () => {\n    await expect(libraryTeamRoles(vi.fn(async () => response({}, 503)) as unknown as typeof fetch)).rejects.toThrow(\"HTTP 503\");\n  });\n",
+      "after": "\n  it(\"retains the built-in roles when the remote catalog can't be read\", async () => {\n    const teams = await libraryTeamRoles(async () => response({}, 503));\n    expect(teams.map((team) => team.name)).toEqual(industryTeamCatalog.map((team) => team.name));\n    expect(teams.every((team) => team.roles.length === 4)).toBe(true);\n  });\n"
+    }
+  ],
+  "server/routes/teams.ts": [
+    {
+      "before": "import { z } from \"zod\";\nimport { MAX_TEAM_BACKUP_BYTES } from \"../../shared/team-backup.ts\";\n",
+      "after": "import { z } from \"zod\";\nimport { isDeepStrictEqual } from \"node:util\";\nimport { MAX_TEAM_BACKUP_BYTES } from \"../../shared/team-backup.ts\";\n"
+    },
+    {
+      "before": "import { fetchGithubTeam, fetchLibraryTeam, fetchTeamCatalog } from \"../team-library.ts\";\nimport { createTeamManifest, parseTeamManifest } from \"../team-manifest.ts\";\n",
+      "after": "import { fetchGithubTeam, fetchLibraryTeam, fetchTeamCatalog } from \"../team-library.ts\";\nimport { industryTeam } from \"../industry-teams.ts\";\nimport { createTeamManifest, parseTeamManifest } from \"../team-manifest.ts\";\n"
+    },
+    {
+      "before": "      const body = await readBody(req, MAX_TEAM_BACKUP_BYTES);\n      if (body?.format === \"openmaus.backup\") {\n",
+      "after": "      const body = await readBody(req, MAX_TEAM_BACKUP_BYTES);\n      const builtInSlug = url.searchParams.get(\"builtInTeam\");\n      const localTeam = builtInSlug === null ? undefined : industryTeam(builtInSlug);\n      if (builtInSlug !== null && (!localTeam || importMode !== \"add\" || !isDeepStrictEqual(body, localTeam))) {\n        return json(res, 409, { error: \"The built-in team differs from this preview. Open its card again.\" });\n      }\n      if (body?.format === \"openmaus.backup\") {\n"
+    },
+    {
+      "before": "      try {\n        if (isBotPackage(body)) packageDocument = parsePackageDocument(body, { trust: \"file\" });\n        else manifest = parseTeamManifest(body);\n",
+      "after": "      try {\n        if (localTeam) packageDocument = localTeam;\n        else if (isBotPackage(body)) packageDocument = parsePackageDocument(body, { trust: \"file\" });\n        else manifest = parseTeamManifest(body);\n"
+    },
+    {
+      "before": "        const result = packageDocument\n          ? importPackageDocument(packageDocument, { ...options, trust: \"file\" }, deps)\n          : importTeamManifest(manifest!, options, deps);\n",
+      "after": "        const result = packageDocument\n          ? importPackageDocument(packageDocument, { ...options, trust: \"file\", ...(localTeam ? { builtInIndustry: true } : {}) }, deps)\n          : importTeamManifest(manifest!, options, deps);\n"
+    }
+  ],
+  "server/package-import.ts": [
+    {
+      "before": "import type { BotVisibility, ModelSelection } from \"../shared/wire.ts\";\n\n",
+      "after": "import type { BotVisibility, ModelSelection } from \"../shared/wire.ts\";\nimport { industryBotSettings } from \"../shared/industry-templates.ts\";\nimport { enableIndustryCare } from \"./industry-care.ts\";\n\n"
+    },
+    {
+      "before": "  visibility?: BotVisibility;\n  org?: OrgImportContext;\n",
+      "after": "  visibility?: BotVisibility;\n  /** Set only for an explicitly selected, server-generated industry package. */\n  builtInIndustry?: boolean;\n  org?: OrgImportContext;\n"
+    },
+    {
+      "before": "          section,\n          ...(options.visibility ? { visibility: options.visibility } : {}),\n",
+      "after": "          section,\n          ...(options.builtInIndustry ? { toolScope: industryBotSettings().toolScope } : {}),\n          ...(options.visibility ? { visibility: options.visibility } : {}),\n"
+    },
+    {
+      "before": "        connectorTools: {},\n        // The publisher's choice, with no card: recording only keeps evidence in this workspace.\n",
+      "after": "        connectorTools: {},\n        ...(options.builtInIndustry ? industryBotSettings() : {}),\n        // The publisher's choice, with no card: recording only keeps evidence in this workspace.\n"
+    },
+    {
+      "before": "      });\n      for (const skillName of agent?.skills ?? []) {\n",
+      "after": "      });\n      if (options.builtInIndustry) enableIndustryCare(created.id);\n      for (const skillName of agent?.skills ?? []) {\n"
+    }
+  ],
+  "src/lib/template-add.ts": [
+    {
+      "before": "}\n\n/** Adds a previewed template alongside everything already here, and selects its first bot. The server keeps the rules:\n * new records only, skills off, routines paused. */\nexport async function addTemplate(manifest: unknown, dispatch: (action: Action) => void): Promise<AddedTemplate> {\n  // SAFETY: this endpoint is owned by the app and returns the imported records.\n  const response = (await api(\"/api/teams/import?mode=add\", { method: \"POST\", body: JSON.stringify(manifest) })) as AddedTemplate;\n  for (const bot of response.bots) dispatch({ type: \"botAdded\", bot });\n  for (const group of response.groups ?? []) dispatch({ type: \"groupPatched\", group });\n",
+      "after": "}\n\n/** The server installs a bundled toolkit only for the exact built-in package shown in the preview. */\nexport async function addTemplate(manifest: unknown, dispatch: (action: Action) => void, builtInTeam?: string): Promise<AddedTemplate> {\n  const target = builtInTeam ? `&builtInTeam=${encodeURIComponent(builtInTeam)}` : \"\";\n  const response = (await api(`/api/teams/import?mode=add${target}`, { method: \"POST\", body: JSON.stringify(manifest) })) as AddedTemplate;\n  for (const bot of response.bots) dispatch({ type: \"botAdded\", bot });\n  for (const group of response.groups ?? []) dispatch({ type: \"groupPatched\", group });\n"
+    }
+  ],
+  "src/lib/team-catalog.ts": [
+    {
+      "before": "  manifest: string;\n  readme: string;\n  members: number;\n",
+      "after": "  manifest: string;\n  readme?: string;\n  builtIn?: true;\n  members: number;\n"
+    },
+    {
+      "before": "  teams: TeamCatalogEntry[];\n}\n",
+      "after": "  teams: TeamCatalogEntry[];\n  communityAvailable?: false;\n}\n"
+    }
+  ],
+  "server/package-import.test.ts": [
+    {
+      "before": "import { mkdtempSync, readFileSync, rmSync } from \"node:fs\";\nimport { tmpdir } from \"node:os\";\nimport { join } from \"node:path\";\n",
+      "after": "import { existsSync, mkdtempSync, readFileSync, rmSync } from \"node:fs\";\nimport { tmpdir } from \"node:os\";\nimport { join } from \"node:path\";\n"
+    },
+    {
+      "before": "\ndescribe(\"importing a whole team\", () => {\n  it(\"adds every part from a file: persona, picture, brief, Chief, rooms, paused routines, skills off, valueless connections, notes\", async () => {\n    const app = await installation({ servers: { crm: { type: \"http\", url: \"https://existing.example.com\", headers: { Authorization: \"Bearer mine\" }, enabled: true } } });\n",
+      "after": "\ndescribe(\"importing a whole team\", () => {\n  it(\"removes each member's installed customer-care skill when the industry team fails after provisioning\", async () => {\n    const app = await installation();\n    const { industryTeam } = await import(\"./industry-teams.ts\");\n    const { bundledPicks } = await import(\"./limix-skill-store.ts\");\n    const { DATA_DIR } = await import(\"./config.ts\");\n    const before = app.snapshot();\n    const provisioned: string[] = [];\n    const document = industryTeam(\"industry-education\")!;\n    const failing = { ...app.deps, sections: { writeBrief: (section: string) => {\n      for (const bot of app.store.bots.filter(bot => bot.section === section)) {\n        expect(bundledPicks(bot.id).has(\"industry-customer-care\")).toBe(true);\n        provisioned.push(bot.id);\n      }\n      throw new Error(\"fixture refuses team brief\");\n    } } };\n    expect(() => app.importer.importPackageDocument(document, { trust: \"file\", mode: \"add\", builtInIndustry: true }, failing))\n      .toThrow(\"fixture refuses team brief\");\n    expect(provisioned).toHaveLength(4);\n    expect(app.snapshot()).toBe(before);\n    for (const id of provisioned) expect(existsSync(join(DATA_DIR, \"skill-state\", id))).toBe(false);\n  });\n\n  it(\"adds every part from a file: persona, picture, brief, Chief, rooms, paused routines, skills off, valueless connections, notes\", async () => {\n    const app = await installation({ servers: { crm: { type: \"http\", url: \"https://existing.example.com\", headers: { Authorization: \"Bearer mine\" }, enabled: true } } });\n"
+    },
+    {
+      "before": "  });\n\n  it(\"brings a new install's chrome MausBot back in chrome from its own export\", async () => {\n    const app = await installation();\n    app.store.seedIfEmpty();\n",
+      "after": "  });\n\n  it(\"preserves a fresh install's default bot name and chrome color in its own export\", async () => {\n    const app = await installation();\n    app.store.seedIfEmpty();\n"
+    },
+    {
+      "before": "    const exported = createBotPackageExport({ name: \"Mine\", groups: [], routines: [], bots: app.store.bots });\n    const document: PackageDocument = app.parsePackageDocument(JSON.parse(JSON.stringify(exported)));\n    expect(document.package.agents.map((agent) => [agent.name, agent.appearance?.color])).toEqual([[\"MausBot\", \"chrome\"]]);\n    const result = app.importer.importPackageDocument(document, { trust: \"file\", mode: \"add\" }, app.deps);\n    if (result.alreadyAdded) throw new Error(\"unexpected\");\n",
+      "after": "    const exported = createBotPackageExport({ name: \"Mine\", groups: [], routines: [], bots: app.store.bots });\n    const document: PackageDocument = app.parsePackageDocument(JSON.parse(JSON.stringify(exported)));\n    expect(document.package.agents.map((agent) => [agent.name, agent.appearance?.color])).toEqual([[app.store.bots[0]!.name, \"chrome\"]]);\n    const result = app.importer.importPackageDocument(document, { trust: \"file\", mode: \"add\" }, app.deps);\n    if (result.alreadyAdded) throw new Error(\"unexpected\");\n"
+    }
+  ],
+  "server/testing/fake-claude-cli.ts": [
+    {
+      "before": "const toolsFlag = argAfter(\"--tools\");\nconst tools = [...new Set([...(toolsFlag ? toolsFlag.split(\",\") : [\"Bash\", \"Read\", \"Edit\", \"Write\", \"Glob\", \"Grep\", \"WebFetch\", \"WebSearch\"]),\n  ...(process.env.FAKE_CLAUDE_KEEP_BASH === \"1\" ? [\"Bash\"] : [])])];\n",
+      "after": "const toolsFlag = argAfter(\"--tools\");\nconst tools = [...new Set([...(toolsFlag !== null ? toolsFlag.split(\",\").filter(Boolean) : [\"Bash\", \"Read\", \"Edit\", \"Write\", \"Glob\", \"Grep\", \"WebFetch\", \"WebSearch\"]),\n  ...(process.env.FAKE_CLAUDE_KEEP_BASH === \"1\" ? [\"Bash\"] : [])])];\n"
+    }
+  ],
+  "server/drivers/claude.test.ts": [
+    {
+      "before": "      .then(() => recorder.until((e) => e.type === \"turn.completed\").then((event) => JSON.stringify(event) + JSON.stringify(recorder.events)), (error: unknown) => String(error));\n    expect(refused).toContain(\"too old to run this turn without a shell\");\n  });\n\n",
+      "after": "      .then(() => recorder.until((e) => e.type === \"turn.completed\").then((event) => JSON.stringify(event) + JSON.stringify(recorder.events)), (error: unknown) => String(error));\n    expect(refused).toContain(\"too old to run this turn without a shell\");\n  });\n\n  it(\"stops an operator turn if the CLI advertises native tools despite a MCP-only scope\", async () => {\n    await create(undefined, { FAKE_CLAUDE_VERSION: \"2.1.284\", FAKE_CLAUDE_KEEP_BASH: \"1\" });\n    await instance.adapter.sendTurn({ threadId: \"scope-kept-native\", text: \"Fixture\", toolScope: { allow: [\"mcp:industry-care:care_lookup\"] } });\n    await recorder.until(event => event.type === \"turn.completed\");\n    expect(recorder.events).toContainEqual(expect.objectContaining({ type: \"turn.completed\", ok: false }));\n    expect(recorder.events).toContainEqual(expect.objectContaining({ type: \"runtime.error\", message: expect.stringContaining(\"built-in tool\") }));\n  });\n\n"
+    }
+  ]
+}

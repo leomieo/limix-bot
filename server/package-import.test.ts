@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -61,6 +61,28 @@ afterEach(async () => {
 });
 
 describe("importing a whole team", () => {
+  it("removes each member's installed customer-care skill when the industry team fails after provisioning", async () => {
+    const app = await installation();
+    const { industryTeam } = await import("./industry-teams.ts");
+    const { bundledPicks } = await import("./limix-skill-store.ts");
+    const { DATA_DIR } = await import("./config.ts");
+    const before = app.snapshot();
+    const provisioned: string[] = [];
+    const document = industryTeam("industry-education")!;
+    const failing = { ...app.deps, sections: { writeBrief: (section: string) => {
+      for (const bot of app.store.bots.filter(bot => bot.section === section)) {
+        expect(bundledPicks(bot.id).has("industry-customer-care")).toBe(true);
+        provisioned.push(bot.id);
+      }
+      throw new Error("fixture refuses team brief");
+    } } };
+    expect(() => app.importer.importPackageDocument(document, { trust: "file", mode: "add", builtInIndustry: true }, failing))
+      .toThrow("fixture refuses team brief");
+    expect(provisioned).toHaveLength(4);
+    expect(app.snapshot()).toBe(before);
+    for (const id of provisioned) expect(existsSync(join(DATA_DIR, "skill-state", id))).toBe(false);
+  });
+
   it("adds every part from a file: persona, picture, brief, Chief, rooms, paused routines, skills off, valueless connections, notes", async () => {
     const app = await installation({ servers: { crm: { type: "http", url: "https://existing.example.com", headers: { Authorization: "Bearer mine" }, enabled: true } } });
     const document: PackageDocument = app.parsePackageDocument(fixture("full-team.v2.json"));
@@ -111,13 +133,13 @@ describe("importing a whole team", () => {
     expect(app.events.filter((kind) => kind === "bot")).toHaveLength(3);
   });
 
-  it("brings a new install's chrome MausBot back in chrome from its own export", async () => {
+  it("preserves a fresh install's default bot name and chrome color in its own export", async () => {
     const app = await installation();
     app.store.seedIfEmpty();
     const { createBotPackageExport } = await import("./package-export.ts");
     const exported = createBotPackageExport({ name: "Mine", groups: [], routines: [], bots: app.store.bots });
     const document: PackageDocument = app.parsePackageDocument(JSON.parse(JSON.stringify(exported)));
-    expect(document.package.agents.map((agent) => [agent.name, agent.appearance?.color])).toEqual([["MausBot", "chrome"]]);
+    expect(document.package.agents.map((agent) => [agent.name, agent.appearance?.color])).toEqual([[app.store.bots[0]!.name, "chrome"]]);
     const result = app.importer.importPackageDocument(document, { trust: "file", mode: "add" }, app.deps);
     if (result.alreadyAdded) throw new Error("unexpected");
     expect(result.bots.map((bot) => app.store.bot(bot.id)?.color)).toEqual(["chrome"]);

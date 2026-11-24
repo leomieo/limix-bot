@@ -12,7 +12,8 @@ import { harnessCapabilityLines, type DriverCapabilities } from "./harness-capab
 import { redactSecretsInText } from "./redact.ts"; import { chiefLevel } from "./chief-level.ts"; import { defaultBotRefusal } from "./default-bot.ts";
 import type { BotRecord, OptionCardData } from "./store.ts";
 import type { TeamSetupFields, TeamSetupOperation, TeamSetupRequest, TeamSetupResult, TeamSetupUndo } from "../shared/team-setup.ts";
-import { READY_BOTS, readyBot } from "../shared/ready-bots.ts";
+import { readyBot } from "../shared/ready-bots.ts";
+import { industryGalleryInstruction, industryGalleryTarget, SOURCE_LABEL, TemplateIdError, type ResolvedTemplate } from "./chief-templates.ts";
 
 const section = (value?: string) => value?.trim() || "";
 const teamName = z.string().trim().min(1).max(60).refine(fitsOnOneLine).refine((value) => redactSecretsInText(value) === value, "Team names cannot contain credentials");
@@ -43,6 +44,11 @@ export class TeamSetupError extends Error {
   readonly status: number;
   readonly code?: string;
   constructor(message: string, status = 400, code?: string) { super(message); this.status = status; this.code = code; }
+}
+
+function requireSetupTemplate(id: string) {
+  const gallery = industryGalleryTarget(id);
+  if (gallery) throw new TeamSetupError(industryGalleryInstruction(gallery), 409);
 }
 
 /** Without `fields` (deletions) any drift cancels; with them it pins only the before-values the card showed, and authority is re-checked at confirm. */
@@ -95,10 +101,13 @@ interface Options {
   deleteBot(botId: string, revalidate: () => void, request?: TeamSetupRequest): Promise<void>;
   /** Creates the group chat a reviewer chose with an applied setup; absent where setups never offer one. */
   createRoom?(request: TeamSetupRequest, botIds: string[]): { id: string; name: string };
+  /** Reads a create operation's template (built-in or GitHub library) before the plan is checked. */
+  templates?: { resolve(id: string): Promise<ResolvedTemplate> };
 }
 
 type RequestFrom = { botId: string; name: string; color: string };
 type SetupArgs = { botId: string; threadId: string; plan: unknown; from?: RequestFrom };
+type Templates = ReadonlyMap<string, ResolvedTemplate>;
 type DeletionArgs = { botId: string; threadId: string; targetBotId: string; reason: string; from?: RequestFrom };
 /** Server-only invocation lease. Never saved on a request or approval card. */
 type SubmitAuthority = { canCommit?: () => boolean };
@@ -161,6 +170,7 @@ export class TeamSetupRequestService {
       targets.add(operation.botId);
       const target = this.options.store.bot(operation.botId);
       if (operation.action === "create") {
+        if (confirming && operation.template) requireSetupTemplate(operation.template.id);
         if (target) throw new TeamSetupError("A proposed bot already exists. Review a new proposal.", 409);
         if (!operation.fields.name?.trim() || !operation.fields.title?.trim() || !operation.fields.soul?.trim() || !operation.fields.modelSelection) throw new TeamSetupError("Each new bot needs a name, title, soul instructions, and exact model selection");
       } else {
@@ -196,20 +206,44 @@ export class TeamSetupRequestService {
     }
   }
 
-  private prepare(args: SetupArgs) {
+  /** Each template a plan names, read once; an id that names nothing refuses the whole plan. */
+  private async templates(plan: unknown): Promise<Templates> {
+    const resolved = new Map<string, ResolvedTemplate>();
+    const operations = typeof plan === "object" && plan !== null && Array.isArray((plan as { operations?: unknown }).operations) ? (plan as { operations: unknown[] }).operations : [];
+    const ids = [...new Set(operations.flatMap((operation) => {
+      const template = (operation as { template?: unknown } | null)?.template;
+      return typeof template === "string" && template.trim() ? [template.trim()] : [];
+    }))].slice(0, 24);
+    for (const id of ids) {
+      if (!this.options.templates) continue;
+      try { resolved.set(id, await this.options.templates.resolve(id)); }
+      catch (error) {
+        if (error instanceof TemplateIdError) throw new TeamSetupError(error.message);
+        throw new TeamSetupError(`The template library can't be reached right now, so ${JSON.stringify(id)} could not be read. Propose without that template (a built-in bot or your own design) and say so.`, 502);
+      }
+    }
+    return resolved;
+  }
+
+  private prepare(args: SetupArgs, resolved: Templates = new Map()) {
     const parsed = planSchema.safeParse(args.plan);
     if (!parsed.success) throw new TeamSetupError(parsed.error.issues[0]?.message ?? "Invalid team setup");
     const chief = this.chief(args.botId);
     const combined = new Map<string, typeof parsed.data.operations[number]>();
+    const chosen = new Map<string, ResolvedTemplate>();
     for (const operation of parsed.data.operations) {
       const key = operation.action === "create" ? `create:${operation.key}` : `update:${operation.botId}`;
       const previous = combined.get(key);
       let fields = { ...previous?.fields, ...operation.fields };
       if (operation.action === "create") {
         if (operation.template) {
-          const template = readyBot(operation.template);
-          if (!template) throw new TeamSetupError(`Unknown ready-made bot ${JSON.stringify(operation.template)}. Use an id from list_team_library botTemplates: ${READY_BOTS.map((bot) => bot.id).join(", ")}`);
-          fields = { name: template.name, title: template.title, description: template.description, soul: template.soul, ...fields };
+          requireSetupTemplate(operation.template);
+          const builtin = readyBot(operation.template);
+          const template = resolved.get(operation.template.trim())
+            ?? (builtin ? { id: `builtin:${builtin.id}`, source: "builtin" as const, name: builtin.name, apps: builtin.apps, fields: { name: builtin.name, title: builtin.title, description: builtin.description, soul: builtin.soul } } : undefined);
+          if (!template) throw new TeamSetupError(`Unknown template ${JSON.stringify(operation.template)}. Use an id exactly as list_team_library returned it.`);
+          fields = { ...template.fields, ...fields };
+          chosen.set(key, template);
         }
         fields.modelSelection ??= chief.modelSelection;
       }
@@ -219,9 +253,11 @@ export class TeamSetupRequestService {
     const operations: TeamSetupOperation[] = [...combined.values()].map((operation) => {
       const target = operation.action === "update" ? this.options.store.bot(operation.botId) : undefined;
       const fields = this.fields({ ...operation.fields, section: operation.fields.section ?? target?.section ?? chief.section ?? "" }, target ?? undefined);
+      const template = operation.action === "create" ? chosen.get(`create:${operation.key}`) : undefined;
       return { action: operation.action, botId: operation.action === "create" ? newId() : operation.botId,
         ...(operation.action === "create" ? { threadId: newId() } : {}),
         fields,
+        ...(template ? { template: { id: template.id, name: template.name, source: template.source, apps: template.apps } } : {}),
         ...(target ? { expectedRevision: teamSetupRevision(target, fields) } : {}),
       };
     });
@@ -269,9 +305,10 @@ export class TeamSetupRequestService {
   proposeDeletion(args: DeletionArgs) { return this.card(this.prepareDeletion(args), args.from); }
 
   async submit(args: SetupArgs & SubmitAuthority) {
+    const resolved = await this.templates(args.plan);
     const grant = this.options.autoApply?.(args.botId, args.threadId) ?? null;
-    if (grant) return { ...await this.applyImmediately(this.prepare(args), args.from, args.canCommit), appliedBy: grant };
-    return { ...this.propose(args), applied: false, state: "pending" as const };
+    if (grant) return { ...await this.applyImmediately(this.prepare(args, resolved), args.from, args.canCommit), appliedBy: grant };
+    return { ...this.card(this.prepare(args, resolved), args.from), applied: false, state: "pending" as const };
   }
 
   async submitDeletion(args: DeletionArgs & SubmitAuthority) {
@@ -295,6 +332,10 @@ export class TeamSetupRequestService {
     for (const operation of request.operations) {
       const current = this.options.store.bot(operation.botId);
       lines.push(`\n${operation.action === "create" ? "Create" : "Update"} @${operation.fields.name ?? current?.name} (${operation.action === "create" ? "new bot" : operation.botId})`);
+      if (operation.template) {
+        lines.push(`Template: "${operation.template.name}" from the ${SOURCE_LABEL[operation.template.source]} (${operation.template.id}).`);
+        if (operation.template.apps.length) lines.push(`Suggested apps, not connected by this setup: ${operation.template.apps.join(", ")}.`);
+      }
       for (const [key, value] of Object.entries(operation.fields)) {
         if (key === "chiefOfStaff") {
           lines.push(`Chief of Staff: ${current?.chiefOfStaff ? "Yes" : "No"} → ${value ? "Yes" : "No"}.${value ? " May coordinate and configure bots in this department." : " Access to additional departments is removed."}`);

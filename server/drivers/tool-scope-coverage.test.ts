@@ -7,7 +7,11 @@ it("covers every registered adapter and refuses unsupported native restrictions"
   for (const [engine, support] of Object.entries(TOOL_SCOPE_SUPPORT)) {
     expect(assertToolScopeSupported(engine, undefined)).toBeUndefined();
     expect(() => assertToolScopeSupported(engine, { allow: "all" })).toThrow();
-    if (support === "native-and-mcp") {
+    if (support === "mcp-with-native-off") {
+      for (const scope of [{ allow: [] }, { allow: ["mcp:docs:find"] }, { deny: ["native:*"] }]) expect(assertToolScopeSupported(engine, scope)).toEqual(scope);
+      expect(() => assertToolScopeSupported(engine, { allow: ["native:Read"] })).toThrow(/not supported/);
+      expect(() => assertToolScopeSupported(engine, { deny: ["native:Bash"] })).toThrow(/not supported/);
+    } else if (support === "native-and-mcp") {
       expect(assertToolScopeSupported(engine, { allow: [] })).toEqual({ allow: [] });
     } else {
       expect(() => assertToolScopeSupported(engine, { allow: [] })).toThrow(/not supported/);

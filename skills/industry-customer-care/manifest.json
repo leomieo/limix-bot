@@ -1,0 +1,9 @@
+{
+  "id": "industry-customer-care",
+  "name": "Customer Care Desk",
+  "version": "1.0.0",
+  "description": "Route support questions, look up public catalog records and prepare department-specific handoff drafts.",
+  "defaultEnabled": true,
+  "triggerTerms": ["chăm sóc khách hàng", "khiếu nại", "hoàn tiền", "bảo hành", "giá bán", "còn hàng", "đơn hàng", "mã SKU", "hồ sơ bàn giao", "bàn giao ca", "customer support", "customer service", "complaint", "refund", "order status", "in stock", "case handoff"],
+  "requiredCapabilities": []
+}

@@ -6,6 +6,7 @@ import { setLocale } from "./i18n";
 import en from "@/locales/en.json";
 import { MASCOT_BODY_IDS } from "../../shared/mascot-bodies";
 import type { NewBotDefaults } from "../../shared/new-bot-defaults";
+import { INDUSTRY_BOTS, industryBotSettings } from "../../shared/industry-templates";
 
 const defaults = (): NewBotDefaults => ({
   profile: {
@@ -50,6 +51,21 @@ describe("ready-made bots", () => {
 });
 
 describe("readyBotTemplate", () => {
+  it("resolves every industry template locally and excludes private defaults from each draft", () => {
+    const given = defaults();
+    Object.assign(given.profile, { approvalMode: "full", chiefOfStaff: true, managedSections: ["Payroll"], browser: true });
+    expect(INDUSTRY_BOTS).toHaveLength(31);
+    expect(new Set(INDUSTRY_BOTS.map(({ id }) => id)).size).toBe(31);
+    for (const bot of INDUSTRY_BOTS) {
+      expect(readyBot(bot.id)).toBe(bot);
+      const draft = readyBotTemplate(given, bot);
+      expect(draft.profile).toMatchObject({ ...industryBotSettings(), modelSelection: given.profile.modelSelection, soul: bot.soul });
+      expect(draft.profile).not.toHaveProperty("cwd");
+      expect(draft.profile).not.toHaveProperty("chiefOfStaff");
+      expect(draft.memory).not.toEqual(expect.objectContaining(given.memory));
+      expect(draft.routines).not.toContainEqual(given.routines[0]);
+    }
+  });
   const plant = readyBot("plant-care")!;
 
   it("sets who the bot is and how it looks", () => {

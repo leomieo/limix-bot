@@ -1,3 +1,17 @@
+Limix Bot 0.3.100
+
+## Tiếng Việt
+
+- Từ lời chào hoặc bảng Chi tiết của Trợ lý Limix, mở 30 mẫu bot phòng ban, 10 nhóm theo ngành hoặc mẫu Siêu bot CSKH. Xem trước rồi chọn **Dùng mẫu**. Các mẫu vẫn có sẵn khi thư viện trực tuyến mất kết nối.
+- Mỗi nhóm ngành có một bot tiếp nhận, ba bot chuyên môn và một phòng nội bộ để bàn giao yêu cầu đúng người phụ trách.
+- Siêu bot CSKH có thể phân loại yêu cầu, tra SKU trong danh mục công khai của doanh nghiệp và chuẩn bị hồ sơ bàn giao. Kết nối tài khoản nhắn tin và nạp danh mục của bạn khi thiết lập.
+
+## English
+
+- From the Limix assistant’s welcome message or Details panel, browse 30 departmental bot templates, 10 industry teams, or the customer support bot. Preview a template and select **Use template**. The templates remain available when the online library is offline.
+- Each industry team includes an intake bot, three specialists and an internal room for handing requests to the right person.
+- The customer support bot can triage requests, look up SKUs in your public catalog and prepare a handoff. Connect your messaging accounts and add your catalog during setup.
+
 Limix Bot 0.3.99
 
 ## Tiếng Việt

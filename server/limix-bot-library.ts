@@ -157,8 +157,8 @@ export function parseLibraryBot(value: unknown, expectedId: string): LibraryBot 
   return bot;
 }
 
-async function fetchJson(url: string, maxBytes: number): Promise<unknown> {
-  const response = await fetch(url, { headers: { accept: "application/json, text/plain;q=0.9" }, redirect: "error", signal: AbortSignal.timeout(10_000) });
+async function fetchJson(url: string, maxBytes: number, fetcher: typeof fetch = fetch): Promise<unknown> {
+  const response = await fetcher(url, { headers: { accept: "application/json, text/plain;q=0.9" }, redirect: "error", signal: AbortSignal.timeout(10_000) });
   if (!response.ok) throw new Error(lxs(`GitHub trả lỗi HTTP ${response.status}`, `GitHub returned HTTP ${response.status}`));
   const raw = await response.text();
   if (Buffer.byteLength(raw) > maxBytes) throw new Error(lxs("Tệp mẫu quá lớn", "The template file is too large"));
@@ -167,6 +167,19 @@ async function fetchJson(url: string, maxBytes: number): Promise<unknown> {
   } catch {
     throw new Error(lxs("GitHub không trả về JSON hợp lệ", "GitHub did not return valid JSON"));
   }
+}
+
+/** The checked catalog of single-bot templates; with `fetcher`, read now and not cached (a fixture's fake GitHub). */
+export async function fetchBotListing(fetcher?: typeof fetch): Promise<LibraryBotListing[]> {
+  if (!fetcher) return listing();
+  return parseBotListing(await fetchJson(`${BOT_LIBRARY_RAW_ROOT}/catalog.json`, MAX_CATALOG_BYTES, fetcher));
+}
+
+/** One template bot's checked file, only when the catalog lists its id. */
+export async function fetchLibraryBot(id: string, fetcher?: typeof fetch): Promise<LibraryBot> {
+  if (!ID.test(id)) throw new Error("That template id is invalid");
+  if (!(await fetchBotListing(fetcher)).some((bot) => bot.id === id)) throw Object.assign(new Error("No such template bot"), { status: 404 });
+  return parseLibraryBot(await fetchJson(`${BOT_LIBRARY_RAW_ROOT}/bots/${id}.json${fetcher ? "" : `?t=${Date.now()}`}`, MAX_BOT_BYTES, fetcher), id);
 }
 
 let cached: { at: number; bots: LibraryBotListing[] } | null = null;

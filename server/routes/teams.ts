@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isDeepStrictEqual } from "node:util";
 import { MAX_TEAM_BACKUP_BYTES } from "../../shared/team-backup.ts";
 import type { BotVisibility, WireBot, WireGroup } from "../../shared/wire.ts";
 import { validateBotCwd } from "../bot-cwd.ts";
@@ -31,6 +32,7 @@ import { readSectionContext } from "../section-context.ts";
 import { sectionKey, type BotRecord, type GroupRecord, type Store } from "../store.ts";
 import { createTeamBackup, importTeamBackup } from "../team-backup.ts";
 import { fetchGithubTeam, fetchLibraryTeam, fetchTeamCatalog } from "../team-library.ts";
+import { industryTeam } from "../industry-teams.ts";
 import { createTeamManifest, parseTeamManifest } from "../team-manifest.ts";
 import type { RequestAuth } from "../request-auth.ts";
 import { userErrorFields } from "../user-errors.ts";
@@ -335,6 +337,11 @@ export function createTeamRoutes(deps: TeamRouteDeps): RouteHandler {
         importVisibility = parsed.visibility;
       }
       const body = await readBody(req, MAX_TEAM_BACKUP_BYTES);
+      const builtInSlug = url.searchParams.get("builtInTeam");
+      const localTeam = builtInSlug === null ? undefined : industryTeam(builtInSlug);
+      if (builtInSlug !== null && (!localTeam || importMode !== "add" || !isDeepStrictEqual(body, localTeam))) {
+        return json(res, 409, { error: "The built-in team differs from this preview. Open its card again." });
+      }
       if (body?.format === "openmaus.backup") {
         if (importMode !== "add") return json(res, 400, { error: "Import backups alongside your existing bots; project mode is only for templates" });
         try {
@@ -353,7 +360,8 @@ export function createTeamRoutes(deps: TeamRouteDeps): RouteHandler {
       let packageDocument: PackageDocument | null = null;
       let manifest: ReturnType<typeof parseTeamManifest> | null = null;
       try {
-        if (isBotPackage(body)) packageDocument = parsePackageDocument(body, { trust: "file" });
+        if (localTeam) packageDocument = localTeam;
+        else if (isBotPackage(body)) packageDocument = parsePackageDocument(body, { trust: "file" });
         else manifest = parseTeamManifest(body);
       } catch (error) {
         return json(res, 400, { error: error instanceof Error ? error.message : "Invalid bot package" });
@@ -368,7 +376,7 @@ export function createTeamRoutes(deps: TeamRouteDeps): RouteHandler {
       let imported: PackageImportResult;
       try {
         const result = packageDocument
-          ? importPackageDocument(packageDocument, { ...options, trust: "file" }, deps)
+          ? importPackageDocument(packageDocument, { ...options, trust: "file", ...(localTeam ? { builtInIndustry: true } : {}) }, deps)
           : importTeamManifest(manifest!, options, deps);
         if (result.alreadyAdded) return json(res, 200, result);
         imported = result;

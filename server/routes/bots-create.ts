@@ -1,4 +1,6 @@
 import type { WireBot } from "../../shared/wire.ts";
+import { industryBotSettings, industryTemplate } from "../../shared/industry-templates.ts";
+import { enableIndustryCare } from "../industry-care.ts";
 import { freshLook } from "../bot-look.ts";
 import { validateBotCwd } from "../bot-cwd.ts";
 import { parseBotProfilePatch } from "../bot-profile.ts";
@@ -100,7 +102,18 @@ export function createBotCreateRoutes(deps: BotCreateRouteDeps): RouteHandler {
       if ("error" in kept) return json(res, kept.error.includes("already") ? 409 : 400, { error: kept.error });
       const { id: _id, threadId: _threadId, ...rest } = body;
       body = rest;
-      const template = resolveBotCreationDefaults(cfg.newBotDefaults, body);
+      const industry = typeof body.industryTemplate === "string" ? industryTemplate(body.industryTemplate) : undefined;
+      if (body.industryTemplate !== undefined && !industry) return json(res, 400, { error: "Unknown built-in industry template" });
+      if (industry && body.preset !== undefined) return json(res, 400, { error: "Choose one bot template" });
+      if (industry && auth.kind === "session" && !auth.scopes.includes("admin")) {
+        return json(res, 403, { error: "Installing an industry template requires the admin scope" });
+      }
+      const template = resolveBotCreationDefaults(cfg.newBotDefaults, industry ? {
+        ...body, useDefaults: false, settings: {
+          name: industry.name, title: industry.title, description: industry.description, soul: industry.soul,
+          ...industry.look, ...industryBotSettings(),
+        },
+      } : body);
       const settings = template.profile;
       if (auth.kind === "session" && !auth.scopes.includes("admin")) {
         const field = clientBotPatchViolation(settings);
@@ -242,6 +255,7 @@ export function createBotCreateRoutes(deps: BotCreateRouteDeps): RouteHandler {
           createdRoutines.push({ id: created.id, enabled: routine.enabled !== false });
           if (ownersRoutines) cloudRoutineAuthors?.wrote(created.id, ownersRoutines);
         }
+        if (industry) enableIndustryCare(bot.id);
       } catch (error) {
         for (const routine of createdRoutines) routines!.remove(routine.id);
         store.deleteBot(bot.id);
