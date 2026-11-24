@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -8,7 +9,7 @@ import { deleteAttachment } from "../attachments.ts";
 import { chunkText, createBotChannels } from "./engine.ts";
 import { telegramAdapter } from "./telegram.ts";
 
-const TOKEN = "123456789:AAH_fake_token_fake_token_fake_tok";
+const TOKEN = `123456789:${randomBytes(27).toString("base64url")}`;
 const cleanups: Array<() => void> = [];
 afterEach(() => { for (const stop of cleanups.splice(0)) stop(); });
 

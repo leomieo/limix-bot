@@ -93,6 +93,8 @@ for path, upstream in ((".github/FUNDING.yml", "github: milind-soni"), (".well-k
         metadata.unlink()
         changed.append(f"{path} (removed)")
 
+edit("server/container-computer.ts", lambda s: s.replace('password = "CHANGE_ME",', "password: string,"))
+
 wf = ROOT / ".github/workflows"
 if wf.exists():
     for f in wf.glob("*.yml"):

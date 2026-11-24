@@ -840,7 +840,7 @@ function appleWorkspaceMountIsSafe(
 
 export function containerRunArgs(
   runtime: Runtime,
-  password = "CHANGE_ME",
+  password: string,
   target: LocalVmTarget = SHARED_LOCAL_VM_TARGET,
   desktop: DesktopRunOptions = { platform: process.platform, resources: DEFAULT_DESKTOP_RESOURCES, hostUser: null },
 ): string[] {
