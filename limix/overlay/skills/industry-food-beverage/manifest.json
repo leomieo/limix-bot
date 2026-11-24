@@ -1,0 +1,18 @@
+{
+  "id": "industry-food-beverage",
+  "name": "Restaurants and cafés",
+  "version": "1.0.0",
+  "description": "Answer menu questions, book tables and resolve order issues.",
+  "defaultEnabled": true,
+  "triggerTerms": [
+    "Restaurants and cafés",
+    "Nhà hàng và đồ uống",
+    "Menu advisor",
+    "Table reservations",
+    "Restaurant support",
+    "Tư vấn thực đơn",
+    "Đặt bàn nhà hàng",
+    "Hậu mãi nhà hàng"
+  ],
+  "requiredCapabilities": []
+}

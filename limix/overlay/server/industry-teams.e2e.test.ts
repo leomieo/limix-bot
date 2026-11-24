@@ -48,6 +48,7 @@ it("installs a reviewed industry team with per-member tools and rolls back a fai
       expect(bot.chiefOfStaff).not.toBe(true);
       const store = await get(`/api/limix/skill-store/${bot.id}`);
       expect(store.skills).toContainEqual(expect.objectContaining({ name: "industry-customer-care", kind: "bundled", added: true }));
+      expect(store.skills.filter((item: { name: string; added: boolean }) => item.added && item.name.startsWith("industry-")).map((item: { name: string }) => item.name).sort()).toEqual(["industry-customer-care", slug]);
     }
     const room = added.groups[0];
     await post(`/api/groups/${room.id}/messages`, { threadId: room.threadId, text: "CARE-ROOM-IN: Khách cần tư vấn kích cỡ." });

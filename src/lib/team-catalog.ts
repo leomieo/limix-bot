@@ -1,6 +1,6 @@
 // The community templates catalog (/api/team-library/catalog). Its names and
 // summaries come in English; the built-in teams show in the app's language.
-import { industryTeamLabel } from "../../shared/industry-display";
+import { industryLabel, industryTeamLabel, industryWords, roleLabel } from "../../shared/industry-display";
 import { INDUSTRY_PROFILES } from "../../shared/industry-profiles";
 import { activeLocale, t } from "./i18n";
 import type { LocaleKey } from "@/locales";
@@ -50,4 +50,11 @@ export function catalogMatches(entry: TeamCatalogEntry, search: string): boolean
   return `${copy.name} ${copy.summary} ${entry.name} ${entry.summary} ${entry.category} ${entry.skills.join(" ")} ${entry.requires.apps.join(" ")}`
     .toLowerCase()
     .includes(search);
+}
+
+export function industrySkillLabel(id: string): string {
+  const locale = activeLocale();
+  if (id === "industry-customer-care") return industryWords(locale).intake;
+  const profile = INDUSTRY_PROFILES.find(p => `industry-${p.slug}` === id);
+  return profile ? `${industryLabel(profile, locale).name} · ${profile.roles.map(role => roleLabel(role, locale).name).join(", ")}` : id;
 }

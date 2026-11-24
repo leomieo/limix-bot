@@ -1,3 +1,4 @@
+import { INDUSTRY_PROFILES } from "../shared/industry-profiles.ts";
 // Limix Bot: skills are chosen per bot. A new bot starts with only Limix's core skills (learning new skills, reading
 // links with Agent Reach, operating Windows, the phone helpers) plus the skills it learns itself; everything else waits
 // in the store ("Kho Kĩ Năng (Skills)") until a person adds it to one bot. Settings → Kĩ Năng (Skills) only downloads and
@@ -43,7 +44,11 @@ const BUNDLED_TEXT: Record<string, [vi: string, en: string]> = {
   "windows-computer-automation": ["Điều khiển Windows an toàn: đọc màn hình, thao tác cửa sổ, nhập liệu, trình duyệt, ứng dụng, tệp và tiến trình qua Agent Desktop và Windows-MCP; chọn đúng công cụ, xác minh kết quả, chống lặp thao tác.", "Control Windows safely: read the screen, work windows, type, browse, and manage apps, files and processes through Agent Desktop and Windows-MCP; pick the right tool, check the result, never repeat an action blindly."],
 };
 
+const industrySkills = new Map(INDUSTRY_PROFILES.map(p => [`industry-${p.slug}`, p]));
+
 export function limixSkillText(id: string, fallback: string): string {
+  const industry = industrySkills.get(id);
+  if (industry) return lxs(industry.vi.description, industry.description);
   const text = BUNDLED_TEXT[id];
   return text ? lxs(text[0], text[1]) : fallback;
 }
@@ -91,7 +96,7 @@ export function limixSelectBundled(text: string, capabilities: Iterable<string>,
   const folded = foldVietnamese(text);
   const unaccented = usable.filter(({ manifest }) => manifest.defaultEnabled && manifest.triggerTerms.some((term) => folded.includes(foldVietnamese(term))));
   const called = usable.filter(({ manifest }) => slashCalled(text, manifest.id));
-  return mergeSkills(mergeSkills(selectBundledSkills(text, available, skills), unaccented), called);
+  return mergeSkills(mergeSkills(selectBundledSkills(text, available, skills), unaccented), [...called, ...usable.filter(skill => industrySkills.has(skill.manifest.id))]);
 }
 
 export interface BundledListing {

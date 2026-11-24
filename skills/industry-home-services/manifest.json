@@ -1,0 +1,18 @@
+{
+  "id": "industry-home-services",
+  "name": "Home services",
+  "version": "1.0.0",
+  "description": "Scope jobs, dispatch technicians and arrange follow-up visits.",
+  "defaultEnabled": true,
+  "triggerTerms": [
+    "Home services",
+    "Dịch vụ tại nhà",
+    "Home service intake",
+    "Field dispatcher",
+    "Home service warranty desk",
+    "Khảo sát nhu cầu tại nhà",
+    "Điều phối kỹ thuật",
+    "Bảo hành dịch vụ tại nhà"
+  ],
+  "requiredCapabilities": []
+}

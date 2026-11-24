@@ -6,6 +6,11 @@ import { templateMascot } from "./template-mascot.ts";
 export const INDUSTRY_CARE_SKILL = "industry-customer-care";
 export const INDUSTRY_CARE_SERVER = "industry-care";
 
+export function industrySkillsForTemplate(id: string): string[] {
+  const profile = INDUSTRY_PROFILES.find(p => id === `industry-${p.slug}` || p.roles.some(r => id === `industry-${p.slug}-${r.slug}`));
+  return profile ? [INDUSTRY_CARE_SKILL, `industry-${profile.slug}`] : id === INDUSTRY_CARE_SKILL ? [INDUSTRY_CARE_SKILL] : [];
+}
+
 export function industryBotSettings() {
   return {
     approvalMode: "ask" as const, alwaysAllow: [], computer: "off" as const,

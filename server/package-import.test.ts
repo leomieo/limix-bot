@@ -72,6 +72,7 @@ describe("importing a whole team", () => {
     const failing = { ...app.deps, sections: { writeBrief: (section: string) => {
       for (const bot of app.store.bots.filter(bot => bot.section === section)) {
         expect(bundledPicks(bot.id).has("industry-customer-care")).toBe(true);
+        expect(bundledPicks(bot.id).has("industry-education")).toBe(true);
         provisioned.push(bot.id);
       }
       throw new Error("fixture refuses team brief");

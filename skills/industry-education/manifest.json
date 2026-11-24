@@ -1,0 +1,18 @@
+{
+  "id": "industry-education",
+  "name": "Education and training",
+  "version": "1.0.0",
+  "description": "Advise applicants, coordinate classes and explain tuition.",
+  "defaultEnabled": true,
+  "triggerTerms": [
+    "Education and training",
+    "Giáo dục và đào tạo",
+    "Admissions advisor",
+    "Class coordinator",
+    "Tuition advisor",
+    "Tư vấn tuyển sinh",
+    "Giáo vụ lớp học",
+    "Học vụ tài chính"
+  ],
+  "requiredCapabilities": []
+}

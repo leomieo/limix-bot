@@ -1,0 +1,46 @@
+{
+  "server/package-import.test.ts": [
+    {
+      "before": "      for (const bot of app.store.bots.filter(bot => bot.section === section)) {\n        expect(bundledPicks(bot.id).has(\"industry-customer-care\")).toBe(true);\n        provisioned.push(bot.id);\n      }\n",
+      "after": "      for (const bot of app.store.bots.filter(bot => bot.section === section)) {\n        expect(bundledPicks(bot.id).has(\"industry-customer-care\")).toBe(true);\n        expect(bundledPicks(bot.id).has(\"industry-education\")).toBe(true);\n        provisioned.push(bot.id);\n      }\n"
+    }
+  ],
+  "server/package-import.ts": [
+    {
+      "before": "        ...avatar,\n      });\n      if (options.builtInIndustry) enableIndustryCare(created.id);\n      for (const skillName of agent?.skills ?? []) {\n        const skill = skillByName.get(skillName);\n",
+      "after": "        ...avatar,\n      });\n      if (options.builtInIndustry) enableIndustryCare(created.id, pkg!.id);\n      for (const skillName of agent?.skills ?? []) {\n        const skill = skillByName.get(skillName);\n"
+    }
+  ],
+  "server/routes/bots-create.ts": [
+    {
+      "before": "          if (ownersRoutines) cloudRoutineAuthors?.wrote(created.id, ownersRoutines);\n        }\n        if (industry) enableIndustryCare(bot.id);\n      } catch (error) {\n        for (const routine of createdRoutines) routines!.remove(routine.id);\n",
+      "after": "          if (ownersRoutines) cloudRoutineAuthors?.wrote(created.id, ownersRoutines);\n        }\n        if (industry) enableIndustryCare(bot.id, industry.id);\n      } catch (error) {\n        for (const routine of createdRoutines) routines!.remove(routine.id);\n"
+    }
+  ],
+  "server/team-library.test.ts": [
+    {
+      "before": "      const slug = `industry-${profile.slug}`;\n      const entry = bundled.teams.find((item) => item.slug === slug);\n      expect(entry).toMatchObject({ members: 4, builtIn: true, skills: [\"industry-customer-care\"] });\n      const doc = await fetchLibraryTeam(slug, offline);\n      if (doc.format !== \"openmaus.package\" || doc.version !== 2) throw new Error(\"Expected a v2 industry package\");\n",
+      "after": "      const slug = `industry-${profile.slug}`;\n      const entry = bundled.teams.find((item) => item.slug === slug);\n      expect(entry).toMatchObject({ members: 4, builtIn: true, skills: [\"industry-customer-care\", slug] });\n      const doc = await fetchLibraryTeam(slug, offline);\n      if (doc.format !== \"openmaus.package\" || doc.version !== 2) throw new Error(\"Expected a v2 industry package\");\n"
+    }
+  ],
+  "src/components/TemplateDetails.tsx": [
+    {
+      "before": "// person can compare two before pressing \"Dùng mẫu\". Nothing is created here.\nimport { useEffect, useRef, useState, type ReactNode } from \"react\";\nimport { catalogCopy, type TeamCatalogEntry } from \"@/lib/team-catalog\";\nimport { teamImportPreview, type PendingTeamImport } from \"@/lib/team-import\";\nimport { t } from \"@/lib/i18n\";\n",
+      "after": "// person can compare two before pressing \"Dùng mẫu\". Nothing is created here.\nimport { useEffect, useRef, useState, type ReactNode } from \"react\";\nimport { catalogCopy, industrySkillLabel, type TeamCatalogEntry } from \"@/lib/team-catalog\";\nimport { teamImportPreview, type PendingTeamImport } from \"@/lib/team-import\";\nimport { t } from \"@/lib/i18n\";\n"
+    },
+    {
+      "before": "      { label: lx(\"Tổng quan\", \"At a glance\"), body: facts },\n      { label: lx(\"Thành viên\", \"Members\"), body: (team?.members ?? []).map((member) => (member.title ? `${member.name} — ${member.title}` : member.name)) },\n      { label: lx(\"Kỹ năng đi kèm\", \"Skills included\"), body: team?.skills?.length ? team.skills : entry.skills },\n      { label: lx(\"Ứng dụng cần kết nối\", \"Apps needed\"), body: team?.apps.length ? team.apps.map((app) => (app.optional ? lx(`${app.label} (không bắt buộc)`, `${app.label} (optional)`) : app.label)) : entry.requires.apps },\n      { label: lx(\"Lưu ý\", \"Notes\"), body: team?.warnings ?? [] },\n",
+      "after": "      { label: lx(\"Tổng quan\", \"At a glance\"), body: facts },\n      { label: lx(\"Thành viên\", \"Members\"), body: (team?.members ?? []).map((member) => (member.title ? `${member.name} — ${member.title}` : member.name)) },\n      { label: lx(\"Kỹ năng đi kèm\", \"Skills included\"), body: entry.builtIn ? entry.skills.map(industrySkillLabel) : team?.skills?.length ? team.skills : entry.skills },\n      { label: lx(\"Ứng dụng cần kết nối\", \"Apps needed\"), body: team?.apps.length ? team.apps.map((app) => (app.optional ? lx(`${app.label} (không bắt buộc)`, `${app.label} (optional)`) : app.label)) : entry.requires.apps },\n      { label: lx(\"Lưu ý\", \"Notes\"), body: team?.warnings ?? [] },\n"
+    }
+  ],
+  "src/lib/team-catalog.ts": [
+    {
+      "before": "// The community templates catalog (/api/team-library/catalog). Its names and\n// summaries come in English; the built-in teams show in the app's language.\nimport { industryTeamLabel } from \"../../shared/industry-display\";\nimport { INDUSTRY_PROFILES } from \"../../shared/industry-profiles\";\nimport { activeLocale, t } from \"./i18n\";\n",
+      "after": "// The community templates catalog (/api/team-library/catalog). Its names and\n// summaries come in English; the built-in teams show in the app's language.\nimport { industryLabel, industryTeamLabel, industryWords, roleLabel } from \"../../shared/industry-display\";\nimport { INDUSTRY_PROFILES } from \"../../shared/industry-profiles\";\nimport { activeLocale, t } from \"./i18n\";\n"
+    },
+    {
+      "before": "    .includes(search);\n}\n",
+      "after": "    .includes(search);\n}\n\nexport function industrySkillLabel(id: string): string {\n  const locale = activeLocale();\n  if (id === \"industry-customer-care\") return industryWords(locale).intake;\n  const profile = INDUSTRY_PROFILES.find(p => `industry-${p.slug}` === id);\n  return profile ? `${industryLabel(profile, locale).name} · ${profile.roles.map(role => roleLabel(role, locale).name).join(\", \")}` : id;\n}\n"
+    }
+  ]
+}

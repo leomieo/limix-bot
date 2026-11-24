@@ -1,0 +1,18 @@
+{
+  "id": "industry-retail-ecommerce",
+  "name": "Retail and e-commerce",
+  "version": "1.0.0",
+  "description": "Help customers choose products, track orders and arrange returns.",
+  "defaultEnabled": true,
+  "triggerTerms": [
+    "Retail and e-commerce",
+    "Bán lẻ và thương mại điện tử",
+    "Product advisor",
+    "Order coordinator",
+    "Returns advisor",
+    "Tư vấn sản phẩm",
+    "Điều phối đơn hàng",
+    "Chăm sóc đổi trả"
+  ],
+  "requiredCapabilities": []
+}

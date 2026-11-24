@@ -1,0 +1,10 @@
+{
+  "format": "hybrid-en-core-vi-layer/v1",
+  "core_locale": "en",
+  "user_locale": "vi",
+  "core_entrypoint": "SKILL.md",
+  "vietnamese_layer": "references/vi.md",
+  "core_authoritative": true,
+  "load_mode": "progressive",
+  "external_skill_policy": "reviewed_only"
+}

@@ -66,7 +66,7 @@ describe("team library", () => {
     for (const profile of INDUSTRY_PROFILES) {
       const slug = `industry-${profile.slug}`;
       const entry = bundled.teams.find((item) => item.slug === slug);
-      expect(entry).toMatchObject({ members: 4, builtIn: true, skills: ["industry-customer-care"] });
+      expect(entry).toMatchObject({ members: 4, builtIn: true, skills: ["industry-customer-care", slug] });
       const doc = await fetchLibraryTeam(slug, offline);
       if (doc.format !== "openmaus.package" || doc.version !== 2) throw new Error("Expected a v2 industry package");
       const pkg = doc.package;

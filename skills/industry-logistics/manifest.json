@@ -1,0 +1,18 @@
+{
+  "id": "industry-logistics",
+  "name": "Shipping and logistics",
+  "version": "1.0.0",
+  "description": "Quote freight, track shipments and reconcile claims.",
+  "defaultEnabled": true,
+  "triggerTerms": [
+    "Shipping and logistics",
+    "Vận tải và giao nhận",
+    "Freight quote advisor",
+    "Shipment coordinator",
+    "Shipping claims desk",
+    "Báo cước vận chuyển",
+    "Điều vận bưu gửi",
+    "Đối soát giao nhận"
+  ],
+  "requiredCapabilities": []
+}

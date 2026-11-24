@@ -345,7 +345,7 @@ function runImport(source: ImportSource, options: PackageImportOptions, deps: Pa
         ...(agent?.connections ? { mcpServers: agent.connections.flatMap((key) => serverForKey.has(key) ? [serverForKey.get(key)!] : []) } : {}),
         ...avatar,
       });
-      if (options.builtInIndustry) enableIndustryCare(created.id);
+      if (options.builtInIndustry) enableIndustryCare(created.id, pkg!.id);
       for (const skillName of agent?.skills ?? []) {
         const skill = skillByName.get(skillName);
         if (!skill) throw new Error(`Package skill "${skillName}" is unavailable`);

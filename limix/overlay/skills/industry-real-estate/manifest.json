@@ -1,0 +1,18 @@
+{
+  "id": "industry-real-estate",
+  "name": "Real estate",
+  "version": "1.0.0",
+  "description": "Match listings, schedule viewings and track transaction documents.",
+  "defaultEnabled": true,
+  "triggerTerms": [
+    "Real estate",
+    "Bất động sản",
+    "Property advisor",
+    "Viewing coordinator",
+    "Property transaction desk",
+    "Tư vấn bất động sản",
+    "Điều phối lịch xem",
+    "Điều phối hồ sơ nhà đất"
+  ],
+  "requiredCapabilities": []
+}

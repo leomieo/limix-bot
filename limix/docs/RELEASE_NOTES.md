@@ -1,3 +1,15 @@
+Limix Bot 0.3.102
+
+## Tiếng Việt
+
+- Xem kỹ năng đi kèm trước khi dùng mẫu. Mỗi nhóm trong 10 ngành có kỹ năng nghiệp vụ riêng cùng kỹ năng chăm sóc khách hàng.
+- Các bot phòng ban tạo riêng cũng được trang bị kỹ năng đúng ngành.
+
+## English
+
+- Preview the included skills. Each of the ten industry teams now includes its own operational guide alongside customer care.
+- Department bots created individually also receive their industry skill.
+
 Limix Bot 0.3.101
 
 ## Tiếng Việt

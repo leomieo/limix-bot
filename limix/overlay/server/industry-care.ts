@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { INDUSTRY_CARE_SERVER, INDUSTRY_CARE_SKILL } from "../shared/industry-templates.ts";
+import { industrySkillsForTemplate, INDUSTRY_CARE_SERVER, INDUSTRY_CARE_SKILL } from "../shared/industry-templates.ts";
 import { allowsTool, canUseMcpServer, type ToolScope } from "../shared/tool-scope.ts";
 import { DATA_DIR } from "./config.ts";
 import type { McpServerSpec } from "./contracts.ts";
@@ -20,8 +20,9 @@ function careLocation(botId: string) {
   };
 }
 
-export function enableIndustryCare(botId: string): void {
-  if (!existsSync(careLocation(botId).entry) || limixBundledSwitch(botId, INDUSTRY_CARE_SKILL, true)?.status !== 200) {
+export function enableIndustryCare(botId: string, templateId = INDUSTRY_CARE_SKILL): void {
+  const skills = industrySkillsForTemplate(templateId);
+  if (!existsSync(careLocation(botId).entry) || !skills.length || skills.some(id => limixBundledSwitch(botId, id, true)?.status !== 200)) {
     throw new Error("Thiếu bộ công cụ CSKH trong bản cài Limix Bot.");
   }
 }

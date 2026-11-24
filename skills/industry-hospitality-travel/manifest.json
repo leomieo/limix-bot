@@ -1,0 +1,18 @@
+{
+  "id": "industry-hospitality-travel",
+  "name": "Hospitality and travel",
+  "version": "1.0.0",
+  "description": "Compare rooms and tours, manage bookings and assist guests.",
+  "defaultEnabled": true,
+  "triggerTerms": [
+    "Hospitality and travel",
+    "Lưu trú và du lịch",
+    "Travel advisor",
+    "Travel reservations",
+    "Guest support",
+    "Tư vấn hành trình",
+    "Đặt chỗ du lịch",
+    "Hỗ trợ khách lưu trú"
+  ],
+  "requiredCapabilities": []
+}

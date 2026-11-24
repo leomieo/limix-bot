@@ -1,0 +1,18 @@
+{
+  "id": "industry-wholesale-distribution",
+  "name": "Wholesale and distribution",
+  "version": "1.0.0",
+  "description": "Quote dealer prices, coordinate bulk orders and reconcile accounts.",
+  "defaultEnabled": true,
+  "triggerTerms": [
+    "Wholesale and distribution",
+    "Bán buôn và phân phối",
+    "Dealer sales advisor",
+    "Wholesale fulfillment",
+    "Dealer accounts",
+    "Kinh doanh đại lý",
+    "Vận hành đơn sỉ",
+    "Đối soát đại lý"
+  ],
+  "requiredCapabilities": []
+}

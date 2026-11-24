@@ -6,9 +6,10 @@ import { stoppedAtBotLimit } from "@/lib/bot-limit";
 import { MausAvatar } from "./Avatar";
 import { NewBotDialog } from "./lazy-screens";
 import { READY_BOT_CATEGORIES, READY_BOTS, readyBot, readyBotCopy, type ReadyBot, type ReadyBotCategory } from "@/lib/ready-bots";
-import { INDUSTRY_BOTS, INDUSTRY_CARE_SKILL, industryTemplate } from "../../shared/industry-templates";
+import { INDUSTRY_BOTS, INDUSTRY_CARE_SKILL, industrySkillsForTemplate, industryTemplate } from "../../shared/industry-templates";
 import { INDUSTRY_PROFILES } from "../../shared/industry-profiles";
 import { cn } from "@/lib/cn";
+import { industrySkillLabel } from "@/lib/team-catalog";
 import { industryLabel } from "../../shared/industry-display";
 import { activeLocale, t } from "@/lib/i18n";
 import type { LocaleKey } from "@/locales";
@@ -220,7 +221,7 @@ export function LimixBotGallery({ search, onDialog, onAdded, revision = 0, sugge
         { label: lx("Bot này làm gì", "What it does"), body: details.bot?.description ?? details.card.description },
         { label: lx("Cách bot làm việc", "How it works"), body: details.bot?.soul ?? "" },
         { label: lx("Bạn có thể hỏi", "Things to ask"), body: details.bot?.tryAsking ?? [details.card.try] },
-        { label: lx("Kỹ năng đi kèm", "Skills included"), body: industryTemplate(details.card.id) ? [INDUSTRY_CARE_SKILL] : details.bot?.skills ?? [] },
+        { label: lx("Kỹ năng đi kèm", "Skills included"), body: industryTemplate(details.card.id) ? industrySkillsForTemplate(details.card.id).map(industrySkillLabel) : details.bot?.skills ?? [] },
         { label: lx("Kênh chăm sóc khách hàng", "Customer service channels"), body: industryTemplate(details.card.id)
           ? lx("Sau khi tạo bot, mở Cài đặt của bot để kết nối Zalo, Facebook Page, Messenger hoặc Telegram.", "After creating the bot, open its settings to connect Zalo, a Facebook Page, Messenger or Telegram.") : "" },
         { label: lx("Ứng dụng nên kết nối", "Apps it works with"), body: (details.bot?.apps ?? details.card.apps).map((app) => APP_LABELS[app] ?? app) },

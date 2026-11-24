@@ -13,7 +13,7 @@ import { ArrowLeft, Check, Compass, ExternalLink, FolderOpen, Github, Loader2, R
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { TeamTemplateDetails } from "./TemplateDetails";
-import { catalogCopy, catalogMatches, type TeamCatalog, type TeamCatalogEntry } from "@/lib/team-catalog";
+import { catalogCopy, catalogMatches, industrySkillLabel, type TeamCatalog, type TeamCatalogEntry } from "@/lib/team-catalog";
 
 import { TEAM_GLYPHS, TeamImportDetails } from "./TeamImportDetails";
 import { LimixBotGallery, refreshTemplateBots } from "./LimixBotGallery";
@@ -553,7 +553,7 @@ export function TeamLibraryPanel({
           <>
             <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-6 sm:px-8">
               <TeamImportDetails pending={pending} importedNames={importedNames} org={pendingOrg !== null} />
-              {pending.builtInTeam && <p className="mt-3 text-[13px] text-ink-secondary">{lx("Mỗi thành viên có kỹ năng CSKH, công cụ phân loại yêu cầu và tra danh mục công khai riêng. Kết nối kênh và nạp dữ liệu của doanh nghiệp sau khi tạo.", "Each member gets the customer-care skill, ticket triage and its own public catalog lookup. Set up your business data and channels after creation.")}</p>}
+              {pending.builtInTeam && <p className="mt-3 text-[13px] text-ink-secondary">{catalog?.teams.find(team => team.slug === pending.builtInTeam)?.skills.map(industrySkillLabel).join(" · ")}<br />{lx("Mỗi thành viên có kỹ năng CSKH, công cụ phân loại yêu cầu và tra danh mục công khai riêng. Kết nối kênh và nạp dữ liệu của doanh nghiệp sau khi tạo.", "Each member gets the customer-care skill, ticket triage and its own public catalog lookup. Set up your business data and channels after creation.")}</p>}
               {error && <div role="alert" className="mt-4 rounded-lg bg-danger/10 px-3 py-2 text-[13px] text-danger">{error}</div>}
             </div>
 
@@ -753,7 +753,7 @@ export function TeamLibraryPanel({
                             <h3 className="[overflow-wrap:anywhere] text-[14px] font-medium text-ink">{copy.name}</h3>
                             <p className="mt-0.5 [overflow-wrap:anywhere] text-[13px] text-ink-secondary">{copy.outcome ?? copy.summary}</p>
                             <p className="mt-1 [overflow-wrap:anywhere] text-[12px] text-ink-tertiary">
-                              {t("templates.botCount", { count: entry.members })} · {t("templates.playbookCount", { count: entry.skills.length })}
+                              {t("templates.botCount", { count: entry.members })} · {t("templates.playbookCount", { count: entry.builtIn ? 1 : entry.skills.length })}
                               {entry.requires.apps.length > 0 && ` · ${entry.requires.apps.join(", ")}`}
                               {entry.setupMinutes && ` · ${t("templates.minutes", { count: entry.setupMinutes })}`}
                             </p>

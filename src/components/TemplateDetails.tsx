@@ -2,7 +2,7 @@ import { activeLocale } from "@/lib/i18n";
 // "Xem thêm" on a bot template or a team template: everything the template brings, laid out the same way for each, so a
 // person can compare two before pressing "Dùng mẫu". Nothing is created here.
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { catalogCopy, type TeamCatalogEntry } from "@/lib/team-catalog";
+import { catalogCopy, industrySkillLabel, type TeamCatalogEntry } from "@/lib/team-catalog";
 import { teamImportPreview, type PendingTeamImport } from "@/lib/team-import";
 import { t } from "@/lib/i18n";
 import { api } from "@/state/store";
@@ -91,7 +91,7 @@ export function TeamTemplateDetails({ entry, onUse, onClose }: { entry: TeamCata
       { label: lx("Nhóm này làm gì", "What the team does"), body: [copy.summary, copy.outcome].filter(Boolean).join("\n\n") },
       { label: lx("Tổng quan", "At a glance"), body: facts },
       { label: lx("Thành viên", "Members"), body: (team?.members ?? []).map((member) => (member.title ? `${member.name} — ${member.title}` : member.name)) },
-      { label: lx("Kỹ năng đi kèm", "Skills included"), body: team?.skills?.length ? team.skills : entry.skills },
+      { label: lx("Kỹ năng đi kèm", "Skills included"), body: entry.builtIn ? entry.skills.map(industrySkillLabel) : team?.skills?.length ? team.skills : entry.skills },
       { label: lx("Ứng dụng cần kết nối", "Apps needed"), body: team?.apps.length ? team.apps.map((app) => (app.optional ? lx(`${app.label} (không bắt buộc)`, `${app.label} (optional)`) : app.label)) : entry.requires.apps },
       { label: lx("Lưu ý", "Notes"), body: team?.warnings ?? [] },
     ]}

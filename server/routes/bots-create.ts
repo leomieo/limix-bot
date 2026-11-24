@@ -255,7 +255,7 @@ export function createBotCreateRoutes(deps: BotCreateRouteDeps): RouteHandler {
           createdRoutines.push({ id: created.id, enabled: routine.enabled !== false });
           if (ownersRoutines) cloudRoutineAuthors?.wrote(created.id, ownersRoutines);
         }
-        if (industry) enableIndustryCare(bot.id);
+        if (industry) enableIndustryCare(bot.id, industry.id);
       } catch (error) {
         for (const routine of createdRoutines) routines!.remove(routine.id);
         store.deleteBot(bot.id);

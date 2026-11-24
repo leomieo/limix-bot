@@ -1,6 +1,6 @@
 import { industryTeamLabel, industryWords } from "../shared/industry-display.ts";
 import { INDUSTRY_PROFILES, type IndustryProfile } from "../shared/industry-profiles.ts";
-import { industryRoleBot, industryTemplate, INDUSTRY_CARE_SKILL } from "../shared/industry-templates.ts";
+import { industryRoleBot, industrySkillsForTemplate, industryTemplate, INDUSTRY_CARE_SKILL } from "../shared/industry-templates.ts";
 import type { ReadyBot } from "../shared/ready-bots.ts";
 import { parsePackageDocument, type PackageDocument } from "../shared/package-format.ts";
 import type { TeamCatalogEntry } from "./team-library.ts";
@@ -9,7 +9,7 @@ const teamSlug = (profile: IndustryProfile) => `industry-${profile.slug}`;
 
 
 export const industryTeamCatalog: TeamCatalogEntry[] = INDUSTRY_PROFILES.map((profile) => ({
-  slug: teamSlug(profile), ...industryTeamLabel(profile), members: profile.roles.length + 1, skills: ["industry-customer-care"],
+  slug: teamSlug(profile), ...industryTeamLabel(profile), members: profile.roles.length + 1, skills: industrySkillsForTemplate(teamSlug(profile)),
   requires: { apps: [] }, manifest: `/api/team-library/teams/${teamSlug(profile)}`, builtIn: true,
 }));
 
@@ -36,7 +36,7 @@ export function industryTeam(slug: string, locale = "en"): PackageDocument | und
   return parsePackageDocument({
     format: "openmaus.package", version: 2,
     package: {
-      id: slug, release: "1.0.0", name: label.name, tagline: label.summary, summary: label.summary,
+      id: slug, release: "1.1.0", name: label.name, tagline: label.summary, summary: label.summary,
       category: label.category, author: { name: "Limix Bot" }, license: "Apache-2.0",
       outcomes: [words.supportDescription], setupMinutes: 5,
       requirements: { apps: [], capabilities: [] },

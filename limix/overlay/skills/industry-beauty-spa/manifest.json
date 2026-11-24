@@ -1,0 +1,18 @@
+{
+  "id": "industry-beauty-spa",
+  "name": "Beauty and spa",
+  "version": "1.0.0",
+  "description": "Compare treatments, book appointments and follow up after a visit.",
+  "defaultEnabled": true,
+  "triggerTerms": [
+    "Beauty and spa",
+    "Làm đẹp và spa",
+    "Spa service advisor",
+    "Spa scheduler",
+    "Spa aftercare",
+    "Tư vấn dịch vụ spa",
+    "Điều phối lịch spa",
+    "Chăm sóc sau dịch vụ"
+  ],
+  "requiredCapabilities": []
+}

@@ -1,0 +1,18 @@
+{
+  "id": "industry-auto-repair",
+  "name": "Auto repair",
+  "version": "1.0.0",
+  "description": "Book inspections, estimate repairs and handle warranty requests.",
+  "defaultEnabled": true,
+  "triggerTerms": [
+    "Auto repair",
+    "Dịch vụ và sửa chữa ô tô",
+    "Vehicle service intake",
+    "Parts estimator",
+    "Workshop warranty advisor",
+    "Tiếp nhận xe",
+    "Dự toán phụ tùng",
+    "Bảo hành xưởng xe"
+  ],
+  "requiredCapabilities": []
+}
