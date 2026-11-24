@@ -67,11 +67,11 @@ Không cần mở cổng trên modem, không cần IP tĩnh. Tên miền phải 
 
 1. Trên Cloudflare: **Zero Trust → Networks → Tunnels → Create a tunnel → Cloudflared**, đặt tên (ví dụ `limix-server`).
    Cloudflare hiện một lệnh cài có đoạn `--token eyJ...`: chép riêng phần mã sau `--token` (giữ bí mật).
-2. Ở bước **Public hostname**: Subdomain `bot`, Domain `limixmedia.com`, Service **HTTP**, URL `caddy:80`. Lưu.
+2. Ở bước **Public hostname**: Subdomain `bot`, Domain là tên miền của bạn (ví dụ `example.com`), Service **HTTP**, URL `caddy:80`. Lưu.
 3. Trên máy chủ (Ubuntu 22.04/24.04), chạy (thay MÃ bằng mã vừa chép):
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/leomieo/limix-bot/main/deploy/install.sh | sudo sh -s -- --domain bot.limixmedia.com --tunnel MÃ --install-docker
+curl -fsSL https://raw.githubusercontent.com/leomieo/limix-bot/main/deploy/install.sh | sudo sh -s -- --domain bot.example.com --tunnel MÃ --install-docker
 ```
 
 Trình cài bỏ qua bước kiểm tra cổng 80/443 và bản ghi DNS, chạy thêm `cloudflared` cạnh Limix Bot. Mã được giữ trong
