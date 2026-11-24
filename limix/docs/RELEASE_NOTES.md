@@ -4,9 +4,13 @@ Limix Bot 0.3.114
 
 - Khi bot dùng Gemini qua Antigravity, yêu cầu tạo ảnh từ kênh chat được chuyển đến model đã chọn. Kênh chat nhận tệp ảnh khi Antigravity trả dữ liệu ảnh, kể cả khi bot gửi thêm lời nhắn sau ảnh.
 
+- Zalo hỗ trợ nhận và gửi ảnh, video MP4 và tệp thông thường. Giới hạn của Limix Bot là 10 MB cho ảnh và 32 MB cho video hoặc tệp.
+
 ## English
 
 - Bots using Gemini through Antigravity send image requests from chat channels to the selected model. When Antigravity returns image data, the channel can deliver the attachment even if a text message follows it.
+
+- Zalo supports sending and receiving images, MP4 videos, and regular files. Limix Bot allows up to 10 MB for images and 32 MB for videos and files.
 
 Limix Bot 0.3.113
 

@@ -3,7 +3,7 @@ import type { ChannelMessage } from "./engine.ts";
 import { afterEach, expect, it, vi } from "vitest";
 import { fetchPublicPage } from "../wait-probes.ts";
 import { deleteAttachment } from "../attachments.ts";
-import { receiveZaloMedia, zaloUpload } from "./zalo-media.ts";
+import { receiveZaloFile, receiveZaloMedia, zaloUpload } from "./zalo-media.ts";
 
 vi.mock("../wait-probes.ts", () => ({ fetchPublicPage: vi.fn() }));
 const url = new URL("https://photo-a.zadn.zdn.vn/fixture");
@@ -21,6 +21,18 @@ it.each([
   expect(attachment.mime).toBe(mime);
   expect(await zaloUpload(attachment)).toMatchObject({ data: bytes, metadata: { totalSize: bytes.length } });
 });
+it("round trips a regular file larger than the image limit with its original name", async () => {
+  const bytes = Buffer.alloc(11 * 1024 * 1024, 0x61);
+  vi.mocked(fetchPublicPage).mockResolvedValue({ ok: true, url, headers: {}, body: bytes });
+  const attachment = await receiveZaloFile(url.href, "report.bin");
+  paths.push(attachment.path);
+  expect(attachment).toMatchObject({ kind: "file", name: "report.bin" });
+  const upload = await zaloUpload(attachment);
+  expect(upload.filename).toBe("report.bin");
+  expect(upload.metadata.totalSize).toBe(bytes.length);
+  expect(upload.data.equals(bytes)).toBe(true);
+});
+
 it("refuses other origins and invalid media", async () => {
   await expect(receiveZaloMedia("http://127.0.0.1/file", true)).rejects.toThrow();
   expect(fetchPublicPage).not.toHaveBeenCalled();

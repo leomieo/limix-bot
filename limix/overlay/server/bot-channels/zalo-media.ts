@@ -4,15 +4,15 @@ import { IMAGE_MAX_BYTES, saveFile, saveImage } from "../attachments.ts";
 import { fetchPublicPage } from "../wait-probes.ts";
 import { fetchChannelMedia, readChannelMedia, type ChannelMedia } from "./channel-media.ts";
 
-const VIDEO_LIMIT = 32 * 1024 * 1024;
+const ZALO_FILE_LIMIT = 32 * 1024 * 1024;
 const ZALO_CDN = ["zaloapp.com", "zalo.me", "zdn.vn", "zadn.vn", "zalo.vn"];
 
 export function receiveZaloFile(url: string, name: string) {
-  return fetchChannelMedia(url, ZALO_CDN, name);
+  return fetchChannelMedia(url, ZALO_CDN, name, ZALO_FILE_LIMIT);
 }
 
 export async function receiveZaloMedia(url: string, photo: boolean): Promise<ChannelMedia> {
-  const limit = photo ? IMAGE_MAX_BYTES : VIDEO_LIMIT;
+  const limit = photo ? IMAGE_MAX_BYTES : ZALO_FILE_LIMIT;
   const target = new URL(url);
   if (target.protocol !== "https:" || !/(^|\.)(zaloapp\.com|zalo\.me|zdn\.vn|zadn\.vn|zalo\.vn)$/.test(target.hostname)) throw Error("Unsupported Zalo media address");
   const page = await fetchPublicPage(url, { maxBytes: limit + 1, timeoutMs: 30000, maxRedirects: 0 });
@@ -29,7 +29,7 @@ export async function receiveZaloMedia(url: string, photo: boolean): Promise<Cha
 }
 
 export async function zaloUpload(file: ChannelMedia) {
-  const { data, filename } = await readChannelMedia(file, file.mime === "video/mp4" ? VIDEO_LIMIT : IMAGE_MAX_BYTES);
+  const { data, filename } = await readChannelMedia(file, file.kind === "image" ? IMAGE_MAX_BYTES : ZALO_FILE_LIMIT);
   const dimensions = file.kind === "image" ? imageDimensions(data, file.mime) : undefined;
   if (file.kind === "image" && !dimensions) throw Error("Unsupported image");
   return { data, filename, metadata: { ...dimensions, totalSize: data.length } };
