@@ -100,7 +100,7 @@ describe("service units", () => {
     expect(shippedSentinelCli("darwin", "/Users/maus", (path) => present.has(path))).toEqual({ node: `${app}/MacOS/Limix Bot`, script: `${app}/Resources/server/limixbot.js` });
     const user = "/Users/maus/Applications/Limix Bot.app/Contents";
     expect(shippedSentinelCli("darwin", "/Users/maus", (path) => path.startsWith(user))?.script).toBe(`${user}/Resources/server/limixbot.js`);
-    expect(shippedSentinelCli("linux", "/home/maus", (path) => path.startsWith("/opt/OpenMausBot/"))).toEqual({ node: "/opt/OpenMausBot/openmausbot", script: "/opt/OpenMausBot/resources/server/limixbot.js" });
+    expect(shippedSentinelCli("linux", "/home/maus", (path) => path.startsWith("/opt/Limix Bot/"))).toEqual({ node: "/opt/Limix Bot/limixbot", script: "/opt/Limix Bot/resources/server/limixbot.js" });
     // an app with its script missing, or one released before Sentinel, is no CLI for it
     expect(shippedSentinelCli("darwin", "/Users/maus", (path) => path.endsWith("MacOS/Limix Bot"))).toBeNull();
     expect(shippedSentinelCli("darwin", "/Users/maus", (path) => present.has(path), () => false)).toBeNull();

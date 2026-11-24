@@ -1263,7 +1263,7 @@
   "cloudWelcome.bring.myCloudTitle": "Przenieś tu bota z My Cloud",
   "cloudWelcome.bring.myCloudHint": "Zanim cokolwiek zostanie przeniesione, zobaczysz, co idzie, a co zostaje.",
   "cloudWelcome.bring.move": "Przenieś",
-  "cloudWelcome.bring.mausBotStays": "Zostaje na My Cloud: w zespole każdy ma własnego",
+  "cloudWelcome.bring.limixBotStays": "Zostaje na My Cloud: w zespole każdy ma własnego",
   "cloudWelcome.bring.moveFailed": "Nie można przenieść {bot}. Bot jest nadal na My Cloud, bez zmian.",
   "cloudWelcome.engine.sub": "Twoje boty myślą dzięki twojemu planowi Claude lub ChatGPT. Zaloguj się raz w {name}.",
   "cloudWelcome.engine.credit": "Masz kredyty Claude o wartości {amount}, więc twoje boty mogą zacząć od razu. Zaloguj się, kiedy chcesz.",

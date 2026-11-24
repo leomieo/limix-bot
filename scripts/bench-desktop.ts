@@ -56,7 +56,7 @@ const round = (value: number, digits = 1) => Math.round(value * 10 ** digits) / 
 const median = (samples: number[]) => { const sorted = [...samples].sort((a, b) => a - b); return sorted.length ? sorted[Math.floor(sorted.length / 2)]! : NaN; };
 const percentile = (samples: number[], p: number) => { const sorted = [...samples].sort((a, b) => a - b); return sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil((p / 100) * sorted.length) - 1))] ?? NaN; };
 const kb = (bytes: number) => round(bytes / 1024);
-const work = mkdtempSync(join(tmpdir(), "openmausbot-bench-work-"));
+const work = mkdtempSync(join(tmpdir(), "limixbot-bench-work-"));
 const cleanups: Array<() => Promise<void>> = [];
 
 // A long markdown answer the fake engine streams in small chunks, after a run of tool calls.
@@ -89,7 +89,7 @@ function platformEnv(extra: Record<string, string> = {}): NodeJS.ProcessEnv {
 }
 
 function newDataDir(): string {
-  const dir = mkdtempSync(join(process.platform === "win32" ? tmpdir() : "/tmp", "openmausbot-bench-"));
+  const dir = mkdtempSync(join(process.platform === "win32" ? tmpdir() : "/tmp", "limixbot-bench-"));
   mkdirSync(join(dir, "tmp"), { recursive: true });
   writeFileSync(join(dir, "config.json"), JSON.stringify({
     features: { smartSetupChoices: false },

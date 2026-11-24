@@ -39,7 +39,7 @@ export async function launchRestartableServer(options: { scripted?: boolean; dat
     ...(options.scripted ? { environment: { FAKE_CLAUDE_ROOM_PLAN: planPath } } : {}),
   } } }, null, 2));
   // Kept after close, for a failed run's evidence.
-  const evidenceDir = join(tmpdir(), "openmausbot-verification-evidence");
+  const evidenceDir = join(tmpdir(), "limixbot-verification-evidence");
   mkdirSync(evidenceDir, { recursive: true });
   const logPath = join(evidenceDir, `restartable-${Date.now()}-${process.pid}.log`);
   const url = `http://127.0.0.1:${port}`;

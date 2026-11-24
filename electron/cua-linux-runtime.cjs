@@ -581,7 +581,7 @@ function createLinuxCuaRuntime({
     }
     // Unix sockets have a short path limit: a private uid-scoped dir under the temp root when XDG_RUNTIME_DIR is unusable.
     const currentUid = process.getuid?.() ?? os.userInfo().uid;
-    const root = ensurePrivateDirectory(path.join(os.tmpdir(), `openmausbot-cua-${currentUid}`));
+    const root = ensurePrivateDirectory(path.join(os.tmpdir(), `limixbot-cua-${currentUid}`));
     cleanupStaleRuntimeDirectories(root);
     return root;
   };

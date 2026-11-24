@@ -16,7 +16,7 @@ export const AVATAR_FILE_TYPES = "image/png,image/jpeg,image/gif,image/webp";
 const LABEL = "text-[12px] font-medium uppercase tracking-wide text-ink-secondary";
 
 /** The welcome's own profile edit: name, colour, look, then a picture of the person's own or one made with AI. */
-export function MausBotCustomize({ preview, name, nameRef, image, onName, onPatch }: {
+export function LimixBotCustomize({ preview, name, nameRef, image, onName, onPatch }: {
   preview: Bot;
   name: string;
   nameRef: RefObject<HTMLInputElement | null>;
@@ -61,7 +61,7 @@ export function MausBotCustomize({ preview, name, nameRef, image, onName, onPatc
         </div>
       </div>
       <div>
-        <span className={LABEL}>{t("mausbotWelcome.look")}</span>
+        <span className={LABEL}>{t("limixbotWelcome.look")}</span>
         <div className="mt-1.5 grid grid-cols-5 gap-1">
           {MASCOT_BODY_IDS.map((id) => (
             <button
@@ -86,17 +86,17 @@ export function MausBotCustomize({ preview, name, nameRef, image, onName, onPatc
           <button type="button" data-mausbot-welcome-upload="" disabled={image.busy} onClick={() => image.fileRef.current?.click()}
             className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-ink-secondary hover:bg-ink/[0.05] hover:text-ink disabled:opacity-50">
             {image.uploading ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <ImagePlus size={14} aria-hidden="true" />}
-            {t("mausbotWelcome.upload")}
+            {t("limixbotWelcome.upload")}
           </button>
           <span aria-hidden="true" className="text-ink-tertiary">·</span>
           <button type="button" data-mausbot-welcome-generate="" aria-expanded={generating} onClick={() => setGenerating(!generating)}
             className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-ink-secondary hover:bg-ink/[0.05] hover:text-ink">
-            <Sparkles size={14} aria-hidden="true" />{t("mausbotWelcome.generate")}
+            <Sparkles size={14} aria-hidden="true" />{t("limixbotWelcome.generate")}
           </button>
           {picture && (
             <div className="basis-full"><button type="button" data-mausbot-welcome-remove="" disabled={image.busy} onClick={image.removeImage}
               className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-[13px] text-ink-secondary hover:bg-ink/[0.05] hover:text-ink disabled:opacity-50">
-              <Trash2 size={13} aria-hidden="true" />{t("mausbotWelcome.removePicture")}
+              <Trash2 size={13} aria-hidden="true" />{t("limixbotWelcome.removePicture")}
             </button></div>
           )}
         </div>

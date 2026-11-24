@@ -14,15 +14,15 @@ Limix Bot team while the desktop app and its harness are running.
 The v1 server intentionally cannot approve requests, remember permission grants, delete data, import teams,
 change credentials, or control computer/VM lifecycle. Those actions stay in the human-facing app.
 
-## From the openmausbot command
+## From the limixbot command
 
-With the `openmausbot` npm package installed, the MCP client can run it
+With the `limixbot` npm package installed, the MCP client can run it
 directly; it serves the same tools:
 
 ```json
 {
   "mcpServers": {
-    "openmausbot": { "command": "openmausbot", "args": ["mcp"], "env": { "OMB_PORT": "8799" } }
+    "limixbot": { "command": "limixbot", "args": ["mcp"], "env": { "OMB_PORT": "8799" } }
   }
 }
 ```
@@ -37,9 +37,9 @@ Start Limix Bot, then configure the MCP client to run:
 ```json
 {
   "mcpServers": {
-    "openmausbot": {
+    "limixbot": {
       "command": "pnpm",
-      "args": ["--dir", "/absolute/path/to/OpenMausBot", "mcp"]
+      "args": ["--dir", "/absolute/path/to/limix-bot", "mcp"]
     }
   }
 }
@@ -87,21 +87,21 @@ macOS example:
 ```json
 {
   "mcpServers": {
-    "openmausbot": {
-      "command": "/Applications/OpenMausBot.app/Contents/MacOS/OpenMausBot",
-      "args": ["/Applications/OpenMausBot.app/Contents/Resources/server/mcp-server.js"],
+    "limixbot": {
+      "command": "/Applications/Limix Bot.app/Contents/MacOS/Limix Bot",
+      "args": ["/Applications/Limix Bot.app/Contents/Resources/server/mcp-server.js"],
       "env": { "ELECTRON_RUN_AS_NODE": "1" }
     }
   }
 }
 ```
 
-On Windows, use the installed `OpenMausBot.exe` as `command`, the adjacent
+On Windows, use the installed `Limix Bot.exe` as `command`, the adjacent
 `resources\\server\\mcp-server.js` as the argument, and the same `ELECTRON_RUN_AS_NODE=1` environment value.
-The usual per-user install is under `%LOCALAPPDATA%\\Programs\\OpenMausBot`.
+The usual per-user install is under `%LOCALAPPDATA%\\Programs\\Limix Bot`.
 
-On Ubuntu `.deb` installs, the executable is normally `/opt/OpenMausBot/openmausbot` and the script is
-`/opt/OpenMausBot/resources/server/mcp-server.js`. Use the same environment value.
+On Ubuntu `.deb` installs, the executable is normally `/opt/Limix Bot/limixbot` and the script is
+`/opt/Limix Bot/resources/server/mcp-server.js`. Use the same environment value.
 
 ## Connection discovery
 

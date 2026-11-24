@@ -16,7 +16,7 @@ import { useStore, type Bot } from "@/state/store";
 import { BOT_PROFILE_LIMITS } from "../../shared/bot-profile";
 import { BotAvatar } from "./Avatar";
 import { useAvatarImage } from "./avatar-editing";
-import { MausBotCustomize } from "./MausBotCustomize";
+import { LimixBotCustomize } from "./LimixBotCustomize";
 import { usePrefersReducedMotion } from "./mascot-clock";
 
 const LOOK = ["name", "color", "mascotBody", "avatarUrl", "avatarCrop", "avatarZoom", "avatarFocusX", "avatarFocusY"] as const;
@@ -52,7 +52,7 @@ export const teamQuiet = (state: { config?: { team?: unknown } | null; bots: Rea
 /** MausBot's first-launch card is due now (mausBotWelcomeDue), and, like the Cloud Pro popup and the product-updates
  * question, waits for the first reply (unknown until the bots load), for a launch after the one whose welcome finished, and
  * for a launch the notices queue has not already used. The notices queue asks this too, so the card goes first. */
-export function useMausBotWelcomeDue(viewer: WelcomeViewer | null): { bot: Bot | undefined; due: boolean } {
+export function useLimixBotWelcomeDue(viewer: WelcomeViewer | null): { bot: Bot | undefined; due: boolean } {
   const { state } = useStore();
   const bot = myDefaultBot(state.bots, useViewerEmail());
   // The app tour runs only when Settings starts it; one never taken does not hold this back.
@@ -66,9 +66,9 @@ export function useMausBotWelcomeDue(viewer: WelcomeViewer | null): { bot: Bot |
   return { bot, due };
 }
 
-export function MausBotWelcome({ viewer }: { viewer: WelcomeViewer | null }) {
+export function LimixBotWelcome({ viewer }: { viewer: WelcomeViewer | null }) {
   const { state } = useStore();
-  const { bot, due: ready } = useMausBotWelcomeDue(viewer);
+  const { bot, due: ready } = useLimixBotWelcomeDue(viewer);
   const [shownFor, setShownFor] = useState<string | null>(null);
   const [closed, setClosed] = useState(false);
   const due = !closed && ready;
@@ -84,10 +84,10 @@ export function MausBotWelcome({ viewer }: { viewer: WelcomeViewer | null }) {
   }, [shownFor, closed]);
   const shown = shownFor && !closed ? state.bots.find((candidate) => candidate.id === shownFor) : undefined;
   if (!shown) return null;
-  return createPortal(<MausBotWelcomeCard bot={shown} onClose={() => setClosed(true)} />, document.body);
+  return createPortal(<LimixBotWelcomeCard bot={shown} onClose={() => setClosed(true)} />, document.body);
 }
 
-export function MausBotWelcomeCard({ bot, onClose }: { bot: Bot; onClose: () => void }) {
+export function LimixBotWelcomeCard({ bot, onClose }: { bot: Bot; onClose: () => void }) {
   const { dispatch } = useStore();
   const advanced = useAdvancedMode();
   const reduced = usePrefersReducedMotion();
@@ -147,7 +147,7 @@ export function MausBotWelcomeCard({ bot, onClose }: { bot: Bot; onClose: () => 
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="mausbot-welcome-title"
+        aria-labelledby="limixbot-welcome-title"
         tabIndex={-1}
         style={{ outline: "none" }}
         onKeyDown={(event) => {
@@ -161,7 +161,7 @@ export function MausBotWelcomeCard({ bot, onClose }: { bot: Bot; onClose: () => 
           <button
             ref={pictureRef}
             type="button"
-            aria-label={t("mausbotWelcome.customize", { name })}
+            aria-label={t("limixbotWelcome.customize", { name })}
             aria-expanded={editing}
             aria-controls="mausbot-welcome-panel"
             data-mausbot-welcome-picture=""
@@ -178,9 +178,9 @@ export function MausBotWelcomeCard({ bot, onClose }: { bot: Bot; onClose: () => 
               <Pencil size={13} />
             </span>
           </button>
-          <h2 id="mausbot-welcome-title" className={cn("mt-3 text-ink", advanced ? "text-[20px] font-semibold" : "text-[17px] font-medium leading-6 tracking-[-0.008em]")}>{t("mausbotWelcome.title", { name })}</h2>
+          <h2 id="limixbot-welcome-title" className={cn("mt-3 text-ink", advanced ? "text-[20px] font-semibold" : "text-[17px] font-medium leading-6 tracking-[-0.008em]")}>{t("limixbotWelcome.title", { name })}</h2>
           <ul className="mt-3 space-y-1.5 text-left text-[14px] leading-snug text-ink-secondary">
-            {([[Sparkles, "mausbotWelcome.line.helper"], [BookOpen, "mausbotWelcome.line.knows"], [Wand2, "mausbotWelcome.line.setup"], [Crown, "mausbotWelcome.line.powers"]] as const).map(([Icon, key]) => (
+            {([[Sparkles, "limixbotWelcome.line.helper"], [BookOpen, "limixbotWelcome.line.knows"], [Wand2, "limixbotWelcome.line.setup"], [Crown, "limixbotWelcome.line.powers"]] as const).map(([Icon, key]) => (
               <li key={key} className="flex items-start gap-2.5"><Icon size={15} className="mt-0.5 shrink-0 text-ink-tertiary" aria-hidden="true" />{t(key)}</li>
             ))}
           </ul>
@@ -197,19 +197,19 @@ export function MausBotWelcomeCard({ bot, onClose }: { bot: Bot; onClose: () => 
         >
           <div className="min-h-0 overflow-hidden">
             <div className="pt-4">
-              <MausBotCustomize preview={preview} name={draft.name} nameRef={nameRef} image={image} onName={(next) => edit({ name: next })} onPatch={edit} />
+              <LimixBotCustomize preview={preview} name={draft.name} nameRef={nameRef} image={image} onName={(next) => edit({ name: next })} onPatch={edit} />
             </div>
           </div>
         </div>
 
         <div className={cn("mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:items-center", advanced ? "sm:justify-between" : "sm:justify-end")}>
-          <button type="button" data-mausbot-welcome-later="" onClick={() => choose(false)} title={t("mausbotWelcome.notNowHint", { name })}
+          <button type="button" data-mausbot-welcome-later="" onClick={() => choose(false)} title={t("limixbotWelcome.notNowHint", { name })}
             className={advanced ? "rounded-full px-3 py-2 text-[13px] text-ink-secondary hover:bg-raised-hover hover:text-ink" : "ui-button ui-button-pill"}>
-            {t("mausbotWelcome.notNow")}
+            {t("limixbotWelcome.notNow")}
           </button>
           <button type="button" data-mausbot-welcome-add="" onClick={() => choose(true)}
             className={advanced ? "rounded-full bg-accent px-5 py-2.5 text-[14px] font-medium text-accent-ink hover:brightness-110" : "ui-button ui-button-pill ui-button-primary"}>
-            {t("mausbotWelcome.add", { name })}
+            {t("limixbotWelcome.add", { name })}
           </button>
         </div>
       </div>

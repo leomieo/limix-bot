@@ -108,7 +108,7 @@ It also proves:
   not.
 
 The times are kept in
-`<tmp>/openmausbot-verification-evidence/warm-summary-timings.jsonl`. No live
+`<tmp>/limixbot-verification-evidence/warm-summary-timings.jsonl`. No live
 model runs: whether a real Claude Code honours `--fork-session` for
 `/compact` in print mode is checked only by the fake.
 

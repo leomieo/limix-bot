@@ -74,7 +74,7 @@ jobs:
       - name: Check packaged Linux server
         if: matrix.platform == 'linux'
         run: |
-          node scripts/smoke-limix-packaged.mjs release/linux-unpacked/openmausbot release/linux-unpacked/resources
+          node scripts/smoke-limix-packaged.mjs release/linux-unpacked/limixbot release/linux-unpacked/resources
           v=$(node -p "require('./package.json').version")
           cp "release/LimixBot-$v-x86_64.AppImage" release/LimixBot-Linux-x64.AppImage
           cp "$(find release -maxdepth 1 -name '*.deb' -print -quit)" release/LimixBot-Linux-x64.deb

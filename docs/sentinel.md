@@ -155,7 +155,7 @@ ships, whichever command you ran it from:
 | Platform | Node | Script |
 |---|---|---|
 | macOS | `/Applications/OpenMausBot.app/Contents/MacOS/OpenMausBot` (or under `~/Applications`) | `…/Contents/Resources/server/limixbot.js` |
-| Ubuntu `.deb` | `/opt/OpenMausBot/openmausbot` | `/opt/OpenMausBot/resources/server/limixbot.js` |
+| Ubuntu `.deb` | `/opt/Limix Bot/limixbot` | `/opt/Limix Bot/resources/server/limixbot.js` |
 
 The app's own executable runs as Node with `ELECTRON_RUN_AS_NODE=1`, just as
 the [MCP server](mcp-server.md#from-the-installed-desktop-app) does. App

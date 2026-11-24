@@ -1,3 +1,15 @@
+Limix Bot 0.3.113
+
+## Tiếng Việt
+
+- Trên Linux, dùng lệnh `limixbot` để mở Limix Bot từ terminal.
+- Trên macOS, trợ lý nhập liệu bằng giọng nói hiển thị tên Limix Bot Speech.
+
+## English
+
+- On Linux, use the `limixbot` command to open Limix Bot from the terminal.
+- On macOS, the dictation helper appears as Limix Bot Speech.
+
 Limix Bot 0.3.112
 
 ## Tiếng Việt

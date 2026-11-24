@@ -389,7 +389,7 @@ describe("decodeLogTail", () => {
 
 describe("readSafeLogTail", () => {
   it("exports only a bounded complete-line updater tail from an isolated log fixture", () => {
-    const directory = mkdtempSync(join(tmpdir(), "openmausbot-updater-diagnostics-"));
+    const directory = mkdtempSync(join(tmpdir(), "limixbot-updater-diagnostics-"));
     try {
       const log = join(directory, "updater.log");
       const tail = "[info] update staged\n[error] https://updates.example.test/app.zip?jwt=private-query-token\n";
@@ -408,7 +408,7 @@ describe("readSafeLogTail", () => {
   });
 
   it("reads a bounded tail from a regular app-owned log", () => {
-    const directory = mkdtempSync(join(tmpdir(), "openmausbot-log-tail-"));
+    const directory = mkdtempSync(join(tmpdir(), "limixbot-log-tail-"));
     try {
       const log = join(directory, "server.log");
       writeFileSync(log, "partial-secret\nfirst\nsecond\n", { mode: 0o600 });
@@ -419,7 +419,7 @@ describe("readSafeLogTail", () => {
   });
 
   it.skipIf(process.platform === "win32")("rejects a log-path symlink", () => {
-    const directory = mkdtempSync(join(tmpdir(), "openmausbot-log-symlink-"));
+    const directory = mkdtempSync(join(tmpdir(), "limixbot-log-symlink-"));
     try {
       const privateFile = join(directory, "private.txt");
       const log = join(directory, "desktop-crashes.log");

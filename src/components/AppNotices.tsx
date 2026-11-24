@@ -40,7 +40,7 @@ import { LinkButton, NoticeCard, NoticeToast, NotNowButton } from "./NoticeCard"
 import { useDesktopNotices, useOtherDialogOpen } from "./notice-dialogs";
 import { localDesktopPage } from "./onboarding/WelcomeGate";
 import { UpdatesConsentDialog, updatesConsentBridge, useUpdatesConsent } from "./UpdatesConsent";
-import { useMausBotWelcomeDue } from "./MausBotWelcome";
+import { useLimixBotWelcomeDue } from "./LimixBotWelcome";
 import { NewLookNotice, reportNewLook } from "./NewLookNotice";
 import { PhoneUpdateCard, phonesToTell, useRetiredLinkPhones } from "./PhoneUpdateNotice";
 import { reportSimpleModePrompt, SimpleModePrompt } from "./SimpleModePrompt";
@@ -104,7 +104,7 @@ export function AppNotices({ quiet = false, viewer = null, now = Date.now }: { q
   const updater = useUpdaterState();
   const intent = useCloudIntent();
   const moving = useMoveQuiet(now);
-  const mausBot = useMausBotWelcomeDue(viewer);
+  const mausBot = useLimixBotWelcomeDue(viewer);
   // Bots in two places: this computer's page only, where main knows what lives here.
   const two = useTwoPlaces();
   const twoFact = !local || two.suggest === null ? false : two.suggest === undefined ? null : true;

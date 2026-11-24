@@ -645,7 +645,7 @@ sudo chown -R root:root /opt/openmausbot-browser/chrome-VERSION
 sudo chmod -R go-w /opt/openmausbot-browser/chrome-VERSION
 ```
 
-Save this as the root-owned `/etc/apparmor.d/openmausbot-chrome`, replacing
+Save this as the root-owned `/etc/apparmor.d/limixbot-chrome`, replacing
 `VERSION` with the same value. Keep the exact executable path: a wildcard under
 the writable service home would also allow replacement executables.
 
@@ -653,7 +653,7 @@ the writable service home would also allow replacement executables.
 abi <abi/4.0>,
 include <tunables/global>
 
-profile openmausbot-chrome /opt/openmausbot-browser/chrome-VERSION/chrome flags=(unconfined) {
+profile limixbot-chrome /opt/openmausbot-browser/chrome-VERSION/chrome flags=(unconfined) {
   userns,
 }
 ```
@@ -661,7 +661,7 @@ profile openmausbot-chrome /opt/openmausbot-browser/chrome-VERSION/chrome flags=
 Load the profile:
 
 ```sh
-sudo apparmor_parser -r /etc/apparmor.d/openmausbot-chrome
+sudo apparmor_parser -r /etc/apparmor.d/limixbot-chrome
 ```
 
 Add the following line under `[Service]` in the systemd unit above, again using

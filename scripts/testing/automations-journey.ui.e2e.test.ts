@@ -473,7 +473,7 @@ await import(${JSON.stringify(pathToFileURL(join(ROOT, "server", "testing", "fak
   const { server: serverEnv, secrets } = cloudHomeChildEnvironments(cloudHomeConfiguration(offered)!, offered, home);
   const env = { ...serverEnv, OMB_PORT: String(port), OMB_WEBHOOK_PORT: String(port + 1), OMB_TEST_SEALED_PATH: "1", TMPDIR: join(home, "tmp") };
   const offline = `data:text/javascript,${encodeURIComponent('const real = globalThis.fetch; globalThis.fetch = async (url, init) => String(url).startsWith("http://127.0.0.1:") ? real(url, init) : new Response("offline fixture", { status: 503 });')}`;
-  const evidenceDir = join(tmpdir(), "openmausbot-verification-evidence");
+  const evidenceDir = join(tmpdir(), "limixbot-verification-evidence");
   mkdirSync(evidenceDir, { recursive: true });
   const logPath = join(evidenceDir, `cloud-journey-${Date.now()}-${process.pid}.log`);
   const log = createWriteStream(logPath);

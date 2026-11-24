@@ -29,7 +29,7 @@ export function workspacePreparationDockerfile(workspace: string): string {
       'rm -rf "$HOME/.local"' \\
       'ln -s "$apps/local" "$HOME/.local"' \\
       'container_start="$(cat /proc/sys/kernel/random/boot_id):$(sed "s/.*) //" /proc/1/stat | cut -d " " -f20)"' \\
-      'prepared="$HOME/.cache/openmausbot-browser-locks"' \\
+      'prepared="$HOME/.cache/limixbot-browser-locks"' \\
       'if [ "$(cat "$prepared" 2>/dev/null || true)" != "$container_start" ]; then' \\
       '  find "$profiles" \\( -name SingletonLock -o -name SingletonSocket -o -name SingletonCookie -o -name .parentlock -o -name lock -type l \\) -delete' \\
       '  printf "%s\\n" "$container_start" > "$prepared"' \\

@@ -2352,3 +2352,10 @@ for feature in ("industry-customer-care", "assistant-template-suggestions", "hyb
                 s = s.replace(patch["before"], patch["after"], 1)
             return s
         edit(rel, apply_feature)
+
+for path in ("scripts/control-omb.ts", "server/testing/restartable-server.ts",
+             "scripts/testing/automations-journey.ui.e2e.test.ts",
+             "server/hosted-access.test.ts", "server/quota-switch.e2e.test.ts",
+             "server/warm-summary.e2e.test.ts"):
+    edit(path, lambda s: s.replace("openmausbot-verification-evidence", "limixbot-verification-evidence")
+                          .replace("openmausbot-verify-data-", "limixbot-verify-data-"))

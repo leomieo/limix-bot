@@ -17,15 +17,15 @@ vi.mock("@/lib/default-bot", async (original) => ({
   useViewerEmail: () => null,
   setWelcomingBot: (id: string | null) => f.welcoming(id),
 }));
-vi.mock("./MausBotCustomize", () => ({ MausBotCustomize: () => null }));
-const { MausBotWelcome } = await import("./MausBotWelcome");
+vi.mock("./LimixBotCustomize", () => ({ LimixBotCustomize: () => null }));
+const { LimixBotWelcome } = await import("./LimixBotWelcome");
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const maus = (turns: number) => ({ id: "maus", threadId: "t1", name: "MausBot", title: "", description: "", notifications: true, color: "chrome",
   mascotBody: null, avatarUrl: null, unread: false, modelSelection: { instanceId: "claude", model: "sonnet" }, createdAt: 1, defaultBot: {}, messages: [],
   tasks: [{ threadId: "t1", title: "", createdAt: 1, ...(turns ? { usage: { input: 1, output: 1, costUsd: null, turns } } : {}) }] });
 let host: HTMLDivElement, root: Root;
-const show = async () => { await act(async () => { root.render(createElement(MausBotWelcome, { viewer: LOCAL_VIEWER })); }); };
+const show = async () => { await act(async () => { root.render(createElement(LimixBotWelcome, { viewer: LOCAL_VIEWER })); }); };
 const opened = () => f.welcoming.mock.calls.some(([id]) => id === "maus");
 beforeEach(() => {
   setLocale("en");

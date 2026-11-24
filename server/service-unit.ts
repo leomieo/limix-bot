@@ -155,7 +155,7 @@ export function shippedSentinelCli(
     ? ["/Applications/Limix Bot.app", join(home, "Applications", "Limix Bot.app")].map((app) => ({
       node: join(app, "Contents", "MacOS", "Limix Bot"), script: join(app, "Contents", "Resources", "server", "limixbot.js"),
     }))
-    : platform === "linux" ? [{ node: "/opt/OpenMausBot/openmausbot", script: "/opt/OpenMausBot/resources/server/limixbot.js" }] : [];
+    : platform === "linux" ? [{ node: "/opt/Limix Bot/limixbot", script: "/opt/Limix Bot/resources/server/limixbot.js" }] : [];
   return candidates.find((cli) => exists(cli.node) && exists(cli.script) && hasSentinel(cli.script)) ?? null;
 }
 

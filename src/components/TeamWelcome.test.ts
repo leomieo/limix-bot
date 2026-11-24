@@ -16,7 +16,7 @@ vi.mock("@/state/team-people", async (original) => ({ ...await original<typeof i
 import { TeamWelcome } from "./TeamWelcome";
 import { teamPrivateChatsLineDue } from "./TeamPrivateChatsLine";
 import { finishTeamWelcome, markTeamWelcomeShown, parseTeamWelcome, resetTeamWelcome, teamWelcomeDue, teamWelcomeView, WELCOME_USE_MS } from "@/lib/team-welcome";
-import { teamQuiet } from "./MausBotWelcome";
+import { teamQuiet } from "./LimixBotWelcome";
 
 const ACME = { id: "team-acme", name: "Acme" };
 const people = [
@@ -77,7 +77,7 @@ describe("a new member's first screen in a team", () => {
     render(null);
     expect(container.querySelector("[data-team-welcome-invited]")?.textContent).toBe("You’re in Acme now.");
     expect(container.querySelector("[data-team-welcome-person]")).toBeNull();
-    expect(container.textContent).toContain("No bots are shared with you in Acme yet. Your own MausBot is in the sidebar.");
+    expect(container.textContent).toContain("No bots are shared with you in Acme yet. Your own Limix Bot is in the sidebar.");
     expect([...container.querySelectorAll("button")].map((button) => button.textContent)).toEqual(["Look around"]);
   });
 });

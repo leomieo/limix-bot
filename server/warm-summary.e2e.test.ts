@@ -61,7 +61,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const words = (prompt: any) => JSON.stringify(prompt);
 /** Each run's times to the next reply, kept with the fixtures' other evidence. */
 const record = (entry: Record<string, unknown>) => {
-  const dir = join(tmpdir(), "openmausbot-verification-evidence");
+  const dir = join(tmpdir(), "limixbot-verification-evidence");
   mkdirSync(dir, { recursive: true });
   appendFileSync(join(dir, "warm-summary-timings.jsonl"), `${JSON.stringify({ at: new Date().toISOString(), compactMs: COMPACT_MS, ...entry })}\n`);
 };

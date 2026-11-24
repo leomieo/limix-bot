@@ -1,15 +1,15 @@
-// `openmausbot` on the command line: run the server anywhere and pair devices to it.
+// `limixbot` on the command line: run the server anywhere and pair devices to it.
 //
-//   openmausbot setup [--data-dir ~/.limixbot]
-//   openmausbot start [serve options]
-//   openmausbot serve [--port 8799] [--data-dir ~/.limixbot] [--label "cab mini"]
+//   limixbot setup [--data-dir ~/.limixbot]
+//   limixbot start [serve options]
+//   limixbot serve [--port 8799] [--data-dir ~/.limixbot] [--label "cab mini"]
 //                     [--public-url https://host] [--tailscale | --tunnel | --domain HOST] [--relay] [--no-pair]
-//   openmausbot pair  [--label "My MacBook"] [--client] [--public-url https://host]
-//   openmausbot sessions [revoke <id>]
-//   openmausbot status
-//   openmausbot login [--email you@example.com] [--relay]
-//   openmausbot logout
-//   openmausbot run | send | wait | doctor | team apply | export | …
+//   limixbot pair  [--label "My MacBook"] [--client] [--public-url https://host]
+//   limixbot sessions [revoke <id>]
+//   limixbot status
+//   limixbot login [--email you@example.com] [--relay]
+//   limixbot logout
+//   limixbot run | send | wait | doctor | team apply | export | …
 //
 // This module only exports: limixbot.ts runs main(), so bundling this file into other entries never runs it twice.
 import { spawn, type ChildProcess } from "node:child_process";
@@ -910,7 +910,7 @@ export async function serveUntilStopped(options: CliOptions, run: (options: CliO
   for (;;) {
     const code = await run(launch);
     if (!policy.again(code)) return code;
-    console.log("\nOpenMausBot is starting again to finish installing a copy from the desktop app…");
+    console.log("\nLimix Bot is starting again to finish installing a copy from the desktop app…");
     launch = { ...options, pair: false, open: false };
   }
 }

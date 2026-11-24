@@ -667,7 +667,7 @@ describe("VPS computer", () => {
     const transfer = fake.calls.find(({ args }) => args.includes("openmausbot-preview"))!.args;
     expect(transfer.slice(2)).toEqual([
       "exec", "-u", "cua", "-e", "HOME=/home/cua", CONTAINER_ID,
-      "sh", "-c", expect.stringContaining('quality=70'), "openmausbot-preview", "/tmp/openmausbot-vps-preview.png",
+      "sh", "-c", expect.stringContaining('quality=70'), "openmausbot-preview", "/tmp/limixbot-vps-preview.png",
     ]);
     expect(transfer[transfer.indexOf("-c") + 1]).toContain("image.thumbnail((1280, 1280))");
     expect(fake.calls.some(({ args }) => args.includes("rm") && args.includes("-f"))).toBe(true);

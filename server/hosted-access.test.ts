@@ -142,7 +142,7 @@ beforeAll(async () => {
 }, 30_000);
 afterAll(async () => {
   await waitForExit(child, { signal: "SIGTERM" });
-  const evidenceDir = join(tmpdir(), "openmausbot-verification-evidence");
+  const evidenceDir = join(tmpdir(), "limixbot-verification-evidence");
   mkdirSync(evidenceDir, { recursive: true });
   const logPath = join(evidenceDir, `hosted-access-${Date.now()}-${process.pid}.log`);
   writeFileSync(logPath, log);
