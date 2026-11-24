@@ -4,7 +4,7 @@ import { existsSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join, posix, resolve, win32 } from "node:path";
 
-const FOLDER = "openmausbot-sentinel";
+const FOLDER = "limixbot-sentinel";
 
 export function defaultSentinelOut(dataDir: string, platform: NodeJS.Platform = process.platform, home = homedir(), env: NodeJS.ProcessEnv = process.env): string {
   const path = platform === "win32" ? win32 : posix;

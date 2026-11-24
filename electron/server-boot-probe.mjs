@@ -4,7 +4,7 @@ export const BOOT_PROBE_INTERVAL_MS = 500;
 
 export const SERVER_BOOT_TIMEOUT_MS = 60_000;
 export const SERVER_LISTENING_GRACE_MS = 180_000;
-const LISTENING_LINE = "openmausbot server on ";
+const LISTENING_LINES = ["limixbot server on ", "openmausbot server on "];
 
 export function listeningSignal() {
   let tail = "";
@@ -13,8 +13,8 @@ export function listeningSignal() {
     hear(chunk) {
       if (heard) return;
       const text = tail + chunk;
-      tail = text.slice(-LISTENING_LINE.length);
-      heard = text.includes(LISTENING_LINE);
+      tail = text.slice(-Math.max(...LISTENING_LINES.map(line => line.length)));
+      heard = LISTENING_LINES.some(line => text.includes(line));
     },
     heard: () => heard,
   };

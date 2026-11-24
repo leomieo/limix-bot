@@ -3,55 +3,55 @@ export { HEADLESS_VERBS as HEADLESS_VERB_NAMES } from "./headless/args.ts";
 export const HEADLESS_USAGE = `Drive a running workspace (scripts, CI, other agents):
   limixbot doctor                    check the server answers and an engine is ready
   limixbot doctor --host             check this Linux machine can run a server (exit 7 if not)
-  openmausbot bots | channels | models  your bots, your rooms, the engines and their models
-  openmausbot run BOT "do this"         give a bot one job and wait until it and every teammate it asked are done
-  openmausbot send BOT "text"           send one message and return at once
-  openmausbot wait BOT                  wait on work already running
-  openmausbot messages BOT              the latest messages of a conversation
-  openmausbot interrupt BOT [--tree]    press Stop (--tree: and every teammate on its job)
-  openmausbot export BOT --out DIR      write a job's transcripts, files and screens to DIR
-  openmausbot events [--job THREAD]     the server's live events as JSON lines
-  openmausbot team apply FILE           make the workspace match a team file (team export writes one)
-  openmausbot engine set claude --key-env ANTHROPIC_API_KEY   give it an engine without a screen
+  limixbot bots | channels | models  your bots, your rooms, the engines and their models
+  limixbot run BOT "do this"         give a bot one job and wait until it and every teammate it asked are done
+  limixbot send BOT "text"           send one message and return at once
+  limixbot wait BOT                  wait on work already running
+  limixbot messages BOT              the latest messages of a conversation
+  limixbot interrupt BOT [--tree]    press Stop (--tree: and every teammate on its job)
+  limixbot export BOT --out DIR      write a job's transcripts, files and screens to DIR
+  limixbot events [--job THREAD]     the server's live events as JSON lines
+  limixbot team apply FILE           make the workspace match a team file (team export writes one)
+  limixbot engine set claude --key-env ANTHROPIC_API_KEY   give it an engine without a screen
   limixbot connect URL --code CODE --out FILE              get a token for a workspace elsewhere
-  openmausbot token create NAME --out FILE [--expires 90d]    a token for CI that ends on its date (token list, token revoke ID)
-  openmausbot new-bot | new-channel | set-model | edit | mcp
+  limixbot token create NAME --out FILE [--expires 90d]    a token for CI that ends on its date (token list, token revoke ID)
+  limixbot new-bot | new-channel | set-model | edit | mcp
 
   Server: --url URL (or OPENMAUSBOT_URL), --port N (or OMB_PORT), else this computer's.
   Token: OPENMAUSBOT_TOKEN or --token-file FILE. --json prints one JSON document;
   progress goes to stderr (--quiet drops it). limixbot help VERB for the details.`;
 
-/** The usage text, its commands written the way this CLI was started (`npx openmausbot …`). */
-export function usage(prefix = "openmausbot"): string {
-  return USAGE.split("\n").map((line) => line.replace(/^(\s+)openmausbot(?= )/, `$1${prefix}`)).join("\n");
+/** The usage text, its commands written the way this CLI was started (`npx limixbot …`). */
+export function usage(prefix = "limixbot"): string {
+  return USAGE.split("\n").map((line) => line.replace(/^(\s+)limixbot(?= )/, `$1${prefix}`)).join("\n");
 }
 
-export const USAGE = `openmausbot — your team of AI bots, ready in a few steps
+export const USAGE = `limixbot — your team of AI bots, ready in a few steps
 
-  openmausbot                         set up once, then open your workspace
+  limixbot                         set up once, then open your workspace
   limixbot setup [--data-dir DIR]
   limixbot start [the same options as serve]
   limixbot serve [--port 8799] [--data-dir DIR] [--label NAME]
                     [--public-url https://host | --domain HOST | --tunnel | --tailscale] [--lan] [--relay]
   limixbot pair  [--label NAME] [--phone [ios|android]] [--ttl 24h] [--public-url https://host]
-  openmausbot devices [revoke ID]
+  limixbot devices [revoke ID]
   limixbot status
-  openmausbot --version
+  limixbot --version
   limixbot login [--email you@example.com] [--relay]
   limixbot logout
-  openmausbot access list | add EMAIL [--chat-only] | remove EMAIL
+  limixbot access list | add EMAIL [--chat-only] | remove EMAIL
   limixbot service install [the same way-in options as serve] [--port N] [--data-dir DIR] | uninstall
                     [--sentinel]   (the health scan below, every two minutes, instead of the server)
-  openmausbot sentinel [--data-dir DIR] [--out DIR] [--once] [--json]   (read-only health scan; see --help)
+  limixbot sentinel [--data-dir DIR] [--out DIR] [--once] [--json]   (read-only health scan; see --help)
   limixbot browser install [--with-deps] | status
-  openmausbot fleet init --domain HOST [--operator USER] | create NAME --admin EMAIL [--member EMAIL] [--brand FILE]
+  limixbot fleet init --domain HOST [--operator USER] | create NAME --admin EMAIL [--member EMAIL] [--brand FILE]
                     [--anthropic-key-file FILE] [--cap USD] [--license-key KEY] [--memory 1G]
                   | list | users NAME add|remove EMAIL [--chat-only] | suspend NAME | resume NAME
                   | delete NAME --yes [--keep-data] | upgrade   (all take --dry-run)
                   | agent [--socket PATH] [--group USER]   (root; installed by init --operator)
 
 setup   choose AI access and optional phone access; keep existing bots and chats
-start   same as openmausbot: use your saved settings and open the workspace
+start   same as limixbot: use your saved settings and open the workspace
 serve   starts the server without prompts; in a terminal it prints a pairing
         code, the link to paste into the desktop app (＋ → Connect to a
         server) and a QR for a phone
@@ -116,6 +116,6 @@ Ways in (pick one; --lan can join any):
 
 ${HEADLESS_USAGE}
 
-Install once with \`npm install -g openmausbot\`, then type \`openmausbot\`.
-Or run without a global install: \`npx openmausbot\`. Node 24+ is required.
+Install once with \`npm install -g limixbot\`, then type \`limixbot\`.
+Or run without a global install: \`npx limixbot\`. Node 24+ is required.
 `;

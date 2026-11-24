@@ -322,7 +322,7 @@ directory. It prints a pairing code:
 
 ```sh
 D=$(mktemp -d)
-node --experimental-strip-types server/openmausbot.ts serve --data-dir "$D" --port 8799 --no-open &
+node --experimental-strip-types server/limixbot.ts serve --data-dir "$D" --port 8799 --no-open &
 curl -s http://127.0.0.1:8799/api/health
 ```
 
@@ -332,7 +332,7 @@ Set `OMB_LOOPBACK_TRUST=service` to act as a shared workspace. Send a
 ## Reports and patches
 
 - Give a minimal reproducer against the server
-  (`server/openmausbot.ts serve --data-dir <tmp>`), as a script or a few
+  (`server/limixbot.ts serve --data-dir <tmp>`), as a script or a few
   `curl` commands, and say which host type it needs: desktop, self-hosted,
   `service` trust, or Cloud.
 - State the boundary crossed (from the list above), the attacker's starting

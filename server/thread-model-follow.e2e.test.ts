@@ -20,7 +20,7 @@ type Fixture = {
   prompts: (instance: "claude" | typeof SPARE) => unknown[];
 };
 
-async function withEngines(check: (fixture: Fixture) => Promise<void>) {
+async function withEngines(check: (fixture: Fixture) => Promise<void>, environment: NodeJS.ProcessEnv = {}) {
   const fixture = await launchVerificationServer();
   const { dataDir, url, logPath } = fixture.info;
   let server: ChildProcess | undefined;
@@ -57,7 +57,7 @@ async function withEngines(check: (fixture: Fixture) => Promise<void>) {
     const log = openSync(logPath, "a", 0o600);
     server = spawn(process.execPath, ["--experimental-strip-types", fileURLToPath(new URL("./index.ts", import.meta.url))], {
       cwd: fileURLToPath(new URL("..", import.meta.url)),
-      env: verificationServerEnvironment({}, dataDir, Number(new URL(url).port)), stdio: ["ignore", log, log],
+      env: verificationServerEnvironment(environment, dataDir, Number(new URL(url).port)), stdio: ["ignore", log, log],
     });
     closeSync(log);
     await expect.poll(async () => {
@@ -144,4 +144,27 @@ it("keeps the sign-in failure when the bot's model is on the same signed-out eng
     expect(fixture.prompts("claude")).toHaveLength(1);
     expect(await thread()).toMatchObject({ modelSelection: { instanceId: "claude", model: "claude-opus-5" }, followsBotModel: false });
   });
+}, 120_000);
+
+it("answers the same Messenger conversation on the newly selected bot model", async () => {
+  await withEngines(async fixture => {
+    const { bot } = await fixture.control("new-bot", "--name", "Channel fixture");
+    const path = `/api/bots/${bot.id}/messenger`;
+    await fixture.api("POST", path, { token: JSON.stringify({ uid: "123456", name: "Fixture" }), access: "everyone" });
+    const exchange = async (id: string) => {
+      await fixture.api("POST", path + "/inbox", { messages: [{ id, chatId: "fixture", name: "Guest", text: id }] });
+      const { items } = await fixture.api("GET", path + "/outbox");
+      expect(items[0]).toMatchObject({ chatId: "fixture", text: expect.any(String) });
+      expect(await fixture.api("POST", path + "/sent", { id: items[0].id })).toMatchObject({ ok: true });
+      return items[0].text;
+    };
+    const first = await exchange("FIRST_CHANNEL_MESSAGE");
+    expect(first.length).toBeGreaterThan(0);
+    expect(fixture.prompts("claude")).toHaveLength(1);
+    await fixture.api("PATCH", `/api/bots/${bot.id}`, { modelSelection: { instanceId: SPARE, model: "claude-opus-5" } });
+    const second = await exchange("SECOND_CHANNEL_MESSAGE");
+    expect(second).not.toContain("Bot chưa trả lời");
+    expect(fixture.prompts(SPARE)).toHaveLength(1);
+    expect(fixture.prompts("claude")).toHaveLength(1);
+  }, { FAKE_CLAUDE_VERSION: "2.1.284" });
 }, 120_000);

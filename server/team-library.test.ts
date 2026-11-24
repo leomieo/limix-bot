@@ -142,7 +142,7 @@ describe("team library", () => {
   it("loads a shared team file (package v2) from GitHub as a file, without its claimed publisher", async () => {
     const shared = JSON.parse(readFileSync(join(import.meta.dirname, "..", "shared", "package-fixtures", "full-team.v2.json"), "utf8"));
     const fetcher = vi.fn(async () => response(shared)) as unknown as typeof fetch;
-    const loaded = await fetchGithubTeam("https://github.com/acme/team/blob/main/sales-desk-1.3.0.openmaus.json", fetcher);
+    const loaded = await fetchGithubTeam("https://github.com/acme/team/blob/main/sales-desk-1.3.0.limix.json", fetcher);
     if (loaded.format !== "openmaus.package" || loaded.version !== 2) throw new Error("expected a shared team");
     expect(loaded.package.team?.name).toBe("Sales desk");
     expect(loaded.package.publisher).toBeUndefined();

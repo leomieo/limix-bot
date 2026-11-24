@@ -628,7 +628,7 @@ export function isValidAntigravityInitializeResult(
 }
 
 export async function validateAntigravityRuntime(runtime: AntigravityRuntime, expectedVersion: string): Promise<void> {
-  const profileDirectory = await mkdtemp(join(tmpdir(), "openmaus-antigravity-verify-"));
+  const profileDirectory = await mkdtemp(join(tmpdir(), "limix-antigravity-verify-"));
   let client: AntigravityAcpClient | undefined;
   let tempDirectory: string | undefined;
   let failed = false;

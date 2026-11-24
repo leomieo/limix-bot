@@ -123,7 +123,7 @@ describe("canonical thread links", () => {
 
   it("copies and parses one spelling, and rejects near-misses", () => {
     const link = threadRefUrl({ botId: "scout", threadId: uuid });
-    expect(link).toBe(`openmausbot://thread/${uuid}?bot=scout`);
+    expect(link).toBe(`limixbot://thread/${uuid}?bot=scout`);
     expect(parseThreadRefUrl(link)).toEqual({ threadId: uuid, botId: "scout" });
     expect(parseThreadRefUrl(`openmausbot://thread/${uuid}`)).toEqual({ threadId: uuid });
     for (const miss of [
@@ -153,7 +153,7 @@ describe("canonical thread links", () => {
     const sent = `Already [Release notes](${link}) and [Gone](openmausbot://thread/dead?bot=ada)`;
     expect(serializeThreadRefs(sent + " plus #Nothing", threads)).toBe(sent + " plus #Nothing");
     const bracketed = [scout("b", "QA [PR] 245")];
-    expect(serializeThreadRefs("see #QA [PR] 245", bracketed)).toBe("see [QA \\[PR\\] 245](openmausbot://thread/b?bot=scout)");
+    expect(serializeThreadRefs("see #QA [PR] 245", bracketed)).toBe("see [QA \\[PR\\] 245](limixbot://thread/b?bot=scout)");
   });
 
   it("displays canonical links as title chips and dead links as raw text", () => {

@@ -137,7 +137,7 @@ it.each([false, true])("delivers a channel result after 31 minutes (owner: %s)",
   }
 });
 
-async function harness(script: Script, options: { waitMs?: number; full?: boolean; included?: () => boolean; noConfine?: boolean } = {}) {
+async function harness(script: Script, options: { waitMs?: number; full?: boolean; included?: () => boolean; noConfine?: boolean; channelModelChanging?: BotApiHostDeps["channelModelChanging"]; canConfine?: BotApiHostDeps["canConfine"] } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "omb-bot-api-host-"));
   dirs.push(dir);
   const fake = fakeStore();
@@ -158,7 +158,8 @@ async function harness(script: Script, options: { waitMs?: number; full?: boolea
     },
     threadBusy: (botId, threadId) => fake.bots.get(botId)?.tasks.find((task) => task.threadId === threadId)?.busy === true,
     canStart: () => !options.full,
-    canConfine: () => !options.noConfine,
+    canConfine: options.canConfine ?? (() => !options.noConfine),
+    channelModelChanging: options.channelModelChanging,
     discard: (botId, threadId) => { const bot = fake.bots.get(botId)!; bot.tasks = bot.tasks.filter((task) => task.threadId !== threadId); },
     ...(options.included ? { included: options.included } : {}),
     hooksBaseUrl: () => "https://bots.example.test",
@@ -501,6 +502,24 @@ describe("the Bot API door on the webhook receiver", () => {
     // A guest never continues the owner's conversation: it gets one of its own.
     const sneak = await h.host.askFromChannel("b1", { text: "hi", threadId: first.threadId, title: "x", owner: false }).catch((error: Error) => error.message);
     expect(sneak).toMatch(/no such thread/);
+  });
+
+  it.each([true, false])("waits for model switching before accepting a channel message, owner=%s", async owner => {
+    let switching = true;
+    const gate = vi.fn(() => true);
+    const h = await harness((fake, _botId, _prompt, opts) => {
+      fake.store.appendMessage(opts.threadId, { role: "bot", kind: "text", text: "ok" });
+      opts.onSettled({ ok: true, text: "" });
+    }, { channelModelChanging: () => switching, canConfine: gate });
+    const input = { owner, title: "Fixture", text: "Hello", threadId: "removed-thread" };
+    await expect(h.host.askFromChannel("b1", input)).rejects.toMatchObject({ retryable: true });
+    expect(h.turns).toHaveLength(0);
+    switching = false;
+    const reply = await h.host.askFromChannel("b1", input);
+    expect(reply.reply).toBe("ok");
+    await h.host.askFromChannel("b1", { ...input, threadId: reply.threadId });
+    expect(h.turns).toHaveLength(2);
+    if (!owner) expect(gate).toHaveBeenLastCalledWith("b1", reply.threadId);
   });
 
   it("never sends the note a turn wrote before its last tool call as the answer", async () => {

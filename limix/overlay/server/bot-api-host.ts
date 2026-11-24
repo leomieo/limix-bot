@@ -54,7 +54,8 @@ export interface BotApiHostDeps {
   /** Whether a new turn would start now, before anything is written. */
   canStart(botId: string, threadId: string): boolean;
   /** This bot's AI can run a turn with no shell and no tools; one that can't doesn't take a call. */
-  canConfine(botId: string): boolean;
+  canConfine(botId: string, threadId?: string): boolean;
+  channelModelChanging?(botId: string, threadId?: string): boolean;
   /** A thread the API opened whose turn never started. */
   discard?(botId: string, threadId: string): void;
   /** False on a plan that doesn't include the Bot API; asked on every call, so an upgrade counts at once. Absent: included. */
@@ -216,7 +217,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       });
     } catch (error) {
       markRunning(botId, threadId, false);
-      if (opened) deps.discard?.(botId, threadId);
+      if (opened && !channel?.delivery) deps.discard?.(botId, threadId);
       const busy = z.object({ code: z.enum(["thread_busy", "thread_limit"]) }).safeParse(error).success;
       fail(busy ? 409 : 502, busy ? BUSY : COULD_NOT_ANSWER, error instanceof Error ? error.message : String(error));
     }
@@ -246,16 +247,18 @@ export function createBotApiHost(deps: BotApiHostDeps) {
    * Bot API caller, confined. Waits for the answer up to `waitMs`. */
   async function askFromChannel(botId: string, input: Parameters<ChannelAsk>[1] & { waitMs?: number }): ReturnType<ChannelAsk> {
     const store = deps.store;
+    const savedTask = input.threadId ? store.taskByThread(botId, input.threadId) : undefined;
+    const channelThread = savedTask && Boolean(savedTask.botApi) === !input.owner ? savedTask.threadId : undefined;
+    if (deps.channelModelChanging?.(botId, channelThread)) failBeforeAcceptance("capacity_busy");
     if (!input.owner) {
-      if (!deps.canConfine(botId)) fail(403, CANNOT_CONFINE);
+      if (savedTask && !savedTask.botApi) fail(404, "no such thread");
+      if (!deps.canConfine(botId, channelThread)) throw Object.assign(new Error(CANNOT_CONFINE), { status: 403, code: "guest_engine" });
       let attachments: ChannelMedia[] = [];
-      const answer = await runCall(botId, { message: input.text, ...(input.threadId ? { thread: input.threadId } : {}), wait: Math.round((input.waitMs ?? 600_000) / 1000) } as z.output<typeof callSchema>, () => {}, { attachment: input.attachment, delivery: input.delivery, collect(files) { attachments = files; } });
+      const answer = await runCall(botId, { message: input.text, ...(channelThread ? { thread: channelThread } : {}), wait: Math.round((input.waitMs ?? 600_000) / 1000) } as z.output<typeof callSchema>, () => {}, { attachment: input.attachment, delivery: input.delivery, collect(files) { attachments = files; } });
       const body = answer.body as { reply?: string; thread: string; status?: "needs_approval" | "working" };
       return { threadId: body.thread, ...(attachments.length ? { attachments } : {}), reply: body.reply ?? "", ...(body.status ? { status: body.status } : {}) };
     }
-    let threadId = input.threadId;
-    const known = threadId ? store.taskByThread(botId, threadId) : undefined;
-    if (!known || known.botApi) threadId = undefined;
+    let threadId = channelThread;
     if (threadId && deps.threadBusy(botId, threadId)) failBeforeAcceptance("thread_busy");
     if (!deps.canStart(botId, threadId ?? "")) failBeforeAcceptance("capacity_busy");
     if (threadId === undefined) {

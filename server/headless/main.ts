@@ -23,18 +23,18 @@ limixbot doctor --host [--data-dir DIR] [--port 8799] [--domain HOST]
   Check this Linux machine can run the server and the bots' sandbox: the system, Docker or Podman, user
   namespaces, seccomp, cgroup v2, free disk, size, ports and the clock. Each problem says its fix.
   Exit 0 ready (warnings allowed), 7 something is missing. On macOS and Windows it says it is for Linux.`,
-  bots: "openmausbot bots\n  Your bots and what each is doing.",
-  channels: "openmausbot channels\n  Your rooms (group chats) and who is in them.",
-  models: "openmausbot models\n  The engines and the models each offers (use them as INSTANCE/MODEL).",
-  messages: `openmausbot messages TARGET [--limit 30]\n  The latest messages of a conversation (at most 200).
+  bots: "limixbot bots\n  Your bots and what each is doing.",
+  channels: "limixbot channels\n  Your rooms (group chats) and who is in them.",
+  models: "limixbot models\n  The engines and the models each offers (use them as INSTANCE/MODEL).",
+  messages: `limixbot messages TARGET [--limit 30]\n  The latest messages of a conversation (at most 200).
   ${T}`,
-  send: `openmausbot send TARGET (TEXT | --text TEXT | --message-file FILE | -) [--task new|current|ID] [--title T] [--send-id ID] [--dry-run]
+  send: `limixbot send TARGET (TEXT | --text TEXT | --message-file FILE | -) [--task new|current|ID] [--title T] [--send-id ID] [--dry-run]
   Send one message and return at once. It goes to the conversation the bot or room has open (--task current,
   the default), to a new one (--task new, titled by --title or the message's first line), or to --task ID.
   It says which conversation it went to. The same --send-id never sends twice.
   ${T}`,
-  "send-channel": "openmausbot send-channel --channel ID (TEXT | --text TEXT) [--task new|current|ID] [--title T] [--dry-run]\n  The same as send, for a room named by id.",
-  run: `openmausbot run TARGET (TEXT | --message-file FILE | -) [--task new|current|ID] [--title T]
+  "send-channel": "limixbot send-channel --channel ID (TEXT | --text TEXT) [--task new|current|ID] [--title T] [--dry-run]\n  The same as send, for a room named by id.",
+  run: `limixbot run TARGET (TEXT | --message-file FILE | -) [--task new|current|ID] [--title T]
                 [--wait job|turn|none] [--timeout 30m] [--on-input exit|wait|stop] [--on-timeout leave|stop]
                 [--strict] [--export DIR [--force]]
   Give a bot or room one job and wait until it, and every teammate it asked, is done.
@@ -45,53 +45,53 @@ limixbot doctor --host [--data-dir DIR] [--port 8799] [--domain HOST]
   --on-timeout: leave the work running, or stop it. --strict: a teammate that failed fails the run.
   Exit 0 done, 1 failed or stopped, 3 needs you, 4 timed out, 130 Ctrl-C (the work keeps running).
   ${T}`,
-  wait: `openmausbot wait TARGET [--for job|turn] [--timeout 30m] [--on-input …] [--on-timeout …] [--strict] [--since MS]
+  wait: `limixbot wait TARGET [--for job|turn] [--timeout 30m] [--on-input …] [--on-timeout …] [--strict] [--since MS]
   Wait on a conversation already running (after run --wait none, Ctrl-C or a restarted CI step).
   --since MS (which run prints) keeps watching the same job, so one that ended meanwhile reports how.
   Nothing running: it returns at once (exit 0). Same exit codes as run.
   ${T}`,
-  interrupt: `openmausbot interrupt TARGET [--tree] [--dry-run]\n  Press Stop on a conversation. --tree also stops every teammate still working on its job.
+  interrupt: `limixbot interrupt TARGET [--tree] [--dry-run]\n  Press Stop on a conversation. --tree also stops every teammate still working on its job.
   ${T}`,
-  "new-bot": "openmausbot new-bot NAME [--title T] [--team T] [--model INSTANCE/MODEL] [--effort E]\n  Make a bot.",
-  "new-channel": "openmausbot new-channel NAME --members A,B [--team T]\n  Make a room from bots, by name or id.",
-  "set-model": "openmausbot set-model BOT --model INSTANCE/MODEL [--effort E] [--task ID] [--dry-run]\n  Change an idle bot's model (or one idle conversation's, with --task).",
-  edit: "openmausbot edit BOT --message ID (TEXT | --text TEXT) [--task ID] [--dry-run]\n  Rewrite an earlier message of yours and have the bot answer again from there.",
-  export: `openmausbot export TARGET --out DIR [--root ID] [--since MS] [--max-files 200] [--max-screens 100] [--max-bytes 500MB] [--force]
+  "new-bot": "limixbot new-bot NAME [--title T] [--team T] [--model INSTANCE/MODEL] [--effort E]\n  Make a bot.",
+  "new-channel": "limixbot new-channel NAME --members A,B [--team T]\n  Make a room from bots, by name or id.",
+  "set-model": "limixbot set-model BOT --model INSTANCE/MODEL [--effort E] [--task ID] [--dry-run]\n  Change an idle bot's model (or one idle conversation's, with --task).",
+  edit: "limixbot edit BOT --message ID (TEXT | --text TEXT) [--task ID] [--dry-run]\n  Rewrite an earlier message of yours and have the bot answer again from there.",
+  export: `limixbot export TARGET --out DIR [--root ID] [--since MS] [--max-files 200] [--max-screens 100] [--max-bytes 500MB] [--force]
   Write a conversation's job to DIR: the job tree, every transcript (secrets removed),
   the files its replies link to, and screen captures. --root keeps one job.
   ${T}`,
-  events: `openmausbot events [--thread ID]… [--job THREAD_ID [--until-settled]] [--kind K,…] [--since CURSOR] [--screens] [--jsonl]
+  events: `limixbot events [--thread ID]… [--job THREAD_ID [--until-settled]] [--kind K,…] [--since CURSOR] [--screens] [--jsonl]
   The server's live events, one JSON line each: messages, threads, bots and rooms, or the kinds --kind names
   (--kind message,runtime adds token-level events to messages).
   --job follows the threads of one conversation's job; --until-settled ends with it.`,
-  team: "openmausbot team apply FILE | team export --out FILE   (see help team apply, help team export)",
-  "team apply": `openmausbot team apply FILE [--dry-run | --check] [--prune] [--rotate-secrets] [--wait-idle 2m]
+  team: "limixbot team apply FILE | team export --out FILE   (see help team apply, help team export)",
+  "team apply": `limixbot team apply FILE [--dry-run | --check] [--prune] [--rotate-secrets] [--wait-idle 2m]
   Make the workspace match a team file (YAML or JSON): teams and briefs, bots, skills, Chiefs,
   rooms and engines. Prints the plan, then applies it; a second apply prints "No changes.".
   --dry-run only prints the plan; --check exits 6 if anything would change. --prune deletes bots
   and rooms the file leaves out, in teams marked prune: true. Keys come from { env } or { file },
   and a key already set is kept unless --rotate-secrets. docs/headless-cli.md has the format.`,
-  "team export": "openmausbot team export [--team NAME]… --out FILE\n  Write the workspace (or some teams) as a team file; skills go beside it, keys as placeholders,\n  and a key written into a soul, brief or skill is taken out.",
-  engine: "openmausbot engine set KIND … | engine list   (see help engine set)",
-  "engine set": `openmausbot engine set KIND (--key-env VAR | --key-file FILE) [--base-url URL] [--only-claude-api] [--install] [--rotate] [--dry-run]
+  "team export": "limixbot team export [--team NAME]… --out FILE\n  Write the workspace (or some teams) as a team file; skills go beside it, keys as placeholders,\n  and a key written into a soul, brief or skill is taken out.",
+  engine: "limixbot engine set KIND … | engine list   (see help engine set)",
+  "engine set": `limixbot engine set KIND (--key-env VAR | --key-file FILE) [--base-url URL] [--only-claude-api] [--install] [--rotate] [--dry-run]
   Give the workspace an engine key: claude, openai, openrouter, openai-compatible, xai, groq, greenference, modelgo, mistral or cerebras.
   The key is never printed. One already set is kept unless --rotate. --install installs the engine's
   command if it is not running already, so a script can run this on every start.
   claude: the key runs every Claude bot; --only-claude-api keeps it to "Claude (API key)" bots.`,
-  "engine list": "openmausbot engine list\n  The engines, whether each is ready, and which keys are set (never their values).",
+  "engine list": "limixbot engine list\n  The engines, whether each is ready, and which keys are set (never their values).",
   connect: `limixbot connect [URL] [--code CODE] --out FILE [--label NAME] [--client] [--force]
   Get a token for a workspace you reach over the network, saved to FILE (only you can read it).
   On this computer's own server the code is made for you; elsewhere, get one from Settings → Phone.
   Then use it: --url URL --token-file FILE (or OPENMAUSBOT_URL and OPENMAUSBOT_TOKEN).`,
-  mcp: "openmausbot mcp\n  Serve the Limix Bot MCP tools on stdin and stdout, for an agent (docs/mcp-server.md).",
-  token: "openmausbot token create NAME --out FILE … | token list | token revoke ID   (see help token create)",
-  "token create": `openmausbot token create NAME --out FILE [--scope client|admin] [--expires 90d] [--force]
+  mcp: "limixbot mcp\n  Serve the Limix Bot MCP tools on stdin and stdout, for an agent (docs/mcp-server.md).",
+  token: "limixbot token create NAME --out FILE … | token list | token revoke ID   (see help token create)",
+  "token create": `limixbot token create NAME --out FILE [--scope client|admin] [--expires 90d] [--force]
   An access token for CI and scripts, saved to FILE (only you can read it) and never printed.
   It ends on its date (--expires, at most the server's session limit: 180 days unless OMB_SESSION_MAX_DAYS)
   and never renews. --scope client (the default) can chat and answer approvals; admin can change settings.
-  Then: --url URL --token-file FILE. It is listed with openmausbot sessions too.`,
-  "token list": "openmausbot token list\n  The access tokens, their scope, when each ends and when it was last used (never the token).",
-  "token revoke": "openmausbot token revoke ID\n  End an access token at once (openmausbot token list shows the ids).",
+  Then: --url URL --token-file FILE. It is listed with limixbot sessions too.`,
+  "token list": "limixbot token list\n  The access tokens, their scope, when each ends and when it was last used (never the token).",
+  "token revoke": "limixbot token revoke ID\n  End an access token at once (limixbot token list shows the ids).",
 };
 
 export interface HeadlessOptions {

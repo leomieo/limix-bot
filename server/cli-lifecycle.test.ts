@@ -214,7 +214,7 @@ describe("CLI startup lifecycle", () => {
 
   it("reopens a matching desktop workspace even when its server PID differs from the lease owner", async () => {
     writeFileSync(join(dataDir, "environment-id"), workspaceId);
-    writeFileSync(join(dataDir, "openmausbot-server.lease"), JSON.stringify({
+    writeFileSync(join(dataDir, "limixbot-server.lease"), JSON.stringify({
       version: 1, pid: process.pid, host: hostname(), token: workspaceId, createdAt: Date.now(),
     }));
     vi.stubEnv("OMB_DATA_DIR", process.env.OMB_DATA_DIR);

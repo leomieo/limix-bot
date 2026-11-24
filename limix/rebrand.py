@@ -2331,7 +2331,7 @@ for rel, marker in [("electron/main.mjs", "limix-gateway"), ("electron/preload.c
         raise RuntimeError(f"Messaging gateway still wired in {rel} ({marker}): update limix/patches/messaging-module.json")
 
 # Restore the preceding template layer before replaying its dependent changes.
-for feature in ("channel-admin-video", "industry-specialists", "hybrid-factory"):
+for feature in ("windows-branding-channel-model", "channel-admin-video", "industry-specialists", "hybrid-factory"):
     layer = json.loads((ROOT / f"limix/patches/{feature}.json").read_text(encoding="utf-8"))
     for rel, edits in layer.items():
         def preceding_layer(source, edits=edits):
@@ -2341,7 +2341,7 @@ for feature in ("channel-admin-video", "industry-specialists", "hybrid-factory")
             return source
         edit(rel, preceding_layer)
 
-for feature in ("industry-customer-care", "assistant-template-suggestions", "hybrid-factory", "industry-specialists", "channel-admin-video"):
+for feature in ("industry-customer-care", "assistant-template-suggestions", "hybrid-factory", "industry-specialists", "channel-admin-video", "windows-branding-channel-model"):
     for rel, edits in json.loads((ROOT / f"limix/patches/{feature}.json").read_text(encoding="utf-8")).items():
         def apply_feature(s, edits=edits, rel=rel):
             for patch in edits:

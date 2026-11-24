@@ -37,8 +37,8 @@ const READS = new Set(["GET", "HEAD", "OPTIONS"]);
 /** What a frozen copy keeps once its workspace is deleted: the marker, this server's identity, Files, downloaded tools
  * and caches, and its own runtime files. Everything else, credentials included, is the person's workspace. */
 const DEVICE_STATE = new Set(["moved.json", "environment-id", "sync", "tools", "cache", ".cache", "tmp", ".tmp", "dist-native", "tunnel-runtime",
-  ".limixbot-server-child", "openmausbot-server.lease"]);
-const kept = (name: string) => DEVICE_STATE.has(name) || name.startsWith("openmausbot-server.lease.");
+  ".limixbot-server-child", ".openmausbot-server-child", "openmausbot-server.lease", "limixbot-server.lease"]);
+const kept = (name: string) => DEVICE_STATE.has(name) || /^(?:limixbot|openmausbot)-server\.lease\./.test(name);
 
 export type MoveFreeze = ReturnType<typeof createMoveFreeze>;
 

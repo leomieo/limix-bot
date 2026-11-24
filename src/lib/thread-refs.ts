@@ -109,8 +109,8 @@ export interface ThreadRefAddress {
   botId?: string;
 }
 
-const THREAD_URL_PREFIX = "openmausbot://thread/";
-const BOT_URL_PREFIX = "openmausbot://bot/";
+const THREAD_URL_PREFIX = "limixbot://thread/";
+const BOT_URL_PREFIX = "limixbot://bot/";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ID_LIMIT = 256;
 
@@ -125,7 +125,7 @@ export function threadRefUrl(ref: { botId: string; threadId: string }): string {
 }
 
 export function parseThreadRefUrl(value: string): ThreadRefAddress | null {
-  const raw = value.trim();
+  const raw = value.trim().replace(/^openmausbot:/i, "limixbot:");
   if (!raw.toLowerCase().startsWith(THREAD_URL_PREFIX)) return null;
   let url: URL;
   try {
@@ -153,7 +153,7 @@ export function parseThreadRefUrl(value: string): ThreadRefAddress | null {
 }
 
 export function parseBotRefUrl(value: string): { botId: string } | null {
-  const raw = value.trim();
+  const raw = value.trim().replace(/^openmausbot:/i, "limixbot:");
   if (!raw.toLowerCase().startsWith(BOT_URL_PREFIX)) return null;
   let url: URL;
   try {
@@ -177,7 +177,7 @@ export function parseBotRefUrl(value: string): { botId: string } | null {
 
 /** Even a link that fails strict parsing must never reach the shell as an external link. */
 export function looksLikeThreadRefUrl(value: string): boolean {
-  return value.trim().toLowerCase().startsWith(THREAD_URL_PREFIX);
+  return value.trim().toLowerCase().replace(/^openmausbot:/, "limixbot:").startsWith(THREAD_URL_PREFIX);
 }
 
 export function isThreadUuid(value: string): boolean {
@@ -344,7 +344,7 @@ export function threadTokenFromPaste(
 ): { token: string; ref: ResolvedThreadRef } | null {
   const trimmed = pasted.trim();
   if (!trimmed) return null;
-  const wrapped = /^\[((?:\\.|[^\\\]])*)\]\((openmausbot:\/\/thread\/[^()\s]*)\)$/.exec(trimmed);
+  const wrapped = /^\[((?:\\.|[^\\\]])*)\]\(((?:limixbot|openmausbot):\/\/thread\/[^()\s]*)\)$/.exec(trimmed);
   const address = wrapped
     ? parseThreadRefUrl(wrapped[2])
     : parseThreadRefUrl(trimmed) ?? (isThreadUuid(trimmed) ? { threadId: trimmed } : null);

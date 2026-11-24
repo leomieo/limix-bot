@@ -11,6 +11,7 @@ import { dirname, join } from "node:path";
 import { z } from "zod";
 
 import type { ChannelMedia } from "./channel-media.ts";
+import { redactSecretsInText } from "../../shared/redact.ts";
 import { retryableBusySchema } from "../bot-api.ts";
 import { writeFileAtomic } from "../atomic.ts";
 import type { RequestAuth } from "../request-auth.ts";
@@ -172,6 +173,17 @@ const text = (label: string) => ({
   failed: "Bot chưa trả lời được lúc này. Thử lại sau.",
   empty: "Bot đã làm xong nhưng không có câu trả lời bằng chữ.",
 });
+
+function channelAiFailure(error: unknown, owner: boolean): string | undefined {
+  const issue = z.object({ code: z.string().optional(), detail: z.string().optional() }).safeParse(error);
+  if (!issue.success) return;
+  if (issue.data.code === "guest_engine" || /too old to run this turn without a shell|kept its shell, so it can.t run this turn/i.test(issue.data.detail ?? "")) return "Mô hình đang chọn chưa hỗ trợ trò chuyện với khách trên kênh này. Hãy báo chủ bot chọn mô hình hỗ trợ quyền khách trong Limix Bot.";
+  if (!owner || !issue.data.detail) return;
+  if (/not (?:logged|signed) in|sign[ -]?in required|sign in again|authentication required|invalid api key|unauthorized|unauthenticated/i.test(issue.data.detail))
+    return "Tài khoản AI của mô hình đang chọn cần xác thực. Mở Cài đặt → AI trong Limix Bot để kết nối lại, rồi gửi một tin nhắn mới.";
+  if (/model (?:not found|is unavailable)|provider instance .*unavailable|model_not_found/i.test(issue.data.detail))
+    return "Mô hình đã chọn hiện không khả dụng. Hãy chọn một mô hình đang hoạt động trong cài đặt của bot rồi gửi một tin nhắn mới.";
+}
 
 const ZALO_RECEIPT = /^(?:\*\*)?(?:(?:mình|tôi|em)\s+)?đã nhận(?: được)? tin nhắn(?:\s*[:：]?\s+(?:“([^”\r\n]*)”|"([^"\r\n]*)"|'([^'\r\n]*)'|‘([^’\r\n]*)’)|(?: của bạn)?(?=\s*[.!。]|\s*$))\s*[.!。]?(?:\*\*)?\s*/iu;
 
@@ -438,8 +450,9 @@ export function createBotChannels(deps: BotChannelsDeps) {
         result = { reply: body || (answer.status === "needs_approval" ? say.approval : answer.status === "working" ? say.working : hasMedia ? "" : say.empty), attachments };
       } catch (error) {
         if (signal.aborted) return;
-        log(`${kind}: ${failure(error)}`);
-        result = { reply: error === mediaUnavailable ? say.mediaFailed : say.failed };
+        const detail = z.object({ detail: z.string() }).safeParse(error);
+        log(`${kind}: ${redactSecretsInText(detail.success ? detail.data.detail : failure(error)).slice(0, 600)}`);
+        result = { reply: channelAiFailure(error, owner) ?? (error === mediaUnavailable ? say.mediaFailed : say.failed) };
       } finally {
         clearInterval(typing);
       }

@@ -53,7 +53,9 @@ jobs:
           node --test electron/limix-docker-mac.node-test.mjs electron/messaging-module.node-test.mjs
           node node_modules/vitest/vitest.mjs run src/lib/copy-text.test.ts src/lib/copy-text.guard.test.ts
       - name: Verify Bot API threads and navigation
-        run: node node_modules/vitest/vitest.mjs run server/bot-api-host.test.ts src/state/thread-navigation.test.ts
+        run: |
+          node --test electron/limix-profile.node-test.mjs
+          node node_modules/vitest/vitest.mjs run server/bot-api-host.test.ts server/thread-model-follow.e2e.test.ts src/state/thread-navigation.test.ts
       - name: Verify Responses image generation
         run: node node_modules/vitest/vitest.mjs run server/limix-image-routing.test.ts server/limix-image-routing.e2e.test.ts server/image-generation.test.ts server/limix-image-connections.test.ts server/routes/image-settings.test.ts server/routes/image-tools.test.ts src/components/ImageGenerationSettings.test.ts
       - name: Verify the phone connection guide
@@ -89,7 +91,7 @@ jobs:
         run: |
           res=release/win-unpacked/resources
           fail=0
-          for f in server/index.js server/desktop-entry.mjs ui/index.html cloudflared/cloudflared.exe app-update.yml limix-runtime/python/python.exe limix-runtime/python/python3.exe limix-runtime/uv/uv.exe skills/limix-bot-factory/{SKILL.md,scripts/mcp_server.py,scripts/factorylib/stdio.py} skills/ui-ux-pro-max/SKILL.md skills/agent-reach/SKILL.md skills/rea-video/SKILL.md skills/reverse-engineer-anything/{SKILL.md,manifest.json,LICENSE,references/evidence-workflows.md}; do
+          for f in server/index.js server/limixbot.js licenses/LimixBot-LICENSE.txt licenses/LimixBot-NOTICE.txt server/desktop-entry.mjs ui/index.html cloudflared/cloudflared.exe app-update.yml limix-runtime/python/python.exe limix-runtime/python/python3.exe limix-runtime/uv/uv.exe skills/limix-bot-factory/{SKILL.md,scripts/mcp_server.py,scripts/factorylib/stdio.py} skills/ui-ux-pro-max/SKILL.md skills/agent-reach/SKILL.md skills/rea-video/SKILL.md skills/reverse-engineer-anything/{SKILL.md,manifest.json,LICENSE,references/evidence-workflows.md}; do
             [ -f "$res/$f" ] || { echo "::error::missing $res/$f"; fail=1; }
           done
           [ -f "release/win-unpacked/Limix Bot.exe" ] || { echo "::error::missing Limix Bot.exe"; fail=1; }

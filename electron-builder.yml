@@ -5,7 +5,7 @@ artifactName: LimixBot-${version}-${arch}.${ext}
 
 protocols:
   - name: Limix Bot package install
-    schemes: [openmausbot]
+    schemes: [limixbot, openmausbot]
 
 # In-app auto-update reads latest-mac.yml + the .zip (macOS) or latest.yml +
 # the NSIS .exe (Windows) from the PUBLIC releases in this source repo.
@@ -55,9 +55,9 @@ asar: true
 extraResources:
   # Ship the app's own license terms in every desktop distribution.
   - from: LICENSE
-    to: licenses/OpenMausBot-LICENSE.txt
+    to: licenses/LimixBot-LICENSE.txt
   - from: NOTICE
-    to: licenses/OpenMausBot-NOTICE.txt
+    to: licenses/LimixBot-NOTICE.txt
   # cloudflared is distributed under Apache-2.0 as a separate executable.
   # OpenMausBot itself uses the same full license text; ship another named
   # copy so the third-party executable's terms remain unambiguous.
@@ -205,7 +205,7 @@ nsis:
   perMachine: false
   shortcutName: Limix Bot
   # Versioned, like the .dmg. The README's /latest/download/ button needs a
-  # STABLE filename, so ship a second copy named OpenMausBot-setup.exe on the
+  # STABLE filename, so ship a second copy named LimixBot-setup.exe on the
   # release — the same trick as OpenMausBot.dmg beside OpenMausBot-${version}.dmg.
   artifactName: LimixBot-${version}-setup.${ext}
 

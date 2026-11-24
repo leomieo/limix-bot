@@ -1,12 +1,18 @@
-Limix Bot 0.3.105
+Limix Bot 0.3.106
 
 ## Tiếng Việt
+
+- Bot ưu tiên xử lý tin nhắn sau khi chuyển mô hình xong. Khi mô hình không hỗ trợ tin nhắn khách, kênh chat báo lý do.
+- Chuẩn hóa tên Limix Bot trên Windows, trong nhật ký máy chủ và khi xuất bản mẫu.
 
 - Xem công cụ dựng phim, tạo giọng đọc và căn phụ đề trong **Công cụ cho kỹ năng → Yêu cầu của skills**. Chọn từng công cụ khi cần.
 - Chọn **Limix AI Video Creator** trong mục Bản mẫu để lên kịch bản phân cảnh, soạn phụ đề và tạo dự án video Hypit có thể chỉnh sửa. Để xuất phim, hãy kết nối môi trường Hypit của bạn.
 - Trong phần Kênh chat, bạn có thể mời nhiều quản trị viên qua tin nhắn riêng và gỡ quyền từng người. Trong nhóm chat, quản trị viên dùng quyền khách.
 
 ## English
+
+- Connected channels can wait for a model change and give a clear message when the selected model cannot handle guest chats.
+- Windows files, server logs and template exports use the Limix Bot name.
 
 - Find optional rendering, narration and caption tools under **Tools for skills → Skill requirements**. Choose tools individually for your project.
 - Choose **Limix AI Video Creator** in Templates to storyboard a short video, draft captions and create an editable Hypit project. Connect your Hypit runtime to render the video.

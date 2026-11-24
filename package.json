@@ -1,7 +1,7 @@
 {
   "name": "limixbot",
   "private": true,
-  "version": "0.3.105",
+  "version": "0.3.106",
   "description": "Limix Bot: a local-first chat app for running a team of AI bots, connected to Telegram and Zalo.",
   "homepage": "https://github.com/leomieo/limix-bot",
   "repository": {
@@ -30,8 +30,8 @@
     "docs:build": "pnpm --filter @openmausbot/docs build",
     "docs:preview": "pnpm --filter @openmausbot/docs preview",
     "companion": "node --experimental-strip-types companion/src/index.ts",
-    "omb": "node --experimental-strip-types server/openmausbot.ts",
-    "pair": "node --experimental-strip-types server/openmausbot.ts pair",
+    "omb": "node --experimental-strip-types server/limixbot.ts",
+    "pair": "node --experimental-strip-types server/limixbot.ts pair",
     "dev:server": "node --experimental-strip-types server/dev-server.ts",
     "mcp": "node --experimental-strip-types scripts/mcp-server.ts",
     "control:omb": "node --experimental-strip-types scripts/control-omb.ts",

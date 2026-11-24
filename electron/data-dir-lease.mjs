@@ -4,7 +4,8 @@ import { existsSync, linkSync, mkdirSync, readdirSync, readFileSync, readlinkSyn
 import { hostname, uptime } from "node:os";
 import { join } from "node:path";
 
-const LEASE_NAME = "openmausbot-server.lease";
+const LEASE_NAME = "limixbot-server.lease";
+const LEGACY_LEASE_NAME = "openmausbot-server.lease";
 const DELEGATED_CHILD_DIR = ".limixbot-server-child";
 // Internal parent-to-child capability, obtained only from utilityServerLeaseEnvironment(); never public configuration.
 const CHILD_LEASE_ENV = "OPENMAUSBOT_INTERNAL_DATA_DIR_LEASE";
@@ -409,7 +410,15 @@ function prepareDataDir(dataDir, legacyDataDir) {
 }
 
 function assertNoLiveDelegatedChild(dataDir, t) {
-  const childLeasePath = join(dataDir, DELEGATED_CHILD_DIR, LEASE_NAME);
+  for (const path of [
+    join(dataDir, DELEGATED_CHILD_DIR, LEASE_NAME),
+    join(dataDir, DELEGATED_CHILD_DIR, LEGACY_LEASE_NAME),
+    join(dataDir, ".openmausbot-server-child", LEGACY_LEASE_NAME),
+    join(dataDir, LEGACY_LEASE_NAME),
+  ]) assertStoppedLease(path, t);
+}
+
+function assertStoppedLease(childLeasePath, t) {
   const child = readOwner(childLeasePath);
   if (!child) return;
   if (!sameMachine(child)) {
@@ -603,7 +612,10 @@ function clearRecords(dataDir, stale) {
   const paths = [
     join(dataDir, LEASE_NAME),
     join(dataDir, DELEGATED_CHILD_DIR, LEASE_NAME),
-    ...entries.filter((name) => name.startsWith(`${LEASE_NAME}.reap-`)).map((name) => join(dataDir, name)),
+    join(dataDir, LEGACY_LEASE_NAME),
+    join(dataDir, DELEGATED_CHILD_DIR, LEGACY_LEASE_NAME),
+    join(dataDir, ".openmausbot-server-child", LEGACY_LEASE_NAME),
+    ...entries.filter((name) => [LEASE_NAME, LEGACY_LEASE_NAME].some(prefix => name.startsWith(`${prefix}.reap-`))).map((name) => join(dataDir, name)),
   ];
   const cleared = [];
   for (const path of paths) {
