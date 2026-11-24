@@ -11,7 +11,7 @@
 
 # Limix Bot
 
-Limix Bot giúp bạn tạo đội bot AI để trò chuyện, giao việc và tự động hóa công việc. Bạn có thể chạy bot trên máy tính của mình hoặc dùng My Cloud.
+Limix Bot là không gian làm việc với AI cho cá nhân và đội nhóm. Tạo bot theo vai trò, giao việc trong chat và kết nối các kỹ năng, công cụ và kênh liên lạc bạn cần.
 
 ## Tải và cài đặt
 
@@ -26,29 +26,18 @@ Limix Bot giúp bạn tạo đội bot AI để trò chuyện, giao việc và t
 2. Vào **Cài đặt → AI**. Chọn nhà cung cấp rồi đăng nhập hoặc thêm khóa API.
 3. Mở **Trợ lý Limix**, chọn mẫu bot hoặc nhóm theo ngành rồi bấm **Dùng mẫu**. Bạn cũng có thể chọn **+** ở thanh bên để tự tạo bot.
 
-## Bạn có thể làm gì
+## Tính năng
 
-- Chọn từ 30 mẫu bot phòng ban và 10 nhóm theo ngành. Dùng Siêu bot CSKH để phân loại yêu cầu, tra danh mục của bạn và chuẩn bị bàn giao cho nhân viên.
-- Giao vai trò, chọn mô hình AI và thêm kỹ năng riêng cho từng bot. Cho các bot phối hợp trong nhóm hoặc lên lịch làm việc định kỳ.
-- Kết nối Telegram, Zalo, Discord và các kênh được hỗ trợ trong phần **Kênh chat** của bot. Tính năng gửi tệp phụ thuộc vào từng nền tảng.
-- Cài kỹ năng từ thư viện Limix và xem quyền, công cụ cần dùng trước khi bật.
-- Cho bot làm việc trong trình duyệt hoặc trên máy tính riêng, tùy cấu hình. Ghép nối điện thoại để truy cập khi máy chủ bot đang chạy và có mạng.
-- Khi My Cloud mất kết nối, chọn **Dùng máy tính này** để làm việc với các bot có sẵn trên máy. Đồng bộ lịch sử trò chuyện khi kết nối lại.
-
-## Tài liệu
-
-| Bạn muốn làm gì? | Hướng dẫn |
+| Tính năng | Bạn có thể làm gì |
 | --- | --- |
-| Cài ứng dụng, chọn AI và tạo bot đầu tiên | [Bắt đầu với Limix Bot](docs/README.md#tieng-viet) |
-| Dùng bot mẫu, nhóm bot và kỹ năng | [Bot, nhóm bot và kỹ năng](docs/README.md#vi-bots) |
-| Kết nối kênh chat hoặc xử lý lỗi | [Kênh chat và xử lý lỗi](docs/README.md#vi-channels) |
-| Vận hành máy chủ hoặc Fleet trên Linux | [Triển khai máy chủ](docs/README.md#vi-operations) |
+| **Bot và nhóm mẫu** | Bắt đầu với 30 mẫu bot phòng ban và 10 nhóm theo ngành, rồi điều chỉnh mô hình, chỉ dẫn và kỹ năng theo nhu cầu. |
+| **Chăm sóc khách hàng** | Phân loại yêu cầu, tra cứu danh mục đã kết nối và chuẩn bị bàn giao cho nhân viên. |
+| **Sản xuất video** | Lên kịch bản phân cảnh, soạn phụ đề và tạo dự án Hypit có thể chỉnh sửa với **Limix AI Video Creator**. |
+| **Kỹ năng và tự động hóa** | Thêm kỹ năng theo công việc, xem công cụ cần dùng và đặt lịch cho tác vụ lặp lại. |
+| **Kênh chat** | Kết nối bot với Telegram, Zalo, Discord, Facebook Page hoặc Messenger tùy cấu hình. |
+| **Môi trường làm việc** | Dùng Limix Bot trên máy tính, trong My Cloud hoặc trên hạ tầng tự quản. |
 
-## Yêu cầu và lưu ý
-
-- Bộ cài đang ở giai đoạn beta. Hãy sao lưu dữ liệu trước khi chuyển máy và chỉ tải từ trang phát hành chính thức.
-- Máy tính riêng trên máy này cần môi trường container tương thích, chẳng hạn Docker Desktop. Limix Bot hỗ trợ cài một số công cụ còn thiếu cho kỹ năng trên Windows.
-- Chỉ kết nối tài khoản bạn có quyền sử dụng. Xem lại quyền truy cập trước khi bật kỹ năng, tự động hóa hoặc kết nối kênh chat.
+[Khám phá tính năng và cách sử dụng](docs/README.md#tieng-viet) · [Hướng dẫn tự lưu trữ](docs/self-hosting.md)
 
 [Trang chủ](https://limixmedia.com) · [Bản phát hành](https://github.com/leomieo/limix-bot/releases) · [Thư viện kỹ năng](https://github.com/leomieo/limix-skill-hub) · [Đóng góp](https://github.com/leomieo/limix-bot/blob/main/CONTRIBUTING.md) · [Quy tắc ứng xử](https://github.com/leomieo/limix-bot/blob/main/CODE_OF_CONDUCT.md) · [Bảo mật](https://github.com/leomieo/limix-bot/blob/main/SECURITY.md) · [Giấy phép](https://github.com/leomieo/limix-bot/blob/main/LICENSE) · [Ghi công](https://github.com/leomieo/limix-bot/blob/main/NOTICE)
 
@@ -60,7 +49,7 @@ Limix Bot giúp bạn tạo đội bot AI để trò chuyện, giao việc và t
 
 # Limix Bot
 
-Limix Bot lets you build a team of AI bots to chat, delegate work and automate recurring tasks. Run bots on your computer or use My Cloud.
+Limix Bot is an AI workspace for individuals and teams. Create bots for specific roles, assign work in chat, and connect the skills, tools and channels you use.
 
 ## Download and install
 
@@ -75,28 +64,17 @@ Limix Bot lets you build a team of AI bots to chat, delegate work and automate r
 2. Open **Settings → AI**. Choose a provider, then sign in or add an API key.
 3. Open the **Limix assistant**, choose a bot or industry team, then select **Use template**. You can also select **+** in the sidebar to create your own bot.
 
-## What you can do
+## Features
 
-- Choose from 30 departmental bot templates and 10 industry teams. Use the customer support bot to triage requests, look up products in your catalog and prepare handoffs.
-- Give each bot a role, an AI model and its own skills. Let bots work together in groups or run scheduled tasks.
-- Connect Telegram, Zalo, Discord and other supported services in the bot’s **Chat channels** settings. File support varies by service.
-- Install skills from the Limix library and review the permissions and tools they need before enabling them.
-- Let your bots work in a browser or a dedicated computer, depending on your setup. Pair your phone for access while the bot’s host is running and online.
-- If My Cloud is unavailable, select **Use this computer** to keep working with bots stored locally. Sync chat history when the connection returns.
-
-## Documentation
-
-| I want to… | Guide |
+| Feature | What you can do |
 | --- | --- |
-| Install the app, choose AI and create my first bot | [Getting started](docs/README.md#english) |
-| Use bot templates, teams and skills | [Bots, teams and skills](docs/README.md#en-bots) |
-| Connect a chat channel or diagnose a problem | [Chat channels and troubleshooting](docs/README.md#en-channels) |
-| Run a server or manage Linux Fleet | [Server deployment](docs/README.md#en-operations) |
+| **Bot and team templates** | Start with 30 departmental bot templates and 10 industry teams, then tailor their models, instructions and skills. |
+| **Customer support** | Triage requests, look up information in a connected catalog and prepare handoffs to staff. |
+| **Video production** | Storyboard short videos, draft captions and prepare editable Hypit projects with **Limix AI Video Creator**. |
+| **Skills and automation** | Add skills for each role, review the tools they need, and schedule recurring tasks. |
+| **Chat channels** | Connect a bot to Telegram, Zalo, Discord, Facebook Page or Messenger, depending on your setup. |
+| **Workspaces** | Use Limix Bot on your computer, in My Cloud or on infrastructure you manage. |
 
-## Requirements and notes
-
-- The installers are in beta. Back up your data before moving to another computer and download from the official release page.
-- Dedicated local computers require a compatible container runtime such as Docker Desktop. On Windows, Limix Bot can install some of the tools required by skills.
-- Connect only accounts you’re authorized to use. Review access before enabling skills, automations or chat channels.
+[Explore Limix Bot and how to use it](docs/README.md#english) · [Self-hosting guide](docs/self-hosting.md)
 
 [Home](https://limixmedia.com) · [Releases](https://github.com/leomieo/limix-bot/releases) · [Skill library](https://github.com/leomieo/limix-skill-hub) · [Contributing](https://github.com/leomieo/limix-bot/blob/main/CONTRIBUTING.md) · [Code of Conduct](https://github.com/leomieo/limix-bot/blob/main/CODE_OF_CONDUCT.md) · [Security](https://github.com/leomieo/limix-bot/blob/main/SECURITY.md) · [License](https://github.com/leomieo/limix-bot/blob/main/LICENSE) · [Notices](https://github.com/leomieo/limix-bot/blob/main/NOTICE)

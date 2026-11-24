@@ -1,61 +1,63 @@
-[Tiếng Việt](#tieng-viet) · [English](#english) · [Kho mã / Repository](../README.md)
+[Tiếng Việt](#tieng-viet) · [English](#english) · [README](../README.md)
 
-# Tài liệu Limix Bot · Limix Bot documentation
+# Khám phá Limix Bot · Explore Limix Bot
 
 <a id="tieng-viet"></a>
 
 ## Tiếng Việt
 
-[Bắt đầu](#vi-start) · [Bot và kỹ năng](#vi-bots) · [Kênh chat](#vi-channels) · [Triển khai](#vi-operations)
+Limix Bot là không gian làm việc cho cá nhân và đội nhóm muốn dùng AI trong công việc hằng ngày. Tạo bot theo vai trò, giao việc trong cuộc trò chuyện, rồi kết nối kỹ năng và công cụ phù hợp với từng công việc.
 
-<a id="vi-start"></a>
-
-### Bắt đầu
-
-1. Chọn bộ cài đúng hệ điều hành và kiến trúc máy trong [bảng tải xuống](../README.md#tieng-viet). Nếu đang dùng phiên bản cũ, hãy xem [ghi chú phát hành](https://github.com/leomieo/limix-bot/releases) trước khi cập nhật.
-2. Mở **Cài đặt → AI**, kết nối tài khoản hoặc khóa API của nhà cung cấp, rồi chọn mô hình cho bot.
-3. Mở **Bản mẫu**, chọn một bot, bấm **Dùng mẫu** và gửi một yêu cầu thử trong Limix Bot. Dùng yêu cầu chỉ đọc, chẳng hạn tóm tắt một đoạn văn ngắn.
-4. Kiểm tra nội dung phản hồi trước khi bật kỹ năng, kết nối kênh ngoài hoặc lên lịch tác vụ.
+[Bắt đầu](#vi-start) · [Bot và nhóm](#vi-bots) · [Kênh chat](#vi-channels) · [Không gian làm việc](#vi-operations)
 
 <a id="vi-bots"></a>
 
-### Bot, nhóm bot và kỹ năng
+### Tạo bot theo vai trò
 
-| Mục tiêu | Cách thực hiện |
+Mỗi bot có thể dùng mô hình, chỉ dẫn và kỹ năng riêng. Bạn có thể tạo một bot để nghiên cứu và soạn thảo, hoặc dùng nhóm mẫu để phân công công việc giữa nhiều vai trò.
+
+| Bạn muốn | Tính năng phù hợp |
 | --- | --- |
-| Giao một vai trò | Tạo bot từ **Bản mẫu** hoặc dấu **+** ở thanh bên. Đặt vai trò, mô hình và phạm vi công cụ cho bot. |
-| Phối hợp theo ngành | Chọn một nhóm trong thư viện, xem vai trò của từng bot và kỹ năng đi kèm, rồi dùng mẫu. Với nhóm chăm sóc khách hàng, hãy thử một tình huống bàn giao giữa hai vai trò trước. |
-| Thêm kỹ năng | Mở phần kỹ năng của bot và xem nguồn, quyền và công cụ phụ thuộc trước khi bật. Dùng **Công cụ cho kỹ năng → Yêu cầu của skills** để xem phần mềm hỗ trợ cần cho từng tác vụ. |
-| Sản xuất video | Chọn **Limix AI Video Creator** để chuẩn bị kịch bản phân cảnh, phụ đề và dự án Hypit có thể chỉnh sửa. Kết xuất video cần môi trường Hypit được cấu hình trên máy thực thi. |
+| Tạo đội bot cho một lĩnh vực | Chọn trong 30 mẫu bot phòng ban và 10 nhóm theo ngành. Xem vai trò thành viên và kỹ năng đi kèm trước khi dùng mẫu. |
+| Hỗ trợ khách hàng | Dùng Siêu bot CSKH để phân loại yêu cầu, tra thông tin từ danh mục đã kết nối và chuẩn bị bàn giao cho nhân viên. |
+| Sản xuất video ngắn | Dùng **Limix AI Video Creator** để lên kịch bản phân cảnh, soạn phụ đề và chuẩn bị dự án Hypit có thể chỉnh sửa. Kết xuất cần môi trường Hypit trên máy chạy bot. |
+| Xây dựng quy trình riêng | Dùng **Trợ lý Limix** để tìm mẫu phù hợp, tạo bản nháp bot và xem công cụ cần dùng trước khi đưa vào công việc. |
 
-### Quyền và dữ liệu
+### Mở rộng bằng kỹ năng và công cụ
 
-- Cấp quyền theo công việc. Với tài khoản, dữ liệu hoặc hành động nhạy cảm, dùng chế độ hỏi duyệt và giới hạn phạm vi tool hoặc thư mục theo bot.
-- Trước khi bật lịch chạy hay kênh ngoài, kiểm tra bot có thể đọc và ghi những gì trong môi trường thực thi.
-- Sao lưu dữ liệu trước khi chuyển máy hoặc nâng cấp môi trường tự lưu trữ. Báo riêng các vấn đề bảo mật theo hướng dẫn của dự án. [Báo cáo bảo mật](../SECURITY.md)
+- **Kỹ năng** cung cấp hướng dẫn chuyên môn cho bot. Chọn kỹ năng phù hợp với từng vai trò từ thư viện hoặc dùng kỹ năng đi kèm mẫu.
+- **Công cụ** giúp bot đọc dữ liệu, kết nối dịch vụ và thực hiện tác vụ. Trong **Công cụ cho kỹ năng**, bạn có thể xem phần mềm cần thiết và cài công cụ khi dùng đến.
+- **Lịch chạy** giúp bot thực hiện công việc định kỳ, chẳng hạn chuẩn bị bản tổng hợp hoặc rà soát danh sách việc cần xử lý.
 
 <a id="vi-channels"></a>
 
-### Kênh chat và xử lý lỗi
+### Trò chuyện trên các kênh quen thuộc
 
-Mở cài đặt bot và chọn **Kênh chat**. Kết nối dịch vụ đang cần, thử một tin nhắn riêng và kiểm tra câu trả lời trước khi cho khách sử dụng. Quyền chủ bot áp dụng cho tài khoản đã liên kết trên kênh hỗ trợ xác minh danh tính. Phản hồi trong nhóm dùng quyền khách.
+Trong phần **Kênh chat** của bot, bạn có thể kết nối Telegram, Zalo, Discord, Facebook Page hoặc Messenger tùy theo cấu hình. Các kênh hỗ trợ xác minh danh tính cho phép liên kết chủ bot và thêm quản trị viên. Bot dùng quyền khách khi phản hồi trong nhóm.
 
-| Hiện tượng | Kiểm tra |
-| --- | --- |
-| Bot không trả lời ngay trong Limix | Kiểm tra mô hình, tài khoản AI, hạn mức và trạng thái của cuộc trò chuyện. |
-| Limix trả lời nhưng kênh ngoài gặp lỗi | Kiểm tra bot được gán cho kênh, trạng thái kết nối, quyền khách và khả năng xử lý quyền khách của mô hình đã chọn. |
-| Kỹ năng báo thiếu công cụ | Quét lại trong **Công cụ cho kỹ năng**. Kiểm tra công cụ trên đúng máy mà bot sẽ chạy. |
-| My Cloud không kết nối được | Kiểm tra mạng và trạng thái tài khoản. Nếu màn hình có tùy chọn **Dùng máy tính này**, bạn có thể tiếp tục với các bot đã có trên máy. |
+Bạn có thể thử bot trong Limix trước, sau đó kết nối một kênh và kiểm tra bằng tin nhắn riêng. Cách này giúp bạn xem bot trả lời ra sao trước khi mở quyền cho khách.
 
 <a id="vi-operations"></a>
 
-### Triển khai máy chủ
+### Chọn nơi bot làm việc
 
-- **Ứng dụng desktop** phù hợp khi bạn quản lý bot trực tiếp trên máy cá nhân. Xem [bộ cài desktop](../README.md#tieng-viet).
-- **Máy chủ tự quản** phù hợp khi bot cần chạy độc lập với cửa sổ desktop. Xem [hướng dẫn tự lưu trữ](self-hosting.md) để cấu hình máy chủ, truy cập từ xa và Fleet.
-- **Fleet trên Linux** dùng một dịch vụ systemd cho mỗi workspace. Máy chủ đã cài Fleet từ bản trước cần chuyển tên unit theo [hướng dẫn nâng cấp](self-hosting.md#updating-an-existing-fleet-to-the-new-service-name).
+| Môi trường | Phù hợp khi |
+| --- | --- |
+| **Máy tính này** | Bạn quản lý bot từ ứng dụng desktop và làm việc với dữ liệu trên máy. |
+| **My Cloud** | Bạn muốn dùng không gian làm việc trên Cloud và truy cập từ nhiều thiết bị. |
+| **Máy chủ tự quản** | Bạn muốn vận hành bot trên hạ tầng của mình. [Hướng dẫn tự lưu trữ](self-hosting.md) |
 
-Khi báo lỗi, gửi phiên bản Limix Bot, hệ điều hành, thao tác tái hiện và thông báo lỗi đã che thông tin riêng tư. [Báo lỗi](https://github.com/leomieo/limix-bot/issues) · [Đóng góp](../CONTRIBUTING.md) · [Giấy phép](../LICENSE) · [Ghi công](../NOTICE)
+Tùy cấu hình, bạn có thể cho bot làm việc trong trình duyệt hoặc trên máy tính riêng. Cài đặt quyền theo từng bot và chọn chế độ hỏi duyệt cho tác vụ nhạy cảm.
+
+<a id="vi-start"></a>
+
+### Bắt đầu với một bot
+
+1. Tải bộ cài phù hợp với thiết bị. [Bộ cài Limix Bot](../README.md#tieng-viet)
+2. Mở **Cài đặt → AI** và kết nối nhà cung cấp bạn muốn dùng.
+3. Trong **Bản mẫu**, chọn bot phù hợp, bấm **Dùng mẫu** và giao một việc thử.
+
+[Bản phát hành](https://github.com/leomieo/limix-bot/releases) · [Thư viện kỹ năng](https://github.com/leomieo/limix-skill-hub) · [Hỗ trợ](https://github.com/leomieo/limix-bot/issues) · [Bảo mật](../SECURITY.md)
 
 ---
 
@@ -63,53 +65,55 @@ Khi báo lỗi, gửi phiên bản Limix Bot, hệ điều hành, thao tác tái
 
 ## English
 
-[Getting started](#en-start) · [Bots and skills](#en-bots) · [Chat channels](#en-channels) · [Deployment](#en-operations)
+Limix Bot is a workspace for individuals and teams that use AI in their everyday work. Create bots for specific roles, assign work in chat, and connect the skills and tools each job calls for.
 
-<a id="en-start"></a>
-
-### Getting started
-
-1. Choose the installer that matches your operating system and architecture from the [download table](../README.md#english). If you already use Limix Bot, read the [release notes](https://github.com/leomieo/limix-bot/releases) before updating.
-2. Open **Settings → AI**, connect a provider account or API key, and choose a model for your bot.
-3. Open **Templates**, select a bot, choose **Use template**, and send a test message in Limix Bot. Start with a read-only task, such as summarizing a short passage.
-4. Check the reply before enabling skills, connecting external channels or scheduling tasks.
+[Get started](#en-start) · [Bots and teams](#en-bots) · [Chat channels](#en-channels) · [Workspaces](#en-operations)
 
 <a id="en-bots"></a>
 
-### Bots, teams and skills
+### Build bots around roles
 
-| Goal | What to do |
+Each bot can have its own model, instructions and skills. Create a single bot for research and writing, or use a team template to divide work among several roles.
+
+| I want to… | Feature |
 | --- | --- |
-| Assign a role | Create a bot from **Templates** or the sidebar **+**. Set its role, model and tool scope. |
-| Work as an industry team | Choose a team from the library, review the member roles and included skills, then use the template. For customer support, test a handoff between two roles first. |
-| Add a skill | Open the bot's skills settings and review the source, permissions and dependencies before enabling a skill. Use **Tools for skills → Skill requirements** to see the software needed for specific tasks. |
-| Produce video | Choose **Limix AI Video Creator** to prepare storyboards, captions and editable Hypit projects. Rendering needs a configured Hypit runtime on the machine doing the work. |
+| Create a team for an industry | Choose from 30 departmental bot templates and 10 industry teams. Review member roles and included skills before choosing a template. |
+| Support customers | Use the customer support bot to triage requests, look up information in a connected catalog and prepare handoffs to staff. |
+| Produce short videos | Use **Limix AI Video Creator** to storyboard, draft captions and prepare editable Hypit projects. Rendering requires a Hypit runtime on the machine running the bot. |
+| Build a custom workflow | Ask the **Limix assistant** to find suitable templates, draft a bot and review the tools it needs before putting it to work. |
 
-### Permissions and data
+### Extend bots with skills and tools
 
-- Grant access for the job at hand. Use Ask approval and scope tools or folders per bot for sensitive accounts, data or actions.
-- Before enabling scheduled work or external chat channels, check which data the bot can read and write where it runs.
-- Back up your data before moving computers or upgrading a self-hosted environment. Report security issues privately using the project's policy. [Security reporting](../SECURITY.md)
+- **Skills** give bots instructions for specialized work. Choose skills from the library for each role or use the skills included in a template.
+- **Tools** let bots read data, connect to services and carry out tasks. Use **Tools for skills** to review software requirements and install tools as you need them.
+- **Scheduled tasks** let bots repeat work such as preparing a digest or reviewing a list of outstanding items.
 
 <a id="en-channels"></a>
 
-### Chat channels and troubleshooting
+### Talk to bots on familiar channels
 
-Open the bot's settings and choose **Chat channels**. Connect the service you need, test a private message and check the reply before opening access to guests. Owner permissions apply to a linked account on channels that support identity verification. Group replies use guest permissions.
+Under **Chat channels** in the bot settings, connect Telegram, Zalo, Discord, Facebook Page or Messenger, depending on your setup. Channels that support identity verification let you link the bot owner and add administrators. Bots answer in groups with guest permissions.
 
-| Symptom | Check |
-| --- | --- |
-| The bot does not reply in Limix Bot | Check the model, AI account, usage limits and conversation status. |
-| Limix Bot replies, but an external channel fails | Check which bot is attached, the channel connection, guest access, and whether the selected model supports guest turns. |
-| A skill reports a missing tool | Rescan in **Tools for skills**. Check for the tool on the machine where the bot actually runs. |
-| My Cloud is unreachable | Check your network and account status. If you see **Use this computer**, you can continue working with bots stored locally. |
+You can test the bot in Limix first, then connect a channel and send a private message. This lets you see how the bot replies before opening access to guests.
 
 <a id="en-operations"></a>
 
-### Server deployment
+### Choose where bots work
 
-- **Desktop** suits people who manage bots directly on a personal computer. See the [desktop downloads](../README.md#english).
-- **Self-hosted server** suits bots that need to run independently of the desktop window. See the [self-hosting guide](self-hosting.md) for server setup, remote access and Fleet.
-- **Linux Fleet** uses one systemd service per workspace. For existing Fleet installations, follow the [unit migration instructions](self-hosting.md#updating-an-existing-fleet-to-the-new-service-name).
+| Environment | Use it when… |
+| --- | --- |
+| **This computer** | You manage bots in the desktop app and work with data on your machine. |
+| **My Cloud** | You want a cloud workspace that you can access from multiple devices. |
+| **Self-hosted server** | You want to run bots on your own infrastructure. [Self-hosting guide](self-hosting.md) |
 
-When filing an issue, include the Limix Bot version, operating system, steps to reproduce and a redacted error message. [Report a bug](https://github.com/leomieo/limix-bot/issues) · [Contributing](../CONTRIBUTING.md) · [License](../LICENSE) · [Notices](../NOTICE)
+Depending on your setup, a bot can work in a browser or on a dedicated computer. Set permissions per bot and use Ask approval for sensitive tasks.
+
+<a id="en-start"></a>
+
+### Start with one bot
+
+1. Download the installer for your device. [Limix Bot installers](../README.md#english)
+2. Open **Settings → AI** and connect the provider you want to use.
+3. In **Templates**, choose a bot, select **Use template**, and give it a test task.
+
+[Releases](https://github.com/leomieo/limix-bot/releases) · [Skill library](https://github.com/leomieo/limix-skill-hub) · [Support](https://github.com/leomieo/limix-bot/issues) · [Security](../SECURITY.md)
