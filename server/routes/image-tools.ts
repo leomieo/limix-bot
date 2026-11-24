@@ -131,10 +131,16 @@ export function imageTurn(store: ImageTurnStore, threadId: string, requireActive
   };
 }
 
-export function createImageToolRoutes(deps: ImageTurnStore & { config: (ctx: ImageRouteContext) => ImageCredentials; dataDir: string; fetchImpl?: typeof fetch }) {
+export function createImageToolRoutes(deps: ImageTurnStore & { config: (ctx: Pick<ImageRouteContext, "botId" | "threadId">) => ImageCredentials; dataDir: string; fetchImpl?: typeof fetch }) {
   const inFlight = new Map<string, number>();
   const daily = createImageDailyCap(deps.dataDir);
   return {
+    async channelImage(botId: string, threadId: string, messageId: string, prompt: string, attach: ImageTurn["attach"], signal?: AbortSignal) {
+      return generateImageForTurn({ prompt }, {
+        cfg: deps.config({ botId, threadId }), daily, inFlight, fetchImpl: deps.fetchImpl, signal,
+        personTurn: true, turn: { key: deps.key(threadId, messageId), parked: () => 0, attach },
+      });
+    },
     async internal(ctx: ImageRouteContext): Promise<typeof PASS | void> {
       if (ctx.method !== "POST" || ctx.path !== "/api/internal/images/generate") return PASS;
       const turn = imageTurn(deps, ctx.threadId, ctx.requireActive);

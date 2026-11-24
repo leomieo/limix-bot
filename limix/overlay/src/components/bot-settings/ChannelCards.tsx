@@ -182,7 +182,7 @@ function ChannelPanel({ bot, channel, view, onView }: { bot: Bot; channel: (type
             <label className="flex items-center justify-between gap-3 text-ink">
               <span>
                 {lx("Trả lời khi được @gọi trong nhóm", "Reply to @mentions in groups")}
-                <span className="block text-[12px] text-ink-secondary">{lx("Mọi thành viên đều có thể gọi bot. Bot trả lời trong nhóm với quyền khách, kể cả khi chủ bot gọi.", "Anyone in the group can mention the bot. Group replies use guest access, including when the owner mentions it.")}</span>
+                <span className="block text-[12px] text-ink-secondary">{lx("Chủ bot đã liên kết luôn có toàn quyền khi gọi bot trong nhóm. Bật tùy chọn này để các thành viên khác cũng có thể gọi bot với quyền khách.", "The linked owner always has full access when mentioning the bot in a group. Turn this on to let other members mention it with guest access.")}</span>
               </span>
               <Switch aria-label={lx("Trả lời khi được @gọi trong nhóm", "Reply to @mentions in groups")} checked={view.groupMentions ?? view.access === "everyone"} disabled={busy} onClick={() => void post({ groupMentions: !(view.groupMentions ?? view.access === "everyone") })} data-testid="channel-zalo-group-mentions" />
             </label>

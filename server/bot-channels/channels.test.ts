@@ -134,7 +134,7 @@ function fakeChannel(options: { quiet?: boolean; failFirstSends?: number } = {})
   return { adapter, sent, deliver, ready: () => Boolean(io) };
 }
 
-it("drops a repeated message, retries a busy send, and answers a group as a guest even when the owner writes there", async () => {
+it("drops a repeated message, retries a busy send, and recognizes the linked owner separately from other group members", async () => {
   const fake = fakeChannel({ failFirstSends: 2 });
   const { asks, route } = host(fake.adapter);
   expect((await route("POST", "/api/bots/b1/discord", { token: "bad" }))!.status).toBe(400);
@@ -151,12 +151,13 @@ it("drops a repeated message, retries a busy send, and answers a group as a gues
   expect(fake.sent.slice(linkedPieces).map((m) => m.text)).toEqual(["ok: xin", "chào bạn"]);
   fake.deliver("3", "boss", "trong nhóm", false);
   await new Promise((resolve) => setTimeout(resolve, 50));
-  expect(asks).toEqual([{ text: "xin chào bạn", owner: true }]);
+  await until(() => asks.length === 2);
+  expect(asks[1]).toEqual({ text: "trong nhóm", owner: true });
   await route("POST", "/api/bots/b1/discord", { access: "everyone" });
   fake.deliver("4", "boss", "trong nhóm", false);
   fake.deliver("5", "khach", "cũng trong nhóm", false);
-  await until(() => asks.length === 3);
-  expect(asks.slice(1)).toEqual([{ text: "trong nhóm", owner: false }, { text: "cũng trong nhóm", owner: false }]);
+  await until(() => asks.length === 4);
+  expect(asks.slice(2)).toEqual([{ text: "trong nhóm", owner: true, threadId: "t2" }, { text: "cũng trong nhóm", owner: false }]);
 });
 
 it("stays silent to strangers on an account that is also someone's inbox", async () => {
@@ -286,7 +287,7 @@ it("signs Zalo in by QR, answers direct messages and mentions, and reports a ses
   const load = async () => client;
   const { asks, route } = host({ ...zaloAdapter(load), paceMs: [1, 3] }, { zalo: zaloLogin(load) }, (input) => {
     if (input.text !== "hi" && input.text !== "báo cáo") return;
-    expect(input.owner).toBe(false);
+    expect(input.owner).toBe(input.text === "báo cáo");
     if (input.text === "hi") return "Đã nhận được tin nhắn “hi”.";
     if (input.text === "báo cáo") return "Đã nhận được tin nhắn “báo cáo”. Bạn muốn báo cáo về chủ đề nào?";
   });
@@ -315,7 +316,7 @@ it("signs Zalo in by QR, answers direct messages and mentions, and reports a ses
   expect(asks).toEqual([
     { text: "chào shop", owner: true },
     { text: "hi", owner: false },
-    { text: "báo cáo", owner: false },
+    { text: "báo cáo", owner: true },
     { text: "hỏi thêm", owner: false, threadId: "t2" },
   ]);
   expect(sends.slice(1).filter(({ text }) => !text.startsWith("Đã nhận"))).toEqual([

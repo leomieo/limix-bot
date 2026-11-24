@@ -87,6 +87,17 @@ async function searchWeb(query: string): Promise<string> {
 }
 
 export async function channelPublicLookup(text: string, previousGuestText?: string): Promise<string | undefined> {
+  const link = text.trim().match(/^(?:@\S+\s+)?(?:(?:đọc|xem|tóm tắt|mở|read|open|summarize)\s+(?:(?:trang|link|page)\s+)?)?(https?:\/\/[^\s<>]+)$/iu);
+  if (link) {
+    try {
+      const url = new URL(link[1]);
+      if (url.username || url.password || url.port || redactSecretsInText(url.href) !== url.href) return NO_RESULTS;
+      const page = await fetchPublicPage(url.href, { ...REQUEST, maxRedirects: 3 });
+      if (!page.ok || !/^(?:text\/(?:html|plain)|application\/xhtml\+xml)(?:;|$)/i.test(String(page.headers["content-type"]))) return NO_RESULTS;
+      const summary = pageText(page.body.toString("utf8")).slice(0, 4000);
+      return summary ? JSON.stringify({ url: page.url.href, summary }) : NO_RESULTS;
+    } catch { return NO_RESULTS; }
+  }
   const query = publicQuery(text);
   if (!query) return undefined;
   try {

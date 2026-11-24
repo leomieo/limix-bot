@@ -11,6 +11,20 @@
     {
       "before": "}, canConfine: (botId, threadId) => {",
       "after": "}, channelGuestModel: async (botId) => {\n  const selected = store.bot(botId)?.modelSelection;\n  return selected && registry.get(selected.instanceId)?.adapter.capabilities.guestTurns === \"confined\" ? selected : undefined;\n}, canConfine: (botId, threadId) => {"
+    },
+    {
+      "before": "createBotApiHost({ store, startTurn, threadBusy, careFacts:",
+      "after": "createBotApiHost({ store, startTurn, threadBusy,\n  guestImage: async (botId, threadId, messageId, prompt, signal) => {\n    if (store.bot(botId)?.toolsOff?.includes(\"images\")) return { status: \"disabled\" };\n    let attachment: { kind: \"image\"; path: string; mime: string } | undefined;\n    const result = await imageTools.channelImage(botId, threadId, messageId, prompt, image => {\n      if (signal?.aborted) return false;\n      const saved = saveImage(image.bytes, image.mime);\n      attachment = { kind: \"image\", path: saved.path, mime: saved.mime };\n      return true;\n    }, signal);\n    if (attachment) return { status: \"ok\", attachment };\n    return { status: result.status === 429 ? \"limit\" : \"unavailable\" };\n  }, careFacts:"
+    }
+  ],
+  "server/routes/image-tools.ts": [
+    {
+      "before": "config: (ctx: ImageRouteContext)",
+      "after": "config: (ctx: Pick<ImageRouteContext, \"botId\" | \"threadId\">)"
+    },
+    {
+      "before": "    async internal(ctx: ImageRouteContext)",
+      "after": "    async channelImage(botId: string, threadId: string, messageId: string, prompt: string, attach: ImageTurn[\"attach\"], signal?: AbortSignal) {\n      return generateImageForTurn({ prompt }, {\n        cfg: deps.config({ botId, threadId }), daily, inFlight, fetchImpl: deps.fetchImpl, signal,\n        personTurn: true, turn: { key: deps.key(threadId, messageId), parked: () => 0, attach },\n      });\n    },\n    async internal(ctx: ImageRouteContext)"
     }
   ]
 }

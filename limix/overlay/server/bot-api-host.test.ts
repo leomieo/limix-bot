@@ -70,6 +70,19 @@ const replies = (text: string): Script => (fake, _botId, _prompt, opts) => {
   }, 30);
 };
 
+it("returns the generated image to the requesting channel guest only", async () => {
+  const attachment = { kind: "image" as const, mime: "image/png", path: "generated.png" };
+  const guestImage = vi.fn<NonNullable<BotApiHostDeps["guestImage"]>>().mockResolvedValue({ status: "ok", attachment });
+  const h = await harness(replies("text"), { guestImage });
+  const input = { text: "@Leox tạo ảnh 1 con mèo", owner: false, title: "Zalo" };
+  const reply = await h.host.askFromChannel("b1", input);
+  expect(reply.attachments).toEqual([attachment]);
+  expect(h.fake.store.messagesFor(reply.threadId).at(-1)?.attachments).toEqual([attachment]);
+  expect(guestImage).toHaveBeenCalledWith("b1", reply.threadId, expect.any(String), "1 con mèo", undefined);
+  await h.call("b1", h.manager.enable("b1").key!, { message: input.text });
+  expect(guestImage).toHaveBeenCalledTimes(1);
+});
+
 it("asks the guest for a missing location in the same channel", async () => {
   const h = await harness((fake, _botId, prompt, opts) => {
     expect(prompt).toContain("ask one brief follow-up here");
@@ -137,7 +150,7 @@ it.each([false, true])("delivers a channel result after 31 minutes (owner: %s)",
   }
 });
 
-async function harness(script: Script, options: { waitMs?: number; full?: boolean; included?: () => boolean; noConfine?: boolean; channelModelChanging?: BotApiHostDeps["channelModelChanging"]; canConfine?: BotApiHostDeps["canConfine"] } = {}) {
+async function harness(script: Script, options: { guestImage?: BotApiHostDeps["guestImage"]; waitMs?: number; full?: boolean; included?: () => boolean; noConfine?: boolean; channelModelChanging?: BotApiHostDeps["channelModelChanging"]; canConfine?: BotApiHostDeps["canConfine"] } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "omb-bot-api-host-"));
   dirs.push(dir);
   const fake = fakeStore();
@@ -160,6 +173,7 @@ async function harness(script: Script, options: { waitMs?: number; full?: boolea
     canStart: () => !options.full,
     canConfine: options.canConfine ?? (() => !options.noConfine),
     channelModelChanging: options.channelModelChanging,
+    guestImage: options.guestImage,
     discard: (botId, threadId) => { const bot = fake.bots.get(botId)!; bot.tasks = bot.tasks.filter((task) => task.threadId !== threadId); },
     ...(options.included ? { included: options.included } : {}),
     hooksBaseUrl: () => "https://bots.example.test",

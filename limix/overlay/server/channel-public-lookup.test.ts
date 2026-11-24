@@ -51,3 +51,9 @@ it("looks up basic questions on a fixed public endpoint and derives the source l
   expect(await lookup("Tra giúp 090 123 4567")).toBeUndefined();
   expect(fetchPage).toHaveBeenCalledTimes(1);
 });
+
+it("reads the public page requested by a guest", async () => {
+  fetchPage.mockResolvedValue({ ok: true, url: new URL("https://example.org/news"), headers: { "content-type": "text/html" }, body: Buffer.from("<p>Public news</p>") });
+  expect(JSON.parse((await lookup("Tóm tắt https://example.org/news"))!)).toMatchObject({ summary: "Public news", url: "https://example.org/news" });
+  expect(fetchPage).toHaveBeenCalledOnce();
+});

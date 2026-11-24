@@ -49,6 +49,9 @@ export interface BotApiTurnOptions {
 }
 
 export interface BotApiHostDeps {
+  guestImage?(botId: string, threadId: string, messageId: string, prompt: string, signal?: AbortSignal): Promise<
+    { status: "ok"; attachment: ChannelMedia } | { status: "disabled" | "limit" | "unavailable" }
+  >;
   careFacts?(botId: string, message: string): Promise<string | undefined>;
   store: Pick<Store, "bot" | "taskByThread" | "createTask" | "patchTask" | "appendMessage" | "messagesFor" | "onChange">;
   startTurn(botId: string, text: string, opts: BotApiTurnOptions): Promise<unknown>;
@@ -142,9 +145,11 @@ export function createBotApiHost(deps: BotApiHostDeps) {
   deps.store.onChange((change) => { if (change.type === "bot.deleted") manager.removeForBot(change.botId); });
 
   const included = () => deps.included?.() !== false;
+  const channelRequests = new Set<string>();
+  const busy = (botId: string, threadId: string) => channelRequests.has(threadId) || deps.threadBusy(botId, threadId);
   const pendingFor = (botId: string) => {
     const set = running.get(botId);
-    for (const threadId of set ?? []) if (!deps.threadBusy(botId, threadId)) set!.delete(threadId);
+    for (const threadId of set ?? []) if (!busy(botId, threadId)) set!.delete(threadId);
     return set?.size ?? 0;
   };
   const markRunning = (botId: string, threadId: string, on: boolean) => {
@@ -162,7 +167,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     const next = rest.findIndex((line) => line.role === "user");
     const after = next === -1 ? rest : rest.slice(0, next);
     if (pendingCard(after)) return { thread: threadId, status: "needs_approval" };
-    if (deps.threadBusy(botId, threadId)) return { thread: threadId, status: "working" };
+    if (busy(botId, threadId)) return { thread: threadId, status: "working" };
     return { reply: replyText(after), thread: threadId };
   }
 
@@ -184,7 +189,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       const task = store.taskByThread(botId, threadId);
       // Only a thread this API opened: the caller never writes into the person's own conversations.
       if (!task || task.botApi !== true) fail(404, "no such thread");
-      if (deps.threadBusy(botId, threadId)) failBeforeAcceptance("thread_busy");
+      if (busy(botId, threadId)) failBeforeAcceptance("thread_busy");
     }
     if (!deps.canStart(botId, threadId ?? "")) failBeforeAcceptance("capacity_busy");
     if (!manager.admit(botId)) {
@@ -209,9 +214,28 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     let settled: TurnOutcome | undefined;
     let dispatchError: string | undefined;
     markRunning(botId, threadId, true);
+    if (channel) channelRequests.add(threadId);
     try {
+      const imageRequest = channel && message.trim().match(/^(?:@\S+\s+)?(?:(?:hãy|vui lòng|please)\s+)?(?:tạo\s+(?:một\s+)?(?:ảnh|hình)|vẽ|(?:generate|create|make)\s+(?:me\s+)?(?:an?\s+)?(?:image|picture)|draw)\s+(.+)$/isu);
+      if (imageRequest && deps.guestImage) {
+        const signal = channel?.delivery?.signal;
+        signal?.throwIfAborted();
+        const result = await deps.guestImage(botId, threadId, userMessage.id, imageRequest[1].trim(), signal);
+        signal?.throwIfAborted();
+        const vi = /(?:tạo|vẽ)/iu.test(imageRequest[0].slice(0, imageRequest[0].length - imageRequest[1].length));
+        const text = result.status === "ok" ? (vi ? "Đây là ảnh bạn yêu cầu." : "Here is your image.")
+          : result.status === "limit" ? (vi ? "Bot đã đạt giới hạn tạo ảnh. Bạn hãy thử lại sau." : "The image limit has been reached. Please try again later.")
+          : result.status === "disabled" ? (vi ? "Chức năng tạo ảnh đang tắt trên bot này." : "Image generation is switched off for this bot.")
+          : (vi ? "Bot chưa tạo được ảnh. Vui lòng báo quản trị viên kiểm tra dịch vụ tạo ảnh." : "The bot could not create the image. Please ask an administrator to check the image service.");
+        const attachments = result.status === "ok" ? [result.attachment] : [];
+        store.appendMessage(threadId, { role: "bot", kind: "text", text, attachments });
+        channel?.collect(attachments);
+        markRunning(botId, threadId, false);
+        turnStarted();
+        return { status: 200, body: { thread: threadId, reply: text } };
+      }
       const careFacts = await deps.careFacts?.(botId, message);
-      const publicLookup = channel && careFacts === undefined ? await channelPublicLookup(message, previousGuestText) : undefined;
+      const publicLookup = channel && (careFacts === undefined || /https?:\/\//iu.test(message)) ? await channelPublicLookup(message, previousGuestText) : undefined;
       channel?.delivery?.signal.throwIfAborted();
       await deps.startTurn(botId, mediaPrompt(botApiPrompt(message, receivedAt, { guestChannel: Boolean(channel), publicLookup, careFacts }), channel?.attachment), {
         threadId, automationSource: "api", unattended: true, userMessage,
@@ -224,6 +248,8 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       if (opened && !channel?.delivery) deps.discard?.(botId, threadId);
       const busy = z.object({ code: z.enum(["thread_busy", "thread_limit"]) }).safeParse(error).success;
       fail(busy ? 409 : 502, busy ? BUSY : COULD_NOT_ANSWER, error instanceof Error ? error.message : String(error));
+    } finally {
+      if (channel) channelRequests.delete(threadId);
     }
     turnStarted();
     let approvalNotified = false;

@@ -9592,7 +9592,19 @@ const webhooks = new WebhookManager({
     if (!forceNew && trigger.resultsThreadId && store.taskByThread(trigger.botId, trigger.resultsThreadId)) return trigger.resultsThreadId;
     return store.createTask(trigger.botId, "Updates", false)?.threadId;
   }, ...createWebhookRoomPost({ store, cfg, roomTalks }) });
-const webhookRequests = new WebhookRequestService({ store, webhooks, botName: (botId) => store.bot(botId)?.name ?? "the bot" }); const botApi = createBotApiHost({ store, startTurn, threadBusy, careFacts: (botId, message) => { const bot = store.bot(botId); return bot ? industryGuestFacts(bot, message, servers => managedPolicy.filterMcp(servers)) : Promise.resolve(undefined); }, canStart: (botId, threadId) => canAdmitDirectTurn(botId, threadId, false), channelModelChanging: (botId, threadId) => {
+const webhookRequests = new WebhookRequestService({ store, webhooks, botName: (botId) => store.bot(botId)?.name ?? "the bot" }); const botApi = createBotApiHost({ store, startTurn, threadBusy,
+  guestImage: async (botId, threadId, messageId, prompt, signal) => {
+    if (store.bot(botId)?.toolsOff?.includes("images")) return { status: "disabled" };
+    let attachment: { kind: "image"; path: string; mime: string } | undefined;
+    const result = await imageTools.channelImage(botId, threadId, messageId, prompt, image => {
+      if (signal?.aborted) return false;
+      const saved = saveImage(image.bytes, image.mime);
+      attachment = { kind: "image", path: saved.path, mime: saved.mime };
+      return true;
+    }, signal);
+    if (attachment) return { status: "ok", attachment };
+    return { status: result.status === 429 ? "limit" : "unavailable" };
+  }, careFacts: (botId, message) => { const bot = store.bot(botId); return bot ? industryGuestFacts(bot, message, servers => managedPolicy.filterMcp(servers)) : Promise.resolve(undefined); }, canStart: (botId, threadId) => canAdmitDirectTurn(botId, threadId, false), channelModelChanging: (botId, threadId) => {
   const selection = threadId ? turnSelection(botId, threadId) : store.bot(botId)?.modelSelection;
   return Boolean(store.bot(botId)?.approvalGrant || selection && providerInstancesChanging.has(selection.instanceId));
 }, channelGuestModel: async (botId) => {

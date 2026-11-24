@@ -1,3 +1,17 @@
+Limix Bot 0.3.110
+
+## Tiếng Việt
+
+- Khách có thể nhắn “Tạo ảnh một con mèo” để nhận ảnh ngay trong cuộc trò chuyện khi bot đã bật và kết nối dịch vụ tạo ảnh.
+- Khách có thể gửi “Tóm tắt” kèm liên kết đến một trang web công khai để hỏi bot về nội dung trang.
+- Trên Zalo, Telegram và Discord, chủ bot đã liên kết có toàn quyền khi gọi bot trong nhóm. Cuộc trò chuyện của chủ bot trong nhóm được tách khỏi tin nhắn riêng và cuộc trò chuyện của khách.
+
+## English
+
+- Guests can ask for an image in chat when the bot has image generation enabled and an image provider connected.
+- Guests can send “Summarize” followed by a public webpage link to ask about its contents.
+- On Zalo, Telegram and Discord, linked owners have full access when addressing their bot in a group. Each group conversation stays separate from private messages and other members’ conversations.
+
 Limix Bot 0.3.109
 
 ## Tiếng Việt

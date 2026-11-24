@@ -1,6 +1,6 @@
 // Limix Bot: a bot answers on Telegram, Discord, Zalo or a Facebook Page from its own settings. This server holds each connection itself
 // (no webhook, no address to open): the owner links their own account with a one-time code (/link CODE) and then talks
-// to the bot as from the app, at Full access, in a direct chat of its own; everyone else, and every group, is answered
+// to the bot as from the app, at Full access, in a separate conversation for each chat; other participants are answered
 // only when the owner allows it, through the confined Bot API path. Secrets are sealed on disk and never leave this server.
 //
 // The duplicate filter, retry with backoff, per-account send pacing and the channel adapter contract follow ChannelHub,
@@ -25,7 +25,7 @@ export interface ChannelMessage {
   chatId: string;
   from: { id: string; name: string };
   text: string;
-  /** A one-to-one chat with the bot; anything else is a group, answered only as a guest. */
+  /** A one-to-one chat with the bot; anything else is a group. */
   direct: boolean;
   /** Carried a photo, file or sticker this server cannot read yet. */
   media?: boolean;
@@ -149,9 +149,10 @@ const botSchema = z.object({
 const fileSchema = z.object({ v: z.literal(1), bots: z.record(z.string(), botSchema) });
 type InboxMessage = z.output<typeof inboxSchema>;
 type Stored = z.output<typeof botSchema>;
-function privateGrant(adapter: ChannelAdapter, entry: Stored | undefined, message: Pick<ChannelMessage, "direct" | "from">) {
-  if (!entry?.enabled || !message.direct || adapter.guestsOnly) return undefined;
+function channelGrant(adapter: ChannelAdapter, entry: Stored | undefined, message: Pick<ChannelMessage, "direct" | "from">) {
+  if (!entry?.enabled || adapter.guestsOnly) return undefined;
   if (entry.owner?.id === message.from.id) return "owner";
+  if (!message.direct) return undefined;
   return entry.admins.find(admin => admin.id === message.from.id)?.grant;
 }
 
@@ -342,7 +343,7 @@ export function createBotChannels(deps: BotChannelsDeps) {
 
   async function deliverResult(adapter: ChannelAdapter, botId: string, id: string, message: InboxMessage, signal: AbortSignal) {
     const lane = `${adapter.kind}:${botId}`;
-    const authorized = () => !message.owner || privateGrant(adapter, read(adapter.kind).bots[botId], message) === (message.grant ?? "owner");
+    const authorized = () => !message.owner || channelGrant(adapter, read(adapter.kind).bots[botId], message) === (message.grant ?? "owner");
     const result = message.result!;
     let sent = message.sent ?? 0;
     while (!signal.aborted && authorized()) {
@@ -399,13 +400,13 @@ export function createBotChannels(deps: BotChannelsDeps) {
       });
       return void await send(say.linked);
     }
-    const grant = privateGrant(adapter, entry, message);
+    const grant = channelGrant(adapter, entry, message);
     const owner = !!grant && (saved?.row.owner ?? true);
-    const authorized = () => !saved?.row.owner || privateGrant(adapter, read(kind).bots[botId], message) === (saved.row.grant ?? "owner");
+    const authorized = () => !saved?.row.owner || channelGrant(adapter, read(kind).bots[botId], message) === (saved.row.grant ?? "owner");
     if (!authorized()) return;
     const allowsGuest = acceptGuest(kind, entry, message);
     if (!owner && !allowsGuest) return message.direct && !adapter.quietToStrangers ? void await send(say.ownerOnly) : undefined;
-    const conversation = owner && grant !== "owner" ? JSON.stringify(["admin", grant, message.chatId]) : message.direct ? message.chatId : `${message.chatId}:${message.from.id}`;
+    const conversation = owner && !message.direct ? JSON.stringify(["group-owner", message.chatId, message.from.id]) : owner && grant !== "owner" ? JSON.stringify(["admin", grant, message.chatId]) : message.direct ? message.chatId : `${message.chatId}:${message.from.id}`;
     if (command?.[1] === "new") {
       patch(kind, botId, (current) => { const chats = { ...current.chats }; delete chats[conversation]; return { ...current, chats }; });
       return void await send(say.fresh);
@@ -473,7 +474,7 @@ export function createBotChannels(deps: BotChannelsDeps) {
     const link = !message.media && /^\/link(?:@\w+)?(?:\s|$)/.test(message.text.trim());
     if (link && adapter.guestsOnly) return;
     const command = link || !message.media && /^\/start(?:@\w+)?$/.test(message.text.trim());
-    const grant = privateGrant(adapter, entry, message);
+    const grant = channelGrant(adapter, entry, message);
     const owner = !!grant;
     const eligible = (owner || acceptGuest(kind, entry, message)) && !command && (message.text.trim() || message.loadMedia);
     const row = restored ?? (eligible ? inboxSchema.parse({ ...message, owner, grant, downloading: Boolean(message.loadMedia) }) : undefined);
