@@ -2152,6 +2152,7 @@ process.stdout.write(JSON.stringify({jsonrpc:'2.0',id:m.id,result})+'\\n');});`)
     for (const [index, [model, expectedModel, modelProvider]] of selections.entries()) {
       const { turnId } = await instance.adapter.sendTurn({
         threadId: "t-model-provider-resume", text: "Continue", model,
+        ...(index ? { guestConfined: true, approvalMode: "ask" as const } : {}),
         ...(index ? { resumeCursor: "codex-thread-1" } : {}),
       });
       await recorder.until((event) => event.type === "turn.completed" && event.turnId === turnId);
