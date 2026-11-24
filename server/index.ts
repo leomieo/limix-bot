@@ -78,7 +78,7 @@ import {
 import { avatarImageStatus } from "./avatar-image.ts";
 import { imageGenerationReady } from "./image-generation.ts";
 import { xingchiTurnImages } from "./xingchi-turn-images.ts";
-import { createImageToolRoutes } from "./routes/image-tools.ts"; import { createMeetingsHost } from "./host/meetings-host.ts"; import { meetingsUnavailablePrompt } from "./meetings/prompt.ts";
+import { createImageToolRoutes, IMAGE_MESSAGES } from "./routes/image-tools.ts"; import { createMeetingsHost } from "./host/meetings-host.ts"; import { meetingsUnavailablePrompt } from "./meetings/prompt.ts";
 import { syncCredentialEnv } from "./config.ts";
 import { createImageSettingsRoutes } from "./routes/image-settings.ts";
 import { fitsOnOneLine, parseBotProfilePatch } from "./bot-profile.ts";
@@ -9595,6 +9595,8 @@ const webhooks = new WebhookManager({
 const webhookRequests = new WebhookRequestService({ store, webhooks, botName: (botId) => store.bot(botId)?.name ?? "the bot" }); const botApi = createBotApiHost({ store, startTurn, threadBusy,
   guestImage: async (botId, threadId, messageId, prompt, signal) => {
     if (store.bot(botId)?.toolsOff?.includes("images")) return { status: "disabled" };
+    const selected = turnSelection(botId, threadId);
+    if (selected && providerConfigs()[selected.instanceId]?.driver === "antigravityAgent") return { status: "use_model" };
     let attachment: { kind: "image"; path: string; mime: string } | undefined;
     const result = await imageTools.channelImage(botId, threadId, messageId, prompt, image => {
       if (signal?.aborted) return false;
@@ -9603,6 +9605,7 @@ const webhookRequests = new WebhookRequestService({ store, webhooks, botName: (b
       return true;
     }, signal);
     if (attachment) return { status: "ok", attachment };
+    if (result.status === 409 && "error" in result.body && result.body.error === IMAGE_MESSAGES.notSetUp) return { status: "use_model" };
     return { status: result.status === 429 ? "limit" : "unavailable" };
   }, careFacts: (botId, message) => { const bot = store.bot(botId); return bot ? industryGuestFacts(bot, message, servers => managedPolicy.filterMcp(servers)) : Promise.resolve(undefined); }, canStart: (botId, threadId) => canAdmitDirectTurn(botId, threadId, false), channelModelChanging: (botId, threadId) => {
   const selection = threadId ? turnSelection(botId, threadId) : store.bot(botId)?.modelSelection;

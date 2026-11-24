@@ -50,7 +50,7 @@ export interface BotApiTurnOptions {
 
 export interface BotApiHostDeps {
   guestImage?(botId: string, threadId: string, messageId: string, prompt: string, signal?: AbortSignal): Promise<
-    { status: "ok"; attachment: ChannelMedia } | { status: "disabled" | "limit" | "unavailable" }
+    { status: "ok"; attachment: ChannelMedia } | { status: "disabled" | "limit" | "unavailable" | "use_model" }
   >;
   careFacts?(botId: string, message: string): Promise<string | undefined>;
   store: Pick<Store, "bot" | "taskByThread" | "createTask" | "patchTask" | "appendMessage" | "messagesFor" | "onChange">;
@@ -178,8 +178,14 @@ export function createBotApiHost(deps: BotApiHostDeps) {
   }
 
   function replyMedia(lines: Message[]) {
-    const reply = lines.findLast(line => line.role === "bot" && line.kind === "text");
-    return reply?.attachments?.filter((file): file is ChannelMedia => (file.kind === "image" && !file.fromTool) || file.kind === "file") ?? [];
+    const files = new Map<string, ChannelMedia>();
+    for (const line of lines) {
+      if (line.role !== "bot" || line.kind !== "text") continue;
+      for (const file of line.attachments ?? []) {
+        if ((file.kind === "image" && !file.fromTool) || file.kind === "file") files.set(file.path, file);
+      }
+    }
+    return [...files.values()];
   }
 
   async function channelImageReply(botId: string, threadId: string, userMessage: Message, message: string, signal?: AbortSignal) {
@@ -188,6 +194,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       signal?.throwIfAborted();
       const result = await deps.guestImage(botId, threadId, userMessage.id, imageRequest[1].trim(), signal);
       signal?.throwIfAborted();
+      if (result.status === "use_model") return;
       const vi = /(?:tạo|vẽ)/iu.test(imageRequest[0].slice(0, imageRequest[0].length - imageRequest[1].length));
       const text = result.status === "ok" ? (vi ? "Đây là ảnh bạn yêu cầu." : "Here is your image.")
         : result.status === "limit" ? (vi ? "Bot đã đạt giới hạn tạo ảnh. Bạn hãy thử lại sau." : "The image limit has been reached. Please try again later.")

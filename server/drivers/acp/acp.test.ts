@@ -367,6 +367,15 @@ describe("ACP turns (fake CLI)", () => {
     expect(completed?.itemId).toBe(started?.itemId);
   });
 
+  it("delivers a native generated image when the completion omits the tool name", async () => {
+    await create(GrokAgentDriver, "native-image-tool");
+    const { turnId } = await instance.adapter.sendTurn({ threadId: "image", text: "draw a cat" });
+    await recorder.until(e => e.type === "turn.completed" && e.turnId === turnId);
+    const image = recorder.events.find(e => e.type === "item.completed" && e.itemType === "assistant_image");
+    expect(image).toMatchObject({ data: expect.any(String) });
+    expect(image).not.toHaveProperty("fromTool");
+  });
+
   it("ends a tool call that arrives already finished, so nothing counts it as running", async () => {
     await create(GrokAgentDriver, "finished-tools");
     const { turnId } = await instance.adapter.sendTurn({ threadId: "t-finished-tools", text: "go" });

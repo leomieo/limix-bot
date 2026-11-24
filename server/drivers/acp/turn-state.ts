@@ -34,6 +34,7 @@ export interface AcpTurn {
   runningTools: Set<string>;
   unkeyedToolIds: string[];
   endedToolIds: Set<string>;
+  imageGenerationTools: Set<string>;
   interruptTimer: ReturnType<typeof setTimeout> | null;
   stopQuietWatch: (() => void) | null;
   flushAssistantText: () => void;

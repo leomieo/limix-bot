@@ -83,6 +83,17 @@ it.each([false, true])("returns an image attachment for an explicit channel requ
   expect(guestImage).toHaveBeenCalledTimes(1);
 });
 
+it.each([false, true])("delivers the model's image when no dedicated image service is configured (owner: %s)", async (owner) => {
+  const attachment = { kind: "image" as const, mime: "image/png", path: "generated.png" };
+  const h = await harness((fake, _botId, _prompt, opts) => {
+    fake.store.appendMessage(opts.threadId, { role: "bot", kind: "text", text: "", attachments: [attachment] });
+    fake.store.appendMessage(opts.threadId, { role: "bot", kind: "text", text: "Done" });
+    opts.onSettled({ ok: true, text: "" });
+  }, { guestImage: async () => ({ status: "use_model" }) });
+  const reply = await h.host.askFromChannel("b1", { text: "tạo ảnh con mèo", owner, title: "Zalo" });
+  expect(reply.attachments).toEqual([attachment]);
+});
+
 it("asks the guest for a missing location in the same channel", async () => {
   const h = await harness((fake, _botId, prompt, opts) => {
     expect(prompt).toContain("ask one brief follow-up here");

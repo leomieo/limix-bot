@@ -2359,3 +2359,5 @@ for path in ("scripts/control-omb.ts", "server/testing/restartable-server.ts",
              "server/warm-summary.e2e.test.ts"):
     edit(path, lambda s: s.replace("openmausbot-verification-evidence", "limixbot-verification-evidence")
                           .replace("openmausbot-verify-data-", "limixbot-verify-data-"))
+
+edit("server/index.ts", lambda s: s.replace("import { createImageToolRoutes }", "import { createImageToolRoutes, IMAGE_MESSAGES }"))

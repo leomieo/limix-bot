@@ -1142,6 +1142,13 @@ function handle(msg: any) {
         complete();
         return;
       }
+      if (mode === "native-image-tool") {
+        const update = (u: Record<string, unknown>) => out({ jsonrpc: "2.0", method: "session/update", params: { update: u } });
+        update({ sessionUpdate: "tool_call", toolCallId: "img", title: "generate_image", status: "pending" });
+        update({ sessionUpdate: "tool_call_update", toolCallId: "img", status: "completed", content: [{ type: "image", data: ONE_PIXEL_PNG, mimeType: "image/png" }] });
+        complete();
+        return;
+      }
       if (mode === "finished-tools") {
         const update = (u: Record<string, unknown>) => out({ jsonrpc: "2.0", method: "session/update", params: { update: u } });
         // An unkeyed call left running, so an unkeyed finished one must not take its place in the queue.

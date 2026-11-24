@@ -827,7 +827,8 @@ export function createAcpDriver(support: AcpSupport): ProviderDriver<AcpConfig> 
           const finished = u.status === "completed" || u.status === "failed";
           const toolEnded = (itemId: string | undefined) => {
             current.state.producedItem = true;
-            for (const event of acpToolEndEvents(u, itemId, current.endedToolIds)) emit({ ...base(threadId, current.turnId), ...event });
+            const generatedImage = itemId !== undefined && current.imageGenerationTools.delete(itemId) && u.status === "completed";
+            for (const event of acpToolEndEvents(u, itemId, current.endedToolIds, generatedImage)) emit({ ...base(threadId, current.turnId), ...event });
           };
           switch (u.sessionUpdate) {
             case "agent_message_chunk": {
@@ -870,6 +871,7 @@ export function createAcpDriver(support: AcpSupport): ProviderDriver<AcpConfig> 
               // tool_call_update after it.
               const itemId = (typeof u.toolCallId === "string" && u.toolCallId) ? u.toolCallId
                 : finished ? `acp-tool-unkeyed-${++unkeyedToolSeq}` : nextUnkeyedToolId(current);
+              if (/^(?:generate_image|image_gen|imagegen)$/i.test(String(u.title ?? "").trim())) current.imageGenerationTools.add(itemId);
               emit({
                 ...base(threadId, current.turnId),
                 type: "item.started",
@@ -1129,6 +1131,7 @@ export function createAcpDriver(support: AcpSupport): ProviderDriver<AcpConfig> 
           runningTools: new Set(),
           unkeyedToolIds: [],
           endedToolIds: new Set(),
+          imageGenerationTools: new Set(),
           interruptTimer: null,
           stopQuietWatch: null,
           flushAssistantText,
