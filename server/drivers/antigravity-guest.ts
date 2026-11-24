@@ -1,3 +1,4 @@
+import { extractMcpImages } from "../mcp-tool-images.ts";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -58,8 +59,12 @@ export function antigravityGuestAdapter(adapter: ProviderAdapter, cli: string, e
           });
           controller.signal.throwIfAborted();
           const result = output.trim().split(/\r?\n/).map(line => JSON.parse(line)).find(item => item.event === "result")?.result;
-          if (result?.status !== "SUCCESS" || typeof result.response !== "string" || !result.response.trim()) throw new Error("Antigravity returned no customer reply");
-          emit({ type: "item.completed", itemType: "assistant_text", text: result.response } as RuntimeEvent);
+          if (result?.status !== "SUCCESS") throw new Error("Antigravity returned no customer reply");
+          const image = extractMcpImages(result.response)[0] ?? extractMcpImages(result.content)[0];
+          const text = typeof result.response === "string" ? result.response.trim() : "";
+          if (!image && !text) throw new Error("Antigravity returned no customer reply");
+          if (image) emit({ type: "item.completed", itemType: "assistant_image", data: image.data } as RuntimeEvent);
+          if (text) emit({ type: "item.completed", itemType: "assistant_text", text } as RuntimeEvent);
           emit({ type: "turn.completed", ok: true, stopReason: "end_turn", cost: null } as RuntimeEvent);
         } finally {
           clearTimeout(timer);

@@ -13,7 +13,7 @@ it("runs both selected models on the same customer thread with strict tool permi
     const arg = key => process.argv[process.argv.indexOf(key) + 1];
     if (JSON.parse(arg("--settings")).toolPermission !== "strict" || !process.argv.includes("--sandbox")) process.exit(2);
     const response = arg("--model") + " " + JSON.parse(data).message.content;
-    console.log(JSON.stringify({ event:"result", result:{status:"SUCCESS",response} }));
+    console.log(JSON.stringify({ event:"result", result:{status:"SUCCESS",response:arg("--model")==="image-model"?[{type:"image",mimeType:"image/png",data:"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a73sAAAAASUVORK5CYII="}]:response} }));
   });`);
   const base = { provider: "antigravityAgent", capabilities: {}, onEvent: () => () => {}, stopAll: async () => {} } as unknown as ProviderAdapter;
   const adapter = antigravityGuestAdapter(base, `"${process.execPath}" "${cli}"`, process.env);
@@ -25,5 +25,8 @@ it("runs both selected models on the same customer thread with strict tool permi
       await expect.poll(() => events.find(event => event.turnId === turnId && event.type === "turn.completed")).toMatchObject({ ok: true });
       expect(events).toContainEqual(expect.objectContaining({ turnId, type: "item.completed", text: model + " Hello" }));
     }
+    const { turnId } = await adapter.sendTurn({ guestConfined: true, threadId: "customer-a", text: "Draw a cat", model: "image-model" });
+    await expect.poll(() => events.find(event => event.turnId === turnId && event.type === "turn.completed")).toMatchObject({ ok: true });
+    expect(events).toContainEqual(expect.objectContaining({ turnId, itemType: "assistant_image", data: expect.stringMatching(/^iVBOR/) }));
   } finally { off(); await adapter.stopAll(); await removeTempDir(dir); }
 });
