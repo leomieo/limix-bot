@@ -70,15 +70,15 @@ const replies = (text: string): Script => (fake, _botId, _prompt, opts) => {
   }, 30);
 };
 
-it("returns the generated image to the requesting channel guest only", async () => {
+it.each([false, true])("returns an image attachment for an explicit channel request (owner: %s)", async (owner) => {
   const attachment = { kind: "image" as const, mime: "image/png", path: "generated.png" };
   const guestImage = vi.fn<NonNullable<BotApiHostDeps["guestImage"]>>().mockResolvedValue({ status: "ok", attachment });
   const h = await harness(replies("text"), { guestImage });
-  const input = { text: "@Leox tạo ảnh 1 con mèo", owner: false, title: "Zalo" };
+  const input = { text: "@Leox tạo ảnh 1 con mèo.", owner, title: "Zalo" };
   const reply = await h.host.askFromChannel("b1", input);
   expect(reply.attachments).toEqual([attachment]);
   expect(h.fake.store.messagesFor(reply.threadId).at(-1)?.attachments).toEqual([attachment]);
-  expect(guestImage).toHaveBeenCalledWith("b1", reply.threadId, expect.any(String), "1 con mèo", undefined);
+  expect(guestImage).toHaveBeenCalledWith("b1", reply.threadId, expect.any(String), "1 con mèo.", undefined);
   await h.call("b1", h.manager.enable("b1").key!, { message: input.text });
   expect(guestImage).toHaveBeenCalledTimes(1);
 });

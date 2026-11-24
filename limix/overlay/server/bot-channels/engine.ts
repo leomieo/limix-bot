@@ -447,7 +447,7 @@ export function createBotChannels(deps: BotChannelsDeps) {
         const attachments = answer.attachments;
         const replyText = answer.reply.trim();
         const hasMedia = Boolean(attachments?.length && session.sendMedia);
-        const body = zaloGroup && !answer.status ? zaloGroupReply(replyText, message.text, hasMedia) : replyText;
+        const body = attachments?.length && !session.sendMedia ? say.mediaFailed : zaloGroup && !answer.status ? zaloGroupReply(replyText, message.text, hasMedia) : replyText;
         result = { reply: body || (answer.status === "needs_approval" ? say.approval : answer.status === "working" ? say.working : hasMedia ? "" : say.empty), attachments };
       } catch (error) {
         if (signal.aborted) return;

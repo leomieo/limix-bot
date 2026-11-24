@@ -182,6 +182,23 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     return reply?.attachments?.filter((file): file is ChannelMedia => (file.kind === "image" && !file.fromTool) || file.kind === "file") ?? [];
   }
 
+  async function channelImageReply(botId: string, threadId: string, userMessage: Message, message: string, signal?: AbortSignal) {
+    const imageRequest = message.trim().match(/^(?:@\S+\s+)?(?:(?:hãy|vui lòng|please)\s+)?(?:tạo\s+(?:một\s+)?(?:ảnh|hình)|vẽ|(?:generate|create|make)\s+(?:me\s+)?(?:an?\s+)?(?:image|picture)|draw)\s+(.+)$/isu);
+    if (imageRequest && deps.guestImage) {
+      signal?.throwIfAborted();
+      const result = await deps.guestImage(botId, threadId, userMessage.id, imageRequest[1].trim(), signal);
+      signal?.throwIfAborted();
+      const vi = /(?:tạo|vẽ)/iu.test(imageRequest[0].slice(0, imageRequest[0].length - imageRequest[1].length));
+      const text = result.status === "ok" ? (vi ? "Đây là ảnh bạn yêu cầu." : "Here is your image.")
+        : result.status === "limit" ? (vi ? "Bot đã đạt giới hạn tạo ảnh. Bạn hãy thử lại sau." : "The image limit has been reached. Please try again later.")
+        : result.status === "disabled" ? (vi ? "Chức năng tạo ảnh đang tắt trên bot này." : "Image generation is switched off for this bot.")
+        : (vi ? "Bot chưa tạo được ảnh. Vui lòng báo quản trị viên kiểm tra dịch vụ tạo ảnh." : "The bot could not create the image. Please ask an administrator to check the image service.");
+      const attachments = result.status === "ok" ? [result.attachment] : [];
+      deps.store.appendMessage(threadId, { role: "bot", kind: "text", text, attachments });
+      return { reply: result.status === "ok" ? "" : text, attachments };
+    }
+  }
+
   async function runCall(botId: string, call: z.output<typeof callSchema>, turnStarted: () => void, channel?: { model?: ModelSelection; attachment?: ChannelMedia; delivery?: Parameters<ChannelAsk>[1]["delivery"]; collect(files: ChannelMedia[]): void }): Promise<{ status: number; body: BotApiReply }> {
     const store = deps.store;
     let threadId = call.thread;
@@ -216,23 +233,12 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     markRunning(botId, threadId, true);
     if (channel) channelRequests.add(threadId);
     try {
-      const imageRequest = channel && message.trim().match(/^(?:@\S+\s+)?(?:(?:hãy|vui lòng|please)\s+)?(?:tạo\s+(?:một\s+)?(?:ảnh|hình)|vẽ|(?:generate|create|make)\s+(?:me\s+)?(?:an?\s+)?(?:image|picture)|draw)\s+(.+)$/isu);
-      if (imageRequest && deps.guestImage) {
-        const signal = channel?.delivery?.signal;
-        signal?.throwIfAborted();
-        const result = await deps.guestImage(botId, threadId, userMessage.id, imageRequest[1].trim(), signal);
-        signal?.throwIfAborted();
-        const vi = /(?:tạo|vẽ)/iu.test(imageRequest[0].slice(0, imageRequest[0].length - imageRequest[1].length));
-        const text = result.status === "ok" ? (vi ? "Đây là ảnh bạn yêu cầu." : "Here is your image.")
-          : result.status === "limit" ? (vi ? "Bot đã đạt giới hạn tạo ảnh. Bạn hãy thử lại sau." : "The image limit has been reached. Please try again later.")
-          : result.status === "disabled" ? (vi ? "Chức năng tạo ảnh đang tắt trên bot này." : "Image generation is switched off for this bot.")
-          : (vi ? "Bot chưa tạo được ảnh. Vui lòng báo quản trị viên kiểm tra dịch vụ tạo ảnh." : "The bot could not create the image. Please ask an administrator to check the image service.");
-        const attachments = result.status === "ok" ? [result.attachment] : [];
-        store.appendMessage(threadId, { role: "bot", kind: "text", text, attachments });
-        channel?.collect(attachments);
+      const image = channel && await channelImageReply(botId, threadId, userMessage, message, channel.delivery?.signal);
+      if (image) {
+        channel.collect(image.attachments);
         markRunning(botId, threadId, false);
         turnStarted();
-        return { status: 200, body: { thread: threadId, reply: text } };
+        return { status: 200, body: { thread: threadId, reply: image.reply } };
       }
       const careFacts = await deps.careFacts?.(botId, message);
       const publicLookup = channel && (careFacts === undefined || /https?:\/\//iu.test(message)) ? await channelPublicLookup(message, previousGuestText) : undefined;
@@ -291,7 +297,7 @@ export function createBotApiHost(deps: BotApiHostDeps) {
       return { threadId: body.thread, ...(attachments.length ? { attachments } : {}), reply: body.reply ?? "", ...(body.status ? { status: body.status } : {}) };
     }
     let threadId = channelThread;
-    if (threadId && deps.threadBusy(botId, threadId)) failBeforeAcceptance("thread_busy");
+    if (threadId && busy(botId, threadId)) failBeforeAcceptance("thread_busy");
     if (!deps.canStart(botId, threadId ?? "")) failBeforeAcceptance("capacity_busy");
     if (threadId === undefined) {
       const task = store.createTask(botId, input.title.slice(0, 80), false, undefined, undefined, "full", undefined, undefined, (created) => deps.opened?.(created.threadId));
@@ -304,7 +310,13 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     let settled: TurnOutcome | undefined;
     let dispatchError: string | undefined;
     markRunning(botId, threadId, true);
+    channelRequests.add(threadId);
     try {
+      const image = !input.attachment && await channelImageReply(botId, threadId, userMessage, input.text, input.delivery?.signal);
+      if (image) {
+        markRunning(botId, threadId, false);
+        return { threadId, ...image };
+      }
       await deps.startTurn(botId, mediaPrompt(input.text, input.attachment), {
         threadId, unattended: true, userMessage,
         onSettled: (outcome) => { settled = outcome; markRunning(botId, threadId!, false); },
@@ -313,6 +325,8 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     } catch (error) {
       markRunning(botId, threadId, false);
       fail(502, COULD_NOT_ANSWER, error instanceof Error ? error.message : String(error));
+    } finally {
+      channelRequests.delete(threadId);
     }
     let approvalNotified = false;
     const deadline = Date.now() + (input.waitMs ?? 1_800_000);

@@ -1,3 +1,13 @@
+Limix Bot 0.3.112
+
+## Tiếng Việt
+
+- Khi chủ bot đã liên kết nhắn “Tạo ảnh một con mèo” trên kênh chat, bot dùng dịch vụ tạo ảnh đã cấu hình và gửi ảnh trực tiếp vào cuộc trò chuyện. Nếu kênh gửi ảnh thất bại, bot báo lỗi.
+
+## English
+
+- When a linked owner requests an image in chat, the bot uses the configured image service and sends the image as an attachment. If delivery fails, the channel reports it.
+
 Limix Bot 0.3.111
 
 ## Tiếng Việt
