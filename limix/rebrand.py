@@ -2147,7 +2147,6 @@ for rel, edits in json.loads((ROOT / "limix/patches/codex-sandbox-diagnostics.js
     edit(rel, sandbox_diagnostics)
 
 # Automatic desktop update checks run every six hours on all platforms.
-edit("electron/updater.mjs", lambda s: s.replace("setInterval(() => void updaterCoordinator?.check(), 60 * 60 * 1000).unref?.();", "setInterval(() => void updaterCoordinator?.check(), 6 * 60 * 60 * 1000).unref?.();"))
 
 for rel, edits in json.loads((ROOT / "limix/patches/image-responses.json").read_text(encoding="utf-8")).items():
     def image_responses_patch(s, edits=edits):

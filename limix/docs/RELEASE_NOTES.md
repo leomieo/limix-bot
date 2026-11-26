@@ -5,12 +5,14 @@ Limix Bot 0.3.115
 - Mục Kỹ năng có bốn tab để mở nhanh kho kỹ năng, kỹ năng có sẵn, kỹ năng trên máy và công cụ.
 - Trong kho kỹ năng, bạn có thể sắp xếp theo số sao hoặc ngày thêm và lọc theo chủ đề, số sao tối thiểu và khoảng ngày.
 - Sửa lỗi cài đặt một số kỹ năng có tệp ảnh minh họa lớn.
+- Limix Bot tự kiểm tra bản cập nhật mỗi giờ khi ứng dụng đang chạy.
 
 ## English
 
 - The Skills page has four tabs for quick access to the catalog, built-in skills, local skills, and tools.
 - Sort the skill catalog by stars or date added, and filter by topic, minimum stars, and date range.
 - Fixed an installation issue affecting some skills with large preview images.
+- Limix Bot checks for updates every hour while the app is running.
 
 Limix Bot 0.3.114
 

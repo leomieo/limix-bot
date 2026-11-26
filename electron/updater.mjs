@@ -187,5 +187,5 @@ export function startUpdater(signals = null) {
   }
 
   setTimeout(() => void updaterCoordinator?.check(), 15_000).unref?.();
-  setInterval(() => void updaterCoordinator?.check(), 6 * 60 * 60 * 1000).unref?.();
+  setInterval(() => void updaterCoordinator?.check(), 60 * 60 * 1000).unref?.();
 }
