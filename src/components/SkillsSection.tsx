@@ -1,3 +1,4 @@
+import { SkillLibraryTabs } from "./SkillLibraryTabs";
 // Security: local browse only, with no registry and no network fetch, so an import is exactly the bytes pasted here.
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -145,9 +146,7 @@ export function SkillsSection() {
 
   return (
     <div className="flex flex-col gap-4">
-      <LimixToolsCard />
-      <LimixBundledSkills />
-      <LimixSkillHub />
+      <SkillLibraryTabs catalog={<LimixSkillHub />} bundled={<LimixBundledSkills />} tools={<LimixToolsCard />}>
       <Card title={t("skills.library.title")} subtitle={t("skills.library.subtitle")}>
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
@@ -252,6 +251,8 @@ export function SkillsSection() {
           </div>
         </form>
       </Card>
+
+      </SkillLibraryTabs>
 
       {viewing && <Layer modal><SkillSourceDialog viewing={viewing} error={error} working={Boolean(working)} onClose={() => { if (!working) setViewing(null); }} onEnable={() => void toggle(viewing.skill, true)} /></Layer>}
     </div>

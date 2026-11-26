@@ -18,6 +18,7 @@ interface HubSkill {
   dependencies: string[]; permissions: { runs_code: boolean; mcp: boolean; files: string[] };
   security_findings?: Array<{ rule: string; severity: string; file: string; line?: number }>;
   notes: string[]; last_checked: string | null;
+  added_at?: string | null;
   installed: boolean; enabled: boolean; updateAvailable: boolean; blocked: string | null; risky: string | null;
 }
 interface HubState { repo: string; settings: { autoSync: boolean; autoInstall: boolean; lastSync: string | null; lastError: string | null }; skills: HubSkill[] }
@@ -49,11 +50,15 @@ export function LimixSkillHub() {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
+  const [order, setOrder] = useState("catalog");
+  const [minStars, setMinStars] = useState("");
+  const [from, setFrom] = useState("");
+  const [until, setUntil] = useState("");
   const [toolsOpen, setToolsOpen] = useState(false);
   const [guide, setGuide] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [shown, setShown] = useState(PAGE);
-  useEffect(() => setShown(PAGE), [tab, query, category]);
+  useEffect(() => setShown(PAGE), [tab, query, category, order, minStars, from, until]);
 
   const load = useCallback(async () => {
     try { setState(await call<HubState>("/api/limix/hub")); } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
@@ -71,7 +76,15 @@ export function LimixSkillHub() {
   const categories = useMemo(() => [...new Set(skills.map((s) => s.category))].sort(), [skills]);
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return skills.filter((s) => {
+    const start = from ? new Date(from + "T00:00:00").getTime() : -Infinity;
+    const end = until ? new Date(until + "T00:00:00") : null;
+    if (end) end.setDate(end.getDate() + 1);
+    const matches = skills.filter((s) => {
+      if (minStars && (s.stars == null || s.stars < Number(minStars))) return false;
+      if (from || until) {
+        const added = Date.parse(s.added_at ?? "");
+        if (!Number.isFinite(added) || added < start || (end && added >= end.getTime())) return false;
+      }
       if (category && s.category !== category) return false;
       if (q && !`${s.name} ${s.description} ${s.description_vi ?? ""} ${s.tags.join(" ")}`.toLowerCase().includes(q)) return false;
       switch (tab) {
@@ -83,7 +96,10 @@ export function LimixSkillHub() {
         default: return false;
       }
     });
-  }, [skills, tab, query, category]);
+    if (order === "stars") matches.sort((a, b) => (b.stars ?? -1) - (a.stars ?? -1));
+    if (order === "newest") matches.sort((a, b) => (Date.parse(b.added_at ?? "") || 0) - (Date.parse(a.added_at ?? "") || 0));
+    return matches;
+  }, [skills, tab, query, category, order, minStars, from, until]);
 
   const syncNow = () => run("sync", () => call("/api/limix/hub/sync", {}));
 
@@ -127,6 +143,7 @@ export function LimixSkillHub() {
             </div>
             <p className="mt-1.5 text-[11px] leading-relaxed text-ink-tertiary">
               {s.source.repository ?? lx("Không rõ nguồn", "Unknown source")}
+              {s.added_at && lx(` · Thêm vào kho ${day(s.added_at)}`, ` · Added to catalog ${day(s.added_at)}`)}
               {s.created_at && lx(` · Tạo ${day(s.created_at)}`, ` · Created ${day(s.created_at)}`)}{s.pushed_at && lx(` · Cập nhật ${day(s.pushed_at)}`, ` · Updated ${day(s.pushed_at)}`)}
               {s.stats_checked && lx(` · số sao đo ngày ${day(s.stats_checked)}`, ` · stars measured ${day(s.stats_checked)}`)}
             </p>
@@ -229,13 +246,32 @@ export function LimixSkillHub() {
           <>
             <div className="flex flex-wrap gap-2">
               <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={lx("Tìm kỹ năng…", "Search skills…")} className="min-w-[160px] flex-1 rounded-lg border border-hairline/60 bg-card px-3 py-1.5 text-[13px] text-ink" />
-              <select value={category} onChange={(e) => setCategory(e.target.value)} className="rounded-lg border border-hairline/60 bg-card px-2 py-1.5 text-[13px] text-ink">
-                <option value="">{lx("Mọi nhóm", "All categories")}</option>
+              <select aria-label={lx("Chủ đề", "Topic")} value={category} onChange={(e) => setCategory(e.target.value)} className="rounded-lg border border-hairline/60 bg-card px-2 py-1.5 text-[13px] text-ink">
+                <option value="">{lx("Mọi chủ đề", "All topics")}</option>
                 {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <select aria-label={lx("Sắp xếp", "Sort by")} value={order} onChange={(e) => setOrder(e.target.value)} className={button}>
+                <option value="catalog">{lx("Thứ tự trong kho", "Catalog order")}</option>
+                <option value="stars">{lx("Nhiều sao nhất", "Most stars")}</option>
+                <option value="newest">{lx("Mới thêm nhất", "Recently added")}</option>
               </select>
               {tab === "discover" && <button type="button" className={`${button} shrink-0`} disabled={busy !== null} onClick={() => void syncNow()}>
                 {busy === "sync" ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}{lx("Đồng bộ ngay", "Sync now")}
               </button>}
+            </div>
+            <div className="flex flex-wrap items-end gap-3 text-[12px] text-ink-secondary">
+              <label className="grid gap-1">{lx("Số sao tối thiểu", "Minimum stars")}
+                <input type="number" min="0" step="1" placeholder="0" value={minStars} onChange={(e) => setMinStars(e.target.validity.valid ? e.target.value : "")} className={`${button} w-28`} />
+              </label>
+              <label className="grid gap-1">{lx("Thêm vào kho từ ngày", "Added from")}
+                <input type="date" value={from} max={until || undefined} onChange={(e) => setFrom(e.target.value)} className={button} />
+              </label>
+              <label className="grid gap-1">{lx("Đến ngày", "Added through")}
+                <input type="date" value={until} min={from || undefined} onChange={(e) => setUntil(e.target.value)} className={button} />
+              </label>
+              {(query || category || minStars || from || until) && <button type="button" className={button} onClick={() => {
+                setQuery(""); setCategory(""); setMinStars(""); setFrom(""); setUntil("");
+              }}>{lx("Xóa bộ lọc", "Clear filters")}</button>}
             </div>
             {tab === "discover" && <>
               <p className="text-[12px] text-ink-tertiary" role="status">{lx("Đồng bộ gần nhất", "Last sync")}: {state.settings.lastSync ? new Date(state.settings.lastSync).toLocaleString(lx("vi-VN", "en-US")) : lx("chưa lần nào", "never")}</p>

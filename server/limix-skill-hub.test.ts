@@ -53,3 +53,27 @@ it.each([false, true])("refreshes a stale catalog without silently installing a 
     expect(installLibrarySkill).toHaveBeenCalledWith(expect.objectContaining({ name: "example", reviewState: "disabled" }));
   }
 });
+
+it.each([1_647_658, 2 * 1024 * 1024, 2 * 1024 * 1024 + 1])("checks catalog assets against the library file limit (%i bytes)", async (size) => {
+  fixture.dir = mkdtempSync(join(tmpdir(), "limix-hub-asset-"));
+  const content = "---\nname: example\ndescription: Fixture\n---\nExample";
+  const gif = new Uint8Array(size);
+  const hash = (data: string | Uint8Array) => createHash("sha256").update(data).digest("hex");
+  const entry = {
+    id: "example", source: {}, compatibility: {}, tags: [], notes: [], checksum: hash(content),
+    file_hashes: { "SKILL.md": hash(content), "assets/demo.gif": hash(gif) },
+  };
+  vi.stubGlobal("fetch", async (url: string) => url.endsWith("catalog.json")
+    ? Response.json({ skills: [entry] }) : new Response(url.endsWith("SKILL.md") ? content : gif));
+  await handleLimixHub("POST", "/api/limix/hub/sync", {});
+  const result = await handleLimixHub("POST", "/api/limix/hub/install", { id: "example" });
+  if (size > 2 * 1024 * 1024) {
+    expect(result?.status).toBe(422);
+    expect(installLibrarySkill).not.toHaveBeenCalled();
+  } else {
+    expect(result?.status).toBe(200);
+    expect(installLibrarySkill).toHaveBeenCalledWith(expect.objectContaining({
+      files: [{ path: "assets/demo.gif", content: expect.any(Uint8Array) }],
+    }));
+  }
+});

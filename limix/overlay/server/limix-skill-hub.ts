@@ -1,3 +1,4 @@
+import { SKILL_FOLDER_LIMITS } from "./skill-folder.ts";
 import { fetchHubFile } from "./limix-hub-download.ts";
 // Limix Skill Hub client: keeps a cached copy of the hub catalog, installs a skill only after every file matches the
 // SHA-256 the catalog pins, and never installs scripts, binaries or MCP files unless the owner allows tools for that
@@ -14,9 +15,9 @@ import { installLibrarySkill, readSkillLibraryIndex, retireLibrarySkill, setLibr
 import { lxs } from "./limix-lang.ts";
 
 export const HUB_REPO = "leomieo/limix-skill-hub";
+const FILE_MAX_BYTES = SKILL_FOLDER_LIMITS.fileBytes;
 const HUB_BRANCH = "main";
 const SYNC_MIN_GAP_MS = 20 * 60 * 60 * 1000;
-const FILE_MAX_BYTES = 1024 * 1024;
 
 export interface HubEntry {
   id: string;
@@ -24,6 +25,7 @@ export interface HubEntry {
   description: string;
   description_vi?: string | null;
   version: string;
+  added_at?: string | null;
   source: { repository: string | null; commit: string | null; path: string | null };
   license: string | null;
   language: string;
@@ -86,6 +88,25 @@ async function fetchText(url: string, headers: Record<string, string> = {}): Pro
   return fetch(url, { signal: AbortSignal.timeout(30_000), headers: { "User-Agent": "limix-bot", ...headers } });
 }
 
+async function withCatalogDates(entries: HubEntry[]): Promise<HubEntry[]> {
+  const cached = new Map(hubCatalog().map((skill) => [skill.id, skill.added_at]));
+  const dated = entries.map((skill) => ({ ...skill, added_at: skill.added_at || cached.get(skill.id) || null }));
+  if (dated.every((skill) => skill.added_at)) return dated;
+  try {
+    const response = await fetchText(rawUrl("registry/versions.json"));
+    if (!response.ok) return dated;
+    const history = await response.json() as Record<string, Array<{ at?: string | null }>>;
+    for (const skill of dated) {
+      if (skill.added_at || !Array.isArray(history[skill.id])) continue;
+      const dates = history[skill.id]!.flatMap(({ at }) => at && Number.isFinite(Date.parse(at)) ? [Date.parse(at)] : []);
+      if (dates.length) skill.added_at = new Date(Math.min(...dates)).toISOString();
+    }
+  } catch {
+    // Older hubs may publish a catalog without version history.
+  }
+  return dated;
+}
+
 let syncing: Promise<{ changed: boolean; count: number } | { error: string }> | null = null;
 
 /** Refreshes the cached catalog (ETag, so an unchanged hub costs one tiny request). */
@@ -94,7 +115,7 @@ export function syncHub(): Promise<{ changed: boolean; count: number } | { error
   syncing = (async () => {
     const settings = hubSettings();
     try {
-      const response = await fetchText(rawUrl("registry/catalog.json"), settings.etag && existsSync(catalogFile()) ? { "If-None-Match": settings.etag } : {});
+      const response = await fetchText(rawUrl("registry/catalog.json"), settings.etag && existsSync(catalogFile()) && hubCatalog().every((skill) => skill.added_at) ? { "If-None-Match": settings.etag } : {});
       if (response.status === 304) {
         saveSettings({ ...settings, lastSync: new Date().toISOString(), lastError: null });
         return { changed: false, count: hubCatalog().length };
@@ -104,7 +125,7 @@ export function syncHub(): Promise<{ changed: boolean; count: number } | { error
       const parsed = JSON.parse(text) as { skills?: unknown };
       if (!Array.isArray(parsed.skills)) throw new Error(lxs("Danh mục Hub không đúng định dạng", "The hub catalog has the wrong format"));
       mkdirSync(hubDir(), { recursive: true, mode: 0o700 });
-      writeFileAtomic(catalogFile(), text, { mode: 0o600 });
+      writeFileAtomic(catalogFile(), JSON.stringify({ ...parsed, skills: await withCatalogDates(parsed.skills) }), { mode: 0o600 });
       saveSettings({ ...settings, etag: response.headers.get("etag"), lastSync: new Date().toISOString(), lastError: null });
       if (settings.autoInstall) await autoInstallEligible();
       return { changed: true, count: parsed.skills.length };
