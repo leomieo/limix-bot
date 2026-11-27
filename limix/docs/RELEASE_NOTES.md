@@ -1,3 +1,15 @@
+Limix Bot 0.3.126
+
+## Tiếng Việt
+
+- Mục Thanh toán giới thiệu gói Free dùng trên máy tính và gói Limix Cloud Beta dành cho tài khoản được cấp quyền.
+- Các nhãn dài trong Cài đặt và menu nhóm bot hiển thị đầy đủ. Khi cài công cụ cho kỹ năng, ứng dụng đưa bạn đến bước xác nhận.
+
+## English
+
+- Billing shows the Free desktop plan and the internally granted Limix Cloud Beta plan.
+- Long settings and team menu labels wrap, and installing skill tools brings the confirmation into view.
+
 Limix Bot 0.3.125
 
 ## Tiếng Việt
