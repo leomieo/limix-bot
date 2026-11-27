@@ -59,7 +59,7 @@ export function LimixSkillStoreDialog({ botId, botName, onClose, onOpenSettings 
     try {
       setSkills(await call(path, { name: skill.name, kind: skill.kind, add }));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : lx("Không đổi được kĩ năng này.", "Couldn't change this skill."));
+      setError(cause instanceof Error ? cause.message : lx("Không đổi được kỹ năng này.", "Couldn't change this skill."));
     } finally {
       setWorking("");
     }
@@ -71,9 +71,9 @@ export function LimixSkillStoreDialog({ botId, botName, onClose, onOpenSettings 
       <div role="dialog" aria-modal="true" aria-labelledby="limix-skill-store-title" className="flex max-h-full w-full max-w-[640px] flex-col rounded-2xl border border-hairline/50 bg-panel shadow-2xl">
         <div className="flex items-start justify-between gap-3 px-6 pb-3 pt-5">
           <div>
-            <h2 id="limix-skill-store-title" className="text-[17px] font-semibold text-ink">{lx("Kho Kĩ Năng (Skills)", "Skills Store")}</h2>
+            <h2 id="limix-skill-store-title" className="text-[17px] font-semibold text-ink">{lx("Kho kỹ năng", "Skills Store")}</h2>
             <p className="mt-0.5 text-[12px] leading-relaxed text-ink-secondary">
-              {lx(`Chọn kĩ năng riêng cho ${botName}. Chỉ những kĩ năng được thêm mới nằm trong lời nhắc của bot, nên bot không bị quá tải. Gõ /tên-kĩ-năng trong chat để gọi.`, `Pick skills just for ${botName}. Only added skills go into the bot's prompt, so it never gets overloaded. Type /skill-name in chat to call one.`)}
+              {lx(`Chọn kỹ năng cho ${botName}. Bot sẽ nhận hướng dẫn của những kỹ năng bạn thêm. Để dùng một kỹ năng, gõ dấu / rồi nhập tên kỹ năng trong khung chat.`, `Pick skills just for ${botName}. Only added skills go into the bot's prompt, so it never gets overloaded. Type /skill-name in chat to call one.`)}
             </p>
           </div>
           <button type="button" onClick={onClose} aria-label={lx("Đóng", "Close")} className="rounded-lg p-1.5 text-ink-secondary hover:bg-raised hover:text-ink"><X size={16} /></button>
@@ -81,10 +81,10 @@ export function LimixSkillStoreDialog({ botId, botName, onClose, onOpenSettings 
         <div className="flex flex-wrap items-center gap-2 px-6 pb-3">
           <label className="flex min-w-[200px] flex-1 items-center gap-2 rounded-lg border border-hairline/40 bg-inset px-3 py-2">
             <Search size={14} className="text-ink-tertiary" />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={lx("Tìm kĩ năng…", "Search skills…")} aria-label={lx("Tìm kĩ năng", "Search skills")}
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={lx("Tìm kỹ năng…", "Search skills…")} aria-label={lx("Tìm kỹ năng", "Search skills")}
               className="w-full bg-transparent text-[14px] text-ink placeholder:text-ink-secondary focus:outline-none" />
           </label>
-          <div className="flex gap-1" role="tablist" aria-label={lx("Lọc kĩ năng", "Filter skills")}>
+          <div className="flex gap-1" role="tablist" aria-label={lx("Lọc kỹ năng", "Filter skills")}>
             {FILTERS.map(([id, label]) => (
               <button key={id} type="button" role="tab" aria-selected={filter === id} onClick={() => setFilter(id)}
                 className={`rounded-lg px-2.5 py-1.5 text-[13px] ${filter === id ? "bg-raised text-ink" : "text-ink-secondary hover:bg-raised"}`}>
@@ -98,7 +98,7 @@ export function LimixSkillStoreDialog({ botId, botName, onClose, onOpenSettings 
           {skills === null ? (
             <p className="flex items-center gap-2 py-6 text-[13px] text-ink-secondary"><Loader2 size={14} className="animate-spin" />{lx("Đang tải kho…", "Loading the store…")}</p>
           ) : shown.length === 0 ? (
-            <p className="py-6 text-[13px] text-ink-secondary">{skills.length === 0 ? lx("Kho chưa có kĩ năng nào.", "The store has no skills yet.") : lx("Không có kĩ năng khớp.", "No matching skills.")}</p>
+            <p className="py-6 text-[13px] text-ink-secondary">{skills.length === 0 ? lx("Kho chưa có kỹ năng nào.", "The store has no skills yet.") : lx("Không tìm thấy kỹ năng phù hợp.", "No matching skills.")}</p>
           ) : (
             <ul className="flex flex-col divide-y divide-hairline/40 rounded-xl border border-hairline/40">
               {shown.map((skill) => (
@@ -106,7 +106,7 @@ export function LimixSkillStoreDialog({ botId, botName, onClose, onOpenSettings 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <span className="font-mono text-[13px] text-ink">{skill.name}</span>
-                      <span className="text-[12px] text-ink-tertiary">{skill.core ? lx("Kĩ năng gốc", "Core skill") : KIND(skill.kind)}</span>
+                      <span className="text-[12px] text-ink-tertiary">{skill.core ? lx("Kỹ năng gốc", "Core skill") : KIND(skill.kind)}</span>
                       {skill.warnings > 0 && <span className="text-[12px] text-warning">{skill.warnings} {lx("cảnh báo", "warnings")}</span>}
                     </div>
                     <p className="mt-0.5 line-clamp-2 text-[12px] leading-relaxed text-ink-secondary">{skill.description}</p>
@@ -128,8 +128,8 @@ export function LimixSkillStoreDialog({ botId, botName, onClose, onOpenSettings 
           )}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 px-6 pb-5 pt-3">
-          <p className="text-[12px] text-ink-tertiary">{lx('Bấm "Đã thêm" để bỏ kĩ năng khỏi bot này.', 'Press "Added" to remove a skill from this bot.')}</p>
-          <button type="button" className={button} onClick={onOpenSettings}>{lx("Tải thêm kĩ năng", "Get more skills")}</button>
+          <p className="text-[12px] text-ink-tertiary">{lx('Bấm "Đã thêm" để bỏ kỹ năng khỏi bot này.', 'Press "Added" to remove a skill from this bot.')}</p>
+          <button type="button" className={button} onClick={onOpenSettings}>{lx("Tải thêm kỹ năng", "Get more skills")}</button>
         </div>
       </div>
     </div>

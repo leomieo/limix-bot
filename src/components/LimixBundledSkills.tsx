@@ -19,7 +19,7 @@ export function LimixBundledSkills() {
   }, []);
 
   return (
-    <Card title={lx("Kĩ năng có sẵn của Limix Bot", "Skills built into Limix Bot")} subtitle={lx("Đi kèm ứng dụng. Kĩ năng gốc luôn bật cho mọi bot; các kĩ năng khác nằm trong kho, thêm cho từng bot ở mục Kĩ Năng (Skills) của bot.", "Shipped with the app. Core skills are always on for every bot; the others wait in the store, and you add them to one bot at a time under the bot's Skills page.")}>
+    <Card title={lx("Kỹ năng có sẵn của Limix Bot", "Skills built into Limix Bot")} subtitle={lx("Mọi bot đều có sẵn các kỹ năng cơ bản. Để thêm kỹ năng khác, mở mục Kỹ năng trong cài đặt của từng bot.", "Shipped with the app. Core skills are always on for every bot; the others wait in the store, and you add them to one bot at a time under the bot's Skills page.")}>
       <div className="flex flex-col gap-3">
         {skills === null ? null : skills.length === 0 ? (
           <p className="text-[13px] text-ink-secondary">{lx("Chưa thấy kỹ năng có sẵn nào trong bản cài này.", "No built-in skills were found in this install.")}</p>
@@ -29,7 +29,7 @@ export function LimixBundledSkills() {
               <li key={skill.id} className="px-3 py-2.5">
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-[13px] text-ink">{skill.id}</span>
-                  <span className="text-[12px] text-ink-tertiary">{skill.core ? lx("Kĩ năng gốc · mọi bot", "Core skill · every bot") : lx("Trong kho · thêm cho từng bot", "In the store · add per bot")}</span>
+                  <span className="text-[12px] text-ink-tertiary">{skill.core ? lx("Kỹ năng gốc · mọi bot", "Core skill · every bot") : lx("Trong kho · thêm cho từng bot", "In the store · add per bot")}</span>
                 </div>
                 <p className="mt-0.5 text-[12px] leading-relaxed text-ink-secondary">{skill.description}</p>
                 {skill.triggerTerms.length > 0 && (

@@ -273,12 +273,12 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
         </div>
         <div className="shrink-0 space-y-3 border-b border-hairline/40 px-5 py-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="min-w-0 flex-1 text-[12px] leading-relaxed text-ink-secondary">{lx("Chỉ quét kỹ năng có sẵn và đã tải về. Công cụ cơ bản và yêu cầu của skills được hiển thị riêng.", "Only bundled and downloaded skills are scanned. Base tools and skill requirements are shown separately.")}</p>
+            <p className="min-w-0 flex-1 text-[12px] leading-relaxed text-ink-secondary">{lx("Ứng dụng quét các kỹ năng có sẵn và những kỹ năng bạn đã tải. Chọn một thẻ để xem công cụ cơ bản hoặc công cụ cần cho từng kỹ năng.", "Only bundled and downloaded skills are scanned. Base tools and skill requirements are shown separately.")}</p>
             <button type="button" className={`${button} shrink-0`} disabled={scanning || busy} onClick={() => void scan()}>{scanning ? <Loader2 size={14} className="animate-spin" /> : <ScanSearch size={14} />}{lx("Quét máy", "Scan this computer")}</button>
           </div>
           <div role="tablist" aria-label={lx("Nhóm công cụ", "Tool categories")} className="grid grid-cols-2 gap-2">
             <button id="limix-tools-base-tab" role="tab" aria-selected={activeTab === "tools"} aria-controls="limix-tools-base-panel" type="button" className={`${button} justify-center aria-selected:border-ink/40 aria-selected:bg-control aria-selected:font-semibold`} onClick={() => switchTab("tools")}>{lx("Công cụ cơ bản", "Base tools")} <span className="text-ink-tertiary">{state?.items.length ?? 0}</span></button>
-            <button id="limix-tools-requirements-tab" role="tab" aria-selected={activeTab === "requirements"} aria-controls="limix-tools-requirements-panel" type="button" className={`${button} justify-center aria-selected:border-ink/40 aria-selected:bg-control aria-selected:font-semibold`} onClick={() => switchTab("requirements")}>{lx("Yêu cầu của skills", "Skill requirements")} <span className="text-ink-tertiary">{packages.length}</span></button>
+            <button id="limix-tools-requirements-tab" role="tab" aria-selected={activeTab === "requirements"} aria-controls="limix-tools-requirements-panel" type="button" className={`${button} justify-center aria-selected:border-ink/40 aria-selected:bg-control aria-selected:font-semibold`} onClick={() => switchTab("requirements")}>{lx("Công cụ theo kỹ năng", "Skill requirements")} <span className="text-ink-tertiary">{packages.length}</span></button>
           </div>
           {error && <p role="alert" className="break-words text-[12px] text-danger">{error}</p>}
         </div>
