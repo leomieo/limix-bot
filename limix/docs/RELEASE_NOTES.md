@@ -1,3 +1,15 @@
+Limix Bot 0.3.120
+
+## Tiếng Việt
+
+- Mở **Ứng dụng → Kho Plugin** để xem quyền và các kết nối cần có trước khi tải plugin.
+- Bật plugin cho cả nhóm hoặc chọn riêng từng bot. Bạn có thể xem chỉ dẫn đã cài, cập nhật và gỡ plugin ngay trong kho.
+
+## English
+
+- Open **Apps → Plugin library** to review permissions and required connections before downloading a plugin.
+- Enable plugins for a team or an individual bot. Inspect the installed instructions, update packages, or uninstall them from the library.
+
 Limix Bot 0.3.119
 
 ## Tiếng Việt
