@@ -102,7 +102,7 @@ describe("Settings search in Simple mode", () => {
     flushSync(() => document.querySelector<HTMLButtonElement>("[data-settings-more]")!.click());
     expect(heading()).toBe("More settings");
     expect([...document.querySelectorAll("[data-settings-more-section]")].map((row) => row.getAttribute("data-settings-more-section")))
-      .toEqual(["decisionModel", "imageGeneration", "experimental"]);
+      .toEqual(["decisionModel", "experimental"]);
     const limits = document.querySelector('[data-settings-block="limits"]')!;
     expect(limits.querySelector("h3")!.textContent).toBe("Limits");
     for (const title of ["Group turns", "Tool time limit", "Parallel threads", "Automatic recovery", "Event log cleanup"]) expect(limits.textContent, title).toContain(title);

@@ -1,3 +1,21 @@
+Limix Bot 0.3.125
+
+## Tiếng Việt
+
+- Menu nhóm bot tự điều chỉnh theo kích thước cửa sổ. Các tùy chọn có tên dài tự xuống dòng và bạn có thể cuộn để xem hết menu.
+
+- Khi bấm Cài một gói của kỹ năng, ứng dụng đưa bạn đến bước chọn thư mục và xác nhận.
+
+- Thanh bên Cài đặt hiển thị trọn tên các mục dài, kể cả Mức dùng và thanh toán.
+
+## English
+
+- Bot team menus fit within the window. Long labels wrap, and you can scroll through all actions in smaller windows.
+
+- Selecting Install for a skill package brings its destination and confirmation into view.
+
+- Long navigation labels remain readable in both settings views.
+
 Limix Bot 0.3.124
 
 ## Tiếng Việt

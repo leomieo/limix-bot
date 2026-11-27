@@ -970,7 +970,7 @@ export function Sidebar({ open, onClose, collapseToIcons = false }: {
   };
   const openTeamMenu = (name: string, x: number, y: number, returnTo: HTMLElement) => {
     teamMenuReturn.current = returnTo;
-    setTeamMenu({ name, x: Math.max(8, Math.min(x, window.innerWidth - 266)), y: Math.max(8, Math.min(y, window.innerHeight - 190)) });
+    setTeamMenu({ name, x, y });
   };
   const [deletingTeam, setDeletingTeam] = useState<string | null>(null);
   const [teamDeletePending, setTeamDeletePending] = useState(false);
@@ -1572,9 +1572,10 @@ export function Sidebar({ open, onClose, collapseToIcons = false }: {
       <OwnerPickerHost />
       {newTeam && <TeamDialog onClose={() => setNewTeam(false)} />}
       {renameTeam && <TeamDialog section={renameTeam} rename onRenamed={sections.renamed} onClose={() => setRenameTeam(null)} />}
-      {teamMotion.shown && teamMotion.value && createPortal(<div className={cn("fixed inset-0 z-40", teamMotion.closing && "pointer-events-none")} onMouseDown={closeTeamMenu}>
-        <div role="menu" aria-label={teamMotion.value.name} style={{ left: teamMotion.value.x, top: teamMotion.value.y }}
-          className={cn("absolute w-[256px] text-ink", MENU_SHEET, teamMotion.className)} {...teamMotion.exitProps}
+      {teamMotion.shown && teamMotion.value && createPortal(<div className={cn("fixed inset-0 z-40 flex flex-col items-start p-2", teamMotion.closing && "pointer-events-none")} onMouseDown={closeTeamMenu}>
+        <div aria-hidden="true" style={{ height: Math.max(0, teamMotion.value.y - 8) }} />
+        <div role="menu" aria-label={teamMotion.value.name} style={{ marginLeft: `clamp(0px, ${teamMotion.value.x - 8}px, 100% - 16rem)` }}
+          className={cn("max-h-full w-64 max-w-full shrink-0 overflow-y-auto text-ink", MENU_SHEET, teamMotion.className)} {...teamMotion.exitProps}
           onMouseDown={event => event.stopPropagation()} onKeyDown={event => {
             if (event.key === "Escape" || event.key === "Tab") { event.preventDefault(); event.stopPropagation(); closeTeamMenu(); return; }
             navigateThreadMenu(event);
