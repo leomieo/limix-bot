@@ -26,6 +26,7 @@ export interface HelperToolContext {
   res: ServerResponse;
   json: typeof sendJson;
   botId: string;
+  turnScope?: string;
   readBody: () => Promise<unknown>;
   folders: BotFolders;
 }
@@ -121,7 +122,7 @@ export function createHelperToolRoutes(deps: HelperToolDeps) {
       if (typeof questions === "string") return void ctx.json(ctx.res, 400, { error: questions });
       const state = typeof body.state === "string" ? body.state : "";
       if (!relayAccepts("botDecide", state, questions)) return void ctx.json(ctx.res, 400, { error: HELPER_MESSAGES.decideShape });
-      const result = await deps.decider.ask("botDecide", state, questions, { careful: true, timeoutMs: HELPER_TOOL_TIMEOUT_MS });
+      const result = await deps.decider.ask("botDecide", state, questions, { careful: true, timeoutMs: HELPER_TOOL_TIMEOUT_MS, turnScope: ctx.turnScope });
       if (!result.ok) {
         const off = result.reason === "disabled" || result.reason === "no_key";
         return void ctx.json(ctx.res, off ? 409 : 502, { error: off ? HELPER_MESSAGES.decideOff : FAILURE[result.reason] ?? "The decision model's answer could not be read. Try again." });

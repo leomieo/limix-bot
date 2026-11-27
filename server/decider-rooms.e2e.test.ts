@@ -118,6 +118,7 @@ beforeAll(async () => {
     env: {
       ...(process.env.PATH ? { PATH: process.env.PATH } : {}),
       ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}),
+      OMB_DATA_DIR: data,
       HOME: home,
       USERPROFILE: home,
       OMB_PORT: String(port),

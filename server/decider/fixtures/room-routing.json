@@ -631,6 +631,42 @@
       "gold": [
         "sol"
       ]
+    },
+    {
+      "id": "vi-billing",
+      "set": "vi",
+      "room": "launch",
+      "message": "Tôi đã thanh toán nhưng tài khoản chưa kích hoạt. Kiểm tra giúp trạng thái webhook thanh toán.",
+      "gold": [
+        "ravi"
+      ]
+    },
+    {
+      "id": "vi-layout",
+      "set": "vi",
+      "room": "launch",
+      "message": "Trên Safari điện thoại, thanh điều hướng đè lên nút mua hàng. Sửa phần CSS giúp tôi.",
+      "gold": [
+        "theo"
+      ]
+    },
+    {
+      "id": "vi-copy",
+      "set": "vi",
+      "room": "launch",
+      "message": "Viết lại email thông báo ra mắt sao cho ngắn gọn và dễ hiểu.",
+      "gold": [
+        "nora"
+      ]
+    },
+    {
+      "id": "vi-design",
+      "set": "vi",
+      "room": "launch",
+      "message": "Vẽ giúp bộ biểu tượng mới trong Figma, cùng phong cách với logo hiện tại.",
+      "gold": [
+        "maya"
+      ]
     }
   ]
 }

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { userError, type UserError } from "../user-errors.ts";
 // Never throws into a turn: every failure comes back as { ok: false, reason }. The included relay
 // token goes only to the relay's URL, and only with requests the relay accepts.
@@ -11,7 +12,7 @@ import { appendDeciderLog, stateHash } from "./log.ts";
 import { OPENROUTER_DEFAULT_API, OPENROUTER_DEFAULT_MODEL, openrouterBackend } from "./openrouter.ts";
 import { KEY_CHECK_QUESTION, KEY_CHECK_STATE, relayAccepts, relaySeam } from "./relay.ts";
 import type {
-  Answers, AskOptions, BackendResult, ChoiceAnswer, ChoiceQuestion, DeciderBackend, DeciderFailure, DeciderJob,
+  Answers, AskOptions, BackendResult, DeciderAnswer, ChoiceAnswer, ChoiceQuestion, DeciderBackend, DeciderFailure, DeciderJob,
   DeciderProvider, DeciderQuestion, DeciderResult, DeciderSeam, OpenRouterApi, ScoreAnswer, YesNoAnswer,
 } from "./types.ts";
 import { DECIDER_JOBS } from "./types.ts";
@@ -220,6 +221,9 @@ export function createDecider(deps: DeciderDeps): Decider {
   const fetchImpl = deps.fetch ?? fetch;
   const now = deps.now ?? (() => performance.now());
 
+  type Stored = DeciderResult<Record<string, DeciderAnswer>>;
+  const decisions = new Map<string, { expires: number; result: Promise<Stored> }>();
+
   function gate(cfg: AppConfig, seam: DeciderSeam): DeciderFailure | null {
     if (cfg.decider?.provider === "off") return "disabled";
     if (seam === "keyCheck") return null;
@@ -319,7 +323,31 @@ export function createDecider(deps: DeciderDeps): Decider {
       const account = deciderAccount(cfg, seam)!;
       // Through the included token, only the exact requests the relay takes.
       if (account.included && !relayAccepts(seam, state, questions)) return { ok: false, reason: "misconfigured" };
-      return await call(seam, account, { ...openrouterRequest(cfg, account), state, questions }, options);
+      const request = { ...openrouterRequest(cfg, account), state, questions };
+      if (account.provider !== "jev" || seam !== "botDecide" || !options.turnScope || options.signal) {
+        return await call(seam, account, request, options);
+      }
+      const key = createHash("sha256").update(JSON.stringify([options.turnScope, account.token, account.api, account.included, options.timeoutMs, request])).digest("hex");
+      const lookupStarted = now();
+      const prior = decisions.get(key);
+      if (prior && prior.expires > now()) {
+        const cached = await prior.result;
+        if (cached.ok) return { ...cached, answers: structuredClone(cached.answers) as Answers<Qs>, latencyMs: Math.max(0, Math.round(now() - lookupStarted)), inputTokens: 0 };
+        return cached;
+      }
+      decisions.delete(key);
+      if (decisions.size >= 128) decisions.delete(decisions.keys().next().value!);
+      const result = call(seam, account, request, options);
+      const entry = { expires: now() + 30_000, result };
+      decisions.set(key, entry);
+      try {
+        const answer = await result;
+        if (!answer.ok && decisions.get(key) === entry) decisions.delete(key);
+        return structuredClone(answer);
+      } catch (error) {
+        if (decisions.get(key) === entry) decisions.delete(key);
+        throw error;
+      }
     } catch {
       return { ok: false, reason: "malformed" };
     }

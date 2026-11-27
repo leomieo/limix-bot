@@ -753,3 +753,35 @@ describe("settings rules with two providers", () => {
     expect(deciderPatchKey({ enabled: true }, undefined)).toBeNull();
   });
 });
+
+describe("Jev decisions within a trusted turn", () => {
+  it("shares an identical concurrent and subsequent judgement, rechecks gates and isolates changes", async () => {
+    let clock = 0;
+    const config: AppConfig = structuredClone(ON);
+    const fetchImpl = vi.fn<typeof fetch>().mockImplementation(async () => jsonResponse(choiceBody("theo", { theo: 0.92, maya: 0.08 })));
+    const helper = createDecider({ config: () => config, fetch: fetchImpl, now: () => clock });
+    const choose = (turnScope: string, state: unknown = STATE) => helper.choose("botDecide", state, QUESTION, { turnScope });
+    const replies = await Promise.all(Array.from({ length: 10 }, () => choose("turn-A")));
+    expect(replies.every(reply => reply.ok && reply.answers.choice === "theo")).toBe(true);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    config.decider!.enabled = false;
+    expect(await choose("turn-A")).toMatchObject({ ok: false, reason: "disabled" });
+    config.decider!.enabled = true;
+    await choose("turn-B");
+    await choose("turn-A", "a different state");
+    config.decider!.key += "-changed";
+    await choose("turn-A");
+    clock = 30_001;
+    await choose("turn-A");
+    expect(fetchImpl).toHaveBeenCalledTimes(5);
+  });
+  it("retries after failure and never reuses an unscoped call", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValueOnce(jsonResponse({}, 429)).mockImplementation(async () => jsonResponse(choiceBody("theo", { theo: 0.92, maya: 0.08 })));
+    const helper = decider(ON, fetchImpl);
+    const choose = (turnScope?: string) => helper.choose("botDecide", STATE, QUESTION, { turnScope });
+    expect(await choose("one")).toMatchObject({ok:false, reason:"rate_limited"});
+    expect((await choose("one")).ok).toBe(true);
+    await choose(); await choose();
+    expect(fetchImpl).toHaveBeenCalledTimes(4);
+  });
+});
