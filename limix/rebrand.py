@@ -771,20 +771,34 @@ for rel in ("server/config.ts", "server/index.ts", "server/skill-library.ts", "s
 edit("src/locales/en.json", lambda s: s.replace("Off by default. After a bot has run enough tool steps", "On by default. After a bot has run enough tool steps"))
 
 # 9f. Gold text when a bot learns a skill (Hermes shows the same moment in gold): the line in the chat that says a bot
-# added or updated a skill shimmers a few times, then stays gold.
+# added or updated a skill uses a moving gold highlight.
 GOLD_CSS = """
 
 /* Limix Bot: gold text when a bot learns a skill */
-@keyframes limix-gold-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
-.limix-gold-text {
-  background-image: linear-gradient(100deg, #b8860b 0%, #f2c94c 22%, #fff1a8 50%, #f2c94c 78%, #b8860b 100%);
-  background-size: 200% auto;
-  -webkit-background-clip: text; background-clip: text;
-  color: transparent; -webkit-text-fill-color: transparent;
-  font-weight: 600;
-  animation: limix-gold-shimmer 3s linear 3;
+@keyframes limix-gold-shimmer {
+  from { background-position: 100% 50%; }
+  to { background-position: 0% 50%; }
 }
-@media (prefers-reduced-motion: reduce) { .limix-gold-text { animation: none; } }
+.limix-gold-text {
+  color-scheme: var(--code-color-scheme, dark);
+  --skill-gold: light-dark(#704600, #e8ad43);
+  --skill-glint: light-dark(#975d00, #fff5c4);
+  font-family: "Geist Mono Variable", ui-monospace, monospace;
+  font-weight: 600;
+  color: var(--skill-gold);
+  background-image: linear-gradient(104deg, var(--skill-gold) 35%, var(--skill-glint) 50%, var(--skill-gold) 65%);
+  background-size: 240% 100%;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: limix-gold-shimmer 2.4s ease-in-out infinite alternate;
+}
+@media (prefers-reduced-motion: reduce), (forced-colors: active) {
+  .limix-gold-text {
+    animation: none;
+    background-image: none;
+    -webkit-text-fill-color: currentColor;
+  }
+}
 """
 edit("src/styles.css", lambda s: s if "limix-gold-text" in s else s.rstrip("\n") + GOLD_CSS)
 def gold_card(s):
