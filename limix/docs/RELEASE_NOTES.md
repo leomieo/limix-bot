@@ -1,3 +1,15 @@
+Limix Bot 0.3.116
+
+## Tiếng Việt
+
+- Trưởng nhóm bot phân công rõ người phụ trách và tiêu chí nghiệm thu cho từng đầu việc. Các việc độc lập có thể chạy song song, còn việc phụ thuộc được giao sau khi có kết quả cần thiết.
+- Khi cần kiểm tra độc lập, trưởng nhóm chuyển sản phẩm thực tế và tiêu chí nghiệm thu cho một bot khác, rồi tổng hợp kết quả trước khi bàn giao.
+
+## English
+
+- Bot team leaders assign each work item to an accountable teammate with clear acceptance criteria. Independent work can run in parallel, and dependent work starts once its prerequisites are ready.
+- When an independent review is needed, the leader gives a different teammate the actual deliverable and its acceptance criteria, then consolidates the findings before handoff.
+
 Limix Bot 0.3.115
 
 ## Tiếng Việt
