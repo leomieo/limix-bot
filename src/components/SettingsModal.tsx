@@ -44,6 +44,7 @@ import { CloudUsageSettings } from "./CloudUsageMeter";
 import { Card, SettingsGroup, SIMPLE_BUTTONS } from "./SettingsPrimitives";
 import { Layer, useIsTopLayer } from "./Layer";
 import { shortcutLabel } from "./ShortcutHint";
+import { BillingPlans } from "./BillingPlans";
 import { UsageSection } from "./UsageSection";
 import { SkillsSection } from "./SkillsSection";
 import { LicenseExpiryBanner } from "./LicenseExpiryBanner";
@@ -443,7 +444,7 @@ function SettingsDialog() {
       case "logins":
         return <VaultSettings />;
       case "usage":
-        return <AdminOnly note="settings.adminOnly.usage"><UsageSection /></AdminOnly>;
+        return <><BillingPlans /><AdminOnly note="settings.adminOnly.usage"><UsageSection /></AdminOnly></>;
       case "skills":
         return skillsLibraryEnabled(state.config) ? <SkillsSection /> : null;
       case "people":

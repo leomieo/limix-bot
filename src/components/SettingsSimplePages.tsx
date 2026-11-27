@@ -1,3 +1,4 @@
+import { BillingPlans } from "./BillingPlans";
 import { pageIsThisComputer } from "@/lib/companion-bridge";
 import type { ReactNode } from "react";
 import type { AppSettingsSection } from "@/state/store";
@@ -246,6 +247,7 @@ export function SimpleBillingPage({ has, disclose, cloudAccount }: { has: Has; d
   const signedOut = plan?.view.kind === "signed-out" || plan?.view.kind === "removed";
   return (
     <>
+      <BillingPlans />
       <div data-settings-block="usage" className="scroll-mt-4">
         {usage ? <CloudUsageSummaryView usage={usage} upgrade={upgrade}>{dialog}</CloudUsageSummaryView> : <AdminOnly note="settings.adminOnly.usage"><PlanUsageSummary /></AdminOnly>}
       </div>
