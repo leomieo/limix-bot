@@ -1,4 +1,4 @@
-import { Blocks, X } from "lucide-react";
+import { Blocks, Package, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { api, useStore } from "@/state/store";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
@@ -31,7 +31,9 @@ export function SidebarPluginButton({ iconOnly = false }: { iconOnly?: boolean }
         iconOnly ? "size-9 shrink-0 justify-center" : "w-full px-3 py-1.5 text-left",
         active ? "bg-raised text-accent" : "text-ink")}
       onClick={() => dispatch({ type: "togglePlugins", open: true, surface: "library" })}>
-      <Blocks size={18} aria-hidden="true" className="shrink-0" />
+      <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent-text">
+        <Blocks size={16} strokeWidth={1.75} aria-hidden="true" />
+      </span>
       {!iconOnly && <span>{label}</span>}
     </button>
   );
@@ -48,7 +50,12 @@ export function PluginLibraryDialog() {
       <div ref={dialog} role="dialog" aria-modal="true" aria-labelledby="plugin-library-title" tabIndex={-1}
         className="glass-surface glass-popup animate-pop-in relative flex max-w-[780px] flex-col overflow-hidden rounded-2xl text-ink">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-hairline/50 px-5 py-4">
-          <h2 id="plugin-library-title" className="text-[20px] font-semibold">{pluginLabel()}</h2>
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl border border-accent/20 bg-accent/10 text-accent-text">
+              <Blocks size={22} strokeWidth={1.75} aria-hidden="true" />
+            </span>
+            <h2 id="plugin-library-title" className="text-[20px] font-semibold">{pluginLabel()}</h2>
+          </div>
           <button type="button" aria-label={t("common.close")} onClick={close} className="rounded-lg p-2 text-ink-secondary hover:bg-raised">
             <X size={18} aria-hidden="true" />
           </button>
@@ -106,8 +113,15 @@ export function PluginLibrary() {
       const changed = found && local && found.sha256 !== local.sha256;
       const assignment = local && (team ? String(local.teams.includes(key)) : Object.hasOwn(local.bots, key) ? String(local.bots[key]) : "inherit");
       return <article key={id} className="space-y-2 border-t border-line pt-3">
-        <h3 className="font-medium">{display.name[lang]} <small>v{display.version}</small></h3>
-        <p>{display.description[lang]}</p>
+        <div className="flex items-start gap-3">
+          <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-hairline/60 bg-control text-ink-secondary">
+            <Package size={18} strokeWidth={1.75} aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <h3 className="break-words font-medium">{display.name[lang]} <small className="text-ink-tertiary">v{display.version}</small></h3>
+            <p className="break-words text-sm text-ink-secondary">{display.description[lang]}</p>
+          </div>
+        </div>
         <p className="text-sm">{line("Quyền: thêm chỉ dẫn vào cuộc trò chuyện.", "Permission: add instructions to the conversation.")} {line("Kết nối MCP cần có", "Required MCP connections")} · {display.requiresMcp.join(", ") || line("Không có", "None")}</p>
         {!!display.requiresMcp.length && <p className="text-xs text-ink-secondary">{line("Plugin hoạt động khi bot đã được cấp các kết nối trên trong lượt chat.", "The workflow runs when these connections are available to the bot in this turn.")}</p>}
         {local && <details><summary>{line("Xem nội dung đã cài", "Inspect installed package")} · v{local.version}</summary>

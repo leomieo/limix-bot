@@ -1,3 +1,15 @@
+Limix Bot 0.3.128
+
+## Tiếng Việt
+
+- **Kho Plugin** có mục riêng trên thanh bên. Bạn có thể tải plugin, xem quyền và bật hoặc tắt cho từng bot hoặc nhóm bot.
+- Biểu tượng riêng giúp nhận ra Kho Plugin trên thanh bên và các gói trong danh sách.
+
+## English
+
+- The **Plugin library** has its own sidebar entry. Download plugins, review permissions, and enable or disable them for each bot or team.
+- The sidebar and catalog use distinct icons for the library and individual packages.
+
 Limix Bot 0.3.127
 
 ## Tiếng Việt
