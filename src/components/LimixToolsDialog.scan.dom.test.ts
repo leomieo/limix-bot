@@ -61,6 +61,7 @@ it("installs optional video packages individually after reviewing the destinatio
     expect(button("Install all missing requirements")).toBeUndefined();
     flushSync(() => button("Install").click());
     await vi.waitFor(() => expect(document.body.textContent).toContain("No folder selected"));
+    expect(document.activeElement?.textContent).toBe("Choose the project that needs these libraries");
     expect(installRequirements).not.toHaveBeenCalled();
     expect(button("Install packages").disabled).toBe(true);
     flushSync(() => button("Choose project folder…").click());

@@ -121,12 +121,15 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
   const missing = state?.items.filter((item) => !item.installed) ?? [];
   const missingRecommended = missing.filter((item) => item.recommended);
   const missingPackages = (state?.skillScan?.requirements ?? []).filter((row) => row.id && row.installable && !row.optional && row.status === "missing");
-  const prepareInstall = async (rows: SkillRequirement[], baseIds: string[] = []) => {
+  const reviewRef = useRef<HTMLHeadingElement>(null);
+  const prepareInstall = (rows: SkillRequirement[], baseIds: string[] = []) => {
     setError(null);
-    try {
-      setInstallation({ rows, project: "", baseIds });
-    } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+    setInstallation({ rows, project: "", baseIds });
   };
+  const selectedRows = installation?.rows;
+  useLayoutEffect(() => {
+    if (selectedRows) reviewRef.current?.focus();
+  }, [selectedRows]);
   const needsProject = installation?.rows.some(row => row.kind !== "bin" && row.installScope !== "tool") ?? false;
   const chooseProject = async () => {
     try { const project = await window.ogb?.pickFolder?.(); if (project) setInstallation(value => value ? { ...value, project } : null); }
@@ -214,7 +217,7 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
         <h3 className="text-[14px] font-medium text-ink">{lx("Yêu cầu của kỹ năng đã cài", "Installed skill requirements")}</h3>
         {missingPackages.length > 0 && limixTools()?.installRequirements && <button type="button" className={`${button} mt-3`} disabled={busy || scanning || !state.supported} onClick={() => void prepareInstall(missingPackages, missing.map((item) => item.id))}><Download size={14} />{lx("Cài tất cả còn thiếu", "Install all missing requirements")}</button>}
         {installation && <div className="my-3 rounded-xl border border-hairline/40 bg-raised p-3 text-[12px]">
-          <p className="font-medium text-ink">{needsProject ? lx("Chọn dự án cần các thư viện này", "Choose the project that needs these libraries") : lx("Cài vào thư mục công cụ của Limix Bot", "Install into Limix Bot’s tools folder")}</p>
+          <h4 ref={reviewRef} tabIndex={-1} className="font-medium text-ink">{needsProject ? lx("Chọn dự án cần các thư viện này", "Choose the project that needs these libraries") : lx("Cài vào thư mục công cụ của Limix Bot", "Install into Limix Bot’s tools folder")}</h4>
           {needsProject && <><p className="mt-1 text-ink-secondary">{lx("Thư viện như Remotion cần nằm trong dự án đang làm. Bấm nút dưới để chọn thư mục; công cụ dùng chung sẽ được cài riêng trong Limix Bot.", "Libraries such as Remotion belong in the project you are working on. Choose its folder below; shared tools are installed separately in Limix Bot.")}</p><button type="button" className={`${button} mt-2`} onClick={() => void chooseProject()}>{lx("Chọn thư mục dự án…", "Choose project folder…")}</button><p className="mt-1 break-all text-ink-secondary">{installation.project || lx("Chưa chọn thư mục", "No folder selected")}</p></>}
           <p className="mt-1 break-words text-ink-secondary">{[...new Set(installation.rows.flatMap((row) => row.packages ?? [row.name]))].join(", ")}{installation.baseIds.length > 0 && ` · ${installation.baseIds.join(", ")}`}</p>
           <p className="mt-2 text-ink-tertiary">{lx("Công cụ dòng lệnh dùng thư mục công cụ riêng của Limix Bot. Thư viện npm lưu trong dự án; Python dùng .venv. Các gói đánh dấu Tùy chọn chỉ cần cho chức năng tương ứng.", "Command-line tools use Limix Bot’s private tools folder. Project npm libraries stay in the project; Python uses .venv. Optional packages are needed only for the corresponding workflow.")}</p>
