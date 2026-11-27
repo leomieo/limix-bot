@@ -90,6 +90,8 @@ export type DeciderResult<T> =
   | { ok: false; provider?: DeciderProvider; reason: DeciderFailure; status?: number; latencyMs?: number };
 
 export interface AskOptions {
+  /** Server-assigned bot, thread and turn identity for exact decision reuse. */
+  turnScope?: string;
   /** Hard ceiling for the whole call, body included. */
   timeoutMs?: number;
   signal?: AbortSignal;

@@ -1,3 +1,13 @@
+Limix Bot 0.3.121
+
+## Tiếng Việt
+
+- Khi một bot hỏi Jev nhiều lần cùng một câu hỏi với cùng dữ liệu trong một lượt xử lý, Limix Bot có thể dùng lại kết quả trong 30 giây. Điều này giúp giảm số lần gọi Jev. Mỗi bot và mỗi cuộc trò chuyện dùng kết quả riêng.
+
+## English
+
+- When a bot asks Jev the same question with the same data more than once in a turn, Limix Bot can reuse the result for 30 seconds. This reduces duplicate Jev calls. Results are scoped to each bot and conversation.
+
 Limix Bot 0.3.120
 
 ## Tiếng Việt
