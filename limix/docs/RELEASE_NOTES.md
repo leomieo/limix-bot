@@ -1,3 +1,13 @@
+Limix Bot 0.3.124
+
+## Tiếng Việt
+
+- Khi bot thêm hoặc cập nhật kỹ năng, dòng thông báo có ánh vàng chuyển động qua lại. Phông chữ hỗ trợ đầy đủ dấu tiếng Việt. Nếu thiết bị bật chế độ giảm chuyển động, dòng chữ hiển thị tĩnh.
+
+## English
+
+- A gold highlight moves back and forth across skill creation and update messages. The typeface supports Vietnamese accents, and the text stays still when reduced motion is enabled.
+
 Limix Bot 0.3.123
 
 ## Tiếng Việt
