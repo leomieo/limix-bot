@@ -102,10 +102,10 @@ describe("DecisionModelSettings", () => {
     expect(helpersStatusLine(null)).toBe("Decisões: sem configuração · Extração: sem configuração");
   });
 
-  it("offers both providers, with Jev selected for an existing install and no model picker", () => {
+  it("offers Cloudflare alongside the existing providers, with Jev selected for an existing install", () => {
     const view = render();
     expect(view.provider!.props.value).toBe("jev");
-    expect(optionsOf(view.provider!)).toEqual(["jev", "openrouter"]);
+    expect(optionsOf(view.provider!)).toEqual(["jev", "workersai", "openrouter"]);
     expect(view.html).toContain("TypeSafe Jev");
     expect(view.model).toBeUndefined();
     expect(fixture.effects).toHaveLength(1);
@@ -220,7 +220,7 @@ describe("DecisionModelSettings", () => {
     for (const [result, text] of [
       [{ ok: false, reason: "http_error", status: 402 }, "Decisions are included with an active Cloud subscription."],
       [{ ok: false, reason: "rate_limited", status: 429 }, "Your Cloud plan&#x27;s decisions are busy or used up for this month. Try again later."],
-      [{ ok: false, reason: "rejected", status: 401 }, "MausBot Cloud did not accept this machine&#x27;s decisions. Try again later."],
+      [{ ok: false, reason: "rejected", status: 401 }, "Limix Bot Cloud did not accept this machine&#x27;s decisions. Try again later."],
     ] as const) {
       fixture.api.mockResolvedValueOnce(result);
       click(render().test);
@@ -449,12 +449,27 @@ describe("DecisionModelSettings", () => {
       expect(text({ reason: "http_error", status: 500 })).toBe("OpenRouter sent back an error (500). Try again in a moment.");
       expect(text({ reason: "rate_limited" })).toBe("OpenRouter is limiting requests right now. Try again in a moment.");
       expect(text({ reason: "overloaded" })).toBe("The model is overloaded right now. Try again shortly.");
-      expect(text({ reason: "malformed" })).toBe("The model sent an answer MausBot could not read. Try another model.");
+      expect(text({ reason: "malformed" })).toBe("The model sent an answer Limix Bot could not read. Try another model.");
       expect(text({ reason: "unreachable" })).toBe("Could not reach OpenRouter. Check your connection.");
       expect(text({ reason: "timeout" })).toBe("OpenRouter did not answer in time. Try again.");
       expect(text({ reason: "no_key" })).toBe("Paste a key or save one first.");
       expect(text({ reason: "something-new" })).toBe("The test did not finish. Try again.");
       expect(deciderFailureText({ reason: "http_error", status: 402 })).toBe("Jev sent back an error (402). Try again in a moment.");
     });
+  });
+
+  it("saves a Cloudflare provider choice and shows only its credential inputs", async () => {
+    fixture.api.mockResolvedValueOnce(status({
+      provider: "workersai", selectedProvider: "workersai", configured: false, enabled: false, jobs: { roomRouting: true },
+    }));
+    change(render().provider!, "workersai");
+    await flush();
+    expect(fixture.api).toHaveBeenCalledWith("/api/config", { method: "PUT", body: JSON.stringify({ decider: { provider: "workersai" } }) });
+    const view = render();
+    expect(view.provider!.props.value).toBe("workersai");
+    expect(view.html).toContain('data-testid="workers-ai-token"');
+    expect(view.save).toBeUndefined();
+    expect(view.model).toBeUndefined();
+    expect(view.master.props.disabled).toBe(true);
   });
 });

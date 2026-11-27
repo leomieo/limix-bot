@@ -32,7 +32,8 @@ type DeciderConfig = NonNullable<AppConfig["decider"]>;
 
 /** The provider a draft key with no provider named is tested at: the old provider choice, else Jev. */
 function draftProvider(cfg: AppConfig): DeciderProvider {
-  return cfg.decider?.provider === "openrouter" ? "openrouter" : "jev";
+  const provider = cfg.decider?.provider;
+  return provider === "workersai" || provider === "openrouter" ? provider : "jev";
 }
 
 export function deciderModel(cfg: AppConfig): string {
@@ -47,6 +48,7 @@ export function deciderApi(cfg: AppConfig): OpenRouterApi {
 /** In order: the person's own Jev key, their own Workers AI key (Clef), Cloud's included relay (only for seams it
  * accepts), the OpenRouter LLM fallback, nothing. */
 export function deciderAccount(cfg: AppConfig, seam?: DeciderSeam): HelperAccount | null {
+  if (cfg.decider?.provider === "workersai") return workersAiAccount(cfg);
   const jev = jevAccount(cfg);
   const candidates = [jev, workersAiAccount(cfg), jev?.included ? null : includedAccount(), openrouterAccount(cfg)];
   return candidates.find((account): account is HelperAccount => Boolean(account) && !(account!.included && seam && !relaySeam(seam))) ?? null;
@@ -86,6 +88,7 @@ export function describeDecider(cfg: AppConfig) {
   const provider = account?.provider ?? draftProvider(cfg);
   return {
     provider,
+    ...(cfg.decider?.provider === "workersai" ? { selectedProvider: cfg.decider.provider } : {}),
     ...(provider === "openrouter" ? { model: deciderModel(cfg), api: deciderApi(cfg) } : {}),
     configured: Boolean(account),
     ...(account?.keySource ? { keySource: account.keySource } : {}),
@@ -118,8 +121,10 @@ export function deciderSavePatch(
   const saving = KEY_FIELDS.some((field) => Boolean(next[field]));
   const clearing = KEY_FIELDS.some((field) => next[field] === "");
   const after = (field: (typeof KEY_FIELDS)[number] | "workersAiAccountId") => (typeof next[field] === "string" ? next[field] : current?.[field]?.trim()) || "";
-  const ownAfter = Boolean(after("key") || after("openrouterKey") || (after("workersAiToken") && after("workersAiAccountId")));
-  const fallbackHere = fallback.included === true || fallback.shared === true;
+  const workersSelected = (patch.provider ?? current?.provider) === "workersai";
+  const workersAfter = Boolean(after("workersAiToken") && after("workersAiAccountId"));
+  const ownAfter = workersAfter || (!workersSelected && Boolean(after("key") || after("openrouterKey")));
+  const fallbackHere = !workersSelected && (fallback.included === true || fallback.shared === true);
   if (patch.openrouterModel !== undefined && patch.openrouterApi === undefined) next.openrouterApi = "chat";
   if (next.workersAiToken && !after("workersAiAccountId")) return { ok: false, ...userError("serverError.decider.accountRequired") };
   if (saving) {
@@ -324,10 +329,13 @@ export function createDecider(deps: DeciderDeps): Decider {
       // Through the included token, only the exact requests the relay takes.
       if (account.included && !relayAccepts(seam, state, questions)) return { ok: false, reason: "misconfigured" };
       const request = { ...openrouterRequest(cfg, account), state, questions };
-      if (account.provider !== "jev" || seam !== "botDecide" || !options.turnScope || options.signal) {
+      if (account.provider === "openrouter" || seam !== "botDecide" || !options.turnScope || options.signal) {
         return await call(seam, account, request, options);
       }
-      const key = createHash("sha256").update(JSON.stringify([options.turnScope, account.token, account.api, account.included, options.timeoutMs, request])).digest("hex");
+      const key = createHash("sha256").update(JSON.stringify([
+        options.turnScope, account.provider, account.token, account.api, account.accountId,
+        account.included, options.timeoutMs, Boolean(options.careful), request,
+      ])).digest("hex");
       const lookupStarted = now();
       const prior = decisions.get(key);
       if (prior && prior.expires > now()) {

@@ -24,7 +24,7 @@ const optionalText = z.string().optional();
  * log's retention. */
 export const deciderConfigSchema = z.object({
   enabled: z.boolean().optional(),
-  provider: z.enum(["jev", "openrouter", "off"]).optional(),
+  provider: z.enum(["jev", "workersai", "openrouter", "off"]).optional(),
   key: optionalText,
   openrouterKey: optionalText,
   workersAiToken: optionalText,
@@ -60,7 +60,7 @@ export const deciderConfigSchema = z.object({
 /** The decision model; see `deciderConfigSchema`. */
 export interface DeciderConfig {
   enabled?: boolean;
-  provider?: "jev" | "openrouter" | "off";
+  provider?: "jev" | "workersai" | "openrouter" | "off";
   key?: string;
   baseUrl?: string;
   openrouterKey?: string;
