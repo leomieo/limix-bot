@@ -1,3 +1,4 @@
+import { PluginLibraryDialog } from "./components/PluginLibrary";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLimixSidebarFits } from "./lib/limix-sidebar-fit";
 import { ChevronLeft, Loader2, Menu } from "lucide-react";
@@ -445,7 +446,7 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
       <CloudHowTo />
       <CloudSetup viewer={viewer} welcomeShown={welcomeOnScreen} />
       <WelcomeKeeper viewer={viewer} />
-      {state.pluginsOpen && <PluginsPanel />}
+      {state.pluginsOpen && (state.pluginsSurface === "library" ? <PluginLibraryDialog /> : <PluginsPanel />)}
       <AppGrantNotice />
       {state.shortcutsOpen && (
         <KeyboardShortcutsModal

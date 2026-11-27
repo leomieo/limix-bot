@@ -74,10 +74,10 @@ export function SidebarAppsButton() {
       onClick={() => dispatch({ type: "togglePlugins", open: true })}
       aria-label={label}
       title={label}
-      aria-pressed={state.pluginsOpen}
+      aria-pressed={state.pluginsOpen && state.pluginsSurface !== "library"}
       className={cn(
         "flex size-9 shrink-0 items-center justify-center rounded-xl transition-colors",
-        state.pluginsOpen ? "bg-raised text-accent" : "text-ink-secondary hover:bg-raised/50 hover:text-ink",
+        state.pluginsOpen && state.pluginsSurface !== "library" ? "bg-raised text-accent" : "text-ink-secondary hover:bg-raised/50 hover:text-ink",
       )}
     >
       <Puzzle size={18} />
@@ -151,7 +151,7 @@ export function SidebarFooterNav({
     tourId="nav-apps"
     iconsOnly={iconsOnly}
     rail={rail}
-    active={state.pluginsOpen}
+    active={state.pluginsOpen && state.pluginsSurface !== "library"}
     icon={(active) => <Puzzle size={iconSize} className={tone(active)} />}
     onClick={() => dispatch({ type: "togglePlugins", open: true })}
   />;

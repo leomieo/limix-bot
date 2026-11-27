@@ -1,3 +1,13 @@
+Limix Bot 0.3.127
+
+## Tiếng Việt
+
+- Mở **Kho Plugin** ngay từ thanh bên để tải plugin, xem quyền và bật hoặc tắt cho từng bot hoặc nhóm bot.
+
+## English
+
+- Open the **Plugin library** from the sidebar to download plugins, review permissions, and enable or disable them for each bot or team.
+
 Limix Bot 0.3.126
 
 ## Tiếng Việt

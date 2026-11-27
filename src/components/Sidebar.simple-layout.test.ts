@@ -202,7 +202,8 @@ describe("Simple-mode sidebar layout", () => {
     expect(work().props.menuOpen).toBe(true);
     const menu = tree.find((node) => node.props.role === "menu")!;
     expect(menu.props["aria-label"]).toBe("Work");
-    expect(menu.props.style).toEqual({ left: 24, top: 304 });
+    expect(menu.props.style).toEqual({ marginLeft: "clamp(0px, 16px, 100% - 16rem)" });
+    expect(tree.some((node) => node.props["aria-hidden"] === "true" && node.props.style?.height === 296)).toBe(true);
     const items = tree.find((node) => node.type === TeamMenuItems)!.props as Parameters<typeof TeamMenuItems>[0];
     for (const action of ["onAddBots", "onRename", "onShare", "onDelete"] as const) expect(items[action]).toBeTypeOf("function");
   });
