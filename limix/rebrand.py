@@ -2340,7 +2340,7 @@ for feature in ("fleet-unit-name", "windows-branding-channel-model", "channel-ad
             return source
         edit(rel, preceding_layer)
 
-for feature in ("industry-customer-care", "assistant-template-suggestions", "hybrid-factory", "industry-specialists", "channel-admin-video", "windows-branding-channel-model", "fleet-unit-name", "channel-guest-model", "superpowers"):
+for feature in ("industry-customer-care", "assistant-template-suggestions", "hybrid-factory", "industry-specialists", "channel-admin-video", "windows-branding-channel-model", "fleet-unit-name", "channel-guest-model", "superpowers", "plugin-library"):
     for rel, edits in json.loads((ROOT / f"limix/patches/{feature}.json").read_text(encoding="utf-8")).items():
         def apply_feature(s, edits=edits, rel=rel):
             for patch in edits:
