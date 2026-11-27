@@ -9,6 +9,7 @@ import { CloudRoomCard } from "./CloudRoomCard";
 import { CloudUsageCard } from "./CloudUsageMeter";
 import { endCloudHowTo, useWorkspacePlace, type WorkspacePlace } from "./DesktopWorkspaceSwitcher";
 import { SidebarConnectApps } from "./SidebarConnectApps";
+import { SidebarPluginButton } from "./PluginLibrary";
 import { SidebarBottomButtons, SidebarFooterNav } from "./SidebarFooterNav";
 import { phoneSettingsAction, SidebarPhoneButton } from "./SidebarPhoneButton";
 import { SidebarProfileMenu, useSimpleAccount, type ArchivedBots } from "./SidebarProfileMenu";
@@ -39,6 +40,7 @@ function SimpleSidebarFooter({ owner, archived }: { owner: string | null; archiv
       <CloudUsageCard />
       <SidebarPlaceStatus place={place} className="mb-2 px-1" />
       <AccountMoveStatus kind={move.kind} place={move.place} retry={move.retry} onOpen={openAccount} className="ps-1" />
+      <SidebarPluginButton />
       <div className="flex items-center gap-2 not-first:mt-2">
         <SidebarProfileMenu simple={account} />
         <SidebarConnectApps />
@@ -61,6 +63,7 @@ export function SidebarFooter({ density, simple = false, owner = null, archived,
   return (
     <div className={cn("pb-3 pt-2", density === "icons" ? "flex flex-col items-center gap-1 px-2" : "px-3")}>
       <SidebarFooterNav density={density} collapsed={toolsCollapsed} onToggleCollapsed={onToggleTools} />
+      <SidebarPluginButton iconOnly={density === "icons"} />
       {density === "icons" ? (
         <>
           <SidebarPhoneButton density={density} onOpen={() => dispatch(phoneSettingsAction())} />

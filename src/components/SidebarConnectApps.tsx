@@ -75,7 +75,7 @@ export function SidebarConnectApps({ circle = false }: { circle?: boolean }) {
       type="button"
       data-tour="nav-apps"
       data-sidebar-nav="apps"
-      aria-pressed={state.pluginsOpen}
+      aria-pressed={state.pluginsOpen && state.pluginsSurface !== "library"}
       aria-label={circle ? label : undefined}
       title={circle ? label : undefined}
       onClick={() => dispatch({ type: "togglePlugins", open: true })}

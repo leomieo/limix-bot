@@ -538,7 +538,7 @@ export interface AppState {
   webhookIngress: WebhookIngressStatus | null;
   settingsOpen: boolean;
   pluginsOpen: boolean;
-  pluginsSurface: "apps" | "mcp";
+  pluginsSurface: "apps" | "mcp" | "library";
   botCreationPending: boolean;
   computerOpen: boolean;
   inspectorOpen: boolean;
@@ -747,7 +747,7 @@ export type Action =
   | { type: "notice"; notice: AppState["notice"] }
   | { type: "revealThread"; threadId: string }
   | { type: "toggleSettings"; open?: boolean; section?: BotSettingsSection; botId?: string }
-  | { type: "togglePlugins"; open?: boolean; surface?: "apps" | "mcp" }
+  | { type: "togglePlugins"; open?: boolean; surface?: AppState["pluginsSurface"] }
   | { type: "toggleComputer"; open?: boolean; botId?: string }
   | { type: "openDataResult"; botId: string; cardId: string }
   | { type: "dataResultFocusConsumed"; requestId: number }
@@ -1403,7 +1403,7 @@ export function reducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         pluginsOpen: open,
-        pluginsSurface: action.surface ?? state.pluginsSurface,
+        pluginsSurface: action.surface ?? (state.pluginsSurface === "library" && open ? "apps" : state.pluginsSurface),
         ...(open ? { settingsOpen: false, appSettingsOpen: false, shortcutsOpen: false } : {}),
       };
     }

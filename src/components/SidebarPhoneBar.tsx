@@ -1,9 +1,10 @@
-import { FolderOpen, LayoutGrid, Puzzle, Search, UsersRound, X, Zap } from "lucide-react";
+import { Blocks, FolderOpen, LayoutGrid, Puzzle, Search, UsersRound, X, Zap } from "lucide-react";
 
 import { useCloudFilesReady } from "@/lib/cloud-files";
 import { t } from "@/lib/i18n";
 import { useStore } from "@/state/store";
 
+import { pluginLabel } from "./PluginLibrary";
 import { CloudRoomCard } from "./CloudRoomCard";
 import { CloudUsageCard } from "./CloudUsageMeter";
 import { useAutomationsNeedYou } from "./SidebarFooterNav";
@@ -42,8 +43,15 @@ export function SidebarPhoneBar({ query, onQuery }: { query: string; onQuery: (q
       key: "apps",
       label: t("sidebar.nav.apps"),
       icon: <Puzzle size={18} />,
-      active: state.pluginsOpen,
+      active: state.pluginsOpen && state.pluginsSurface !== "library",
       onSelect: () => dispatch({ type: "togglePlugins", open: true }),
+    },
+    {
+      key: "plugins",
+      label: pluginLabel(),
+      icon: <Blocks size={18} />,
+      active: state.pluginsOpen && state.pluginsSurface === "library",
+      onSelect: () => dispatch({ type: "togglePlugins", open: true, surface: "library" }),
     },
   ];
   return (

@@ -29,14 +29,90 @@
       "after": "renamed: (from, to) => { pluginHub.renameTeam(from, to); if (to) botHolds.rename(from, to); else botHolds.forget(\"department\", from); }"
     }
   ],
-  "src/components/PluginsPanel.tsx": [
+  "src/App.tsx": [
     {
-      "before": "import { SavedKeysReset } from \"./SavedKeysReset\";",
-      "after": "import { SavedKeysReset } from \"./SavedKeysReset\";\nimport { PluginLibrary } from \"./PluginLibrary\";"
+      "before": "      {state.pluginsOpen && <PluginsPanel />}",
+      "after": "      {state.pluginsOpen && (state.pluginsSurface === \"library\" ? <PluginLibraryDialog /> : <PluginsPanel />)}"
     },
     {
-      "before": "<div className=\"min-h-0 flex-1 overflow-y-auto px-5 pb-7 sm:px-7\">",
-      "after": "<div className=\"min-h-0 flex-1 overflow-y-auto px-5 pb-7 sm:px-7\">\n          <PluginLibrary />"
+      "before": "import { useCallback, useEffect, useRef, useState } from \"react\";",
+      "after": "import { PluginLibraryDialog } from \"./components/PluginLibrary\";\nimport { useCallback, useEffect, useRef, useState } from \"react\";"
+    }
+  ],
+  "src/state/store.tsx": [
+    {
+      "before": "pluginsSurface: \"apps\" | \"mcp\";",
+      "after": "pluginsSurface: \"apps\" | \"mcp\" | \"library\";"
+    },
+    {
+      "before": "{ type: \"togglePlugins\"; open?: boolean; surface?: \"apps\" | \"mcp\" }",
+      "after": "{ type: \"togglePlugins\"; open?: boolean; surface?: AppState[\"pluginsSurface\"] }"
+    },
+    {
+      "before": "pluginsSurface: action.surface ?? state.pluginsSurface,",
+      "after": "pluginsSurface: action.surface ?? (state.pluginsSurface === \"library\" && open ? \"apps\" : state.pluginsSurface),"
+    }
+  ],
+  "src/components/SidebarConnectApps.tsx": [
+    {
+      "before": "aria-pressed={state.pluginsOpen}",
+      "after": "aria-pressed={state.pluginsOpen && state.pluginsSurface !== \"library\"}"
+    }
+  ],
+  "src/components/SidebarFooterNav.tsx": [
+    {
+      "before": "aria-pressed={state.pluginsOpen}",
+      "after": "aria-pressed={state.pluginsOpen && state.pluginsSurface !== \"library\"}"
+    },
+    {
+      "before": "        state.pluginsOpen ?",
+      "after": "        state.pluginsOpen && state.pluginsSurface !== \"library\" ?"
+    },
+    {
+      "before": "active={state.pluginsOpen}",
+      "after": "active={state.pluginsOpen && state.pluginsSurface !== \"library\"}"
+    }
+  ],
+  "src/components/SidebarFooter.tsx": [
+    {
+      "before": "import { SidebarConnectApps } from \"./SidebarConnectApps\";",
+      "after": "import { SidebarConnectApps } from \"./SidebarConnectApps\";\nimport { SidebarPluginButton } from \"./PluginLibrary\";"
+    },
+    {
+      "before": "      <div className=\"flex items-center gap-2 not-first:mt-2\">",
+      "after": "      <SidebarPluginButton />\n      <div className=\"flex items-center gap-2 not-first:mt-2\">"
+    },
+    {
+      "before": "      <SidebarFooterNav density={density} collapsed={toolsCollapsed} onToggleCollapsed={onToggleTools} />",
+      "after": "      <SidebarFooterNav density={density} collapsed={toolsCollapsed} onToggleCollapsed={onToggleTools} />\n      <SidebarPluginButton iconOnly={density === \"icons\"} />"
+    }
+  ],
+  "src/components/SidebarSimpleRail.tsx": [
+    {
+      "before": "import { SidebarConnectApps } from \"./SidebarConnectApps\";",
+      "after": "import { SidebarConnectApps } from \"./SidebarConnectApps\";\nimport { SidebarPluginButton } from \"./PluginLibrary\";"
+    },
+    {
+      "before": "      <SidebarConnectApps circle />",
+      "after": "      <SidebarConnectApps circle />\n      <SidebarPluginButton iconOnly />"
+    }
+  ],
+  "src/components/SidebarPhoneBar.tsx": [
+    {
+      "before": "import { FolderOpen,",
+      "after": "import { Blocks, FolderOpen,"
+    },
+    {
+      "before": "import { CloudRoomCard }",
+      "after": "import { pluginLabel } from \"./PluginLibrary\";\nimport { CloudRoomCard }"
+    },
+    {
+      "before": "      active: state.pluginsOpen,",
+      "after": "      active: state.pluginsOpen && state.pluginsSurface !== \"library\","
+    },
+    {
+      "before": "  ];\n  return (",
+      "after": "    {\n      key: \"plugins\",\n      label: pluginLabel(),\n      icon: <Blocks size={18} />,\n      active: state.pluginsOpen && state.pluginsSurface === \"library\",\n      onSelect: () => dispatch({ type: \"togglePlugins\", open: true, surface: \"library\" }),\n    },\n  ];\n  return ("
     }
   ]
 }
