@@ -1,3 +1,13 @@
+Limix Bot 0.3.122
+
+## Tiếng Việt
+
+- Trong **Cài đặt → Quyết định và trích xuất**, bạn có thể chọn Cloudflare Workers AI để phân loại tin nhắn và chọn bot trả lời trong phòng tự động. Bạn có thể giữ cả hai khóa và chuyển lại TypeSafe Jev bất cứ lúc nào.
+
+## English
+
+- In **Settings → Decisions and extraction**, you can choose Cloudflare Workers AI to classify messages and select which bot replies in automatic rooms. Keep both credentials and switch back to TypeSafe Jev at any time.
+
 Limix Bot 0.3.121
 
 ## Tiếng Việt
