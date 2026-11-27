@@ -1,0 +1,42 @@
+{
+  "server/index.ts": [
+    {
+      "before": "import { startHubAutoSync } from \"./limix-skill-hub.ts\";",
+      "after": "import { startHubAutoSync } from \"./limix-skill-hub.ts\";\nimport { createPluginHub } from \"./plugin-hub.ts\";"
+    },
+    {
+      "before": "const skillsRoutes = createBotSkillsRoutes(",
+      "after": "const pluginHub = createPluginHub(DATA_DIR, () => ({\n  bots: store.bots.map(({ id, name, section }) => ({ id, name, section })),\n  teams: store.sections.filter(Boolean),\n}));\npluginHub.pruneTeams(store.sections);\nconst skillsRoutes = createBotSkillsRoutes("
+    },
+    {
+      "before": "ROUTES.push(skillsRoutes);",
+      "after": "ROUTES.push(skillsRoutes, pluginHub.route);"
+    },
+    {
+      "before": "label: \"Skill instructions\", text: skillInstructions }",
+      "after": "label: \"Skill instructions\", text: skillInstructions + pluginHub.instructions(bot, Object.keys(integrations.custom ?? {})) }"
+    },
+    {
+      "before": "label: \"Skill instructions\", text: renderSkillInstructions(selectedSkills, { includeRoot: Boolean(workspace) }) }",
+      "after": "label: \"Skill instructions\", text: renderSkillInstructions(selectedSkills, { includeRoot: Boolean(workspace) }) + pluginHub.instructions(bot, Object.keys(integrations.custom ?? {})) }"
+    },
+    {
+      "before": "    teamAvailabilityPart(agentsMounted && coordination ? peers : []),",
+      "after": "    { id: \"skill-instructions\", label: \"Plugin instructions\", text: pluginHub.instructions(bot, caps?.customMcp ? Object.keys(engineMcpServers(bot)) : []) },\n    teamAvailabilityPart(agentsMounted && coordination ? peers : []),"
+    },
+    {
+      "before": "renamed: (from, to) => (to ? botHolds.rename(from, to) : botHolds.forget(\"department\", from))",
+      "after": "renamed: (from, to) => { pluginHub.renameTeam(from, to); if (to) botHolds.rename(from, to); else botHolds.forget(\"department\", from); }"
+    }
+  ],
+  "src/components/PluginsPanel.tsx": [
+    {
+      "before": "import { SavedKeysReset } from \"./SavedKeysReset\";",
+      "after": "import { SavedKeysReset } from \"./SavedKeysReset\";\nimport { PluginLibrary } from \"./PluginLibrary\";"
+    },
+    {
+      "before": "<div className=\"min-h-0 flex-1 overflow-y-auto px-5 pb-7 sm:px-7\">",
+      "after": "<div className=\"min-h-0 flex-1 overflow-y-auto px-5 pb-7 sm:px-7\">\n          <PluginLibrary />"
+    }
+  ]
+}
