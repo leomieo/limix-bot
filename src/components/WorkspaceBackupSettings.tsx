@@ -96,7 +96,7 @@ export function WorkspaceBackupSettings() {
   const refresh = async () => {
     try {
       const result: BackupStatus = await api("/api/workspace-backup/status");
-      if (alive.current) { setStatus(result); setError(result.blockedReason ?? (result.accountReady === false ? lx("Mở Chuyển máy Offline tại Máy tính này và đăng nhập tài khoản Limix để tiếp tục.", "Open Offline computer transfer on This computer and sign in to Limix to continue.") : null)); }
+      if (alive.current) { setStatus(result); setError(result.blockedReason ?? (result.accountReady === false ? lx("Mở Chuyển máy ngoại tuyến tại Máy tính này và đăng nhập tài khoản Limix để tiếp tục.", "Open Offline computer transfer on This computer and sign in to Limix to continue.") : null)); }
     } catch (cause) {
       if (alive.current) { setStatus(null); setError(cause instanceof Error ? cause.message : String(cause)); }
     }

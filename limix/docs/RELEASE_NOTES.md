@@ -1,3 +1,15 @@
+Limix Bot 0.3.123
+
+## Tiếng Việt
+
+- Khi bot đang xử lý, bạn có thể chọn **Bổ sung vào yêu cầu hiện tại** hoặc **Gửi sau khi bot xử lý xong**. Hướng dẫn trong khung chat giải thích cách gửi từng tin nhắn.
+- Các mục cài đặt, thông báo, phòng nhóm, kho kỹ năng và chuyển máy dùng cách diễn đạt tiếng Việt tự nhiên và nhất quán hơn.
+
+## English
+
+- Vietnamese chat controls now explain when a follow-up joins the current request and when it waits for the bot to finish.
+- Updated Vietnamese wording across settings, notifications, group chats, skills and computer transfers.
+
 Limix Bot 0.3.122
 
 ## Tiếng Việt
