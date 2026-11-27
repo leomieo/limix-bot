@@ -18,6 +18,9 @@ const SERVER_DIR = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(SERVER_DIR, "..");
 const FAKE_CLAUDE = join(SERVER_DIR, "testing", "fake-claude-cli.ts");
 const KEY = "tsk_e2e_secret_value_7f3a9c2e41d8";
+const WORKERS_ACCOUNT = "0123456789abcdef0123456789abcdef";
+const WORKERS_TOKEN = "fixture-workers-token";
+const WORKERS_PATH = `/accounts/${WORKERS_ACCOUNT}/ai/run/@cf/cloudflare/clef-flash`;
 
 type JevRequest = { auth?: string; body: any };
 type RouteScript = { status?: number; choice?: string; p?: number; hold?: Promise<void> };
@@ -33,6 +36,7 @@ let engineDump = "";
 let titleDump = "";
 let fallbackTitleDump = "";
 const jevRequests: JevRequest[] = [];
+const workersRequests: JevRequest[] = [];
 const openrouterRequests: JevRequest[] = [];
 let script: RouteScript = {};
 let openrouterScript: RouteScript = {};
@@ -56,17 +60,19 @@ beforeAll(async () => {
     req.on("data", (chunk) => (raw += chunk));
     req.on("end", async () => {
       const body = JSON.parse(raw || "{}");
-      jevRequests.push({ auth: req.headers.authorization, body });
+      const workers = req.url === WORKERS_PATH && body.model === "clef-flash";
+      (workers ? workersRequests : jevRequests).push({ auth: req.headers.authorization, body });
       const send = (status: number, value: unknown) => {
         res.writeHead(status, { "content-type": "application/json" });
         res.end(JSON.stringify(value));
       };
+      const answer = (value: unknown) => send(200, workers ? { success: true, result: value } : value);
       const question = body.questions?.answer;
-      if (req.url !== "/v1/systemone" || body.model !== "jev-latest" || !question) return send(422, { detail: "bad request shape" });
+      if ((!workers && (req.url !== "/v1/systemone" || body.model !== "jev-latest")) || !question) return send(422, { detail: "bad request shape" });
       if (question.type === "noul") {
         return req.headers.authorization === "Bearer tsk_bad"
           ? send(401, { detail: `invalid key ${req.headers.authorization}` })
-          : send(200, { model: "jev-1.13.0", answers: { answer: { type: "noul", noul: 0.96 } }, usage: { input_tokens: 40 } });
+          : answer({ model: body.model, answers: { answer: { type: "noul", noul: 0.96 } }, usage: { input_tokens: 40 } });
       }
       const current = script;
       if (current.hold) await current.hold;
@@ -74,8 +80,8 @@ beforeAll(async () => {
       const keys = Object.keys(question.criteria);
       const choice = current.choice!;
       const other = keys.find((key) => key !== choice)!;
-      send(200, {
-        model: "jev-1.13.0",
+      answer({
+        model: workers ? body.model : "jev-1.13.0",
         answers: { answer: { type: "choice", choice, confidence: current.p, probabilities: { [choice]: current.p, [other]: Math.round((1 - current.p!) * 100) / 100 } } },
         usage: { input_tokens: 700 },
       });
@@ -257,6 +263,34 @@ describe("Auto rooms ask the decision model who answers", { timeout: 90_000 }, (
     const { replies } = await round(room.id, "Stripe webhooks return 500 since the deploy.");
     expect(replies.map((reply) => reply.from!.name)).toEqual(["Maya"]);
     expect(replies[0]!.routedBy).toBeUndefined();
+  });
+
+  it("explicit Workers AI routes Vietnamese messages despite a saved Jev key and uses the lead on rate limits", async () => {
+    const workersAiBaseUrl = `http://127.0.0.1:${(jev.address() as AddressInfo).port}`;
+    const expected = { provider: "workersai", selectedProvider: "workersai" };
+    const selected = await api("PUT", "/api/config", { decider: { provider: "workersai" } });
+    expect(selected.body.decider).toMatchObject({ ...expected, configured: false });
+    expect((await api("PUT", "/api/config", { decider: { workersAiBaseUrl, workersAiAccountId: WORKERS_ACCOUNT } })).status).toBe(200);
+    const saved = await api("PUT", "/api/config", { decider: { workersAiToken: WORKERS_TOKEN } });
+    expect(saved).toMatchObject({ status: 200, body: { decider: { ...expected, configured: true, enabled: true } } });
+    expect(saved.text).not.toContain(WORKERS_TOKEN);
+
+    const originalJevCalls = routeRequests().length;
+    script = { choice: bots.Theo!.id, p: 0.94 };
+    const routed = await round(room.id, "Ứng dụng bị lỗi hiển thị giá trên Safari.");
+    expect(routed.replies.map((reply) => reply.from!.name)).toEqual(["Theo"]);
+    expect(routed.replies[0]!.routedBy).toEqual({ provider: "workersai", probability: 0.94 });
+    expect(workersRequests.at(-1)).toMatchObject({ auth: `Bearer ${WORKERS_TOKEN}`, body: { model: "clef-flash" } });
+
+    script = { status: 429 };
+    const limited = await round(room.id, "Nhờ kiểm tra lỗi đồng bộ hóa đơn.");
+    expect(limited.replies.map((reply) => reply.from!.name)).toEqual(["Maya"]);
+    expect(limited.replies[0]!.routedBy).toBeUndefined();
+    expect(routeRequests()).toHaveLength(originalJevCalls);
+
+    await api("PUT", "/api/config", { decider: { workersAiToken: "" } });
+    const reverted = await api("PUT", "/api/config", { decider: { provider: "jev", enabled: true } });
+    expect(reverted.body.decider).toMatchObject({ provider: "jev", configured: true, enabled: true });
   });
 
   it("an @mention bypasses the decision model", async () => {

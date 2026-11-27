@@ -134,6 +134,22 @@ describe("Clef on Workers AI", () => {
     expect(sent(fetchImpl)).toMatchObject({ url: `${CF_RUN}/clef`, body: { model: "clef" } });
   });
 
+  it("reuses identical requests in a turn without mixing Clef models or Cloudflare accounts", async () => {
+    const fetchImpl = anyYes();
+    const cfg: AppConfig = { decider: { ...config.decider, provider: "workersai" } };
+    const decisions = decider(cfg, fetchImpl);
+    const ask = (careful = false) => decisions.yesNo("botDecide", "x", "Is it?", { careful, turnScope: "turn-1" });
+
+    await Promise.all([ask(), ask()]);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    await ask(true);
+    expect(sent(fetchImpl, 1).url).toBe(`${CF_RUN}/clef`);
+    cfg.decider!.workersAiAccountId = "0123456789abcdef0123456789abcdee";
+    await ask();
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(sent(fetchImpl, 2).url).toContain("/0123456789abcdef0123456789abcdee/");
+  });
+
   it.each([
     [401, "rejected"], [403, "rejected"], [413, "too_large"], [429, "rate_limited"], [503, "overloaded"], [500, "http_error"],
   ] as const)("HTTP %s → %s, never the body", async (status, reason) => {

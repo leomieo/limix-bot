@@ -51,7 +51,7 @@ export function configEntries(deps: Pick<RegistryDeps, "cfg" | "saveConfig" | "b
       id: "ai.routing", label: "Decision and extraction", help: "The small model that decides who answers in rooms and sorts the inbox (Jev or OpenRouter). Its keys are set with keys.* or in Settings.", where: "Settings → AI",
       synonyms: ["decision", "extraction", "routing", "who answers", "jev", "openrouter", "workers ai", "cloudflare"],
       value: nonEmpty(withoutKeys(F.decider.unwrap().omit({ key: true, openrouterKey: true, workersAiToken: true }).strict())),
-      allowed: '{"enabled"?,"provider"?:"jev"|"openrouter"|"off","openrouterModel"?,"openrouterApi"?:"chat"|"decisions","jobs"?:{"roomRouting"?,"inboxTriage"?},"workersAiAccountId"?, addresses?}',
+      allowed: '{"enabled"?,"provider"?:"jev"|"workersai"|"openrouter"|"off","openrouterModel"?,"openrouterApi"?:"chat"|"decisions","jobs"?:{"roomRouting"?,"inboxTriage"?},"workersAiAccountId"?, addresses?}',
       current: () => cfg().decider ?? {}, patch: (decider) => ({ decider }),
       says: (decider) => `Decision and extraction: ${fields(decider)}. Decisions send conversation text to the chosen provider, off this computer`,
     }),

@@ -14,7 +14,7 @@ const KEY_URL = { jev: "https://typesafe.ai", openrouter: "https://openrouter.ai
 /** The room decision budget in server/decider/room-routing.ts; slower falls back to the lead. */
 const ROOM_BUDGET_MS = 1_500;
 
-type Provider = "jev" | "openrouter";
+type Provider = "jev" | "workersai" | "openrouter";
 type ModelList = { source: "openrouter" | "builtin"; models: Array<{ id: string; name: string; group: "recommended" | "more"; api?: "chat" | "decisions" }> };
 type TestResult = { ok: true; latencyMs: number } | { ok: false; reason: string; status?: number };
 
@@ -71,7 +71,7 @@ export function helpersStatusLine(config: ConfigStatus | null): string {
 }
 
 /** A fixed sentence per failure: the vendor's own body never reaches the UI. */
-export function deciderFailureText(result: { reason: string; status?: number }, included = false, provider: Provider | "workersai" = "jev"): string {
+export function deciderFailureText(result: { reason: string; status?: number }, included = false, provider: Provider = "jev"): string {
   if (provider === "workersai") {
     if (result.reason === "http_error") return t("decider.workersAi.error.http", { status: String(result.status ?? "?") });
     const key = WORKERS_AI_FAILURES[result.reason];
@@ -96,7 +96,8 @@ const COMING_SOON: LocaleKey[] = ["decider.jobs.browserClicks", "decider.jobs.to
 export function DecisionModelSettings() {
   const { state, dispatch } = useStore();
   const decider = state.config?.decider;
-  const provider: Provider = decider?.provider === "openrouter" ? "openrouter" : "jev";
+  const provider: Provider = decider?.selectedProvider ?? (decider?.provider === "openrouter" ? "openrouter" : "jev");
+  const workersAi = provider === "workersai";
   const openrouter = provider === "openrouter";
   const configured = decider?.configured ?? false;
   const included = configured && decider?.included === true;
@@ -211,11 +212,12 @@ export function DecisionModelSettings() {
         <Select className="w-48"
           data-testid="decider-provider"
           value={provider}
-          onChange={(event) => choose({ provider: event.target.value === "openrouter" ? "openrouter" : "jev" })}
+          onChange={(event) => choose({ provider: event.target.value as Provider })}
           disabled={switching || !state.config}
           aria-label={t("decider.provider.label")}
         >
           <option value="jev">{t("decider.provider.jev")}</option>
+          <option value="workersai">Cloudflare Workers AI</option>
           <option value="openrouter">{t("decider.provider.openrouter")}</option>
         </Select>
       </SettingRow>
@@ -247,7 +249,7 @@ export function DecisionModelSettings() {
       )}
       <SettingRow
         title={t(openrouter ? "decider.openrouter.master" : "decider.master")}
-        subtitle={configured ? undefined : t(openrouter ? "decider.masterNeedsKey.openrouter" : "decider.masterNeedsKey")}
+        subtitle={configured ? undefined : t(workersAi ? "decider.workersAi.needsAccount" : openrouter ? "decider.masterNeedsKey.openrouter" : "decider.masterNeedsKey")}
       >
         <Switch
           data-testid="decider-master"
@@ -259,7 +261,7 @@ export function DecisionModelSettings() {
         />
       </SettingRow>
 
-      <Card title={t(openrouter ? "decider.openrouter.key.label" : "decider.key.label")}>
+      {!workersAi && <Card title={t(openrouter ? "decider.openrouter.key.label" : "decider.key.label")}>
         <div role="status" className="mb-2 flex items-center gap-2 text-[13px] text-ink-secondary">
           <span className={cn("size-1.5 rounded-full", configured ? "bg-success" : "bg-raised-hover")} />
           <span className={configured ? "text-success" : undefined}>
@@ -339,7 +341,8 @@ export function DecisionModelSettings() {
             <ExternalLink size={11} aria-hidden="true" />
           </a>
         )}
-      </Card>
+      </Card>}
+      {workersAi && error && <p role="alert" className="px-4 text-[12px] text-danger">{error}</p>}
 
       <Card title={t("decider.jobs.title")}>
         <ul className="flex flex-col">
