@@ -3,6 +3,9 @@ import { QRCodeSVG } from "qrcode.react";
 import { Check, Copy, Globe, Loader2, RefreshCw, Smartphone, Wifi } from "lucide-react";
 
 import { api } from "@/state/api";
+import { useStore } from "@/state/store";
+import { t } from "@/lib/i18n";
+import { ServerPairingCard } from "./ServerPairingCard";
 import { lx } from "@/lib/limix-text";
 import { useCopyFeedback } from "@/lib/copy-text";
 
@@ -147,7 +150,7 @@ function RemotePane() {
       let requested = false;
       for (let i = 0; i < 45 && !endpoint; i++) {
         let account = await host.companionAccount.state();
-        if (!requested && (account.status === "error" || (account.status === "ready" && !account.endpoint))) {
+        if (!requested && (account.status === "error" || (account.status === "connecting" && account.endpoint) || (account.status === "ready" && !account.endpoint))) {
           requested = true;
           account = await host.companionAccount.prepare();
         }
@@ -158,7 +161,7 @@ function RemotePane() {
         setNote(i < 6 ? lx("Đang tạo địa chỉ riêng cho máy này trên Cloudflare…", "Creating a private address for this computer on Cloudflare…") : lx("Vẫn đang tạo địa chỉ, chờ thêm chút…", "Still creating the address, one moment…"));
         await pause(2000);
       }
-      if (!endpoint) throw new Error(lx("Chưa tạo được địa chỉ từ xa sau 90 giây. Kiểm tra máy có Internet rồi thử lại.", "Couldn't create the remote address within 90 seconds. Check the computer is online, then retry."));
+      if (!endpoint) throw new Error(lx("Kết nối từ xa chưa sẵn sàng. Bấm Tạo mã QR từ xa để thử kết nối lại.", "Remote access is still connecting. Select Create remote QR code to try again."));
       const made = await api<{ code: string; expiresAt: number }>("/api/auth/pairing", {
         method: "POST",
         body: JSON.stringify({ label: lx("Điện thoại (từ xa)", "Phone (remote)"), ttlMs: 15 * 60_000 }),
@@ -266,7 +269,13 @@ function CloudPane() {
 /** Both ways to open Limix Bot on a phone, as two tabs; on My Cloud, the Cloud's own link. */
 export function LimixPhoneBrowser({ cloudHome = false }: { cloudHome?: boolean }) {
   const [tab, setTab] = useState<"remote" | "wifi">("remote");
-  if (cloudHome) return <CloudPane />;
+  const { state: { config } } = useStore();
+  if (config?.team) {
+    const policy = config.managedPolicy;
+    return <ServerPairingCard team={config.team.name} teamPhoneBlocked={policy?.remoteAccess === false ? t("policy.teamRemoteBlocked", { organization: policy.organizationName }) : null} />;
+  }
+  if (cloudHome || config?.cloudHome) return <CloudPane />;
+  if (!config) return <Loader2 size={15} className="animate-spin text-ink-secondary" />;
   const tabClass = (on: boolean) => `flex-1 rounded-lg px-3 py-1.5 text-[13px] ${on ? "bg-raised text-ink font-medium" : "text-ink-secondary hover:text-ink"}`;
   return (
     <div className="flex flex-col gap-3">

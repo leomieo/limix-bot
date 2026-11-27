@@ -1,3 +1,15 @@
+Limix Bot 0.3.118
+
+## Tiếng Việt
+
+- Khi tạo mã QR từ xa trên PC, Limix Bot có thể kết nối lại địa chỉ đã cấp trước khi tạo mã.
+- My Cloud hiển thị mã ghép nối qua Internet. Team Cloud dùng quyền ghép nối của thành viên. Tùy chọn mạng nội bộ chỉ xuất hiện trên PC.
+
+## English
+
+- Remote phone pairing on PC can reconnect an existing address before creating a QR code.
+- My Cloud offers internet pairing and Team Cloud uses the member’s pairing permissions. Local network pairing appears only on PC.
+
 Limix Bot 0.3.117
 
 ## Tiếng Việt
