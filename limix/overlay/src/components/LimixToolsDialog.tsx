@@ -68,6 +68,7 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
     }
   }, []);
 
+  const [submitting, setSubmitting] = useState(false);
   const [scanning, setScanning] = useState(false);
   const scan = useCallback(async () => {
     setScanning(true);
@@ -88,7 +89,7 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
     if (asking) void limixTools()?.markAsked().catch(() => undefined);
   }, [scan, asking]);
 
-  const busy = Boolean(state?.items.some((item) => item.job?.status === "working") || state?.skillScan?.requirements?.some((item) => item.job?.status === "working"));
+  const busy = submitting || Boolean(state?.items.some((item) => item.job?.status === "working") || state?.skillScan?.requirements?.some((item) => item.job?.status === "working"));
   useEffect(() => {
     if (!busy) return;
     const timer = setInterval(() => void refresh(), 1000);
@@ -136,9 +137,9 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
     catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
   };
   const confirmInstall = async () => {
-    if (!installation || (installation.rows.some(row => row.kind !== "bin" && row.installScope !== "tool") && !installation.project)) return;
+    if (!installation || busy || (needsProject && !installation.project)) return;
     const selected = installation;
-    setInstallation(null);
+    setSubmitting(true);
     setError(null);
     try {
       const bridge = limixTools();
@@ -146,7 +147,9 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
       if (selected.baseIds.length) await bridge.install(selected.baseIds);
       const next = await bridge.installRequirements(selected.rows.map((row) => row.id!), selected.project);
       setState(next);
+      setInstallation(null);
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+    finally { setSubmitting(false); }
   };
 
   const body = !limixTools() ? (
@@ -221,7 +224,7 @@ export function LimixToolsDialog({ onClose, asking = false }: { onClose: () => v
           {needsProject && <><p className="mt-1 text-ink-secondary">{lx("Thư viện như Remotion cần nằm trong dự án đang làm. Bấm nút dưới để chọn thư mục; công cụ dùng chung sẽ được cài riêng trong Limix Bot.", "Libraries such as Remotion belong in the project you are working on. Choose its folder below; shared tools are installed separately in Limix Bot.")}</p><button type="button" className={`${button} mt-2`} onClick={() => void chooseProject()}>{lx("Chọn thư mục dự án…", "Choose project folder…")}</button><p className="mt-1 break-all text-ink-secondary">{installation.project || lx("Chưa chọn thư mục", "No folder selected")}</p></>}
           <p className="mt-1 break-words text-ink-secondary">{[...new Set(installation.rows.flatMap((row) => row.packages ?? [row.name]))].join(", ")}{installation.baseIds.length > 0 && ` · ${installation.baseIds.join(", ")}`}</p>
           <p className="mt-2 text-ink-tertiary">{lx("Công cụ dòng lệnh dùng thư mục công cụ riêng của Limix Bot. Thư viện npm lưu trong dự án; Python dùng .venv. Các gói đánh dấu Tùy chọn chỉ cần cho chức năng tương ứng.", "Command-line tools use Limix Bot’s private tools folder. Project npm libraries stay in the project; Python uses .venv. Optional packages are needed only for the corresponding workflow.")}</p>
-          <div className="mt-3 flex gap-2"><button type="button" className={button} disabled={busy || (needsProject && !installation.project)} onClick={() => void confirmInstall()}>{lx("Cài đặt", "Install packages")}</button><button type="button" className={button} onClick={() => setInstallation(null)}>{lx("Hủy", "Cancel")}</button></div>
+          <div className="mt-3 flex gap-2"><button type="button" className={button} disabled={busy || (needsProject && !installation.project)} onClick={() => void confirmInstall()}>{submitting ? lx("Đang bắt đầu cài…", "Starting installation…") : lx("Cài đặt", "Install packages")}</button><button type="button" className={button} disabled={submitting} onClick={() => setInstallation(null)}>{lx("Hủy", "Cancel")}</button></div>
         </div>}
         {state.skillScan.error ? <p role="alert" className="mt-2 text-[12px] text-danger">{lx("Chưa đọc được yêu cầu kỹ năng: ", "Could not read skill requirements: ")}{state.skillScan.error}</p> : <>
           <p className="mt-1 text-[12px] text-ink-secondary">{lx(`Đã đọc ${state.skillScan.skillCount ?? 0} kỹ năng. Kết quả kiểm tra trên máy chạy Limix Bot; môi trường Docker và cloud cần kiểm tra riêng.`, `Read ${state.skillScan.skillCount ?? 0} skills. Checks apply to the computer running Limix Bot; Docker and cloud environments need separate checks.`)}</p>

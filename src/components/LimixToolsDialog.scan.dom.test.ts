@@ -42,10 +42,10 @@ it("scans again on demand and shows requirements, evidence and incomplete checks
   }
 });
 
-it("installs optional video packages individually after reviewing the destination", async () => {
+it.each([["npm", "remotion"], ["python", "pypdf"]])("opens the destination review for an individual %s package and submits it", async (kind, name) => {
   setLocale("en");
   const snapshot = { supported: true, items: [], skillScan: { skillCount: 1, requirements: [
-    { id: "req-remotion", installable: true, packages: ["remotion", "@remotion/cli"], optional: true, skill: "video", directory: "/skills/video", kind: "npm", name: "remotion", status: "missing", evidence: "Code rendering" },
+    { id: name, installable: true, packages: [name], optional: true, skill: "test", directory: "/skills/test", kind, name, status: "missing", evidence: "Code rendering" },
   ] } };
   const scan = vi.fn().mockResolvedValue(snapshot);
   const installRequirements = vi.fn().mockResolvedValue(snapshot);
@@ -67,7 +67,7 @@ it("installs optional video packages individually after reviewing the destinatio
     flushSync(() => button("Choose project folder…").click());
     await vi.waitFor(() => expect(button("Install packages").disabled).toBe(false));
     flushSync(() => button("Install packages").click());
-    await vi.waitFor(() => expect(installRequirements).toHaveBeenCalledWith(["req-remotion"], "C:/Video project"));
+    await vi.waitFor(() => expect(installRequirements).toHaveBeenCalledWith([name], "C:/Video project"));
   } finally {
     flushSync(() => root.unmount());
     host.remove();
