@@ -1,3 +1,17 @@
+Limix Bot 0.3.117
+
+## Tiếng Việt
+
+- Khi bot tra cứu bằng trình duyệt, bấm **Xem** để theo dõi. Khi bạn yêu cầu mở một trang web, khung trình duyệt tự mở cạnh cuộc trò chuyện trên máy tính.
+- Trình duyệt tích hợp trên Windows khởi chạy Chrome trực tiếp, giúp bạn tiếp tục nhắn tin mà không bị cửa sổ CMD che màn hình.
+- Bản sao lưu bỏ qua môi trường Python ảo và bộ nhớ đệm Python. Mã nguồn dự án vẫn được sao lưu.
+
+## English
+
+- Use **Watch** to follow background browsing. Ask your bot to open a web page and the browser panel opens beside your desktop chat.
+- On Windows, the built-in browser launches Chrome directly so a command window no longer covers your conversation.
+- Workspace backups skip Python virtual environments and bytecode caches while keeping project source files.
+
 Limix Bot 0.3.116
 
 ## Tiếng Việt

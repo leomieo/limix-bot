@@ -276,6 +276,12 @@ describe("header name", () => {
     expect(button(pinned)).toContain('data-testid="computer-button-live"');
   });
 
+  it("recognizes opening a page separately from web research", async () => {
+    const { asksToOpenBrowser } = await import("./WatchScreenButton");
+    for (const text of ["Mở trang này", "Hãy mở https://example.com", "Please open this website", "Go to example.com"]) expect(asksToOpenBrowser(text)).toBe(true);
+    for (const text of ["Tìm giúp tôi giá điện", "Look up this website", "Đừng mở trang này", "open the project file"]) expect(asksToOpenBrowser(text)).toBe(false);
+  });
+
   it("offers a Watch button only while a running tool uses the bot's screen", () => {
     const working = (tool: string, busy = true, computer: Bot["computer"] | "auto" = "cloud", ok?: boolean) => renderToStaticMarkup(createElement(ChatView, {
       bot: { ...bot, computer: computer === "auto" ? undefined : computer, busy, turnStartedAt: 1, tasks: (bot.tasks ?? []).map((task) => ({ ...task, busy, turnStartedAt: 1 })), messages: [

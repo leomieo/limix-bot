@@ -14,7 +14,7 @@ import { needsNoSandbox, type ChromeIdentity } from "./identity.ts";
 import { installChromeForTesting, type ChromeForTestingPin, type DownloadProgress } from "./install.ts";
 import { chromeHost, resolveChromePlan, type ChromeEngine, type ChromeHost, type ChromePlan, type FoundChrome } from "./resolve.ts";
 import { IdentitySidecars } from "./sidecar.ts";
-import { browserLanguage, browserTimeZone, languageList, launcherPath, primaryScreen, writeLauncher, type LauncherBox, type LauncherSettings, type Screen } from "./wrapper.ts";
+import { browserLanguage, browserTimeZone, languageList, launcherFlags, launcherPath, primaryScreen, writeLauncher, type LauncherBox, type LauncherSettings, type Screen } from "./wrapper.ts";
 
 type Ready = { kind: "ready"; chrome: FoundChrome; identity: ChromeIdentity; product: string; fingerprint: string; launcher?: LauncherSettings };
 type State =
@@ -96,7 +96,7 @@ export class ChromeLauncher implements BrowserLaunch {
     this.box = box;
     if (this.state.kind === "ready" && this.state.launcher) {
       const launcher = { ...this.state.launcher, ...this.boxed() };
-      writeLauncher(this.path, launcher, this.options.platform);
+      if (this.options.platform !== "win32") writeLauncher(this.path, launcher, this.options.platform);
       this.state = { ...this.state, launcher };
     }
   }
@@ -116,6 +116,16 @@ export class ChromeLauncher implements BrowserLaunch {
   env(): Record<string, string> {
     if (this.state.kind === "failed" || this.plan().kind === "legacy") return {};
     void this.prepare();
+    if (this.options.platform === "win32") {
+      const settings = this.state.kind === "ready" && this.state.launcher;
+      if (!settings) return {};
+      return {
+        AGENT_BROWSER_EXECUTABLE_PATH: settings.chrome,
+        AGENT_BROWSER_USER_AGENT: settings.userAgent,
+        AGENT_BROWSER_ARGS: launcherFlags(settings, "win32").filter(flag => !flag.startsWith("--user-agent=")).join("\n"),
+        AGENT_BROWSER_HIDE_SCROLLBARS: "0",
+      };
+    }
     this.followTimeZone();
     return { AGENT_BROWSER_EXECUTABLE_PATH: this.path, AGENT_BROWSER_HIDE_SCROLLBARS: "0" };
   }
@@ -129,7 +139,7 @@ export class ChromeLauncher implements BrowserLaunch {
     if (timeZone === state.launcher.timeZone) return;
     const launcher = { ...state.launcher, timeZone };
     try {
-      writeLauncher(this.path, launcher, this.options.platform);
+      if (this.options.platform !== "win32") writeLauncher(this.path, launcher, this.options.platform);
       this.state = { ...state, launcher };
       this.log(`browser: the next browser started tells time in ${timeZone ?? "the system's zone"}`);
     } catch (error) {
@@ -204,7 +214,8 @@ export class ChromeLauncher implements BrowserLaunch {
   }
 
   private uses(spec: LaunchSpec): boolean {
-    return spec.env?.AGENT_BROWSER_EXECUTABLE_PATH === this.path && !attachesToChrome(spec.env);
+    const executable = spec.env?.AGENT_BROWSER_EXECUTABLE_PATH;
+    return (executable === this.path || (this.options.platform === "win32" && this.state.kind === "ready" && executable === this.state.chrome.path)) && !attachesToChrome(spec.env);
   }
 
   private fresh(state: Ready): boolean {
@@ -236,8 +247,10 @@ export class ChromeLauncher implements BrowserLaunch {
         ...(platform === "darwin" ? { home: userInfo().homedir } : {}),
         ...this.boxed(),
       };
-      writeLauncher(this.path, launcher, platform);
-      if (platform !== "win32") await (this.options.checkLauncher ?? runsLauncher)(this.path, this.chromeEnv());
+      if (platform !== "win32") {
+        writeLauncher(this.path, launcher, platform);
+        await (this.options.checkLauncher ?? runsLauncher)(this.path, this.chromeEnv());
+      }
     }
     return { kind: "ready", chrome, identity: { userAgent: identity.userAgent, userAgentMetadata: identity.userAgentMetadata }, product: identity.product, fingerprint: chromeFingerprint(chrome.path), ...(launcher ? { launcher } : {}) };
   }

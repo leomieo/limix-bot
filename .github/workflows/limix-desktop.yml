@@ -44,6 +44,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Verify channel replies and Cloud move menu
         run: node node_modules/vitest/vitest.mjs run src/components/MoveToMyCloud.dom.test.ts
+      - name: Verify browsing and workspace backups
+        if: matrix.platform == 'linux'
+        run: node node_modules/vitest/vitest.mjs run server/browser/chrome/launcher.test.ts src/components/ChatView.controls.test.ts server/workspace-backup.test.ts
       - name: Verify template mascot library
         run: |
           node --experimental-strip-types scripts/gen-template-mascots.ts --check

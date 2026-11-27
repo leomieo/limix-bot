@@ -77,6 +77,18 @@ describe("the Chrome launcher", () => {
     expect(calibrate).toHaveBeenCalledOnce();
   });
 
+  it("starts Windows Chrome directly with its complete user agent", async () => {
+    const machine = mac();
+    const chrome = launcher(machine, { platform: "win32" });
+    await chrome.prepare();
+    expect(chrome.env()).toMatchObject({
+      AGENT_BROWSER_EXECUTABLE_PATH: machine.chrome,
+      AGENT_BROWSER_USER_AGENT: identity("155").userAgent,
+      AGENT_BROWSER_ARGS: expect.stringContaining("--screen-info={1440x900}"),
+    });
+    expect(existsSync(chrome.path)).toBe(false);
+  });
+
   it("reads the identity again after Chrome updated itself in place", async () => {
     const machine = mac();
     const calibrate = vi.fn(async () => identity("155"));

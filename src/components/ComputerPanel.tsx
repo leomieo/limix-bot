@@ -303,6 +303,17 @@ export function ComputerPanel({
     writeComputerPanelView(bot.id, view);
   };
 
+  useEffect(() => {
+    const showBrowser = (event: Event) => {
+      if ((event as CustomEvent<string>).detail !== bot.id) return;
+      explicitPanelView.current = true;
+      setPanelView("browser");
+      writeComputerPanelView(bot.id, "browser");
+    };
+    window.addEventListener("limix-show-bot-browser", showBrowser);
+    return () => window.removeEventListener("limix-show-bot-browser", showBrowser);
+  }, [bot.id]);
+
   const previousPanelTarget = useRef<string | null>(null);
   // Excludes the model and Auto's resolved surface: neither may move the tab.
   const panelTargetKey = `${profileBot.id}:${profileBot.threadId}:${livePlace}:${profileBot.cloudBackend ?? "box"}`;
