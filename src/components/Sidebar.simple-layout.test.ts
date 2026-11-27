@@ -64,7 +64,7 @@ const room: Group = {
   defaultResponder: { kind: "mentions" }, bulletin: "", unread: false, createdAt: 1,
 };
 
-type Props = { children?: ReactNode; className?: string; style?: Record<string, string>; [key: string]: unknown };
+type Props = { children?: ReactNode; className?: string; style?: Record<string, string | number>; [key: string]: unknown };
 function nodes(value: ReactNode): ReactElement<Props>[] {
   return Children.toArray(value).flatMap((child) => {
     if (!isValidElement<Props>(child)) return [];
