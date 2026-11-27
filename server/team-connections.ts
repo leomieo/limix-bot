@@ -262,7 +262,7 @@ export class PeopleConnections {
   }
   private serviceAccess(person: string): BrokerAccess | null {
     const file = this.apps(), record = file.people[person];
-    return record ? managedComposioAccess(file.brokerUrl, { composioBrokerToken: record.token }) : null;
+    return record ? managedComposioAccess(file.brokerUrl, { composioBrokerUrl: file.brokerUrl, composioBrokerToken: record.token }) : null;
   }
   /** The member's own apps, made now if they have none (the first time they connect an app). */
   ensureAppsAccess(person: string, email: string): Promise<PersonAppsAccess | null> {
@@ -303,7 +303,7 @@ export class PeopleConnections {
     }
     const file = this.apps();
     return Object.entries(file.people).flatMap(([person, record]) => {
-      const access = managedComposioAccess(file.brokerUrl, { composioBrokerToken: record.token });
+      const access = managedComposioAccess(file.brokerUrl, { composioBrokerUrl: file.brokerUrl, composioBrokerToken: record.token });
       return access ? [{ person, email: record.email, access }] : [];
     });
   }

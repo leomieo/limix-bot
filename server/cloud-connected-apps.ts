@@ -81,7 +81,7 @@ function readStored(file: string, brokerUrl: string): Stored {
   if (parsed.data.version !== 1) return { kind: "kept", why: `it is version ${parsed.data.version}` };
   // A token goes only to the service that issued it.
   if (parsed.data.brokerUrl !== brokerUrl) return { kind: "none" };
-  return { kind: "held", credentials: { composioBrokerToken: parsed.data.token, composioInstallationId: parsed.data.installationId } };
+  return { kind: "held", credentials: { composioBrokerUrl: brokerUrl, composioBrokerToken: parsed.data.token, composioInstallationId: parsed.data.installationId } };
 }
 
 export function startCloudConnectedApps(options: CloudConnectedAppsOptions): CloudConnectedApps {

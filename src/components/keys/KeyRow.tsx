@@ -147,12 +147,15 @@ export function KeyRow({
   const fieldShown = editing && (!saved.included || saved.configured || ownKey);
   const other = fieldShown && draft ? looksLikeOtherKey(row, draft) : null;
 
+  const includedLabel = entry.id === "composio" && !state.config?.cloudHome && !state.config?.team
+    ? t("keys.composio.managed")
+    : t("keys.includedWithCloudPro");
   const status: KeyStatus = busy === "saving" ? { tone: "busy", text: t("keys.row.saving") }
     : busy === "removing" ? { tone: "busy", text: t("keys.row.removing") }
       : busy === "checking" ? { tone: "busy", text: t("common.checking") }
         : failure && (saved.configured || !fieldShown) ? { tone: "bad", text: t("keys.row.didntWork") }
           : saved.configured ? { tone: "ok", text: target.test || target.verifiedOnSave || works ? t("keys.connected") : t("common.saved") }
-            : saved.included ? { tone: "ok", text: t("keys.includedWithCloudPro") }
+            : saved.included ? { tone: "ok", text: includedLabel }
               : null;
 
   const runCheck = async (): Promise<KeyResult> => {

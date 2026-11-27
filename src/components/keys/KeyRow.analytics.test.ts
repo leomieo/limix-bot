@@ -32,7 +32,7 @@ vi.mock("@/lib/analytics", () => ({ track: fixture.track }));
 const { ApiError } = await import("@/state/store");
 const { KeyRow } = await import("./KeyRow");
 
-type Props = { children?: ReactNode; type?: string; onChange?: (event: { target: { value: string } }) => void; onKeyDown?: (event: { key: string; preventDefault: () => void }) => void; onClick?: () => void; "data-key-remove"?: boolean };
+type Props = { status?: { text: string }; children?: ReactNode; type?: string; onChange?: (event: { target: { value: string } }) => void; onKeyDown?: (event: { key: string; preventDefault: () => void }) => void; onClick?: () => void; "data-key-remove"?: boolean };
 function nodes(tree: ReactNode): Array<ReactElement<Props>> {
   return Children.toArray(tree).flatMap((child) => isValidElement<Props>(child) ? [child, ...nodes(child.props.children)] : []);
 }
@@ -155,6 +155,14 @@ describe("a key saved in Settings → API keys", () => {
     await flush();
     expect(fixture.api).toHaveBeenCalledTimes(2);
     expect(fixture.track.mock.calls).toEqual([["api_key_removed", { provider: "anthropic", via: "settings" }]]);
+  });
+
+  it("labels managed Composio on PC separately from a Cloud plan", () => {
+    const status = () => render({ id: "composio" }).find((node) => node.props.status)?.props.status?.text;
+    fixture.config = { composio: { configured: true, mode: "managed" } };
+    expect(status()).toBe("Managed Composio");
+    fixture.config = { ...fixture.config, cloudHome: true };
+    expect(status()).toBe("Included with your Cloud plan");
   });
 
   it("offers Remove for a Composio project key of the person's own, and none for the managed connection", async () => {

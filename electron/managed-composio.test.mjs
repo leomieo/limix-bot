@@ -14,7 +14,7 @@ const TOKEN = "a".repeat(64);
 
 describe("managed Composio desktop registration", () => {
   it("publishes only a complete broker credential", () => {
-    expect(managedComposioAccess("https://broker.example/", { composioBrokerToken: TOKEN })).toEqual({
+    expect(managedComposioAccess("https://broker.example/", { composioBrokerUrl: "https://broker.example", composioBrokerToken: TOKEN })).toEqual({
       url: "https://broker.example",
       token: TOKEN,
     });
@@ -49,7 +49,7 @@ describe("managed Composio desktop registration", () => {
     expect(normalizeManagedComposioBrokerUrl("https://broker.example?redirect=evil")).toBe("");
 
     const fetchImpl = vi.fn();
-    const credentials = { composioBrokerToken: TOKEN };
+    const credentials = { composioBrokerUrl: "http://[::1]:8787", composioBrokerToken: TOKEN };
     await ensureManagedComposioCredentials({
       brokerUrl: "http://broker.example",
       credentials,
@@ -95,9 +95,23 @@ describe("managed Composio desktop registration", () => {
     );
     expect(credentials).toEqual({
       composioBrokerToken: TOKEN,
+      composioBrokerUrl: "https://broker.example",
       composioInstallationId: "installation-test",
     });
     expect(saveCredentials).toHaveBeenCalledWith(credentials);
+  });
+
+  it.each([undefined, "https://previous.example"])("registers without forwarding the previous token (%s)", async (issuer) => {
+    const credentials = { composioBrokerUrl: issuer, composioBrokerToken: TOKEN };
+    const url = DEFAULT_MANAGED_COMPOSIO_BROKER_URL;
+    expect(managedComposioAccess(url, credentials)).toBeNull();
+    const fetchImpl = vi.fn(async () => Response.json({ installationId: "limix", token: "b".repeat(64) }));
+    await ensureManagedComposioCredentials({ brokerUrl: url, credentials, fetchImpl, saveCredentials: vi.fn() });
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    const [endpoint, init] = fetchImpl.mock.calls[0];
+    expect(endpoint).toBe(url + "/v1/installations");
+    expect(new Headers(init.headers).has("authorization")).toBe(false);
+    expect(managedComposioAccess(url, credentials)?.token).toBe("b".repeat(64));
   });
 
   it("settles a stalled optional registration without storing partial credentials", async () => {
@@ -134,6 +148,7 @@ describe("managed Composio desktop registration", () => {
   it("keeps a valid installation identity during a transient broker outage", async () => {
     const credentials = {
       composioBrokerToken: TOKEN,
+      composioBrokerUrl: "https://broker.example",
       composioInstallationId: "installation-test",
     };
     const saveCredentials = vi.fn(async () => {});
@@ -149,6 +164,7 @@ describe("managed Composio desktop registration", () => {
 
     expect(credentials).toEqual({
       composioBrokerToken: TOKEN,
+      composioBrokerUrl: "https://broker.example",
       composioInstallationId: "installation-test",
     });
     expect(saveCredentials).not.toHaveBeenCalled();
@@ -170,7 +186,7 @@ describe("keeping the desktop app off the managed service", () => {
 
   it("with no key and no switch, checks in as before", async () => {
     vi.stubEnv("COMPOSIO_API_KEY", "");
-    const fetchImpl = await launch({ composioBrokerToken: TOKEN });
+    const fetchImpl = await launch({ composioBrokerUrl: "https://broker.example", composioBrokerToken: TOKEN });
     expect(fetchImpl).toHaveBeenCalledOnce();
     expect(String(fetchImpl.mock.calls[0][0])).toBe("https://broker.example/v1/me");
   });

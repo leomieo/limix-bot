@@ -1,4 +1,5 @@
 export interface ManagedComposioCredentials {
+  composioBrokerUrl?: string;
   composioBrokerToken?: string;
   composioInstallationId?: string;
   [key: string]: unknown;

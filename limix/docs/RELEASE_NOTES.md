@@ -1,3 +1,13 @@
+Limix Bot 0.3.119
+
+## Tiếng Việt
+
+- Limix Bot trên máy tính tự kết nối với dịch vụ Composio do Limix quản lý. Nếu đã liên kết ứng dụng qua dịch vụ được quản lý trước đây, hãy kết nối lại trong mục **Ứng dụng**.
+
+## English
+
+- Limix Bot on desktop automatically connects to the Composio service managed by Limix. If you linked apps through the previous managed service, reconnect them under **Apps**.
+
 Limix Bot 0.3.118
 
 ## Tiếng Việt

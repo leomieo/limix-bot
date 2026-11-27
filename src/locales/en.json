@@ -4025,6 +4025,7 @@
   "keys.helpAria": "{label} help",
   "keys.optional": "Optional",
   "keys.configured": "Configured",
+  "keys.composio.managed": "Managed Composio",
   "keys.includedWithCloudPro": "Included with your Cloud plan",
   "keys.testAuthenticated": "API key authenticated. Chat not tested.",
   "keys.testFreeTier": "Free account: bots will use free models (marked \"free\" in the model picker).",

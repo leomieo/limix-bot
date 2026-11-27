@@ -4025,6 +4025,7 @@
   "keys.helpAria": "Trợ giúp {label}",
   "keys.optional": "Tùy chọn",
   "keys.configured": "Đã cấu hình",
+  "keys.composio.managed": "Composio được quản lý",
   "keys.includedWithCloudPro": "Đã bao gồm trong gói Cloud của bạn",
   "keys.testAuthenticated": "Đã xác thực khóa API. Chưa kiểm tra tính năng trò chuyện.",
   "keys.testFreeTier": "Tài khoản miễn phí: bot sẽ dùng mô hình miễn phí (có nhãn \"free\" trong mục chọn mô hình).",

@@ -1,7 +1,7 @@
 const TOKEN = /^[0-9a-f]{64}$/;
 
-/** OpenMausBot's connected-apps service (cloudflare/composio-broker): the packaged desktop app and a Cloud home use it. */
-export const DEFAULT_MANAGED_COMPOSIO_BROKER_URL = "https://openmausbot-composio.milindsoni201.workers.dev";
+/** Limix Bot's connected-apps service (cloudflare/composio-broker): the packaged desktop app and a Cloud home use it. */
+export const DEFAULT_MANAGED_COMPOSIO_BROKER_URL = "https://composio.limixmedia.com";
 
 /** OMB_COMPOSIO_BROKER=off: nothing reaches the managed service, whatever else is set. */
 export function managedComposioBrokerOff(environment = process.env) {
@@ -38,7 +38,7 @@ export function managedComposioAccess(brokerUrl, credentials) {
   if (managedComposioBrokerOff()) return null;
   const url = normalizeManagedComposioBrokerUrl(brokerUrl);
   const token = credentials?.composioBrokerToken;
-  if (!url || !TOKEN.test(token ?? "")) return null;
+  if (!url || credentials?.composioBrokerUrl !== url || !TOKEN.test(token ?? "")) return null;
   return { url, token };
 }
 
@@ -70,7 +70,7 @@ export async function ensureManagedComposioCredentials({
     if (brokerUrl) log("connected-apps broker URL rejected: HTTPS or a loopback HTTP URL is required");
     return credentials;
   }
-  if (TOKEN.test(credentials.composioBrokerToken ?? "")) {
+  if (managedComposioAccess(url, credentials)) {
     try {
       const check = await fetchImpl(`${url}/v1/me`, {
         headers: { authorization: `Bearer ${credentials.composioBrokerToken}` },
@@ -99,6 +99,7 @@ export async function ensureManagedComposioCredentials({
     if (!TOKEN.test(body?.token ?? "") || typeof body?.installationId !== "string") {
       throw new Error("the connected-apps service returned invalid credentials");
     }
+    credentials.composioBrokerUrl = url;
     credentials.composioBrokerToken = body.token;
     credentials.composioInstallationId = body.installationId;
     await saveCredentials(credentials);
