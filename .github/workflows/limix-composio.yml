@@ -1,0 +1,54 @@
+name: Limix Composio broker
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/limix-composio-deploy]
+permissions:
+  contents: read
+concurrency: limix-composio-production
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 22
+      - name: Install broker build tools
+        run: |
+          mkdir -p "$RUNNER_TEMP/broker"
+          cp -r cloudflare shared "$RUNNER_TEMP/broker/"
+          cd "$RUNNER_TEMP/broker"
+          npm install --no-save --no-audit --no-fund wrangler@4.123.0 zod@4.6.7
+      - name: Migrate and deploy
+        env:
+          CLOUDFLARE_ACCOUNT_ID: e2c5f1d87da45803ba77f9eb676ec3ed
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          PROJECT_KEY: ${{ secrets.LIMIX_COMPOSIO_API_KEY }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/broker/cloudflare/composio-broker"
+          wrangler=../../node_modules/.bin/wrangler
+          id=$("$wrangler" d1 list --json | jq -r '.[] | select(.name=="limix-composio") | .uuid')
+          if [[ -z "$id" ]]; then
+            "$wrangler" d1 create limix-composio
+            id=$("$wrangler" d1 list --json | jq -r '.[] | select(.name=="limix-composio") | .uuid')
+          fi
+          [[ "$id" =~ ^[a-fA-F0-9-]{36}$ ]]
+          sed -i "/\"database_name\":/a\      \"database_id\": \"$id\"," wrangler.jsonc
+          "$wrangler" d1 migrations apply limix-composio --remote
+          if [[ -n "$PROJECT_KEY" ]]; then
+            umask 077
+            file=$(mktemp --suffix=.json)
+            trap 'rm -f "$file"' EXIT
+            node -e 'process.stdout.write(JSON.stringify({COMPOSIO_API_KEY:process.env.PROJECT_KEY}))' > "$file"
+            "$wrangler" deploy --secrets-file "$file"
+          else
+            sed -i '/"secrets": { "required":/d' wrangler.jsonc
+            "$wrangler" deploy
+          fi
+      - name: Verify public broker
+        run: |
+          curl --retry 10 --retry-all-errors --max-time 15 -fsS https://composio.limixmedia.com/health | jq -e 'select(.service=="limix-composio") | {service,ready}'
+

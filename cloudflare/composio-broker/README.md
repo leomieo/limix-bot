@@ -8,6 +8,15 @@ MCP traffic, and returns short-lived Connect Links to the local app.
 The desktop never receives the project key. Authorization links are returned
 only on demand and are never persisted in chat messages.
 
+## Limix production deployment
+
+The packaged client uses `https://composio.limixmedia.com`. Deploy this Worker in the Limix Cloudflare account that owns the zone, using a dedicated Limix Composio project. Keep the project API key in the Worker secret store. A change of project requires users to reconnect their external accounts.
+
+1. Create the D1 database `limix-composio` (or select the existing Limix database) and set its UUID as `database_id` on the `DB` binding in `wrangler.jsonc`.
+2. From this directory run `pnpm exec wrangler d1 migrations apply limix-composio --remote`, then `pnpm exec wrangler secret put COMPOSIO_API_KEY` and enter the Limix project key at the prompt.
+3. Run `pnpm exec wrangler deploy`. For app events, configure the project's webhook and its signing secret as described below.
+4. Before distributing the desktop update, verify the public health endpoint reports `limix-composio` and `ready: true`. With an isolated desktop installation, verify registration, restart, authorization of a test account, and a read through that connection. Health alone checks only the presence of the project key.
+
 ## Development and self-hosting
 
 Run the type and integration checks against a disposable configuration. For a
