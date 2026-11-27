@@ -533,7 +533,7 @@ function SettingsDialog() {
         >
           <span id="app-settings-title" className="sr-only">{t("settings.title")}</span>
           <LimixResizeHandles />
-          <nav aria-label={t("settings.title")} className="glass-rail hidden min-h-0 w-[198px] shrink-0 flex-col gap-0.5 overflow-y-auto px-3 py-4 sm:flex">
+          <nav aria-label={t("settings.title")} className="glass-rail hidden min-h-0 w-[198px] md:w-[220px] shrink-0 flex-col gap-0.5 overflow-y-auto px-3 py-4 sm:flex">
             {searchField(
               "mb-2 flex h-8 shrink-0 items-center gap-2 rounded-lg bg-ink/[0.05] px-[9px] text-[13px] focus-within:ring-2 focus-within:ring-focus/60",
               "w-full min-w-0 bg-transparent text-[13px] text-ink placeholder:text-ink-secondary focus:outline-none",
@@ -552,12 +552,12 @@ function SettingsDialog() {
                   onClick={() => goTo(page.sections[0]!)}
                   aria-current={current ? "page" : undefined}
                   className={cn(
-                    "flex h-8 shrink-0 cursor-pointer items-center gap-[9px] rounded-lg px-[9px] text-left text-[13px] text-ink transition-colors motion-reduce:transition-none",
+                    "flex min-h-8 shrink-0 cursor-pointer items-center gap-[9px] rounded-lg px-[9px] py-1 leading-[18px] text-left text-[13px] text-ink transition-colors motion-reduce:transition-none",
                     current ? "bg-ink/[0.08]" : "hover:bg-ink/[0.06]",
                   )}
                 >
                   <Icon size={15} aria-hidden="true" className="shrink-0" />
-                  <span className="truncate">{t(page.labelKey)}</span>
+                  <span className="min-w-0 whitespace-normal [overflow-wrap:anywhere]">{t(page.labelKey)}</span>
                 </button>
               );
             })}
@@ -652,7 +652,7 @@ function SettingsDialog() {
         className="glass-surface glass-popup animate-pop-in relative flex overflow-hidden rounded-2xl outline-none"
       >
         <span id="app-settings-title" className="sr-only">{t("settings.title")}</span>
-        <nav className="glass-rail hidden min-h-0 w-[200px] shrink-0 flex-col gap-1 overflow-y-auto border-r border-hairline/30 p-3 sm:flex">
+        <nav className="glass-rail hidden min-h-0 w-[200px] md:w-[220px] shrink-0 flex-col gap-1 overflow-y-auto border-r border-hairline/30 p-3 sm:flex">
           <div className="shrink-0 px-2 py-3 text-[15px] font-semibold text-ink">
             {t("settings.title")}
           </div>
@@ -680,12 +680,12 @@ function SettingsDialog() {
                     onClick={() => openSection(id)}
                     aria-current={section === id ? "page" : undefined}
                     className={cn(
-                      "flex h-8 shrink-0 cursor-pointer items-center gap-[9px] rounded-lg px-[9px] text-left text-[13px] text-ink transition-colors motion-reduce:transition-none",
+                      "flex min-h-8 shrink-0 cursor-pointer items-center gap-[9px] rounded-lg px-[9px] py-1 leading-[18px] text-left text-[13px] text-ink transition-colors motion-reduce:transition-none",
                       section === id ? "bg-ink/[0.08]" : "hover:bg-ink/[0.06]",
                     )}
                   >
                     <Icon size={15} className="shrink-0" />
-                    {t(labelKey)}
+                    <span className="min-w-0 whitespace-normal [overflow-wrap:anywhere]">{t(labelKey)}</span>
                   </button>
                 ))}
               </div>
