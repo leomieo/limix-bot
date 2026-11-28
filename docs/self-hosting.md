@@ -1,5 +1,7 @@
 # Self-hosting the Limix Bot server
 
+The Limix Bot names in this guide require a build that includes the naming update. Version 0.3.129 and earlier use the original connection settings.
+
 To keep Limix Bot and its agents on your current computer and use a VPS only as a
 bot’s remote desktop, see [Bring Your Own VPS](byo-vps.md).
 
@@ -24,7 +26,7 @@ On a Linux host with Node.js 24 or newer, install the Limix Bot package from npm
 Use a dedicated OS account and run these commands on the server:
 
 ```sh
-npm install --prefix "$HOME/limix-server" limixbot@0.3.128
+npm install --prefix "$HOME/limix-server" limixbot@0.3.129
 "$HOME/limix-server/node_modules/.bin/limixbot" --version
 "$HOME/limix-server/node_modules/.bin/limixbot" setup
 "$HOME/limix-server/node_modules/.bin/limixbot" serve --public-url https://limix.example.com
@@ -68,7 +70,7 @@ what actually left the server.
 | A domain name, and ports 80 and 443 open | `npx limixbot serve --domain limix.example.com` | `https://limix.example.com/pair#code=…` |
 | Tailscale on the server and your devices | `npx limixbot serve --tailscale` | `https://<machine>.<tailnet>.ts.net/pair#code=…` |
 | Only this network (home or office) | `npx limixbot serve --lan` | `http://192.168.1.20:8799/pair#code=…` |
-| Nothing at all | `npx limixbot login`, then `npx limixbot serve --tunnel` | `https://c-….openmausbot.com/pair#code=…` |
+| Nothing at all | `npx limixbot login`, then `npx limixbot serve --tunnel` | `https://<assigned-tunnel-host>/pair#code=…` |
 | Only the phone app, from anywhere (a machine with no tunnel address, for now) | `npx limixbot login --relay`, then `npx limixbot serve --relay` | a QR for the Limix Bot app ([Limix Bot Relay](phone-relay-server.md)) |
 
 `--lan` can be added to any of the others. Plain `http://` is only for a
@@ -90,7 +92,7 @@ npx limixbot serve --public-url https://limix.example.com  # or --domain, --tail
 In a terminal, `serve` checks the address and prints one pairing block:
 
 ```
-Limix Bot 0.3.128 · server "hetzner-1"
+Limix Bot 0.3.129 · server "hetzner-1"
 data: /home/limix/.limixbot
 Reach    https://limix.example.com   ✓ answers as this server (11:04)
 
@@ -262,7 +264,7 @@ it (for services and scripts). The [setup guide](cli-onboarding.md) explains
 the choices. The npm package does not include engine CLIs (`claude`,
 `codex`, …); setup can install and sign in the supported ones. Run setup,
 engine sign-ins and the server as the same unprivileged user: engine
-credentials live in that user's home, not all under `.openmausbot`. For a
+credentials live in that user's home, outside the Limix Bot data directory. For a
 Linux service, the [VPS guide](deploy-vps.md#before-you-start) covers the
 account, engines and browser libraries. After installing browser libraries
 as administrator, run `npx limixbot browser install` as the service user
@@ -270,7 +272,7 @@ too.
 
 - **`--public-url URL`**: you already have HTTPS in front. The address must
   be https, or http on a private network. After start, `serve` fetches
-  `URL/.well-known/openmausbot/environment` and prints whether it answers
+  `URL/.well-known/limixbot/environment` and prints whether it answers
   with this server's own id. The pairing link uses that address either way.
 - **`--domain NAME`**: point the domain's A record at this machine and open
   ports 80 and 443. The server downloads a pinned Caddy once into its data
@@ -297,9 +299,9 @@ too.
   networks and VPN tunnels are skipped. A machine with no private address
   says so and stays on loopback. Plain http travels in clear, so use it only
   on a network you trust.
-- **`--tunnel`**: `npx limixbot login` reserves an address like
-  `https://c-….openmausbot.com` for this machine (an emailed code signs it
-  in). `serve --tunnel` connects it through a Cloudflare tunnel, the same one
+- **`--tunnel`**: `npx limixbot login` signs in with an emailed code and
+  reserves a tunnel address for this machine. Use the address printed by
+  the CLI. `serve --tunnel` connects it through a Cloudflare tunnel, the same one
   the desktop app uses for its companion. The first run downloads
   `cloudflared` (pinned version and digest) into the data dir. Only traffic
   through the tunnel reaches the server, and it still has to pair: the tunnel
@@ -589,7 +591,7 @@ root service on a Unix socket only that user may open. Your workspace then
 shows **Settings → Installations** (with the enterprise `admin` feature): create
 an installation, add or remove who may sign in, suspend, resume, delete, upgrade
 all, and see each one's spend this month. Every action goes through the
-agent's audit log at `/var/log/openmausbot/fleet.jsonl`.
+Fleet agent's audit log.
 
 `https://acme.example.com` is up when `create` returns; the first admin signs
 in with an emailed code. `OMB_LICENSE_KEY` in the environment (or
@@ -756,7 +758,7 @@ and take a 5-minute ticket from `POST /api/auth/stream-ticket` for the
 event stream, because `EventSource` cannot set headers:
 `GET /api/events?ticket=…`.
 
-`GET /.well-known/openmausbot/environment` is public and tells a client what
+`GET /.well-known/limixbot/environment` is public and tells a client what
 it is talking to: a stable `environmentId`, the label, the version and
 capabilities. Saved connections check the id so a reused address that now
 points at a different server is refused loudly.
@@ -851,7 +853,7 @@ With `service` on a self-hosted server:
   in with their email (`limixbot access add you@example.com`, which edits
   the sign-in list on disk).
 - A browser on an SSH tunnel gets the sign-in page instead of the app.
-- The MCP server script works with `OPENMAUSBOT_TOKEN` set to a paired session.
+- The MCP server script works with `LIMIXBOT_TOKEN` set to a paired session.
 
 **What `service` does not close yet.** Any bot's shell can still do
 everything the Slack worker does, and on a shared workspace that is a real
@@ -900,8 +902,7 @@ is bootstrapped; while it does, Settings refuses to change that list and says
 which variable to change instead. One that is empty, as `.env.example` and the
 Compose files leave them, leaves the list to Settings.
 
-The code itself comes from `accounts.openmausbot.com`, the Limix Bot
-account service, so your server needs no email credentials. Your server asks
+The configured account service sends the code using its own email credentials. Your server asks
 it to send the code, checks the answer, and then issues its own session
 cookie: the browser only ever talks to your server, and who is welcome is
 decided only by your allow-list. Wrong codes count against a lockout of
