@@ -179,7 +179,11 @@ describe("before pairing", () => {
   });
 
   it("describes itself to anyone, but serves nothing else off-machine", async () => {
-    const descriptor = await call("/.well-known/openmausbot/environment", { headers: remote("10.0.0.1") });
+    const headers = remote("10.0.0.1");
+    const descriptor = await call("/.well-known/limixbot/environment", { headers });
+    const legacyDescriptor = await call("/.well-known/openmausbot/environment", { headers });
+    expect(legacyDescriptor.status).toBe(200);
+    expect(legacyDescriptor.body).toEqual(descriptor.body);
     expect(descriptor.status).toBe(200);
     expect(descriptor.body.environmentId).toMatch(/^[0-9a-f-]{36}$/);
     expect(descriptor.body.label).toBe("cab mini");

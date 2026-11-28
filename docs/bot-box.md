@@ -22,7 +22,7 @@ The environment is an allow-list (`server/bot-box/env.ts`): the engine's own set
 tokens and a few names a shell expects. Of Limix Bot's own `OMB_*` variables only those a bot's engine, hooks and MCP
 proxies read pass (`BOX_ENV_OMB_NAMES`); every other one an operator sets on the server, such as `OMB_SIGNIN_SMTP_URL`,
 stays out. Every `OMB_CLOUD_*` setting, the server's own placement (`OMB_DATA_DIR`, `OMB_PORT`), the CLI's session
-token and server address (`OPENMAUSBOT_TOKEN`, `OPENMAUSBOT_URL`) and the workspace credentials are refused whatever
+token and server address (`LIMIXBOT_TOKEN`, `LIMIXBOT_URL`) and the workspace credentials are refused whatever
 a driver passed.
 
 ## The two gates

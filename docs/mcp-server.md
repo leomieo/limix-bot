@@ -1,5 +1,7 @@
 # Limix Bot MCP server
 
+The Limix Bot names in this guide require a build that includes the naming update. Version 0.3.129 and earlier use the original connection settings.
+
 The Limix Bot desktop app includes a local stdio MCP server. It lets another MCP client coordinate your
 Limix Bot team while the desktop app and its harness are running.
 
@@ -70,7 +72,7 @@ client:
    "env": {
      "ELECTRON_RUN_AS_NODE": "1",
      "OMB_PORT": "8799",
-     "OPENMAUSBOT_TOKEN": "omb_sess_..."
+     "LIMIXBOT_TOKEN": "omb_sess_..."
    }
    ```
 
@@ -109,12 +111,12 @@ With no configuration, the MCP process probes Limix Bot's three desktop ports (`
 and accepts only a health response that identifies itself as Limix Bot. This handles the desktop's normal
 fallback when another local process already owns port 8799.
 
-Set `OMB_PORT` to force one local port, or `OPENMAUSBOT_URL` to use an explicit HTTP(S) origin. Plain HTTP is
+Set `OMB_PORT` to force one local port, or `LIMIXBOT_URL` to use an explicit HTTP(S) origin. Plain HTTP is
 accepted only for loopback and private networks (LAN addresses, Tailscale, `*.local`); anything else needs HTTPS. An optional
-`OPENMAUSBOT_TOKEN` is sent as a bearer token for authenticated reverse proxies. When a token is set, an
-explicit `OPENMAUSBOT_URL` or `OMB_PORT` is required so the credential is never sent while probing unrelated
+`LIMIXBOT_TOKEN` is sent as a bearer token for authenticated reverse proxies. When a token is set, an
+explicit `LIMIXBOT_URL` or `OMB_PORT` is required so the credential is never sent while probing unrelated
 local ports. `OPENMAUSBOT_MCP_TIMEOUT_MS` can set an HTTP timeout between 1,000 and 120,000 milliseconds.
-In packaged builds, `OPENMAUSBOT_TOKEN` is required for mutating tools as
+In packaged builds, `LIMIXBOT_TOKEN` is required for mutating tools as
 described above; it is not a generic reverse-proxy secret.
 
 ## Tools

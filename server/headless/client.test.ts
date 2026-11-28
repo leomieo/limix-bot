@@ -17,6 +17,7 @@ describe("the server and the credential", () => {
     expect(namedServer({ url: "https://a.example", port: "1" }, { OPENMAUSBOT_URL: "https://b.example" })).toEqual({ url: "https://a.example" });
     expect(namedServer({ port: "19990" }, { OPENMAUSBOT_URL: "https://b.example" })).toEqual({ port: "19990" });
     expect(namedServer({}, { OPENMAUSBOT_URL: "https://b.example", OMB_PORT: "1" })).toEqual({ url: "https://b.example" });
+    expect(namedServer({}, { LIMIXBOT_URL: "https://limix.example", OPENMAUSBOT_URL: "https://b.example" })).toEqual({ url: "https://limix.example" });
     expect(namedServer({}, { OMB_PORT: "8123" })).toEqual({ port: "8123" });
     expect(namedServer({}, {})).toBeUndefined();
   });
@@ -26,6 +27,7 @@ describe("the server and the credential", () => {
     writeFileSync(file, "omb_sess_from_file\n");
     expect(readToken({ "token-file": file }, { OPENMAUSBOT_TOKEN: "omb_sess_env" })).toBe("omb_sess_from_file");
     expect(readToken({}, { OPENMAUSBOT_TOKEN: " omb_sess_env " })).toBe("omb_sess_env");
+    expect(readToken({}, { LIMIXBOT_TOKEN: " preferred ", OPENMAUSBOT_TOKEN: "legacy" })).toBe("preferred");
     expect(readToken({}, {})).toBeUndefined();
     writeFileSync(join(dir, "empty"), "\n");
     expect(() => readToken({ "token-file": join(dir, "empty") }, {})).toThrow("is empty");
@@ -45,7 +47,7 @@ describe("the server and the credential", () => {
 
   it("refuses control-omb's changes on a server it merely found", async () => {
     await expect(openClient({}, { env: {}, requireExplicitForMutations: true }, true))
-      .rejects.toMatchObject({ message: "mutating commands require an explicit OpenMausBot instance", exitCode: 2 });
+      .rejects.toMatchObject({ message: "mutating commands require an explicit Limix Bot instance", exitCode: 2 });
   });
 });
 
@@ -61,7 +63,7 @@ describe("explain", () => {
     expect(await explain(status(502, "OpenMausBot API error (502): <html>Bad gateway</html>"))).toMatchObject({ message: "OpenMausBot API error (502): <html>Bad gateway</html>" });
     expect(await explain(status(404, 'OpenMausBot API error (404): {"error":"no such bot"}'))).toMatchObject({ exitCode: 2, message: "no such bot" });
     expect(await explain(status(404, "OpenMausBot API error (404): not found"))).toMatchObject({ exitCode: 1 });
-    expect(await explain(new TypeError("fetch failed"), "http://127.0.0.1:1")).toMatchObject({ exitCode: 5, message: "cannot reach OpenMausBot at http://127.0.0.1:1" });
+    expect(await explain(new TypeError("fetch failed"), "http://127.0.0.1:1")).toMatchObject({ exitCode: 5, message: "cannot reach Limix Bot at http://127.0.0.1:1" });
     expect(await explain(Object.assign(new Error("The operation was aborted due to timeout"), { name: "TimeoutError" }))).toMatchObject({ exitCode: 5 });
     const kept = new HeadlessError("as it was", 4, "hint");
     expect(await explain(kept)).toBe(kept);

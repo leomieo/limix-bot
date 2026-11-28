@@ -1,5 +1,7 @@
 # Run Limix Bot from scripts and CI
 
+The Limix Bot names in this guide require a build that includes the naming update. Version 0.3.129 and earlier use the original connection settings.
+
 The `limixbot` command can drive a running workspace without a screen: set
 up a team from a file, give a bot a job, wait until it and every teammate it
 asked are done, and keep what they made. It works against the server on this
@@ -20,7 +22,7 @@ files it links, and writes everything to `./rehearsal`.
 
 ## Which workspace, and as whom
 
-- `--url URL` or `OPENMAUSBOT_URL`: a workspace somewhere else. `https://`
+- `--url URL` or `LIMIXBOT_URL`: a workspace somewhere else. `https://`
   works anywhere; plain `http://` works only on this computer or a private
   network (a LAN address, Tailscale's 100.x or `*.ts.net`, `*.local`).
 - `--port N` or `OMB_PORT`: this computer, on that port.
@@ -43,7 +45,7 @@ works once). On this
 computer's own server, `connect` makes the code itself (`--client` gives a
 token that can chat but not change settings). The token goes to a file only
 you can read, and is never printed. Pass it with `--token-file FILE` or
-`OPENMAUSBOT_TOKEN`; there is no `--token` flag, because a command line can be
+`LIMIXBOT_TOKEN`; there is no `--token` flag, because a command line can be
 read by other programs. A token is never sent while the command is still
 looking for a server: with a token, name the server.
 
@@ -489,7 +491,7 @@ section, or `limixbot engine set`, can set it later instead).
 
 The step fails when the job fails (exit 1), needs someone (exit 3) or runs out
 of time (exit 4). To drive a workspace that is already running elsewhere, set
-`OPENMAUSBOT_URL` and pass a token made with `limixbot connect` as a secret
+`LIMIXBOT_URL` and pass a token made with `limixbot connect` as a secret
 file (`--token-file`).
 
 ## For other agents

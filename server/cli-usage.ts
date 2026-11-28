@@ -17,8 +17,8 @@ export const HEADLESS_USAGE = `Drive a running workspace (scripts, CI, other age
   limixbot token create NAME --out FILE [--expires 90d]    a token for CI that ends on its date (token list, token revoke ID)
   limixbot new-bot | new-channel | set-model | edit | mcp
 
-  Server: --url URL (or OPENMAUSBOT_URL), --port N (or OMB_PORT), else this computer's.
-  Token: OPENMAUSBOT_TOKEN or --token-file FILE. --json prints one JSON document;
+  Server: --url URL (or LIMIXBOT_URL), --port N (or OMB_PORT), else this computer's.
+  Token: LIMIXBOT_TOKEN or --token-file FILE. --json prints one JSON document;
   progress goes to stderr (--quiet drops it). limixbot help VERB for the details.`;
 
 /** The usage text, its commands written the way this CLI was started (`npx limixbot …`). */
