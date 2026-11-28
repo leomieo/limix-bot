@@ -1,4 +1,7 @@
-/// <reference lib="dom" />
+declare const WebAssembly: {
+  Module: new (bytes: Uint8Array) => object;
+  Instance: new (module: object) => { exports: Record<string, unknown> };
+};
 import { readFileSync } from "node:fs";
 import type { Readable } from "node:stream";
 import { limixNativeResource } from "./limix-native-path.ts";

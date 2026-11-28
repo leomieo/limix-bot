@@ -57,19 +57,41 @@ fn show(value: Option<impl std::fmt::Display>) -> String {
 }
 
 fn main() -> ExitCode {
+    #[cfg(target_os = "linux")]
+    if std::env::args_os().skip(1).eq([OsString::from("--stdio")]) {
+        use std::io::{BufRead, Read};
+        let mut input = std::io::stdin().lock();
+        let mut line = String::new();
+        loop {
+            line.clear();
+            match (&mut input).take(64).read_line(&mut line) {
+                Ok(0) => return ExitCode::SUCCESS,
+                Ok(_) if line.ends_with('\n') => (),
+                _ => return ExitCode::from(2),
+            }
+            let Some(req) = request(line.split_ascii_whitespace().map(OsString::from)) else {
+                return ExitCode::from(2);
+            };
+            emit_sample(req);
+        }
+    }
     let Some(req) = request(std::env::args_os().skip(1)) else {
         eprintln!("Usage: limix-process-sampler <pid> [sinceMs]");
         return ExitCode::from(2);
     };
     #[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
     compile_error!("Unsupported process sampler target");
+    emit_sample(req);
+    ExitCode::SUCCESS
+}
+
+fn emit_sample(req: Request) {
     let sample = platform::sample(req).unwrap_or_default();
     println!(
         "{{\"cpuMs\":{},\"connections\":{}}}",
         show(sample.cpu_ms),
         show(sample.connections)
     );
-    ExitCode::SUCCESS
 }
 
 #[cfg(test)]

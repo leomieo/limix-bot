@@ -91,11 +91,12 @@ async function verifyParity(legacy, pid, since) {
 }
 
 async function timeBatches(legacy, pid, parallelism) {
-  const runners = { legacy, rust: rustSample };
+  const runners = { legacy, rust: legacy };
   const samples = { legacy: [], rust: [] };
   for (let round = 0; round < 4; round++) {
     const order = round % 2 === 0 ? ["legacy", "rust"] : ["rust", "legacy"];
     for (const name of order) {
+      process.env.LIMIX_ACP_PROCESS_SAMPLER = name === "rust" ? "rust" : "typescript";
       const start = performance.now();
       const results = await Promise.all(Array.from({ length: parallelism }, () => runners[name](pid)));
       samples[name].push(performance.now() - start);
