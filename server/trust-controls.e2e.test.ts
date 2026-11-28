@@ -51,7 +51,11 @@ const mint = async (botId: string, threadId: string, kind = "connectors") => {
 };
 const relay = (token: string, name: string, args: unknown = {}) => api("POST", "/api/internal/connectors/mcp",
   { jsonrpc: "2.0", id: Math.random(), method: "tools/call", params: { name, arguments: args } }, token);
-const cards = async (thread: string) => (await api("GET", `/api/threads/${thread}/messages?limit=100`)).body.messages as any[];
+const cards = async (thread: string) => {
+  const result = await api("GET", `/api/threads/${thread}/messages?limit=100`);
+  expect(result.status).toBe(200);
+  return result.body.messages as any[];
+};
 const pending = async (thread: string) => {
   let card: any;
   await expect.poll(async () => {
@@ -137,15 +141,15 @@ beforeAll(async () => {
   config.instances.gmailFixture = { ...config.instances.claude, displayName: "Gmail continuation fixture",
     environment: { FAKE_CLAUDE_ROOM_PLAN: join(fixture.info.dataDir, "gmail-plan.json") } };
   writeFileSync(configFile, JSON.stringify(config));
+  await startTrustServer();
+}, 40_000);
+
+async function startTrustServer() {
   const sessions = new SessionRegistry({ file: join(fixture.info.dataDir, "sessions.json"),
     emailScopes: email => email === "admin@fixture.test" ? ["admin", "client"] : ["client"] });
   admin = sessions.issue({ label: "isolated admin", email: "admin@fixture.test", scopes: ["admin", "client"] }).token;
   member = sessions.issue({ label: "isolated member", email: "member@fixture.test", scopes: ["client"] }).token;
   sessions.close();
-  await startTrustServer();
-}, 40_000);
-
-async function startTrustServer() {
   const log = openSync(fixture.info.logPath, "a", 0o600);
   child = spawn(process.execPath, ["--experimental-strip-types", fileURLToPath(new URL("./index.ts", import.meta.url))], {
     cwd: fileURLToPath(new URL("..", import.meta.url)),
@@ -719,8 +723,10 @@ it("resumes the pending support handoff in the same thread after restart", async
   const draft = { thread_id: "case-ci-absent", recipient_email: "support@example.test", subject: "Missing SKU CI-ABSENT", body: "Please verify the catalog entry." };
   expect((await relay(token, "GMAIL_CREATE_EMAIL_DRAFT", draft)).body.result.isError).not.toBe(true);
   const draftId = [...gmailDrafts].find(([, row]) => row.thread_id === draft.thread_id)![0];
-  const deliveries = () => relayed.filter((frame: any) => frame.params?.name === "GMAIL_SEND_DRAFT" && frame.params.arguments?.draft_id === draftId).length;
-  const attempt = relay(token, "GMAIL_SEND_DRAFT", { draft_id: draftId }).catch(() => undefined);
+  const message = { recipient_email: draft.recipient_email, subject: draft.subject, body: draft.body };
+  const deliveries = () => relayed.filter((frame: any) => frame.params?.name === "GMAIL_SEND_EMAIL" &&
+    JSON.stringify(frame.params.arguments) === JSON.stringify(message)).length;
+  const attempt = relay(token, "GMAIL_SEND_EMAIL", message).catch(() => undefined);
   await pending(b.threadId);
   expect(deliveries()).toBe(0);
   await waitForExit(child, { signal: "SIGKILL" });
