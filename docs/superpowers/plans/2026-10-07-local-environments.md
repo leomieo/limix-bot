@@ -16,7 +16,7 @@
 - No changes under `server/`, `src/locales/zh.json`, or any lockfile. New copy is hardcoded English inside the settings component ONLY if that file already hardcodes English (it does — keep its style); no new `en.json` keys required.
 - Local-environment switching is packaged-only (`app.isPackaged`); in dev mode create/switch IPC returns `{ ok: false, error: "dev" }`.
 - `activeId` for a local environment persists only after the health probe returns `"ready"`.
-- Default data dir `~/.openmausbot` stays "This computer": never listable as an entry, never forgettable, boot fallback target.
+- Default data dir `~/.limixbot` stays "This computer": never listable as an entry, never forgettable, boot fallback target.
 - Conventional commits; `pnpm lint` (`oxlint --deny-warnings .`) and `pnpm typecheck` clean at every commit.
 
 ## Review Focus
@@ -46,7 +46,7 @@
   - `workspaceSummary(state)` returns `{ local:true, name:"This computer" }` or `{ local:false, name, origin, localPath?: string, missing?: boolean }` — for a local active entry `local:false` is wrong; instead extend the local branch: `{ local: true, name: entry.name, localPath, missing }`.
   - `workspaceMenuTemplate` — one radio row per local entry (same `onSwitch(id)` callback), "This computer" row always first.
 
-- [ ] **Step 1: Write failing tests** in `electron/environments.node-test.mjs` (follow existing `const env = require("./environments.cjs")` style): `parseEnvironments` on a v1 JSON string stamps `kind:"remote"` and preserves `activeId`; `serializeEnvironments` output has `version: 2`; `withLocalEnvironment` happy path adds `{ id: <makeId()>, kind:"local", ... }`; rejects non-absolute `dataDir`, `dataDir === defaultDir`, nesting (`~/.openmausbot/x` under default `~/.openmausbot`), duplicate path, name length > 60; `activeLocalDataDir` returns the entry's dir when active-local, `null` for `LOCAL_ID`/remote; `workspaceMenuTemplate` renders a row per local entry calling `onSwitch` with the entry id.
+- [ ] **Step 1: Write failing tests** in `electron/environments.node-test.mjs` (follow existing `const env = require("./environments.cjs")` style): `parseEnvironments` on a v1 JSON string stamps `kind:"remote"` and preserves `activeId`; `serializeEnvironments` output has `version: 2`; `withLocalEnvironment` happy path adds `{ id: <makeId()>, kind:"local", ... }`; rejects non-absolute `dataDir`, `dataDir === defaultDir`, nesting (`~/.limixbot/x` under default `~/.limixbot`), duplicate path, name length > 60; `activeLocalDataDir` returns the entry's dir when active-local, `null` for `LOCAL_ID`/remote; `workspaceMenuTemplate` renders a row per local entry calling `onSwitch` with the entry id.
 - [ ] **Step 2: Run to verify failure** — `pnpm test:electron` → new cases fail (Review Focus 5 first case here).
 - [ ] **Step 3: Implement** in `environments.cjs` (signatures above; keep the file dependency-free).
 - [ ] **Step 4: Run to verify pass** — `pnpm test:electron` fully green.

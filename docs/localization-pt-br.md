@@ -129,7 +129,7 @@ logs, developer or CLI errors, emails sent by the control plane, the docs site
 
 ### Grammatical gender of product nouns
 
-Masculine: `o bot`, `o app`, `o Cloud`, `o MausBot Cloud`, `o desktop`, `o
+Masculine: `o bot`, `o app`, `o Cloud`, `o Limix Bot Cloud`, `o desktop`, `o
 navegador`, `o backup`, `o login`, `o webhook`, `o playbook`, `o plugin`, `o
 Marketplace`, `o gatilho`, `o modelo`, `o provedor`, `o plano`, `o
 servidor`.
@@ -184,10 +184,10 @@ These stay unchanged in every pt-BR string.
 | Name | Why |
 |---|---|
 | Limix Bot, Limix Bot | Product names. Never write `OMB` or `T3` (`vocabulary.test.ts`). |
-| Limix Bot Cloud | Product name. `vocabulary.test.ts` requires it verbatim in every translation whose English contains it. Never write `OpenMausBot Cloud` or `MausBot Pro`. Treat it as masculine: “o Limix Bot Cloud”. |
+| Limix Bot Cloud | Product name. `vocabulary.test.ts` requires it verbatim in every translation whose English contains it. Never write `Limix Bot Cloud` or `Limix Bot Pro`. Treat it as masculine: “o Limix Bot Cloud”. |
 | Cloud (short for Limix Bot Cloud) | Product name, masculine: “o Cloud”, “no Cloud”. The generic sky-and-servers cloud is `nuvem`: “desktop na nuvem”. |
 | Boat | Name of a third-party provider. Write it only where the English says Boat; the test fails otherwise. |
-| Jev, Maus, Grok Bot | Names of product features or characters. |
+| Jev, Limix, Grok Bot | Names of product features or characters. |
 | Claude, Claude Code, ChatGPT, Codex, Grok, Gemini, Cursor, OpenCode, Antigravity, OpenAI, Anthropic, xAI, OpenRouter, Ollama, Groq, Cerebras | Third-party product and company names. |
 | Slack, Discord, Telegram, WhatsApp, Gmail, Notion, GitHub, Chrome, Tailscale, Cloudflare Tunnel, Docker, Podman, Whop, Product Hunt | Third-party product names. |
 | Admin, and labels inside the Admin console | The Admin console is not localized, so pointers keep its English labels. |

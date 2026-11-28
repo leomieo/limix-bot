@@ -77,7 +77,7 @@ The box takes the light or dark of the app's skin as last painted (Settings →
 Appearance → Theme), macOS's appearance only until a page has painted one. It
 stays on the display it opened on. The box hides 12 s after the reply unless the
 pointer is over it. Clicking it
-opens `openmausbot://thread/<threadId>?bot=<botId>` and shows the main window.
+opens `limixbot://thread/<threadId>?bot=<botId>` and shows the main window.
 Places that treat every window as the main one (`activate`, single-instance,
 `activateExistingWindow`, window-all-closed, the capabilities broadcast) skip
 the panel.

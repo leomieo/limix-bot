@@ -149,7 +149,7 @@ root, sign in again as `limix`; those accounts have different homes and credenti
 
 ## Path A: a public address with one command
 
-No domain, no proxy, no open port. The server gets an address like `https://c-7f3a9c.openmausbot.com` through a Cloudflare tunnel; only traffic through the tunnel reaches it, and that traffic still has to pair.
+No domain, no proxy, no open port. The server gets an address like `https://<assigned-tunnel-host>` through a Cloudflare tunnel; only traffic through the tunnel reaches it, and that traffic still has to pair.
 
 ```sh
 npx limixbot setup          # once: choose AI access, connect, and choose a model
@@ -273,7 +273,7 @@ npx limixbot pair --label "Kitchen iPad"
 
 ```
 Pairing code   RR8Y-BLR6-H939   works once, until 10:59 · everything
-Link           https://c-7f3a9c.openmausbot.com/pair#code=RR8Y-BLR6-H939
+Link           https://<assigned-tunnel-host>/pair#code=RR8Y-BLR6-H939
 
   Desktop app   ＋ → Connect to a server, paste the link
   Phone         scan with your camera or the Limix Bot app

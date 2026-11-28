@@ -1,6 +1,6 @@
 # Integrate Factory into the existing Limix Bot repository
 
-**Never assume Limix Bot is an unmodified upstream OpenMausBot checkout.** The user's source repository is authoritative.
+**Verify integration points in the current Limix Bot checkout.** The user's source repository is authoritative.
 
 ## Phase 0: Read-only discovery
 

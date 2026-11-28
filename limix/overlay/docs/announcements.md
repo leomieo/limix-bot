@@ -7,7 +7,7 @@ change to it on `main` and every install that runs this version or later picks i
 ## How it works
 
 - **One file on `main`.** The app's server downloads
-  `https://raw.githubusercontent.com/milind-soni/OpenMausBot/main/announcements/announcements.json` when a page of the app
+  `https://raw.githubusercontent.com/leomieo/limix-bot/main/announcements/announcements.json` when a page of the app
   asks for the cards: at launch, then about hourly while the app is in use. Whoever can merge to `main` can publish a card;
   there is no other sign-in and no backend.
 - **The server fetches, the page decides.** The desktop app's own server, a Limix Bot Cloud and a self-hosted server all
@@ -77,8 +77,8 @@ shows it again to everyone.
       "kind": "sponsor",
       "label": "Sponsor",
       "title": "Acme Inference: $5 of free credit",
-      "body": "Acme Inference sponsors MausBot. New accounts get $5 of credit for any model they serve.",
-      "primary": { "label": "Get a key", "action": { "open_url": "https://example.com/acme?utm_source=openmausbot&utm_medium=sponsorship" } },
+      "body": "Acme Inference sponsors Limix Bot. New accounts get $5 of credit for any model they serve.",
+      "primary": { "label": "Get a key", "action": { "open_url": "https://example.com/acme?utm_source=limixbot&utm_medium=sponsorship" } },
       "secondary": { "label": "Add a key", "action": { "open": "api_keys" } },
       "starts": "2026-12-01T00:00:00Z",
       "ends": "2026-12-15T00:00:00Z",

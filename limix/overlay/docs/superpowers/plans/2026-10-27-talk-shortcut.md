@@ -18,7 +18,7 @@
 - Asks always go to this computer's own server, never the Cloud or team page the window shows. The chat is titled exactly `Quick asks`, created on first use with `select: false`, reused, recreated when gone.
 - The box never takes focus and never raises the Limix Bot window: `type:"panel"`, `focusable:false`, `showInactive()`, never `show()`/`focus()`.
 - Timings: reply box hides 12 s after it settles unless the pointer is over it; no answer in 120 s → "Still working · Open chat"; reply text is plain, at most 400 characters.
-- Copy fixed by the spec: `Talk to MausBot from any app`, `Hold {key}, speak, let go`, `{key} is used by another app`, `Voice is in use in MausBot`, `Open MausBot to talk`, `Still working · Open chat`. Settings strings go in `src/locales/en.json` only (other languages fall back; `pnpm i18n:check` must pass). The box's own copy is English in v1: main has no locale catalogs.
+- Copy fixed by the spec: `Talk to Limix Bot from any app`, `Hold {key}, speak, let go`, `{key} is used by another app`, `Voice is in use in Limix Bot`, `Open Limix Bot to talk`, `Still working · Open chat`. Settings strings go in `src/locales/en.json` only (other languages fall back; `pnpm i18n:check` must pass). The box's own copy is English in v1: main has no locale catalogs.
 - New bridge keys (`talkShortcut`, `callActive`) stay out of `REMOTE_SAFE`; their IPC is `localOnly` (`call:active`: `localOrHome`, see Task 8).
 - No new dependencies. Modules under `node --test` never import `electron`: inject it.
 - AGENTS.md: comments only for what code cannot say (OS/Electron facts, public contracts, security invariants). No narration.
@@ -393,13 +393,13 @@ Tracker rules (the algorithm the tests do not fully determine): frames for other
 - [ ] **Step 1: Write the failing unit tests** (frame builders: `userMessage(threadId, sendId)`, `delta(threadId, itemId, text)`, `botText(threadId, text)`, `card(threadId, cardFields)` (a `role: "bot", kind: "options"` message), `opened(threadId)`, `completed(threadId, ok)`. `fakeServer({ bots, saved = null, sendStatus = 202 })` returns `{ talk, calls, saves, events }`: `talk = createTalkServer({ request, serverKey: () => "server-a", prefs: { quickAsksChat: () => saved, setQuickAsksChat: (server, chat) => saves.push([server, chat]) } })`; `request` answers `GET /api/bots?messages=0` with `{ bots }`, `POST …/tasks` with 201 `{ task: { threadId: "t-new", title: "Quick asks" } }`, `GET /api/events?screens=off` with a `ReadableStream` the test drives through `events.push(frame)` / `events.end()`, `POST …/messages` with `sendStatus`; `calls` records `[method, route, parsedBody]`. `flush = () => new Promise(r => setImmediate(r))`)
 
 ```js
-test("findMausBot picks this computer's MausBot, else the Chief of Staff", () => {
+test("findMausBot picks this computer's Limix Bot, else the Chief of Staff", () => {
   const mine = { id: "m", defaultBot: {} }, member = { id: "p", defaultBot: { person: "a@b.test" } }, chief = { id: "c", chiefOfStaff: true };
   assert.equal(findMausBot([member, chief, mine]).id, "m");
   assert.equal(findMausBot([member, chief]).id, "c");
   assert.equal(findMausBot([{ id: "x" }, { ...chief, hidden: true }]), null);
 });
-test("prepare reuses the saved Quick asks chat while MausBot still has it");   // saved {botId:"m",threadId:"t1"}, tasks [{threadId:"t1"}] → returns saved; no POST in calls
+test("prepare reuses the saved Quick asks chat while Limix Bot still has it");   // saved {botId:"m",threadId:"t1"}, tasks [{threadId:"t1"}] → returns saved; no POST in calls
 test("prepare makes a Quick asks chat without selecting it when the saved one is gone, and keeps it", async () => {
   const server = fakeServer({ bots: [{ id: "m", defaultBot: {}, tasks: [] }], saved: { botId: "m", threadId: "t-gone" } });
   assert.deepEqual(await server.talk.prepare(), { botId: "m", threadId: "t-new" });
@@ -419,7 +419,7 @@ test("the reply tracker follows only this ask", () => {
   assert.equal(track(delta("t2", "i9", "elsewhere")), null);
   assert.deepEqual(track(completed("t1", true)), { kind: "done", ok: true, text: "You have two meetings." });
 });
-test("a waiting card or an opened request means MausBot needs the person", () => {
+test("a waiting card or an opened request means Limix Bot needs the person", () => {
   const track = createReplyTracker({ threadId: "t1", sendId: "s1" });
   track(userMessage("t1", "s1"));
   assert.equal(track(card("t1", { answered: "Allow" })), null);
@@ -451,7 +451,7 @@ test("readFrames joins frames split across chunks and skips heartbeats and junk"
 - [ ] **Step 2: Write the failing fixture test** (`server/talk-server.e2e.test.ts`; launch with `OMB_TEST_DESKTOP_OWNER_TOKEN: owner` and send `x-openmausbot-desktop-owner` on every request, as `server/chat-pages.e2e.test.ts:54-56` does, so it runs the packaged desktop's path)
 
 ```ts
-it("asks MausBot in its own Quick asks chat, as the desktop app does, and follows the reply to the end", async () => {
+it("asks Limix Bot in its own Quick asks chat, as the desktop app does, and follows the reply to the end", async () => {
   let saved: TalkChat | null = null;
   const talk = createTalkServer({ request, serverKey: () => "fixture", prefs: { quickAsksChat: () => saved, setQuickAsksChat: (_s, chat) => { saved = chat; } } });
   const before = (await (await request("/api/bots?messages=0")).json()).bots.find((b: any) => b.defaultBot);
@@ -484,7 +484,7 @@ Expected: PASS. If the fixture shows a wire shape the unit fakes assumed wrongly
 
 ```bash
 git add electron/talk-server.mjs electron/talk-server.d.mts electron/talk-server.node-test.mjs server/talk-server.e2e.test.ts
-git commit -m "feat(talk): find MausBot, keep the Quick asks chat and follow the reply"
+git commit -m "feat(talk): find Limix Bot, keep the Quick asks chat and follow the reply"
 ```
 
 ---
@@ -498,7 +498,7 @@ git commit -m "feat(talk): find MausBot, keep the Quick asks chat and follow the
 **Interfaces:**
 - Produces:
   - `TALK_PANEL = { width: 400, margin: 24, minHeight: 56, maxHeight: 240, fadeMs: 180 }` (frozen).
-  - `TALK_LABELS` (frozen): `listening: "Listening…"`, `sending: "Sending to MausBot…"`, `thinking: "MausBot is thinking…"`, `reply: "MausBot"`, `"needs-you": "MausBot needs you · Open chat"`, `"still-working": "Still working · Open chat"`, `error: ""`.
+  - `TALK_LABELS` (frozen): `listening: "Listening…"`, `sending: "Sending to Limix Bot…"`, `thinking: "Limix Bot is thinking…"`, `reply: "Limix Bot"`, `"needs-you": "Limix Bot needs you · Open chat"`, `"still-working": "Still working · Open chat"`, `error: ""`.
   - `TalkView = { state: "listening" | "sending" | "thinking" | "reply" | "needs-you" | "still-working" | "error", text: string }`.
   - `talkPanelBounds(workArea, height)` → `{ x, y, width, height }`: centred, `margin` above the work area's bottom, height clamped to `[minHeight, maxHeight]`.
   - `replyPreview(text, limit = 400): string` — drop Markdown heading marks, list markers, `**`/`__`/`*`/`_` emphasis, backticks and fences; `[label](url)` → `label`; collapse whitespace; over `limit`, cut at the last space before it and add `…`.
@@ -590,7 +590,7 @@ git commit -m "feat(talk): the floating box that never takes focus"
 - Consumes: `speech` `{ start(sink, { finishOnRelease }), stop(sink) }` (Task 3 via main); `server` `{ prepare, ask }` and `TalkServerError` codes (Task 5); `panel` `{ render(view), close(), hovered() }` and `TalkView` (Task 6).
 - Produces:
   - `TALK_TIMING = { replyHideMs: 12_000, noticeHideMs: 4_000, stillWorkingMs: 120_000, hoverRecheckMs: 500 }` (frozen).
-  - `TALK_TEXT` (frozen): `busy: "Voice is in use in MausBot"`, `serverDown: "Open MausBot to talk"`, `permission: "Talking needs Microphone + Speech Recognition access — System Settings → Privacy & Security."`, `dictationOff: "Turn on Dictation in System Settings → Keyboard, then try again."`, `unavailable: "Talking couldn't start. Try again."`, `failed: "MausBot couldn't take that · Open chat"`.
+  - `TALK_TEXT` (frozen): `busy: "Voice is in use in Limix Bot"`, `serverDown: "Open Limix Bot to talk"`, `permission: "Talking needs Microphone + Speech Recognition access — System Settings → Privacy & Security."`, `dictationOff: "Turn on Dictation in System Settings → Keyboard, then try again."`, `unavailable: "Talking couldn't start. Try again."`, `failed: "Limix Bot couldn't take that · Open chat"`.
   - `createTalkSession({ speech, server, panel, voiceInUse: () => boolean, release: () => string[], openChat: (chat: TalkChat | null) => void, newSendId = randomUUID })` → `{ press(), open(), dismiss(), close() }`.
 
 | Phase | `press()` | `open()` | `dismiss()` / `close()` |
@@ -638,7 +638,7 @@ test("a press while a reply shows closes it and starts a new ask");           //
 test("voice in use refuses without listening", () => {
   const h = harness({ busy: true }); h.session.press();
   assert.deepEqual(h.starts, []);
-  assert.deepEqual(h.views, [{ state: "error", text: "Voice is in use in MausBot" }]);
+  assert.deepEqual(h.views, [{ state: "error", text: "Voice is in use in Limix Bot" }]);
   mock.timers.tick(4_000); assert.equal(h.closed, 1);
 });
 test("an empty transcript closes silently, even when the recognizer reports an error", async () => {
@@ -650,11 +650,11 @@ test("an empty transcript closes silently, even when the recognizer reports an e
 });
 test("words heard before a recognizer error are still sent");                 // say "remind me", release {code:1, reason:"recognition-error"} → asks[0].text "remind me"
 test("permission and setup problems say what to fix");                        // speech-not-authorized → TALK_TEXT.permission; dictation-disabled → dictationOff; helper-start-failed → unavailable; each hides after 4 s
-test("the server not running says Open MausBot to talk and stops listening", async () => {
+test("the server not running says Open Limix Bot to talk and stops listening", async () => {
   const h = harness({ prepare: async () => { throw new TalkServerError("server-down"); } });
   h.session.press(); await flush();
   assert.deepEqual(h.stops, [true]);
-  assert.deepEqual(h.views.at(-1), { state: "error", text: "Open MausBot to talk" });
+  assert.deepEqual(h.views.at(-1), { state: "error", text: "Open Limix Bot to talk" });
   mock.timers.tick(4_000); assert.equal(h.closed, 1);
 });
 test("needs-you shows and hides like a reply");                               // ask: onUpdate reply "Checking", needs-you, resolve "needs-you" → views.at(-1) { state: "needs-you", text: "Checking" }; tick(12_000) closed 1
@@ -669,7 +669,7 @@ test("no answer in 120 s shows Still working · Open chat", async () => {
 });
 test("a lost stream shows Still working; a refused send shows the failure");  // ask rejects TalkServerError("lost") → still-working; TalkServerError("refused") → { state: "error", text: TALK_TEXT.failed }
 test("replaced while listening closes the box and nothing is sent");         // sink.replaced() → closed 1; then release(h) after say → asks.length 0
-test("clicking the box opens the chat; before the chat is known it only brings MausBot forward"); // open() while listening → opened [null], stops [true], closed 1; after a reply → opened [CHAT]
+test("clicking the box opens the chat; before the chat is known it only brings Limix Bot forward"); // open() while listening → opened [null], stops [true], closed 1; after a reply → opened [CHAT]
 test("dismissing while listening cancels capture");                           // dismiss() → stops [true], closed 1
 ```
 
@@ -708,7 +708,7 @@ Wiring in `main.mjs`:
 - `function appWindows() { return BrowserWindow.getAllWindows().filter((win) => !isTalkPanel(win)); }` (a hoisted declaration near the top) replaces every `BrowserWindow.getAllWindows()` call.
 - `speech:stop` and `speech:finish` call `stopSpeech(BrowserWindow.fromWebContents(event.sender))` / `finishSpeech(…)`, so a page never stops the talk box's session.
 - Next to the speech IPC: `const callPresence = createCallPresence();`, `let talkShortcut = null, talkSession = null;`, the three handlers (`talk-shortcut:set` passes only boolean `enabled` and string `key` through).
-- In `whenReady`, at 3066: `const desktopPrefs = createDesktopPrefs(jsonFile(path.join(app.getPath("userData"), "desktop-prefs.json")));` passed as `prefs` to `registerDesktopPrefs`; then the panel (`createTalkPanel({ BrowserWindow, screen, iconPath: APP_ICON, onOpen: () => talkSession.open(), onDismiss: () => talkSession.dismiss() })`), `talkShortcut = createTalkShortcut({ globalShortcut, prefs: desktopPrefs, available: () => nativeActions.appleSpeech && !desktopRemoteAccess, onPress: () => talkSession.press() })` and `talkSession = createTalkSession({ speech: { start: startSpeech, stop: stopSpeech }, server: createTalkServer({ request: talkRequest, prefs: desktopPrefs, serverKey: () => (app.isPackaged ? runningDataDir : DEV_URL) ?? "local" }), panel, voiceInUse: () => speechBusy() || callPresence.active(), release: () => talkShortcut.releaseModifiers(), openChat: chat => (chat ? queueChatLink(`openmausbot://thread/${chat.threadId}?bot=${chat.botId}`) : revealForLink()) })`.
+- In `whenReady`, at 3066: `const desktopPrefs = createDesktopPrefs(jsonFile(path.join(app.getPath("userData"), "desktop-prefs.json")));` passed as `prefs` to `registerDesktopPrefs`; then the panel (`createTalkPanel({ BrowserWindow, screen, iconPath: APP_ICON, onOpen: () => talkSession.open(), onDismiss: () => talkSession.dismiss() })`), `talkShortcut = createTalkShortcut({ globalShortcut, prefs: desktopPrefs, available: () => nativeActions.appleSpeech && !desktopRemoteAccess, onPress: () => talkSession.press() })` and `talkSession = createTalkSession({ speech: { start: startSpeech, stop: stopSpeech }, server: createTalkServer({ request: talkRequest, prefs: desktopPrefs, serverKey: () => (app.isPackaged ? runningDataDir : DEV_URL) ?? "local" }), panel, voiceInUse: () => speechBusy() || callPresence.active(), release: () => talkShortcut.releaseModifiers(), openChat: chat => (chat ? queueChatLink(`limixbot://thread/${chat.threadId}?bot=${chat.botId}`) : revealForLink()) })`.
 - `talkRequest(route, init)`: packaged → `localServerRequest(route, init)` (owner header; rejects while the server is down); dev → `fetch(new URL(route, DEV_URL), init)`, through Vite's `/api` proxy to `pnpm dev:server`, because dev never starts the server itself (`serverReady = !app.isPackaged`, line 313).
 - `before-quit`, first lines: `talkSession?.close(); talkShortcut?.close();`.
 
@@ -769,7 +769,7 @@ git commit -m "feat(talk): wire the talk shortcut into the desktop app"
 **Files:**
 - Create: `src/lib/call-presence.ts`, `src/components/TalkShortcutRow.tsx`
 - Modify: `src/components/LiveCallHost.tsx` (call the hook), `src/components/SettingsModal.tsx` (General keywords line 85; render `<TalkShortcutRow />` right after `<DefaultBotSidebarRow />` at ~671), `src/locales/en.json` (beside `settings.analytics.*`, ~1228)
-- Test: `src/lib/call-presence.test.ts`, `src/components/TalkShortcutRow.test.ts` (happy-dom, `createRoot` + `act`, with `settle`/`show`/`click` helpers as `src/components/UpdatesConsent.test.ts:14-27`; `toggle()` is `button[aria-label="Talk to MausBot from any app"]`; `bridge = { state: vi.fn(async () => current), set: vi.fn(async change => (current = { ...current, ...change })) }` on `window.ogb.talkShortcut`)
+- Test: `src/lib/call-presence.test.ts`, `src/components/TalkShortcutRow.test.ts` (happy-dom, `createRoot` + `act`, with `settle`/`show`/`click` helpers as `src/components/UpdatesConsent.test.ts:14-27`; `toggle()` is `button[aria-label="Talk to Limix Bot from any app"]`; `bridge = { state: vi.fn(async () => current), set: vi.fn(async change => (current = { ...current, ...change })) }` on `window.ogb.talkShortcut`)
 
 **Interfaces:**
 - Consumes: `window.ogb.talkShortcut`, `window.ogb.callActive` (Task 8); `useOnCall`, `startCall`, `endCall` (`src/lib/call.ts`); `useLiveMedia`, `isLiveCallRunning`, `LiveMediaPhase` (`src/lib/live-call-media.ts`).
@@ -799,7 +799,7 @@ it("tells main when a call starts and ends, and says none on mount", async () =>
 it("is not shown without the bridge or where Apple speech is unavailable");   // no ogb → host empty; available:false → host empty
 it("shows the switch on with the key in its subtitle, and turns it off", async () => {
   await show();
-  expect(host.textContent).toContain("Talk to MausBot from any app");
+  expect(host.textContent).toContain("Talk to Limix Bot from any app");
   expect(host.textContent).toContain("Hold ⌃⌥Space, speak, let go");
   await click(toggle());
   expect(bridge.set).toHaveBeenCalledWith({ enabled: false });

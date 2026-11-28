@@ -10,7 +10,7 @@ export function baseOptions(): BaseLayoutProps {
       transparentMode: 'none',
     },
     links: [
-      { text: 'Website', url: 'https://mausbot.com', external: true },
+      { text: 'Website', url: 'https://limixmedia.com', external: true },
       { text: 'Changelog', url: '/docs/changelog' },
       { type: 'button', text: 'Download', url: 'https://github.com/leomieo/limix-bot/releases/latest', external: true },
     ],

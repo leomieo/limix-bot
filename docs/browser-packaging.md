@@ -72,7 +72,7 @@ Nothing is invented: Chrome for Testing reports Chromium brands, Google Chrome
 its own. `OMB_BROWSER_SCREEN`, `OMB_BROWSER_LANG` and `OMB_BROWSER_TIMEZONE`
 override the display, language and zone.
 
-`openmausbot browser status`, the server's startup log and the
+`limixbot browser status`, the server's startup log and the
 `browserEngine.chrome` field of its configuration status name the choice, for
 example `Google Chrome 155 (installed)`. **Rollback:** start the server with
 `OMB_BROWSER_LEGACY_SHELL=1` to run exactly the previous engine.
@@ -150,7 +150,7 @@ them. Limix Bot's own ports, metadata and link-local addresses stay closed, also
 a Docker host's gateway, and a public name that resolves to loopback is still refused. It applies to new connections;
 a page already open keeps the ones it has until it closes them. Refused connections show up in the bot's next browser result:
 the first three by name and the rest as a count (up to 20 per result, each destination and reason once):
-`The page tried to reach "127.0.0.1:8799" (blocked: OpenMausBot's own service)`.
+`The page tried to reach "127.0.0.1:8799" (blocked: Limix Bot's own service)`.
 
 `agent_browser_read` reads the page open in the browser. Given an address,
 agent-browser 0.37 would fetch it with its own HTTP client, around the browser
@@ -278,7 +278,7 @@ Run the real browser check against an unpacked app:
 node scripts/smoke-browser-bundle.mjs --resources /absolute/app/resources
 ```
 
-On macOS, use `/absolute/OpenMausBot.app/Contents/Resources`. On Linux, run as
+On macOS, use `/absolute/Limix Bot.app/Contents/Resources`. On Linux, run as
 an unprivileged user against the installed `.deb` at
 `/opt/Limix Bot/resources`. This check creates its own empty home and local
 web page, checks automatic discovery, navigation, typing/clicking, the

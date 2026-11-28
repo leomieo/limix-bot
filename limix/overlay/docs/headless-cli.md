@@ -115,7 +115,7 @@ The message for `send` and `run` can be the next word, `--text TEXT`,
 Before you install a server, check the machine it will run on:
 
 ```text
-$ sudo limixbot doctor --host --data-dir /srv/mausbot
+$ sudo limixbot doctor --host --data-dir /srv/limixbot
 ok    Ubuntu 24.04.1 LTS, kernel 6.8.0-45-generic
 ok    x86_64
 ok    Docker 27.3.1
@@ -123,8 +123,8 @@ FAIL  Bot sandbox: AppArmor blocks unprivileged user namespaces
       fix: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0   (and put it in /etc/sysctl.d/ to keep it after a reboot)
 ok    seccomp is available
 ok    cgroup v2
-ok    412 GB free for /srv/mausbot
-warn  /srv/mausbot is not on an encrypted disk
+ok    412 GB free for /srv/limixbot
+warn  /srv/limixbot is not on an encrypted disk
       fix: use LUKS full-disk encryption, unless your provider encrypts the disk at rest
 ok    8 CPUs, 31 GB memory (a team of 20 needs 8 CPUs and 16 GB)
 ok    Port 8799 is free for the server

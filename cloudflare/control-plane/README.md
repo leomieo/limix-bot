@@ -113,7 +113,7 @@ Account bearer tokens are rejected.
   recoverable from GET or D1. After an idle reclaim the same call allocates a
   new tunnel behind the **same hostname**, so a paired phone keeps its
   address; it may also take back an endpoint whose reclaim is still pending.
-  The desktop app (Remote access on) and `openmausbot serve --tunnel` ask
+  The desktop app (Remote access on) and `limixbot serve --tunnel` ask
   `GET` every 15 minutes, even while their connector reports ready, and make
   this call when the endpoint is gone or in `error`; a `401` from `GET` (the
   90-day installation credential expired) sends them through account
@@ -489,7 +489,7 @@ hostname stay, so a later provisioning call returns the same address.
   removal still refused as connected after its rounds does not count as waiting: it backs off (5 minutes up to 24
   hours) and retries while the sweep and the marking go on. A marked row is a final delete: its owner is answered
   `409 endpoint_busy` until the sweep has removed it.
-- **Self-hosted servers.** A server (`openmausbot serve --tunnel`, a fleet container with `OMB_INSTALLATION_CREDENTIAL`)
+- **Self-hosted servers.** A server (`limixbot serve --tunnel`, a fleet container with `OMB_INSTALLATION_CREDENTIAL`)
   has no phone relay of its own: its tunnel is its public address (web UI, the desktop app's connection to it,
   webhooks). Provisioning never answers a server `relay_capable` (no `retired`, no `full`; at the limit it gets
   `503 endpoint_capacity`), and the cron never marks a server's tunnel for `relay_proven` or `legacy_cutoff`. The

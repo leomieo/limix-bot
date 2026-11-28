@@ -3,7 +3,7 @@
 ## Summary
 
 One desktop installation can be running only one configuration at a time: the
-bots, providers, groups, routines and history under `~/.openmausbot`. Users who
+bots, providers, groups, routines and history under `~/.limixbot`. Users who
 work on several unrelated projects (for example a ham-radio bot team and a
 mobile-app bot team) want completely separate teams, model choices, MCP servers
 and histories, and want to switch between them at the start of a work session.
@@ -25,7 +25,7 @@ at a time, with a ~15 s in-app restart. The server binary is unchanged.
   servers, groups, routines, message history, memories, checkpoints, events.
 - Safe handoff: only one process may hold an environment; a failed switch must
   leave the user exactly where they were.
-- Zero migration: the current `~/.openmausbot` remains "This computer" and
+- Zero migration: the current `~/.limixbot` remains "This computer" and
   behaves exactly as today.
 - Reuse the data-dir lease so two app processes can never share an environment.
 
@@ -67,9 +67,9 @@ copy never says "workspace". A bot's directory stays a "folder".
 
 - Migration: `version: 1` entries are all remote; reading v1 stamps
   `kind: "remote"`. The implicit singleton `local` ("This computer",
-  `~/.openmausbot`) stays addressable without an entry.
-- Default path for a new environment: `~/.openmausbot-<slug>` — the sibling
-  pattern the companion app already uses (`~/.openmausbot-companion`). Never
+  `~/.limixbot`) stays addressable without an entry.
+- Default path for a new environment: `~/.limixbot-<slug>` — the sibling
+  pattern the companion app already uses (`~/.limixbot-companion`). Never
   nested inside another environment's directory (rejected at create time).
 - A custom directory is accepted only through the native folder picker; the
   path must be absolute, non-nested in any registered environment, and not the

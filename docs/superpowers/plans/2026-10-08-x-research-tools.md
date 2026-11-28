@@ -2083,4 +2083,4 @@ Use the repo's `verify-omb` skill (isolated fake-engine instance) to confirm, be
 
 - [ ] **Step 4: Hand off for a local test**
 
-Use the `test-locally` skill to build OMB2 from `feat/x-research-tools`. Do not touch `/Applications/OpenMausBot.app`. Report the branch, the commits, and what Omkar should try. Do not push or open a PR.
+Use the `test-locally` skill to build OMB2 from `feat/x-research-tools`. Do not touch `/Applications/Limix Bot.app`. Report the branch, the commits, and what Omkar should try. Do not push or open a PR.

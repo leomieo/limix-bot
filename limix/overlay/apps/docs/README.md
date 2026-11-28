@@ -17,11 +17,13 @@ Mở [bản xem trước](http://localhost:3000). Chạy các kiểm tra trướ
 
 ```sh
 pnpm docs:build
-pnpm --filter @openmausbot/docs types:check
-pnpm --filter @openmausbot/docs lint
+pnpm --dir apps/docs types:check
+pnpm --dir apps/docs lint
 ```
 
 Nếu tự triển khai trang tài liệu, chọn `apps/docs` làm thư mục gốc của ứng dụng Next.js trên nền tảng bạn sử dụng.
+
+Khi tự triển khai, đặt `DOCS_SITE_URL` thành địa chỉ công khai của trang trước khi chạy lệnh build. Trên Vercel, trang tự dùng tên miền chính thức của dự án.
 
 <a id="english"></a>
 
@@ -38,8 +40,10 @@ Open the [local preview](http://localhost:3000). Run these checks before contrib
 
 ```sh
 pnpm docs:build
-pnpm --filter @openmausbot/docs types:check
-pnpm --filter @openmausbot/docs lint
+pnpm --dir apps/docs types:check
+pnpm --dir apps/docs lint
 ```
 
 If you host the documentation site yourself, set `apps/docs` as the root directory of the Next.js app on your hosting platform.
+
+For a self-hosted documentation site, set `DOCS_SITE_URL` to its public origin before building. Vercel deployments use the production domain automatically.

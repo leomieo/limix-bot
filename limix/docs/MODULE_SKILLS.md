@@ -13,7 +13,7 @@ file cài. Skill riêng của chủ dự án: làm sau.
 | `rea-video` | JuneYaooo/rea-video `3669923` | Apache-2.0 (có NOTICE) | uv cài `rea-video` lần đầu (~vài trăm MB thư viện) + **ffmpeg** (chưa đi kèm); tùy chọn khóa API mô hình xem ảnh | Có |
 
 - Danh sách và từ khóa kích hoạt: `limix/skills/sources.json`. Bot nhận skill khi tin nhắn chứa một từ khóa
-  (`server/skill-library.ts` `selectBundledSkills`), giống 5 skill sẵn có của OpenMausBot.
+  (`server/skill-library.ts` `selectBundledSkills`), theo cùng cơ chế với các kỹ năng tích hợp.
 - `python3 limix/skills/sync.py` dựng lại `limix/overlay/skills/<id>/` từ commit đã ghim (SKILL.md gốc + đoạn mở đầu
   "Limix Bot" hướng dẫn chạy, `manifest.json`, `LICENSE`/`NOTICE`); rebrand chép sang `skills/`.
 - **Cập nhật:** `python3 limix/skills/sync.py --update` → xem `git diff limix/` (skill bên ngoài có thể bảo bot chạy lệnh

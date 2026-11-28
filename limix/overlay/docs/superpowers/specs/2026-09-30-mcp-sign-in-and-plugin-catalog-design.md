@@ -61,7 +61,7 @@ probe returns `{ ok: false, auth: "required" }` instead of the misleading
 
 - **Client identity:** Dynamic Client Registration (RFC 7591) when
   `registration_endpoint` exists, as a public client
-  (`token_endpoint_auth_method: none`), `client_name: "OpenMausBot"`, one
+  (`token_endpoint_auth_method: none`), `client_name: "Limix Bot"`, one
   loopback redirect URI. The registration is cached per authorization server.
   Without DCR, the catalog entry may carry a pre-registered `clientId`; a
   pasted URL without either shows "This server needs an app registration

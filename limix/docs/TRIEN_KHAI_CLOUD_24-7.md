@@ -84,7 +84,7 @@ Trình cài bỏ qua bước kiểm tra cổng 80/443 và bản ghi DNS, chạy 
 
 ## Giới hạn hiện tại
 
-- Bản máy chủ chưa có "hộp cát" (sandbox) cứng cho từng bot như bản OpenMausBot mới nhất; trình cài sẽ báo. Chỉ
+- Bản máy chủ chưa có "hộp cát" (sandbox) cứng cho từng bot; trình cài sẽ báo. Chỉ
   dùng VPS riêng cho Limix Bot.
 - Không khuyến khích đăng nhập Google Antigravity (gói Google AI) trên máy chủ: Google đã khóa quyền dùng của các
   tài khoản đưa phiên đăng nhập Antigravity vào công cụ bên thứ ba. Trên máy chủ nên dùng API key Gemini (AI Studio

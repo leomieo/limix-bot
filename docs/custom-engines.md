@@ -1,7 +1,7 @@
 # Bring your own engine
 
 Two zero-code ways to run Limix Bot bots on an engine the app doesn't ship.
-Both live in `~/.openmausbot/config.json` under `"instances"`; restart the app
+Both live in `~/.limixbot/config.json` under `"instances"`; restart the app
 after editing (instance entries are read at boot).
 
 ## Provider icons

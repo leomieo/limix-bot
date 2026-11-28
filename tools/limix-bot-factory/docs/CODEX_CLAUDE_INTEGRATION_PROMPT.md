@@ -4,7 +4,7 @@ You are working inside the EXISTING Limix Bot repository. The user wants a "Bot 
 
 The installed `limix-bot-factory` skill provides sample templates, a JSON schema, static draft validation, dry-run policy simulation, a local CLI and an optional MCP server. It does NOT include a real Limix runtime adapter.
 
-1. Inspect the current repository (framework, existing bot flows, auth/tenant system, tools, channels, database, frontend and tests). Cite exact local files in an architecture map. Do not infer paths from upstream OpenMausBot without checking.
+1. Inspect the current repository (framework, existing bot flows, auth/tenant system, tools, channels, database, frontend and tests). Cite exact local files in an architecture map. Do not infer paths from another project without checking.
 2. Run the skill's bundled tests; create a real gap analysis mapping every requested Factory capability to an existing module or missing component.
 3. Build a Bot Template gallery using the existing design system; adapt the seven provided Vietnamese cards and add a template preview.
 4. Add create-from-template as a DRAFT-only flow. Convert free-form descriptions into a BotSpec proposal, then validate it deterministically in the backend. Do not let the model directly grant tool/tenant/credential privileges.

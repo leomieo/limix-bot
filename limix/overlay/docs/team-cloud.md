@@ -320,7 +320,7 @@ mcp: { <name>: [address] } }`: who has connected each, never with what.
 The Admin signs the usual pairing body with two more fields:
 
 ```json
-{ "label": "OpenMausBot app (Team Cloud)", "ttlSeconds": 300,
+{ "label": "Limix Bot app (Team Cloud)", "ttlSeconds": 300,
   "team": { "id": "<team id>", "name": "Acme" },
   "member": { "email": "mira@example.com", "role": "owner" | "admin" | "member" } }
 ```
@@ -601,7 +601,7 @@ the team's notes, another member or an admin, in lists, counts, search, notifica
 person could do: a bot they cannot see is never named to their Limix Bot (by name or id it is refused exactly like a bot that
 does not exist, and it is never counted), and a bot they can only view is refused. A routine, a relayed line, an event, a
 guest and another person's words can't use this, and it can answer a waiting question only in that person's own chats.
-The same holds for an Owner's or Admin's Limix Bot, which reaches every bot but other people's MausBots. Nothing reaches a
+The same holds for an Owner's or Admin's Limix Bot, which reaches every bot but other people's personal assistants. Nothing reaches a
 person's Limix Bot from outside it: no other bot is told of it.
 
 **Every bot reaches every bot.** Departments are folders, not walls. Any bot can ask, hand work to or @mention any

@@ -53,7 +53,7 @@ Use only mapped, tested commands:
 - [OpenCode model variants through ACP](opencode-variants.md)
 - [Bot setup, model scope, and file continuity](bot-continuity.md)
 - [Reviewed Chief team setup and scoped deletion](team-setup.md)
-- [Limix Bot, everyone's helper](mausbot.md)
+- [Limix Bot, everyone's helper](limixbot.md)
 - [Profile proposal and credential-card lifecycle](proposal-cards.md)
 - [Full Access without duplicate approvals](full-access.md)
 - [Bots changing app settings, and the guards Full access cannot skip](app-settings.md)

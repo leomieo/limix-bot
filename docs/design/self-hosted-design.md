@@ -20,7 +20,7 @@ A standalone server becomes connected by enrolling the connector. No reinstall, 
 
 ## Parts and where the code lives
 
-- **Home**: the server image our own Clouds run (`ghcr.io/milind-soni/openmausbot`). This repository.
+- **Home**: the server image our own Clouds run (`ghcr.io/leomieo/limix-bot`). This repository.
 - **Connector** (`connector/`): enrols with a one-time code, holds its own Ed25519 key, keeps one outbound WebSocket
   and runs only a fixed job list. No shell, no command of its own choosing, no read of a file by path. In this
   repository, so customers can read what it can do. It has two modes, chosen on the server when it enrols:

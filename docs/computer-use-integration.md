@@ -96,7 +96,7 @@ GNOME/Wayland additionally requires WinRects v8 plus the exact Cua health-report
 
 ### macOS packaging target
 
-- Ship the binary at `OpenMausBot.app/Contents/Resources/cua-driver`,
+- Ship the binary at `Limix Bot.app/Contents/Resources/cua-driver`,
   **outside the ASAR**, executable bit preserved (electron-builder
   `extraResources`).
 - **Re-sign it with our Team ID** before signing + notarizing the app (the

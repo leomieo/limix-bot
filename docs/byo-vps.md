@@ -8,7 +8,7 @@ passphrase, and never runs an agent remotely.
 
 ## Choosing the backend
 
-The published [Your own VPS guide](https://docs.openmausbot.com/docs/computers/byo-vps)
+The published [Your own VPS guide](https://github.com/leomieo/limix-bot/blob/main/apps/docs/content/docs/computers/byo-vps.mdx)
 shows the setup steps and configuration fields. In 0.1.151 and 0.1.152, the Simple layout can
 hide the backend selector for an existing bot (#5225; selector fix #5228). The guide
 includes a stopped-app `bots.json` workaround for affected builds. Do not look for
@@ -63,7 +63,7 @@ transport runs it. Podman cannot replace the Docker CLI here: this backend only 
 Limix Bot connects only through a named alias in your `~/.ssh/config` — you type the alias into
 Settings → API keys, nothing else. Every bot action becomes a `docker exec` over SSH, so the app
 supplies connection sharing and fail-fast timeouts itself: it runs each VPS command through its own
-`ssh_config` (under `~/.openmausbot/ssh/`) that includes your file first and fills in `ControlMaster`,
+`ssh_config` (under `~/.limixbot/ssh/`) that includes your file first and fills in `ControlMaster`,
 `ControlPersist`, keepalives and a connect timeout wherever your alias leaves them unset. Anything your
 alias sets wins. Startup, previews, bot tools and their connection probes use the same settings.
 The live desktop's tunnel is the exception: it opens its own connection (`ControlPath=none`), so
@@ -127,7 +127,7 @@ host is unknown simply fails until you have done this once.
 - **Firewall the VPS to SSH only**, ideally from your IP. Nothing Limix Bot does needs any other inbound
   port open, so anything else open is pure attack surface.
 - **Nothing sensitive is stored.** The only thing Limix Bot persists is the alias name itself
-  (`~/.openmausbot/config.json`, plus a bot's own alias in `bots.json` when it has one); keys, passphrases,
+  (`~/.limixbot/config.json`, plus a bot's own alias in `bots.json` when it has one); keys, passphrases,
   and agent state stay with SSH. Aliases are also kept out of the settings and bot records that paired phones
   and members of a shared workspace receive — they get configured-or-not, never the name. An SSH or Docker
   error that a bot reports in its conversation can still quote a server's name.

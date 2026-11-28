@@ -52,7 +52,7 @@ or taller than the card shows a box the app never draws.
 
 - A packaged build of the branch installed beside, never over, the installed
   Limix Bot (maintainers: the OMB2 side-by-side build). Never touch
-  `/Applications/OpenMausBot.app` or `~/.openmausbot`.
+  `/Applications/Limix Bot.app` or `~/.limixbot`.
 - Launch with `OMB_DATA_DIR=$HOME/.openmausbot-test` unless the check needs real
   bots. Only one running app may hold the key: quit any other Limix Bot first.
 - Use composer dictation once first so Microphone and Speech Recognition are

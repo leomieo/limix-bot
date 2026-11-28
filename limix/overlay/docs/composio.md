@@ -86,7 +86,7 @@ Set the key in the server environment:
 COMPOSIO_API_KEY=ak_your_project_key pnpm dev:server
 ```
 
-The browser-only development UI can also save a key to the owner-only `~/.openmausbot/config.json` file. Using the environment variable is preferred for headless and shared development machines.
+The browser-only development UI can also save a key to the owner-only `~/.limixbot/config.json` file. Using the environment variable is preferred for headless and shared development machines.
 
 Limix Bot creates a stable random user identifier for the installation, stores the returned Session identifier, and reuses that Session across launches. A fresh personal installation that connects a project key uses the Composio user of an earlier Limix Bot installation in that project when there is exactly one such user and it still has a live connection, so the apps connected there come back after a reinstall or on another computer. A Team Cloud, or a self-hosted server several people sign in to, never does this and does not even list the project's accounts, because every member's bots would then get that person's apps. No Gmail, GitHub, Slack, or other provider tokens are stored by Limix Bot; Composio owns their connection lifecycle.
 

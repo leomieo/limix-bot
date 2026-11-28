@@ -747,7 +747,7 @@ Security: the Electron test (S3) and the two phone web-view tests (I1, A1) run e
 
 ## Open questions for Omkar
 
-1. **Figma.** Its remote server accepts only clients in the Figma MCP Catalog: DCR allow-lists `client_name`, and new clients go through a Figma account team (a forum post says additions are paused). Rendering Figma's FigJam app in MausBot needs Supamaus to apply. Do you want to apply?
+1. **Figma.** Its remote server accepts only clients in the Figma MCP Catalog: DCR allow-lists `client_name`, and new clients go through a Figma account team (a forum post says additions are paused). Rendering Figma's FigJam app in Limix Bot needs Supamaus to apply. Do you want to apply?
 2. **Pro gating on phones.** Should rendering apps (both kinds) on the iPhone and Android apps be a Pro feature, as phone Live calls are, or free like widgets? This spec assumes free.
 
 ## Could not verify
