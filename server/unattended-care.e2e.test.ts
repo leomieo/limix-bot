@@ -6,7 +6,7 @@ import { expect, it } from "vitest";
 import { launchVerificationServer, verificationServerArgs, verificationServerEnvironment } from "../scripts/control-omb.ts";
 import { INDUSTRY_CARE_SKILL } from "../shared/industry-templates.ts";
 
-it("delivers once when the recipient received the message but its acknowledgement was lost across restart", async () => {
+it.each([true, false])("preserves the case and delivers once across restart (receipt acknowledged: %s)", async (acknowledged) => {
   const recipient = "ci-support-recipient";
   const sku = "CI-24";
   const receiptBook: string[] = [];
@@ -48,6 +48,13 @@ it("delivers once when the recipient received the message but its acknowledgemen
     const first = await receive();
     expect(first).toHaveLength(1);
     expect(JSON.stringify(JSON.parse(readFileSync(fixture.fixtureDumpPath, "utf8")).prompt)).toContain("runner-only price list");
+    const channelState = () => JSON.parse(readFileSync(join(dataDir, "limix-messenger.json"), "utf8")).bots[bot.id];
+    const thread = channelState().chats[recipient];
+    expect(thread).toBeTruthy();
+    if (acknowledged) {
+      expect(await api(route + "/sent", { id: first[0].id })).toEqual({ ok: true });
+      await expect.poll(() => Object.keys(channelState().inbox).length).toBe(0);
+    }
     const stopped = once(fixture.child, "exit");
     fixture.child.kill("SIGKILL");
     await stopped;
@@ -55,6 +62,9 @@ it("delivers once when the recipient received the message but its acknowledgemen
     reboot = spawn(process.execPath, verificationServerArgs(env), { env, stdio: "ignore" });
     await ready();
     await api(route + "/inbox", event);
+    expect(channelState().chats[recipient]).toBe(thread);
+    const history = await api("/api/threads/" + thread + "/messages?limit=100");
+    expect(history.messages.filter((m: { role: string; text: string }) => m.role === "user" && m.text.includes(sku))).toHaveLength(1);
     const replay = await receive();
     for (const item of replay) await api(route + "/sent", { id: item.id });
     expect(receiptBook, "physical deliveries to the same test recipient").toHaveLength(1);
