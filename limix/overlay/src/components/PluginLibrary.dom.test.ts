@@ -21,6 +21,8 @@ it("shows permissions before download and writes scope changes for the chosen te
     expect(dispatch).toHaveBeenLastCalledWith({ type: "togglePlugins", open: true, surface: "library" });
     await act(async () => root.render(createElement(PluginLibraryDialog)));
     expect(host.querySelector('[role="dialog"] h2')?.textContent).toBe("Kho Plugin");
+    expect(host.querySelector('a[href*="limix-plugin-hub"]')).toBeNull();
+    expect(button("Đồng bộ kho")).toBeDefined();
     expect(host.textContent).toContain("Kết nối MCP cần có · github");
     api.mockResolvedValue({ ...model, installed: [{ ...row, instructions: "Workflow", teams: [], bots: {} }] });
     await act(async () => button("Tải về").click());

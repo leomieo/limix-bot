@@ -10,7 +10,7 @@ import { fetchChannelMedia, readChannelMedia } from "./channel-media.ts";
 const OUTBOX_WAIT_MS = 25_000;
 const SEND_WAIT_MS = 90_000;
 
-interface Outgoing { id: number; chatId: string; text: string; file?: { name: string; base64: string }; settle(error?: string): void }
+interface Outgoing { id: number; deliveryId?: string; chatId: string; text: string; file?: { name: string; base64: string }; settle(error?: string): void }
 interface Bridge { io: ChannelIo; outbox: Outgoing[]; waiters: Array<() => void>; seenAt: number }
 
 export function messengerBridge(options: { manageRefusal(auth: RequestAuth, botId: string): string | null; now?(): number }) {
@@ -42,11 +42,11 @@ export function messengerBridge(options: { manageRefusal(auth: RequestAuth, botI
         for (const wake of bridge.waiters.splice(0)) wake();
         resolve();
       }, { once: true }));
-      const enqueue = (chatId: string, text: string, file?: Outgoing["file"]) => new Promise<void>((resolve, reject) => {
+      const enqueue = (chatId: string, text: string, file?: Outgoing["file"], deliveryId?: string) => new Promise<void>((resolve, reject) => {
           if (io.signal.aborted) return reject(new ChannelError("drop", "Messenger: stopped"));
           const id = ++nextId;
           const timer = setTimeout(() => item.settle("timeout"), SEND_WAIT_MS);
-          const item: Outgoing = { id, chatId, text, file, settle: (error) => {
+          const item: Outgoing = { id, deliveryId, chatId, text, file, settle: (error) => {
             clearTimeout(timer);
             pending.delete(id);
             bridge.outbox = bridge.outbox.filter((each) => each !== item);
@@ -58,10 +58,10 @@ export function messengerBridge(options: { manageRefusal(auth: RequestAuth, botI
         });
       return {
         done,
-        send: enqueue,
-        sendMedia: async (chatId, media) => {
+        send: (chatId, text, deliveryId) => enqueue(chatId, text, undefined, deliveryId),
+        sendMedia: async (chatId, media, deliveryId) => {
           const file = await readChannelMedia(media);
-          await enqueue(chatId, "", { name: file.filename, base64: file.data.toString("base64") });
+          await enqueue(chatId, "", { name: file.filename, base64: file.data.toString("base64") }, deliveryId);
         },
       };
     },
@@ -81,7 +81,7 @@ export function messengerBridge(options: { manageRefusal(auth: RequestAuth, botI
     if (action === "outbox" && method === "GET") {
       if (!bridge.outbox.length) await new Promise<void>((resolve) => { const timer = setTimeout(resolve, OUTBOX_WAIT_MS); bridge.waiters.push(() => { clearTimeout(timer); resolve(); }); });
       bridge.io.healthy();
-      return json(res, 200, { items: bridge.outbox.slice(0, 1).map(({ id, chatId, text, file }) => ({ id, chatId, text, ...(file ? { file } : {}) })) });
+      return json(res, 200, { items: bridge.outbox.slice(0, 1).map(({ id, deliveryId, chatId, text, file }) => ({ id, chatId, text, ...(deliveryId ? { deliveryId } : {}), ...(file ? { file } : {}) })) });
     }
     if (method !== "POST") return json(res, 405, { error: "method not allowed" });
     const body = await readBody(req) as Record<string, unknown> | null;
