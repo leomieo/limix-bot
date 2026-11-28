@@ -26,7 +26,7 @@ export interface OutboundHoldDeps {
   notify: (notification: Notification | null) => void;
 }
 
-export type OutboundHoldAnswer = { ok: true; approved: boolean } | { ok: false; text: string };
+export type OutboundHoldAnswer = { ok: true; approved: boolean; requestId?: string } | { ok: false; text: string };
 
 /** The rule a send goes out under without the card, or null when it waits on the card. At Full access a bot with no
  * sending rule of its own sends without asking; a stored rule is kept exactly as set. */
@@ -38,7 +38,7 @@ function sendsWithoutAsking(rule: OutboundPolicy | undefined, fullAccess: boolea
 
 export interface OutboundHold {
   /** A send goes out without asking (Full access with no rule of its own, or "allow") or waits on the "Send on your behalf?" card. `fullAccess`: the turn runs at Full access. */
-  hold(input: { bot: OutboundHoldBot; threadId: string; tool: string; calls: ConnectorCall[]; opaque: boolean; fullAccess: boolean; active: () => boolean }): Promise<OutboundHoldAnswer>;
+  hold(input: { bot: OutboundHoldBot; threadId: string; tool: string; calls: ConnectorCall[]; opaque: boolean; fullAccess: boolean; active: () => boolean; persist?: (requestId: string, expiresAt: number) => void; discard?: (requestId: string) => void }): Promise<OutboundHoldAnswer>;
   /** At dispatch time, against the bot as it is now: a send that needs no card is recorded; otherwise the hold must have been approved. Throws the refusal text. */
   beforeDispatch(input: { bot: OutboundHoldBot; threadId: string; tool: string; opaque: boolean; fullAccess: boolean; approved: boolean }): void;
 }
@@ -49,12 +49,14 @@ export function createOutboundHold(deps: OutboundHoldDeps): OutboundHold {
   const { holdMs } = deps;
 
   return {
-    async hold({ bot: currentSender, threadId, tool: outboundTool, calls: outboundCalls, opaque, fullAccess, active }) {
+    async hold({ bot: currentSender, threadId, tool: outboundTool, calls: outboundCalls, opaque, fullAccess, active, persist, discard }) {
       const refuseOutbound = (text: string): OutboundHoldAnswer => ({ ok: false, text });
       if (!sendsWithoutAsking(currentSender.outbound, fullAccess, opaque)) {
         const { app, calls, summary } = outboundCard(outboundCalls);
         const owner = connectorThread(currentSender.id, threadId);
         const held = outboundRequests.open({ botId: currentSender.id, threadId, tool: outboundTool, timeoutMs: holdMs });
+        try { persist?.(held.requestId, Date.now() + 24 * 60 * 60_000); }
+        catch (error) { outboundRequests.forget(held.requestId); throw error; }
         const card = store.appendMessage(threadId, {
           role: "bot",
           kind: "options",
@@ -91,6 +93,10 @@ export function createOutboundHold(deps: OutboundHoldDeps): OutboundHold {
           }
         }
         if (answer !== "allow") {
+          if (answer === "timeout" && persist) {
+            return refuseOutbound("The send is still pending on its approval card for 24 hours. Do not start another send for this message.");
+          }
+          discard?.(held.requestId);
           if (answer === "timeout") {
             const stale = store.messagesFor(threadId).find((message) => message.id === card.id);
             if (stale?.card && !stale.card.answered) {
@@ -103,7 +109,7 @@ export function createOutboundHold(deps: OutboundHoldDeps): OutboundHold {
               : "Limix Bot did not send this: the user declined. Do not retry it; ask the user what they would like instead.",
           );
         }
-        return { ok: true, approved: true };
+        return { ok: true, approved: true, ...(persist ? { requestId: held.requestId } : {}) };
       }
       return { ok: true, approved: false };
     },

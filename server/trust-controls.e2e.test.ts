@@ -727,7 +727,7 @@ it("resumes the pending support handoff in the same thread after restart", async
   const deliveries = () => relayed.filter((frame: any) => frame.params?.name === "GMAIL_SEND_EMAIL" &&
     JSON.stringify(frame.params.arguments) === JSON.stringify(message)).length;
   const attempt = relay(token, "GMAIL_SEND_EMAIL", message).catch(() => undefined);
-  await pending(b.threadId);
+  const originalReview = await pending(b.threadId);
   expect(deliveries()).toBe(0);
   await waitForExit(child, { signal: "SIGKILL" });
   await attempt;
@@ -735,6 +735,9 @@ it("resumes the pending support handoff in the same thread after restart", async
   expect(gmailDrafts.get(draftId)).toMatchObject(draft);
   expect(deliveries()).toBe(0);
   const review = await pending(b.threadId);
-  await api("POST", `/api/threads/${b.threadId}/respond`, { requestId: review.card.requestId, behavior: "allow" });
-  await expect.poll(deliveries, { timeout: 5000 }).toBe(1);
+  expect(review.card.requestId).toBe(originalReview.card.requestId);
+  const approve = () => api("POST", `/api/threads/${b.threadId}/respond`, { requestId: review.card.requestId, behavior: "allow" });
+  expect((await approve()).body).toMatchObject({ outcome: "allowed-once" });
+  expect((await approve()).body).toMatchObject({ alreadySettled: true });
+  expect(deliveries()).toBe(1);
 }, 60000);

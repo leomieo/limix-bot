@@ -96,7 +96,6 @@ export function PluginLibrary() {
   return <section className="space-y-3">
     <div className="flex flex-wrap items-center gap-2">
       <button className={button} disabled={busy} onClick={() => void act({ action: "sync" })}>{line("Đồng bộ kho", "Sync catalog")}</button>
-      <a href="https://github.com/leomieo/limix-plugin-hub" target="_blank" rel="noopener noreferrer" className="text-sm underline">{line("Mở kho trên GitHub", "View catalog on GitHub")}</a>
       {view && <select className={button} aria-label={line("Phạm vi áp dụng", "Applies to")} value={scope} onChange={e => setScope(e.target.value)}>
         <option value="">{line("Chọn bot hoặc nhóm", "Choose a bot or team")}</option>
         <optgroup label={line("Nhóm bot", "Teams")}>{view.teams.map(s => <option value={"team:" + s} key={s}>{s}</option>)}</optgroup>

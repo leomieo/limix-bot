@@ -1,3 +1,15 @@
+Limix Bot 0.3.129
+
+## Tiếng Việt
+
+- Yêu cầu gửi Gmail đủ điều kiện có thể tiếp tục được duyệt trong cuộc trò chuyện sau khi máy chủ khởi động lại.
+- Kho Plugin cho phép đồng bộ và chọn bot hoặc nhóm ngay trong ứng dụng.
+
+## English
+
+- Eligible Gmail sends can still be approved in the original conversation after a server restart.
+- Sync the Plugin library and choose a bot or team directly in the app.
+
 Limix Bot 0.3.128
 
 ## Tiếng Việt

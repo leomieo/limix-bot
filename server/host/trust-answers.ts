@@ -2,7 +2,7 @@ import type { ServerResponse } from "node:http";
 
 import { appendDecision } from "../decision-log.ts";
 import { json } from "../harness/http.ts";
-import type { OutboundRequestService } from "../outbound-requests.ts";
+import type { OutboundRequestService, PendingOutboundSends, SavedOutboundSend } from "../outbound-requests.ts";
 import type { Store } from "../store.ts";
 
 /** A proposal a person answers on a card, settled by its own service. */
@@ -16,6 +16,8 @@ export interface TrustAnswerDeps {
   teamMemoryRequests: Remembered;
   outsideWrites: Remembered;
   outboundRequests: OutboundRequestService;
+  pendingSends: PendingOutboundSends;
+  sendRecovered: (requestId: string, send: SavedOutboundSend) => Promise<void>;
 }
 
 /** The person's answer to a team-memory, outside-write or "Send on your behalf?" card. */
@@ -23,7 +25,7 @@ export function createTrustAnswers(deps: TrustAnswerDeps) {
   const { store, teamMemoryRequests, outsideWrites, outboundRequests } = deps;
   const DATA_DIR = deps.dataDir;
 
-  function resolveAndSendTrust(res: ServerResponse, threadId: string, requestId: string, behavior: "allow" | "deny" | "answer"): boolean {
+  async function resolveAndSendTrust(res: ServerResponse, threadId: string, requestId: string, behavior: "allow" | "deny" | "answer", mayRecover: boolean): Promise<boolean> {
     const remembered = teamMemoryRequests.resolve(threadId, requestId, behavior) ?? outsideWrites.resolve(threadId, requestId, behavior);
     if (remembered) {
       json(res, 200, remembered);
@@ -36,6 +38,38 @@ export function createTrustAnswers(deps: TrustAnswerDeps) {
       const outboundBot = outboundCard.from?.botId ? store.bot(outboundCard.from.botId) : store.botByThread(threadId);
       const result = outboundRequests.resolve({ threadId, requestId, behavior });
       if (!result.claimed) {
+        const saved = deps.pendingSends.get(requestId, threadId);
+        if (saved && !mayRecover && behavior === "allow") {
+          json(res, 403, { error: "Only a workspace admin may approve this recovered send." });
+          return true;
+        }
+        if (saved && (!outboundCard.card.answered || outboundCard.card.answered === "allow")) {
+          if (behavior !== "allow") {
+            deps.pendingSends.discard(requestId);
+            store.patchMessage(threadId, outboundCard.id, { card: { ...outboundCard.card, answered: "deny" } });
+            json(res, 200, { ok: true, outcome: "rejected" });
+            return true;
+          }
+          try {
+            await deps.sendRecovered(requestId, saved);
+          } catch {
+            json(res, 409, { error: "Limix Bot could not confirm this send. Check the sent folder before starting a new request." });
+            return true;
+          }
+          store.patchMessage(threadId, outboundCard.id, { card: { ...outboundCard.card, answered: "allow" } });
+          deps.pendingSends.complete(requestId);
+          appendDecision(DATA_DIR, { threadId, requestId, botId: saved.botId, tool: outboundCard.card.tool, decision: "user-approved", source: "user" });
+          json(res, 200, { ok: true, outcome: "allowed-once" });
+          return true;
+        }
+        if (deps.pendingSends.dispatching(requestId)) {
+          json(res, 409, { error: "This send is in progress or its result is unknown. Check the sent folder before starting a new request." });
+          return true;
+        }
+        if (outboundCard.card.answered === "allow" || outboundCard.card.answered === "deny") {
+          json(res, 200, { ok: true, outcome: outboundCard.card.answered === "allow" ? "allowed-once" : "rejected", alreadySettled: true });
+          return true;
+        }
         if (!outboundCard.card.answered) {
           store.patchMessage(threadId, outboundCard.id, { card: { ...outboundCard.card, answered: "unavailable", dismissed: true } });
         }

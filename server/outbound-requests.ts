@@ -1,6 +1,78 @@
+import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync } from "node:fs";
+import { join } from "node:path";
+import { z } from "zod";
+import { writeFileAtomic } from "./atomic.ts";
 import { randomUUID } from "node:crypto";
 import type { ConnectorCall } from "../shared/outbound.ts";
 import { describeTool } from "./activity.ts";
+
+const savedSend = z.object({
+  botId: z.string(),
+  threadId: z.string(),
+  connection: z.string(),
+  expiresAt: z.number(),
+  args: z.object({
+    recipient_email: z.string().min(1),
+    subject: z.string(),
+    body: z.string(),
+    user_id: z.literal("me").optional(),
+    extra_recipients: z.array(z.string()).optional(),
+    cc: z.array(z.string()).optional(),
+  }).strict(),
+});
+export type SavedOutboundSend = z.infer<typeof savedSend>;
+
+export function exactGmailSend(args: unknown): SavedOutboundSend["args"] | undefined {
+  const parsed = savedSend.shape.args.safeParse(args);
+  return parsed.success && JSON.stringify(parsed.data).length <= 400 ? parsed.data : undefined;
+}
+
+export class PendingOutboundSends {
+  private readonly dir: string;
+
+  constructor(dir: string) { this.dir = dir; }
+
+  private path(requestId: string) {
+    if (!/^[0-9a-f-]{36}$/.test(requestId)) throw new Error("Invalid outbound request ID");
+    return join(this.dir, requestId + ".json");
+  }
+
+  save(requestId: string, send: SavedOutboundSend) {
+    mkdirSync(this.dir, { recursive: true, mode: 0o700 });
+    writeFileAtomic(this.path(requestId), JSON.stringify(send), { mode: 0o600 });
+  }
+
+  get(requestId: string, threadId: string): SavedOutboundSend | undefined {
+    if (!/^[0-9a-f-]{36}$/.test(requestId)) return;
+    try {
+      const saved = savedSend.parse(JSON.parse(readFileSync(this.path(requestId), "utf8")));
+      if (saved.threadId === threadId && saved.expiresAt > Date.now()) return saved;
+      if (saved.expiresAt <= Date.now()) this.discard(requestId);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+  }
+
+  discard(requestId: string) {
+    try { unlinkSync(this.path(requestId)); }
+    catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+  }
+
+  claim(requestId: string) {
+    const path = this.path(requestId);
+    // Consume the pending record before talking to Gmail. An ambiguous result must never be retried automatically.
+    renameSync(path, path + ".claimed");
+    writeFileAtomic(path + ".claimed", "", { mode: 0o600 });
+  }
+
+  dispatching(requestId: string): boolean {
+    return /^[0-9a-f-]{36}$/.test(requestId) && existsSync(this.path(requestId) + ".claimed");
+  }
+
+  complete(requestId: string) {
+    unlinkSync(this.path(requestId) + ".claimed");
+  }
+}
 
 export type OutboundAnswer = "allow" | "deny" | "timeout";
 

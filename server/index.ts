@@ -483,7 +483,7 @@ import { profileRevision, profileSnapshot } from "./profile-revision.ts";
 import { flushAllProfileHistory, flushProfileHistory, readHistory, recordProfileChange, soulChanges } from "./profile-versions.ts";
 import { TeamMemory, TEAM_MEMORY_KINDS, type TeamMemoryKind } from "./team-memory.ts";
 import { describeTool } from "./activity.ts";
-import { OutboundRequestService } from "./outbound-requests.ts";
+import { exactGmailSend, OutboundRequestService, PendingOutboundSends, type SavedOutboundSend } from "./outbound-requests.ts";
 import { createOutboundHold, OUTBOUND_HOLD_MS, type OutboundHoldAnswer } from "./outbound-hold.ts";
 import { connectorCallsIn, outboundCallsIn } from "../shared/outbound.ts";
 import { connectorAccessDecision, describeConnectorScopes } from "../shared/connector-scopes.ts";
@@ -9315,7 +9315,51 @@ const outsideWrites = createOutsideWrites({ store, notify, language: (threadId) 
 const outboundRequests = new OutboundRequestService();
 const outboundHold = createOutboundHold({ store, dataDir: DATA_DIR, outboundRequests, holdMs: OUTBOUND_HOLD_MS, connectorThread, activeGroupTurnForBot, notify });
 
-const { resolveAndSendTrust } = createTrustAnswers({ store, dataDir: DATA_DIR, teamMemoryRequests, outsideWrites, outboundRequests });
+const pendingSends = new PendingOutboundSends(join(DATA_DIR, "pending-outbound"));
+
+async function outboundGmailConnection(): Promise<string | undefined> {
+  const settings = cfg.composio;
+  if (CLOUD_HOME || HOSTED_WORKSPACE || !settings?.apiKey?.trim() || !settings.userId) return;
+  const accounts = (await composio.connectedServices(cfg)).gmail?.accounts.filter(account => /^active$/i.test(account.status));
+  if (cfg.composio !== settings || accounts?.length !== 1) return;
+  return createHash("sha256").update(JSON.stringify([settings, accounts[0].id, process.env.OMB_COMPOSIO_API])).digest("hex");
+}
+
+async function sendRecoveredOutbound(requestId: string, saved: SavedOutboundSend): Promise<void> {
+  const payload = { jsonrpc: "2.0", id: requestId, method: "tools/call",
+    params: { name: "GMAIL_SEND_EMAIL", arguments: saved.args } };
+  const calls = connectorCallsIn(payload.params.name, saved.args);
+  const services = await composio.connectedServiceSlugs(cfg);
+  const settings = cfg.composio;
+  if (await outboundGmailConnection() !== saved.connection) throw new Error("Gmail connection changed");
+  const result = await composio.relayMcp(cfg, payload, undefined, () => {
+    const bot = store.bot(saved.botId);
+    if (!bot || bot.composio === false || cfg.composio !== settings ||
+        !directChatOf(saved.botId, saved.threadId) || outsideDrivenThread(saved.threadId) ||
+        proactive.fence.refusesConnectorCall(bot, saved.threadId, payload) ||
+        managedPolicy.appsCallRefusal(calls, services) ||
+        !connectorAccessDecision(bot.connectorScopes, calls, services).ok ||
+        !evaluateConnectorTools([payload.params.name], bot.connectorTools, services).allowed ||
+        !pendingSends.get(requestId, saved.threadId)) throw new Error("The original send is no longer authorized");
+    pendingSends.claim(requestId);
+  });
+  if (!confirmedOutboundSend(result)) throw new Error("Gmail did not confirm delivery");
+}
+
+function confirmedOutboundSend(result: Awaited<ReturnType<typeof composio.relayMcp>>): boolean {
+  if (result.status < 200 || result.status >= 300) return false;
+  try {
+    const reply = JSON.parse(new TextDecoder().decode(result.bytes));
+    return Boolean(reply.result && !reply.error && !reply.result.isError);
+  } catch {
+    return false;
+  }
+}
+
+const { resolveAndSendTrust } = createTrustAnswers({
+  store, dataDir: DATA_DIR, teamMemoryRequests, outsideWrites, outboundRequests,
+  pendingSends, sendRecovered: sendRecoveredOutbound,
+});
 
 const profileRequests = new ProfileRequestService({
   store,
@@ -14597,10 +14641,23 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
         const opaque = connectorCalls.some(call => call.slug === "COMPOSIO_PROXY_EXECUTE");
         if (opaque && currentSender.connectorTools !== undefined && !sandbox.open(currentSender)) return refuseOutbound(sandbox.refusal);
         const fullAccess = outboundTool !== null && sendsFreely();
+        const recoverableArgs = rpcParams?.name === "GMAIL_SEND_EMAIL" && !actor.access &&
+          directChatOf(currentSender.id, internalCapability.threadId) && !outsideDrivenThread(internalCapability.threadId)
+          ? exactGmailSend(rpcParams.arguments)
+          : undefined;
+        const outboundConnection = recoverableArgs ? await outboundGmailConnection().catch(() => undefined) : undefined;
+        requireActiveInternalCapability();
         const held: OutboundHoldAnswer = outboundTool
           ? await outboundHold.hold({
             bot: currentSender, threadId: internalCapability.threadId, tool: outboundTool, calls: outboundCalls, opaque, fullAccess,
             active: () => internalCapabilityIsActive(internalCapability),
+            ...(recoverableArgs && outboundConnection ? {
+              persist: (requestId, expiresAt) => pendingSends.save(requestId, {
+                botId: currentSender.id, threadId: internalCapability.threadId, connection: outboundConnection,
+                expiresAt, args: recoverableArgs,
+              }),
+              discard: (requestId) => pendingSends.discard(requestId),
+            } : {}),
           })
           : { ok: true, approved: false };
         if (!held.ok) return refuseOutbound(held.text);
@@ -14609,6 +14666,10 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
         }
         const outboundApproved = held.approved;
         if (outboundApproved) requireActiveInternalCapability();
+        if (held.requestId && await outboundGmailConnection().catch(() => undefined) !== outboundConnection) {
+          pendingSends.discard(held.requestId);
+          return refuseOutbound("The Gmail connection changed after review. Request a new approval before sending.");
+        }
         let dispatchRefusal: string | undefined;
         const refuseDispatch: (text: string) => never = (text) => {
           dispatchRefusal = text;
@@ -14645,12 +14706,17 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
                 refuseDispatch(error instanceof Error ? error.message : String(error));
               }
             }
+            if (held.requestId) {
+              try { pendingSends.claim(held.requestId); }
+              catch { refuseDispatch("This send is no longer pending. Check the sent folder before trying again."); }
+            }
             for (const key of nextDrafts) reservedDrafts.add(key);
           }, undefined, teamConnections.via(actor.access)[1],
         ); } catch (error) {
           if (dispatchRefusal) return refuseOutbound(dispatchRefusal);
           throw error;
         }
+        if (held.requestId && confirmedOutboundSend(upstream)) pendingSends.complete(held.requestId);
         const headers: Record<string, string> = {
           "content-type": upstream.contentType,
           "cache-control": "no-store",
