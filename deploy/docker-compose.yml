@@ -1,4 +1,4 @@
-# One OpenMausBot tenant: the harness server plus Caddy for TLS + login.
+# One Limix Bot workspace: the harness server plus Caddy for TLS + login.
 #
 # The server only listens on loopback inside its container, and on two Unix
 # sockets in the `edge` volume; Caddy, in its own container, reaches it through
@@ -21,7 +21,7 @@ services:
         ENGINES: ${ENGINES:-}
     # update.sh pins OMB_IMAGE in .env to the stable version's digest. Without it: `latest`, prebuilt on every main
     # push; `docker compose up --build` builds from source instead.
-    image: ${OMB_IMAGE:-ghcr.io/milind-soni/openmausbot:latest}
+    image: ${OMB_IMAGE:-ghcr.io/leomieo/limix-bot:stable}
     restart: unless-stopped
     # The bots' browsers (docs/browser-packaging.md, "Process hygiene"): an
     # init collects the browser processes whose parents exit, and Chrome
@@ -51,7 +51,7 @@ services:
       OMB_SIGNIN_MEMBER_EMAILS:
       OMB_SIGNIN_SMTP_URL:
       OMB_SIGNIN_SMTP_FROM:
-      # "1": phones pair by QR through MausBot Relay (docs/phone-relay-server.md). Sign the
+      # "1": phones pair by QR through Limix Bot Relay (docs/phone-relay-server.md). Sign the
       # container in once first: docker compose exec omb openmausbot login --relay
       OMB_PHONE_RELAY:
     healthcheck:

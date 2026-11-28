@@ -6,7 +6,7 @@
 # it waits (the next run asks before it puts the data back), a rollback whose restore fails (data and copy untouched,
 # tried again on request), an update whose terminal hangs up half-way (it finishes), a refused downgrade, and a
 # `docker compose stop` that fails (no copy, nothing changed).
-#   LAYOUT=installer  /opt/openmausbot with compose.yaml and a ./data folder, as deploy/install.sh lays it out
+#   LAYOUT=installer  /srv/limixbot-e2e/installer with compose.yaml and a ./data folder, as deploy/install.sh lays it out
 #   LAYOUT=checkout   a copy of deploy/ with docker-compose.yml and the named volume `data`
 #   OUT=<evidence folder> LAYOUT=installer bash deploy/e2e/update.sh
 # It removes whatever is in its install folder first. Nothing reaches a real server: the domain is made up.
@@ -14,12 +14,12 @@ set -uo pipefail
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 OUT=${OUT:-$(mktemp -d)}
 LAYOUT=${LAYOUT:-installer}
-REPO=ghcr.io/milind-soni/openmausbot
-FROM=${FROM_VERSION:-0.1.150}
-TO=${TO_VERSION:-0.1.151}
+REPO=ghcr.io/leomieo/limix-bot
+FROM=${FROM_VERSION:?set the earlier Limix release version}
+TO=${TO_VERSION:?set the later Limix release version}
 mkdir -p "$OUT"
-if [ "$LAYOUT" = installer ]; then DIR=/opt/openmausbot DATA=/opt/openmausbot/data
-else DIR=/srv/openmausbot-e2e/deploy DATA=deploy_data; fi
+if [ "$LAYOUT" = installer ]; then DIR=/srv/limixbot-e2e/installer DATA=/srv/limixbot-e2e/installer/data
+else DIR=/srv/limixbot-e2e/deploy DATA=deploy_data; fi
 UPDATE=(bash "$ROOT/deploy/update.sh" --dir "$DIR")
 
 step() { printf '\n== %s\n' "$*"; }
@@ -44,7 +44,7 @@ copy() {
 manifest() { docker run --rm --network none --user 0:0 -v "$1:/d:ro" --entrypoint sh "$REPO:v$FROM" -c 'cd /d && find . -type f -print0 | sort -z | xargs -0 -r stat -c "%u:%g %a %n"; find . -type f -print0 | sort -z | xargs -0 -r sha256sum'; }
 
 step "a $LAYOUT install on $FROM"
-for old in /opt/openmausbot /srv/openmausbot-e2e/deploy; do
+for old in /srv/limixbot-e2e/installer /srv/limixbot-e2e/deploy; do
   if [ -d "$old" ]; then (cd "$old" && docker compose down -v) >/dev/null 2>&1; fi
 done
 for volume in $(copies); do docker volume rm -f "$volume" >/dev/null 2>&1; done

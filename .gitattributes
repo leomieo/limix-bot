@@ -8,6 +8,8 @@ shared/mascot-bodies.ts text eol=lf
 scripts/git-hooks/* text eol=lf
 deploy/podman/*.sh text eol=lf
 # install.sh is piped to sh on a customer's server, and the AppArmor profile is loaded as it is.
+deploy/install.sh text eol=lf
+deploy/update.sh text eol=lf
 connector/**/*.sh text eol=lf
 connector/profiles/* text eol=lf
 # Vendor patch hashes and original notices must survive Windows checkout

@@ -32,10 +32,10 @@ set -uo pipefail
 # update half-way. Output to a terminal that has gone is lost; .update/update.log keeps it.
 trap '' HUP PIPE
 
-REPO="ghcr.io/milind-soni/openmausbot"
-PINNED="^ghcr\.io/milind-soni/openmausbot@sha256:[0-9a-f]{64}$"
-STABLE_URL=${OMB_STABLE_URL:-https://raw.githubusercontent.com/milind-soni/OpenMausBot/channels/stable.json}
-NEWEST_URL=${OMB_NEWEST_URL:-https://api.github.com/repos/milind-soni/OpenMausBot/releases/latest}
+REPO="ghcr.io/leomieo/limix-bot"
+PINNED="^ghcr\.io/leomieo/limix-bot@sha256:[0-9a-f]{64}$"
+STABLE_URL=${OMB_STABLE_URL:-https://raw.githubusercontent.com/leomieo/limix-bot/channels/stable.json}
+NEWEST_URL=${OMB_NEWEST_URL:-https://api.github.com/repos/leomieo/limix-bot/releases/latest}
 SERVICE=${OMB_UPDATE_SERVICE:-omb}
 # A healthy server answers within seconds of starting; two minutes leaves room for a slow first start after an update,
 # and is how long the server is down before a version that never answers is rolled back. OMB_UPDATE_WAIT_S for more.
@@ -54,7 +54,11 @@ for arg in "$@"; do
 done
 if [ -z "$DIR" ]; then
   DIR=$(cd "$(dirname "$0")" && pwd)
-  if [ ! -f "$DIR/docker-compose.yml" ] && [ ! -f "$DIR/compose.yaml" ] && [ -f /opt/openmausbot/compose.yaml ]; then DIR=/opt/openmausbot; fi
+  if [ ! -f "$DIR/docker-compose.yml" ] && [ ! -f "$DIR/compose.yaml" ]; then
+    if [ -f /opt/limixbot/compose.yaml ]; then DIR=/opt/limixbot
+    elif [ -f /opt/openmausbot/compose.yaml ]; then DIR=/opt/openmausbot
+    fi
+  fi
 fi
 STATE="$DIR/.update"
 JOURNAL="$STATE/journal"
@@ -353,7 +357,7 @@ services:
       OMB_SIGNIN_MEMBER_EMAILS:
       OMB_SIGNIN_SMTP_URL:
       OMB_SIGNIN_SMTP_FROM:
-      # "1": phones pair by QR through MausBot Relay. Sign in once: docker compose exec omb openmausbot login --relay
+      # "1": phones pair by QR through Limix Bot Relay. Sign in once: docker compose exec omb openmausbot login --relay
       OMB_PHONE_RELAY:
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://127.0.0.1:8799/api/health | grep -q openmausbot"]
@@ -447,7 +451,7 @@ engine_ready() {
     count=$(engine_count)
     if [ -n "$count" ]; then
       [ "$count" -gt 0 ] && return 0
-    elif compose exec -T "$SERVICE" openmausbot doctor >/dev/null 2>&1; then
+    elif compose exec -T "$SERVICE" node /app/dist-server/limixbot.js doctor >/dev/null 2>&1; then
       return 0
     fi
     [ "$(date +%s)" -lt "$deadline" ] || return 1
@@ -643,7 +647,7 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
-if [ -n "$WANT_VERSION" ] && ! is_version "$WANT_VERSION"; then refuse "--version takes a released version such as 0.1.151."; fi
+if [ -n "$WANT_VERSION" ] && ! is_version "$WANT_VERSION"; then refuse "--version takes a released version such as 0.3.128."; fi
 
 docker compose version >/dev/null 2>&1 || refuse "This needs Docker with the Compose plugin (docker compose version)."
 [ -f docker-compose.yml ] || [ -f compose.yaml ] || [ -n "${COMPOSE_FILE:-}" ] || refuse "There is no docker-compose.yml or compose.yaml in $DIR. Name the install's folder: ./update.sh --dir PATH"

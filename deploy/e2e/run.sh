@@ -15,7 +15,7 @@ ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 OUT=${OUT:-$(mktemp -d)}
 mkdir -p "$OUT"
 DOMAIN=installer-e2e.internal
-DIR=/opt/openmausbot
+DIR=/opt/limixbot
 SETTINGS=(OMB_INSTALL_SKIP_DNS=1 OMB_INSTALL_HTTPS_WAIT_S=20 "OMB_INSTALL_SOURCE=file://$ROOT")
 # Without a version asked for: what a person's later run is, which must keep the version update.sh pinned.
 PLAIN_INSTALL=(sudo env "${SETTINGS[@]}" sh "$ROOT/deploy/install.sh")
@@ -71,7 +71,7 @@ install_until_https() { # evidence-file [the install command, when not the usual
   set -- "$file"
   cat "$1"
   [ "$status" = 1 ] || fail "the install exited $status, not 1"
-  contains "$1" "MausBot is running, but https://$DOMAIN did not answer within 20 seconds" "the install did not end at the certificate"
+  contains "$1" "Limix Bot is running, but https://$DOMAIN did not answer within 20 seconds" "the install did not end at the certificate"
   [ "$(sudo docker inspect --format '{{.State.Health.Status}}' "$(cd "$DIR" && sudo docker compose ps -q omb)")" = healthy ] || fail "the server is not healthy"
   (cd "$DIR" && sudo docker compose exec -T omb curl -sf http://127.0.0.1:8799/api/health) | grep -q openmausbot || fail "the server does not answer inside its container"
   curl -sS -o /dev/null -w '%{http_code}' --max-time 10 -H "Host: $DOMAIN" http://127.0.0.1/ | grep -qx 308 || fail "Caddy does not redirect port 80 to HTTPS"
@@ -94,13 +94,13 @@ done
 
 step "the checks pass once the DNS record is set aside"
 "${INSTALL[@]}" --check --domain "$DOMAIN" | tee "$OUT/check-ready.txt"
-contains "$OUT/check-ready.txt" "This server is ready for MausBot. Nothing was changed." "--check did not pass"
+contains "$OUT/check-ready.txt" "This server is ready for Limix Bot. Nothing was changed." "--check did not pass"
 
 step "install: the server is healthy behind Caddy, on a pinned release, with its data in one folder"
 install_until_https "$OUT/install.txt"
 image=$(sudo sed -n 's/^OMB_IMAGE=//p' "$DIR/.env")
 case "$image" in
-  ghcr.io/milind-soni/openmausbot:stable | ghcr.io/milind-soni/openmausbot:v[0-9]*) ;;
+  ghcr.io/leomieo/limix-bot:stable | ghcr.io/leomieo/limix-bot:v[0-9]*) ;;
   *) [ "$image" = "${OMB_INSTALL_IMAGE:-}" ] || fail "the install pinned $image" ;;
 esac
 [ "$(sudo stat -c %a "$DIR/.env")" = 600 ] || fail ".env is readable by others"
@@ -155,7 +155,7 @@ healthy_again && through_caddy "kill -9 of the server process"
 step "the documented backup and restore, each with the whole project stopped and started"
 echo before-backup | sudo tee "$DIR/data/e2e-backup" >/dev/null
 # docs/deploy-vps.md, "Back up", with the installer: exactly as written there.
-(cd /opt/openmausbot && sudo docker compose stop && sudo sh -c 'set -e; install -d -m 700 backups; f="backups/backup-$(date -u +%Y%m%dT%H%M%SZ).tgz"; (umask 077; tar --warning=no-file-ignored -czf "$f" data .env); chmod 600 "$f"'; sudo docker compose start) >"$OUT/backup.txt" 2>&1
+(cd /opt/limixbot && sudo docker compose stop && sudo sh -c 'set -e; install -d -m 700 backups; f="backups/backup-$(date -u +%Y%m%dT%H%M%SZ).tgz"; (umask 077; tar --warning=no-file-ignored -czf "$f" data .env); chmod 600 "$f"'; sudo docker compose start) >"$OUT/backup.txt" 2>&1
 archive=$(cd "$DIR" && sudo sh -c 'ls backups/backup-*.tgz' | head -n 1)
 [ -n "$archive" ] || fail "the backup made no archive: $(cat "$OUT/backup.txt")"
 grep -q "socket ignored" "$OUT/backup.txt" && fail "tar listed sockets: $(cat "$OUT/backup.txt")"
@@ -163,14 +163,14 @@ grep -q "socket ignored" "$OUT/backup.txt" && fail "tar listed sockets: $(cat "$
 [ "$(sudo stat -c %a "$DIR/backups")" = 700 ] || fail "the backups folder is open to others"
 healthy_again && through_caddy "the backup"
 echo after-backup | sudo tee "$DIR/data/e2e-backup" >/dev/null
-(cd /opt/openmausbot && sudo docker compose stop && sudo sh -c "set -e; tar -tzf $archive data/ >/dev/null; rm -rf data.before-restore; mv data data.before-restore; tar -xzpf $archive data"; sudo docker compose start) >"$OUT/restore.txt" 2>&1
+(cd /opt/limixbot && sudo docker compose stop && sudo sh -c "set -e; tar -tzf $archive data/ >/dev/null; rm -rf data.before-restore; mv data data.before-restore; tar -xzpf $archive data"; sudo docker compose start) >"$OUT/restore.txt" 2>&1
 [ "$(sudo cat "$DIR/data/e2e-backup")" = before-backup ] || fail "the restore did not put the data back: $(cat "$OUT/restore.txt")"
 [ "$(sudo stat -c '%u:%a' "$DIR/data")" = "$(sudo stat -c '%u:%a' "$DIR/data.before-restore")" ] || fail "the restore changed the data folder's owner or mode"
 sudo rm -rf "$DIR/data.before-restore" "$DIR/$archive"
 healthy_again && through_caddy "the restore"
 
 step "the first admin's sign-in link, made the way the installer says"
-(cd "$DIR" && sudo docker compose exec -T omb openmausbot pair --label "First admin") >"$OUT/pair.txt" 2>&1 || fail "pair failed: $(cat "$OUT/pair.txt")"
+(cd "$DIR" && sudo docker compose exec -T omb node /app/dist-server/limixbot.js pair --label "First admin") >"$OUT/pair.txt" 2>&1 || fail "pair failed: $(cat "$OUT/pair.txt")"
 grep -q "https://$DOMAIN/pair#code=" "$OUT/pair.txt" || fail "pair printed no link for $DOMAIN"
 rm -f "$OUT/pair.txt"
 
@@ -251,7 +251,7 @@ contains "$OUT/uninstall.txt" "Your data is kept in $DIR/data" "uninstall did no
 step "install again on the kept data"
 "${INSTALL[@]}" >"$OUT/reinstall.txt" 2>&1 || true
 cat "$OUT/reinstall.txt"
-contains "$OUT/reinstall.txt" "MausBot is running, but https://$DOMAIN did not answer" "the reinstall did not come back up"
+contains "$OUT/reinstall.txt" "Limix Bot is running, but https://$DOMAIN did not answer" "the reinstall did not come back up"
 [ "$(sudo cat "$DIR/data/e2e-marker")" = kept ] || fail "the reinstall touched the data"
 
 printf '\nAll steps passed. Evidence: %s\n' "$OUT"

@@ -273,7 +273,7 @@ it("a window preference changes only while the app window's stream is open: refu
   };
   await api("PUT", "/api/window-prefs", { values: { "appearance.skin": "daylight" } });
   await start("WINDOW-NONE", [step({ action: "set", id: "appearance.skin", value: "midnight" }, true)]);
-  expect(results(await finished("WINDOW-NONE"))).toEqual([expect.objectContaining({ isError: true, text: "Open MausBot on this computer first; this setting lives in the app window." })]);
+  expect(results(await finished("WINDOW-NONE"))).toEqual([expect.objectContaining({ isError: true, text: "Open Limix Bot on this computer first; this setting lives in the app window." })]);
 
   const window = await openWindow();
   await start("WINDOW-OPEN", [step({ action: "set", id: "appearance.skin", value: "midnight" })]);
@@ -285,7 +285,7 @@ it("a window preference changes only while the app window's stream is open: refu
     const key = `WINDOW-CLOSED-${Date.now()}`;
     await start(key, [step({ action: "set", id: "appearance.skin", value: "dusk" }, true)]);
     return results(await finished(key))[0]?.text;
-  }, { timeout: 30_000, message: "the closed window's stream is gone" }).toBe("Open MausBot on this computer first; this setting lives in the app window.");
+  }, { timeout: 30_000, message: "the closed window's stream is gone" }).toBe("Open Limix Bot on this computer first; this setting lives in the app window.");
 
   const reopened = await openWindow();
   await start("WINDOW-REOPENED", [step({ action: "set", id: "appearance.skin", value: "dusk" })]);

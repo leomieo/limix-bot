@@ -8,9 +8,9 @@ services:
     build:
       context: ./deploy/local
       args:
-        BASE_IMAGE: ${OMB_BASE_IMAGE:-ghcr.io/milind-soni/openmausbot:latest}
+        BASE_IMAGE: ${OMB_BASE_IMAGE:-ghcr.io/leomieo/limix-bot:stable}
         ENGINES: ${ENGINES-@anthropic-ai/claude-code @openai/codex}
-    image: ${OMB_LOCAL_IMAGE:-openmausbot-local:latest}
+    image: ${OMB_LOCAL_IMAGE:-limixbot-local:latest}
     restart: unless-stopped
     volumes:
       - data:/data
@@ -24,10 +24,10 @@ services:
       OMB_TUNNEL_SOCKET: /run/openmausbot/http.sock
       OMB_WEBHOOK_SOCKET: /run/openmausbot/hooks.sock
       # The name the desktop app shows for this server (a container's own hostname is a random id).
-      OMB_SERVER_NAME: ${OMB_SERVER_NAME:-mausbot-docker}
+      OMB_SERVER_NAME: ${OMB_SERVER_NAME:-limixbot-docker}
       OMB_PUBLIC_URL: ${OMB_PUBLIC_URL:-http://localhost:${OMB_HTTP_PORT:-8080}}
       OMB_WEBHOOK_PUBLIC_URL: ${OMB_WEBHOOK_PUBLIC_URL:-${OMB_PUBLIC_URL:-http://localhost:${OMB_HTTP_PORT:-8080}}}
-      # "1": phones pair by QR through MausBot Relay (docs/phone-relay-server.md). Sign the
+      # "1": phones pair by QR through Limix Bot Relay (docs/phone-relay-server.md). Sign the
       # container in once first: docker compose exec omb openmausbot login --relay
       OMB_PHONE_RELAY: ${OMB_PHONE_RELAY:-}
     healthcheck:

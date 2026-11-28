@@ -32,12 +32,12 @@ CUA supply-chain work is tracked in [issue #113](https://github.com/milind-soni/
 
 Choose one Ubuntu 24.04 x86_64 package from the latest release:
 
-- [Debian package (`OpenMausBot-amd64.deb`)](https://github.com/milind-soni/OpenMausBot/releases/latest/download/OpenMausBot-amd64.deb) — recommended; APT installs its desktop dependencies and configures the bundled bot browser's sandbox.
-- [Portable AppImage (`OpenMausBot.AppImage`)](https://github.com/milind-soni/OpenMausBot/releases/latest/download/OpenMausBot.AppImage) — does not install system files.
-- [SHA-256 checksums](https://github.com/milind-soni/OpenMausBot/releases/latest/download/SHA256SUMS-ubuntu-x64.txt)
+- [Debian package (`LimixBot-Linux-x64.deb`)](https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-Linux-x64.deb) — recommended; APT installs its desktop dependencies and configures the bundled bot browser's sandbox.
+- [Portable AppImage (`LimixBot-Linux-x64.AppImage`)](https://github.com/leomieo/limix-bot/releases/latest/download/LimixBot-Linux-x64.AppImage) — does not install system files.
+- The GitHub release lists a SHA-256 digest for each asset.
 
 Versioned packages and previous releases remain available on the
-[releases page](https://github.com/milind-soni/OpenMausBot/releases).
+[releases page](https://github.com/leomieo/limix-bot/releases).
 
 ## Build packages
 
@@ -48,8 +48,8 @@ Requirements for building from source:
 - pnpm 10.33.0 (Corepack can install the version declared by the project)
 
 ```sh
-git clone https://github.com/milind-soni/OpenMausBot.git
-cd OpenMausBot
+git clone https://github.com/leomieo/limix-bot.git
+cd limix-bot
 corepack enable
 pnpm install --frozen-lockfile
 pnpm package:linux
@@ -57,8 +57,8 @@ pnpm package:linux
 
 The build creates:
 
-- `release/OpenMausBot-<version>-amd64.deb`
-- `release/OpenMausBot-<version>-x86_64.AppImage`
+- `release/LimixBot-<version>-amd64.deb`
+- `release/LimixBot-<version>-x86_64.AppImage`
 
 The AppImage uses a static runtime and does not require the legacy `libfuse2` package.
 
@@ -67,23 +67,23 @@ The AppImage uses a static runtime and does not require the legacy `libfuse2` pa
 Install a downloaded Debian package with APT so its desktop dependencies are resolved:
 
 ```sh
-sudo apt install ./OpenMausBot-amd64.deb
+sudo apt install ./LimixBot-Linux-x64.deb
 ```
 
 Then open **Limix Bot** from the GNOME application launcher. To remove it:
 
 ```sh
-sudo apt remove openmausbot
+sudo apt remove limixbot
 ```
 
 The portable AppImage does not install system files:
 
 ```sh
-chmod +x release/OpenMausBot-*-x86_64.AppImage
-./release/OpenMausBot-*-x86_64.AppImage
+chmod +x release/LimixBot-*-x86_64.AppImage
+./release/LimixBot-*-x86_64.AppImage
 ```
 
-For a downloaded release AppImage, use `OpenMausBot.AppImage` in place of the versioned path above.
+For a downloaded release AppImage, use `LimixBot-Linux-x64.AppImage` in place of the versioned path above.
 
 ### Arch Linux and EndeavourOS
 
@@ -96,18 +96,18 @@ profile; whether a pacman upgrade re-applies the install steps has not been veri
 
 ```sh
 pnpm package:arch
-sudo pacman -U release/OpenMausBot-<version>-x64.pacman
+sudo pacman -U release/LimixBot-<version>-x64.pacman
 ```
 
-Replace `<version>` with the built version (for example, `0.1.149`). Then launch `openmausbot` from the application launcher or command line.
+Replace `<version>` with the built version (for example, `0.1.149`). Then launch `limixbot` from the application launcher or command line.
 
 #### Portable AppImage
 A minimal Arch install lacks the FUSE helper and some desktop libraries the AppImage needs, so install them first:
 
 ```sh
 sudo pacman -S --needed fuse3 gtk3 nss alsa-lib libcups mesa
-chmod +x OpenMausBot.AppImage
-./OpenMausBot.AppImage
+chmod +x LimixBot-Linux-x64.AppImage
+./LimixBot-Linux-x64.AppImage
 ```
 
 A full desktop install (for example EndeavourOS with KDE or GNOME) usually has all of these already, and
@@ -141,7 +141,7 @@ user namespaces, its bundled browser can still report `No usable sandbox`. Insta
 do not add `--no-sandbox`, disable AppArmor globally, or allowlist arbitrary executables under your home
 directory. See [Chromium's explanation of the Ubuntu restriction](https://chromium.googlesource.com/chromium/src/+/main/docs/security/apparmor-userns-restrictions.md).
 
-Application data remains local in `~/.openmausbot`. Electron browser data and window state use the normal XDG
+Application data remains local in `~/.limixbot`. Electron browser data and window state use the normal XDG
 configuration directory (`~/.config/openmausbot` unless the environment overrides it).
 
 ## Develop the desktop shell
@@ -179,7 +179,7 @@ It also probes the login shell in the background. If a CLI still is not detected
 path before launching the app from a terminal and verify it there:
 
 ```sh
-OMB_EXTRA_PATH=/your/custom/bin ./release/OpenMausBot-*-x86_64.AppImage
+OMB_EXTRA_PATH=/your/custom/bin ./release/LimixBot-*-x86_64.AppImage
 ```
 
 Restart Limix Bot after installing or signing in to a CLI.
@@ -356,8 +356,8 @@ open a new chooser. Cancelling or stopping sharing never causes an automatic sec
 Confirm the executable bit and architecture:
 
 ```sh
-chmod +x OpenMausBot-*-x86_64.AppImage
-file OpenMausBot-*-x86_64.AppImage
+chmod +x LimixBot-*-x86_64.AppImage
+file LimixBot-*-x86_64.AppImage
 ```
 
 Run it from a terminal once to collect the startup output. Do not install `libfuse2` just for this AppImage; the

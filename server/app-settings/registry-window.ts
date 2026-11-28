@@ -44,9 +44,9 @@ export function windowEntries(windowPref: WindowPref): SettingEntry[] {
       "Send anonymous usage data from this app to MausBot's analytics (PostHog), off this computer", "Stop sending usage analytics"),
     flag("general.openAtLogin", "Open at login", "Start MausBot when you log in to this computer (desktop app).", "Settings → General", ["startup", "launch", "login", "open at login"],
       "Open MausBot when you log in", "Don't open MausBot at login"),
-    windowPref("general.talkShortcut", "Talk shortcut", "A key held anywhere on this Mac to talk to MausBot (desktop app).", "Settings → General", ["talk", "voice", "dictation", "microphone", "hotkey"],
+    windowPref("general.talkShortcut", "Talk shortcut", "A key held anywhere on this Mac to talk to the Limix Assistant (desktop app).", "Settings → General", ["talk", "voice", "dictation", "microphone", "hotkey"],
       `{"enabled":true|false,"key":${TALK_KEYS.map((key) => `"${key}"`).join(" | ")}}`, {
-        says: ({ enabled, key }: { enabled: boolean; key: string }) => (enabled ? `Hold ${key.replaceAll("-", "+")} anywhere to talk to MausBot` : "Turn off the talk shortcut"),
+        says: ({ enabled, key }: { enabled: boolean; key: string }) => (enabled ? `Hold ${key.replaceAll("-", "+")} anywhere to talk to the Limix Assistant` : "Turn off the talk shortcut"),
       }),
     flag("account.productEmails", "Product update emails", "MausBot emails you product updates.", "Settings → Your account", ["emails", "newsletter", "product updates", "email updates"],
       "Get MausBot product update emails (your email address is sent to MausBot)", "Stop MausBot product update emails"),

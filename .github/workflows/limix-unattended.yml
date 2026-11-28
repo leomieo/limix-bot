@@ -1,0 +1,24 @@
+name: Limix unattended support acceptance
+on:
+  push:
+    branches: [codex/limix-self-hosting]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unattended:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: pnpm/action-setup@ff378ebe6b225b0680b81c1ad4498ae0d1d3a5e3
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Verify catalog, draft tools and approvals
+        run: pnpm exec vitest run server/industry-care.e2e.test.ts server/industry-care-mcp.e2e.test.ts server/live-approval.e2e.test.ts server/webhook-idempotency.test.ts
+      - name: Restart and replay against an independent recipient
+        if: ${{ !cancelled() }}
+        run: pnpm exec vitest run server/unattended-care.e2e.test.ts

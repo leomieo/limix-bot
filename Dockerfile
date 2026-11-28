@@ -11,13 +11,13 @@
 # Caddy in the same network namespace to terminate TLS and authentication at
 # the edge.
 #
-#   docker build -t openmausbot .
-#   docker build --build-arg ENGINES="@anthropic-ai/claude-code @openai/codex" -t openmausbot .
+#   docker build -t limixbot .
+#   docker build --build-arg ENGINES="@anthropic-ai/claude-code @openai/codex" -t limixbot .
 #   docker build --target cloud-home -t omb-cloud-home .
-#   docker buildx build --platform linux/arm64 -t openmausbot .   # Raspberry Pi 4/5, ARM servers
+#   docker buildx build --platform linux/arm64 -t limixbot .   # Raspberry Pi 4/5, ARM servers
 #
 # HOME is the /data volume, so engine CLI logins (~/.claude, ~/.codex, ~/.grok,
-# ...) and OpenMausBot's own state (~/.openmausbot) persist across container
+# ...) and Limix Bot's own state (~/.openmausbot) persist across container
 # restarts.
 #
 # A plain `docker run` of either image wants `--init --shm-size=512m`, as the
@@ -58,6 +58,7 @@ COPY cloudflare/control-plane/package.json ./cloudflare/control-plane/package.js
 COPY scripts/install-git-hooks.mjs ./scripts/install-git-hooks.mjs
 RUN pnpm install --frozen-lockfile
 COPY . .
+RUN node -e 'const {version} = require("./package.json"); require("node:fs").writeFileSync("/src/server-package.json", JSON.stringify({version, type:"module"}) + "\n")'
 # The Cloud home runs these as root, so nobody else may write them. The web app's
 # build needs more heap than Node gives itself on a 4 GB server, where it ran out
 # of memory: a fixed limit, which such a server meets with swap (docs/deploy-vps.md).
@@ -127,6 +128,7 @@ ENV AGENT_BROWSER_EXECUTABLE_PATH=/opt/openmausbot-browser/chrome \
     OMB_WEBHOOK_PORT=8800 \
     NODE_ENV=production
 WORKDIR /app
+COPY --from=build /src/server-package.json ./package.json
 
 FROM runtime AS cloud-home
 # Tools bots reach for in their shell on a My Cloud: Python, pdftotext and
@@ -227,11 +229,12 @@ COPY --from=build --chown=maus:maus /src/dist-native/duckdb/target ./duckdb
 COPY --from=build --chown=maus:maus /src/dist-server ./dist-server
 COPY --from=build --chown=maus:maus /src/dist ./dist
 COPY --from=build --chown=maus:maus /src/skills ./skills
-# `docker compose exec omb openmausbot pair`: the commands the CLI prints start the same way.
-RUN printf '#!/bin/sh\nexec node /app/dist-server/limixbot.js "$@"\n' > /usr/local/bin/openmausbot && chmod 0755 /usr/local/bin/openmausbot
+RUN printf '#!/bin/sh\nexec node /app/dist-server/limixbot.js "$@"\n' > /usr/local/bin/limixbot \
+  && chmod 0755 /usr/local/bin/limixbot \
+  && ln -s limixbot /usr/local/bin/openmausbot
 ENV HOME=/data \
     LIMIX_GATEWAY_SIDECAR=1 \
-    OMB_CLI_PREFIX="docker compose exec omb openmausbot"
+    OMB_CLI_PREFIX="docker compose exec omb limixbot"
 VOLUME ["/data"]
 USER maus
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \

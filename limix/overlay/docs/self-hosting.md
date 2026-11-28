@@ -1,8 +1,7 @@
 # Self-hosting the Limix Bot server
 
 To keep Limix Bot and its agents on your current computer and use a VPS only as a
-bot’s remote desktop, see [Bring Your Own VPS](byo-vps.md) and the
-[published setup guide](https://docs.openmausbot.com/docs/computers/byo-vps).
+bot’s remote desktop, see [Bring Your Own VPS](byo-vps.md).
 
 Run the server on a machine you control (a VPS, a home server, a Mac mini in a
 closet). Then connect the desktop app, browsers and phones to it. Every path
@@ -19,16 +18,58 @@ Limix Bot under **＋ → Connect to a server**.
 For server feature switches, defaults and configuration-file instructions, see
 [Feature switches](feature-flags.md).
 
+## Install a pinned Limix Bot server
+
+On a Linux host with Node.js 24 or newer, install the Limix Bot package from npm.
+Use a dedicated OS account and run these commands on the server:
+
+```sh
+npm install --prefix "$HOME/limix-server" limixbot@0.3.128
+"$HOME/limix-server/node_modules/.bin/limixbot" --version
+"$HOME/limix-server/node_modules/.bin/limixbot" setup
+"$HOME/limix-server/node_modules/.bin/limixbot" serve --public-url https://limix.example.com
+```
+
+The last command assumes a reverse proxy for your domain that reaches the
+server on loopback. Use the same installed executable for `service install`
+and `pair`. Pairing is only needed to connect a client. Scheduled and incoming
+work runs on the server while that client is closed. Configure model access,
+the channel and any catalog integration on the server before testing live work.
+
+## Verify an unattended support workflow
+
+Use a dedicated test bot, channel, and recipient. Keep the channel connection
+and the product catalog on the server. Personal Messenger relies on the signed-in Electron window to read and deliver messages. If that window runs on the PC you intend to shut down, choose a channel whose connection runs on the test server. Record one verified product code, one
+absent code, and the event ID used to simulate redelivery.
+
+1. Shut down the desktop client machine. From another device, ask the test
+   bot about the verified code and the absent code. Check that the first reply
+   uses current catalog facts and that the second case produces a handoff draft.
+2. While the draft is awaiting approval, disconnect the test channel and
+   restart the server with the same data directory or volume. Reconnect the
+   channel and deliver the same event ID again. Check that the same case and
+   draft remain and that no second handoff is sent.
+3. Edit the draft content, then separately try changing the recipient after
+   approval. Each change must require fresh approval before the new action
+   can run. Approve an unchanged draft and check the recipient receives one
+   handoff. Restart and redeliver once more, then check the delivery count
+   stays at one.
+
+Keep the event ID, case ID, approval IDs and delivery count as evidence. The
+[restart policy](runtime-contract.md#5-one-restart-policy) covers runtime
+reconciliation. Use the channel delivery log and recipient inbox to confirm
+what actually left the server.
+
 ## Pick a way in
 
 | You have | Run | Link it prints |
 |---|---|---|
-| HTTPS in front already (cloudflared, Caddy, nginx) | `npx openmausbot serve --public-url https://maus.example.com` | `https://maus.example.com/pair#code=…` |
-| A domain name, and ports 80 and 443 open | `npx openmausbot serve --domain maus.example.com` | `https://maus.example.com/pair#code=…` |
-| Tailscale on the server and your devices | `npx openmausbot serve --tailscale` | `https://<machine>.<tailnet>.ts.net/pair#code=…` |
-| Only this network (home or office) | `npx openmausbot serve --lan` | `http://192.168.1.20:8799/pair#code=…` |
-| Nothing at all | `npx openmausbot login`, then `npx openmausbot serve --tunnel` | `https://c-….openmausbot.com/pair#code=…` |
-| Only the phone app, from anywhere (a machine with no tunnel address, for now) | `npx openmausbot login --relay`, then `npx openmausbot serve --relay` | a QR for the Limix Bot app ([Limix Bot Relay](phone-relay-server.md)) |
+| HTTPS in front already (cloudflared, Caddy, nginx) | `npx limixbot serve --public-url https://limix.example.com` | `https://limix.example.com/pair#code=…` |
+| A domain name, and ports 80 and 443 open | `npx limixbot serve --domain limix.example.com` | `https://limix.example.com/pair#code=…` |
+| Tailscale on the server and your devices | `npx limixbot serve --tailscale` | `https://<machine>.<tailnet>.ts.net/pair#code=…` |
+| Only this network (home or office) | `npx limixbot serve --lan` | `http://192.168.1.20:8799/pair#code=…` |
+| Nothing at all | `npx limixbot login`, then `npx limixbot serve --tunnel` | `https://c-….openmausbot.com/pair#code=…` |
+| Only the phone app, from anywhere (a machine with no tunnel address, for now) | `npx limixbot login --relay`, then `npx limixbot serve --relay` | a QR for the Limix Bot app ([Limix Bot Relay](phone-relay-server.md)) |
 
 `--lan` can be added to any of the others. Plain `http://` is only for a
 private network: the desktop app accepts it on LAN addresses, Tailscale
@@ -42,26 +83,26 @@ refuses plain http on the open internet.
 On any machine with Node 24 or newer:
 
 ```sh
-npx openmausbot setup                                        # once: AI access and a default model
-npx openmausbot serve --public-url https://maus.example.com  # or --domain, --tailscale, --lan, --tunnel
+npx limixbot setup                                        # once: AI access and a default model
+npx limixbot serve --public-url https://limix.example.com  # or --domain, --tailscale, --lan, --tunnel
 ```
 
 In a terminal, `serve` checks the address and prints one pairing block:
 
 ```
-MausBot 0.1.147 · server "hetzner-1"
-data: /home/maus/.openmausbot
-Reach    https://maus.example.com   ✓ answers as this server (11:04)
+Limix Bot 0.3.128 · server "hetzner-1"
+data: /home/limix/.limixbot
+Reach    https://limix.example.com   ✓ answers as this server (11:04)
 
 Pairing code   7KQ2-M9XD-H4TP   works once, until 11:14 · everything
-Link           https://maus.example.com/pair#code=7KQ2-M9XD-H4TP
+Link           https://limix.example.com/pair#code=7KQ2-M9XD-H4TP
 
   Desktop app   ＋ → Connect to a server, paste the link
-  Phone         scan with your camera or the MausBot app
+  Phone         scan with your camera or the Limix Bot app
 
   ▄▄▄▄▄▄▄ ▄ ▄▄ ▄▄▄▄▄▄▄   (QR of the link)
-For a phone (chat and approvals only)   npx openmausbot pair --phone
-New code later   npx openmausbot pair
+For a phone (chat and approvals only)   npx limixbot pair --phone
+New code later   npx limixbot pair
 Stop with Ctrl+C
 ```
 
@@ -69,16 +110,16 @@ Each way in has its own Reach line:
 
 - `--lan`: `http://192.168.1.20:8799   this network only, not encrypted`
 - `--tailscale`: `… · your tailnet`
-- `--tunnel`: `… · MausBot web address`
+- `--tunnel`: `… · Limix Bot web address`
 
 Paste the link into Limix Bot: **＋ → Connect to a server**. The sheet names the
 server it found ("✓ hetzner-1 · Limix Bot 0.1.147 · HTTPS"), and **Connect to
-hetzner-1** finishes. You can also type the address (`maus.example.com`,
+hetzner-1** finishes. You can also type the address (`limix.example.com`,
 `192.168.1.20:8799`) and the pairing code in their own fields.
 
 `serve` with no way in mints no code. It lists the ways in instead. Every
-command the CLI prints starts the way you started it (`npx openmausbot`,
-`openmausbot`, `pnpm omb`, or `docker compose exec omb openmausbot`), so you
+command the CLI prints starts the way you started it (`npx limixbot`,
+`limixbot`, `pnpm omb`, or `docker compose exec omb node /app/dist-server/limixbot.js`), so you
 can paste it as is.
 
 ### Already have cloudflared, Caddy or nginx in front
@@ -89,13 +130,13 @@ and don't buffer the event stream ([details](#putting-a-proxy-in-front)).
 Then:
 
 ```sh
-npx openmausbot serve --public-url https://maus.example.com
+npx limixbot serve --public-url https://limix.example.com
 ```
 
-Setting `OMB_PUBLIC_URL=https://maus.example.com` in the environment works the
+Setting `OMB_PUBLIC_URL=https://limix.example.com` in the environment works the
 same way. If the Reach line says
-`✗ https://maus.example.com doesn't reach this server`, the tunnel points
-somewhere else. Fix that, then run `npx openmausbot status` to check again.
+`✗ https://limix.example.com doesn't reach this server`, the tunnel points
+somewhere else. Fix that, then run `npx limixbot status` to check again.
 
 ### Docker on your computer or home network
 
@@ -103,7 +144,7 @@ From a checkout of the repository:
 
 ```sh
 docker compose up -d --build                  # http://localhost:8080 on this machine
-docker compose exec omb openmausbot pair      # a code, and a sign-in link for this machine's browser
+docker compose exec omb node /app/dist-server/limixbot.js pair      # a code, and a sign-in link for this machine's browser
 ```
 
 To pair from other devices on the same network, publish the port there and
@@ -111,7 +152,7 @@ name the address they use:
 
 ```sh
 OMB_BIND_ADDRESS=0.0.0.0 OMB_PUBLIC_URL=http://192.168.1.20:8080 docker compose up -d
-docker compose exec omb openmausbot pair      # Link http://192.168.1.20:8080/pair#code=…
+docker compose exec omb node /app/dist-server/limixbot.js pair      # Link http://192.168.1.20:8080/pair#code=…
 ```
 
 Do this only on a machine behind your router. A machine with a public address
@@ -121,16 +162,16 @@ would answer the whole internet over plain http. More options are in
 ### Docker with your own domain
 
 On a fresh Ubuntu 22.04 or 24.04 server (x86-64), one command checks the
-server, installs Limix Bot under `/opt/openmausbot` and ends with HTTPS on your
+server, installs Limix Bot under `/opt/limixbot` and ends with HTTPS on your
 domain:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/milind-soni/OpenMausBot/main/deploy/install.sh | sudo sh -s -- --domain maus.example.com
-cd /opt/openmausbot && sudo docker compose exec omb openmausbot pair   # Link https://<DOMAIN>/pair#code=…
+curl -fsSL https://raw.githubusercontent.com/leomieo/limix-bot/main/deploy/install.sh | sudo sh -s -- --domain limix.example.com
+cd /opt/limixbot && sudo docker compose exec omb node /app/dist-server/limixbot.js pair   # Link https://<DOMAIN>/pair#code=…
 ```
 
 Add `--check` to only check the server. Running it again repairs;
-`sudo /opt/openmausbot/update.sh` updates, with a copy of the data first;
+`sudo /opt/limixbot/update.sh` updates, with a copy of the data first;
 `--uninstall` stops the server and keeps your data. The checks, the files it
 writes and what it contacts are in
 [Deploy on a VPS](deploy-vps.md#quick-start-one-command-on-your-own-domain).
@@ -138,10 +179,10 @@ writes and what it contacts are in
 By hand, on any system with Docker:
 
 ```sh
-git clone https://github.com/milind-soni/OpenMausBot && cd OpenMausBot/deploy
+git clone https://github.com/leomieo/limix-bot && cd limix-bot/deploy
 cp .env.example .env                          # set DOMAIN (and ENGINES)
 docker compose pull omb && docker compose up -d
-docker compose exec omb openmausbot pair      # Link https://<DOMAIN>/pair#code=…
+docker compose exec omb node /app/dist-server/limixbot.js pair      # Link https://<DOMAIN>/pair#code=…
 ```
 
 Caddy gets the certificate. See [Docker (with HTTPS on your own domain)](#docker-with-https-on-your-own-domain).
@@ -149,7 +190,7 @@ Caddy gets the certificate. See [Docker (with HTTPS on your own domain)](#docker
 ### Keep it running (a service)
 
 ```sh
-npx openmausbot service install --public-url https://maus.example.com   # the same way-in options as serve
+npx limixbot service install --public-url https://limix.example.com   # the same way-in options as serve
 ```
 
 This writes a systemd unit (Linux) or a launchd agent (macOS) with the same
@@ -158,7 +199,7 @@ installs a copy of this exact version beside your data, because npm prunes
 its npx cache. The service log never shows a code. Get one with:
 
 ```sh
-npx openmausbot pair
+npx limixbot pair
 ```
 
 ## Troubleshooting
@@ -167,20 +208,20 @@ npx openmausbot pair
 |---|---|---|
 | "That's a pairing code. Also enter the server's address, like http://192.168.1.20:8799." | A code went into the address field. | Type the server's address in the first field; the code moves to its own field. |
 | "http://… is on the open internet and isn't encrypted…" | A plain http link to a public address. | Use its https address, or put HTTPS in front: `--public-url` behind cloudflared or Caddy, `--domain`, or `--tailscale`. |
-| "This points at this computer (127.0.0.1), not at the server." | A link to `127.0.0.1` or `localhost`, which is the computer you're on. | Use the address other devices reach the server at: run `openmausbot pair` on the server, or choose a way in. |
+| "This points at this computer (127.0.0.1), not at the server." | A link to `127.0.0.1` or `localhost`, which is the computer you're on. | Use the address other devices reach the server at: run `limixbot pair` on the server, or choose a way in. |
 | "Can't reach 192.168.1.20:8799. Check the server is running and reachable from this computer." | Nothing answers there. | Start it with a way in (`serve --lan` for this network), and check a firewall allows the port. |
-| "maus.example.com doesn't exist yet." / "…certificate isn't valid yet." | DNS or the certificate isn't ready. | Wait for the DNS record, or give a new server a minute. |
+| "limix.example.com doesn't exist yet." / "…certificate isn't valid yet." | DNS or the certificate isn't ready. | Wait for the DNS record, or give a new server a minute. |
 | "That address answers, but it isn't a Limix Bot server." | Something else answers there, often a proxy pointing at the wrong port. | Point it at `http://127.0.0.1:8799`. |
-| "That's a sign-in code from an email…" / "That's a code from an older Limix Bot…" / "That's a script key…" | The wrong kind of code. | On the server, run `openmausbot pair` for a 12-character pairing code. |
+| "That's a sign-in code from an email…" / "That's a code from an older Limix Bot…" / "That's a script key…" | The wrong kind of code. | On the server, run `limixbot pair` for a 12-character pairing code. |
 | "Too many wrong codes. Try again at 11:19." | Five wrong codes in five minutes from one address. | Wait until then, or make a new code. |
-| `Reach    ✗ https://… doesn't reach this server (connection refused).` | Your tunnel or proxy doesn't reach port 8799. | Point it at `http://127.0.0.1:8799`, then run `openmausbot status`. |
+| `Reach    ✗ https://… doesn't reach this server (connection refused).` | Your tunnel or proxy doesn't reach port 8799. | Point it at `http://127.0.0.1:8799`, then run `limixbot status`. |
 | `Reach    ✗ https://… answers as a different server.` | The address leads to another Limix Bot server. | Point the tunnel at this machine's port. |
 | `Reach    … https://… doesn't answer yet` (`--domain`) | DNS isn't pointing here yet, or ports 80 and 443 are closed. | Fix the A record and open the ports; the certificate follows. |
 | `--lan: this machine has no private network address…` | A VPS with only a public address. | Use `--public-url`, `--domain` or `--tailscale`. |
 | `tailscale: HTTPS certificates are off for this tailnet, so this server listens on http://…` | Tailscale can't serve HTTPS yet, so the server listens on its own tailnet address. It works, and only your tailnet reaches it. | For an `https://` address, turn on HTTPS certificates at https://login.tailscale.com/admin/dns, then run `serve --tailscale` again. |
-| `No MausBot server is running here. Start it: … serve` | `pair` found no server on this port. | Start it, or pass the server's `--port` and `--data-dir`. |
-| `Get a pairing code: openmausbot pair` and no code | The server runs as a service or under `docker compose logs`, where codes stay out of logs. | Run that command in a terminal. |
-| "This shared server takes no pairing commands from this machine." | The server runs with `OMB_LOOPBACK_TRUST=service`. | Let people sign in with their email (`openmausbot access add you@example.com`), or pair from a signed-in admin's Settings. |
+| `No Limix Bot server is running here. Start it: … serve` | `pair` found no server on this port. | Start it, or pass the server's `--port` and `--data-dir`. |
+| `Get a pairing code: limixbot pair` and no code | The server runs as a service or under `docker compose logs`, where codes stay out of logs. | Run that command in a terminal. |
+| "This shared server takes no pairing commands from this machine." | The server runs with `OMB_LOOPBACK_TRUST=service`. | Let people sign in with their email (`limixbot access add you@example.com`), or pair from a signed-in admin's Settings. |
 
 ## Reference
 
@@ -200,7 +241,7 @@ Runs fully on a server:
 - text-to-speech (with a key), the web UI (the server serves it itself)
 
 - a browser for bots, once the engine is installed on the server
-  (`npx openmausbot browser install`, or nothing to do in the Docker image,
+  (`npx limixbot browser install`, or nothing to do in the Docker image,
   which ships it): each bot gets its own isolated, persistent session.
   Watching it live from the app is the next step (docs/plans/browser-engine.md).
   It reaches the public internet and the dev servers a bot starts itself,
@@ -213,7 +254,7 @@ Desktop-only for now (needs the Mac/Linux app):
 
 ## Ways in, in detail
 
-`npx openmausbot start` (or plain `npx openmausbot`) is the guided start. It
+`npx limixbot start` (or plain `npx limixbot`) is the guided start. It
 asks for AI access, an account or API key, and the default model, then opens
 the workspace in this machine's browser. `setup` only configures, and `serve`
 starts without questions from the saved configuration and the flags you give
@@ -224,7 +265,7 @@ engine sign-ins and the server as the same unprivileged user: engine
 credentials live in that user's home, not all under `.openmausbot`. For a
 Linux service, the [VPS guide](deploy-vps.md#before-you-start) covers the
 account, engines and browser libraries. After installing browser libraries
-as administrator, run `npx openmausbot browser install` as the service user
+as administrator, run `npx limixbot browser install` as the service user
 too.
 
 - **`--public-url URL`**: you already have HTTPS in front. The address must
@@ -256,7 +297,7 @@ too.
   networks and VPN tunnels are skipped. A machine with no private address
   says so and stays on loopback. Plain http travels in clear, so use it only
   on a network you trust.
-- **`--tunnel`**: `npx openmausbot login` reserves an address like
+- **`--tunnel`**: `npx limixbot login` reserves an address like
   `https://c-….openmausbot.com` for this machine (an emailed code signs it
   in). `serve --tunnel` connects it through a Cloudflare tunnel, the same one
   the desktop app uses for its companion. The first run downloads
@@ -265,17 +306,17 @@ too.
   lands on a separate listener that the server treats as "through a proxy",
   never as the owner. That listener gzips JSON replies of 1 KB or more when
   the client accepts gzip; the loopback port never compresses.
-  `npx openmausbot logout` releases the address. The account credentials
-  live in `~/.openmausbot/tunnel-account.json` (mode 0600). Started from a
+  `npx limixbot logout` releases the address. The account credentials
+  live in `~/.limixbot/tunnel-account.json` (mode 0600). Started from a
   fleet or a container, where nobody can type an emailed code? Set
   `OMB_INSTALLATION_CREDENTIAL` to the installation credential the fleet
   issued and skip `login`. The address and connector token are fetched at
   every start, and nothing is written to disk. A rejected credential stops
   the start with a clear message rather than serving locally.
 
-Later: `npx openmausbot pair --label "Kitchen iPad"` for another device
+Later: `npx limixbot pair --label "Kitchen iPad"` for another device
 (`--phone` for one that may chat but not change settings), and
-`npx openmausbot devices` to see or sign them out. `openmausbot serve` is a
+`npx limixbot devices` to see or sign them out. `limixbot serve` is a
 plain foreground process. For unattended use, run `service install` (above)
 or follow the [systemd example](deploy-vps.md#keep-it-running). Restarting a
 service never downloads a new release on its own.
@@ -359,7 +400,7 @@ use the [local Compose setup](../deploy/local/README.md). It defaults to
 `http://localhost:8080` and supports optional `.env` overrides.
 
 On Ubuntu, the [installer](deploy-vps.md#quick-start-one-command-on-your-own-domain)
-sets this up with one command, keeping the data in `/opt/openmausbot/data`.
+sets this up with one command, keeping the data in `/opt/limixbot/data`.
 The rest of this section is the same setup by hand.
 
 One tenant = one container for the server plus Caddy for HTTPS.
@@ -367,13 +408,13 @@ Requirements: Docker with Compose, a DNS name pointing at the machine, and
 ports 80/443 open.
 
 ```sh
-git clone https://github.com/milind-soni/OpenMausBot && cd OpenMausBot/deploy
+git clone https://github.com/leomieo/limix-bot && cd limix-bot/deploy
 cp .env.example .env            # set DOMAIN
 docker compose pull omb && docker compose up -d
 ```
 
 That starts the image CI publishes on every `main` push
-(`ghcr.io/milind-soni/openmausbot:latest`; each release is also tagged `v…`,
+(`ghcr.io/leomieo/limix-bot:stable`; each release is also tagged `v…`,
 and the one our own Clouds have run for 48 hours is `stable`). Move to the
 stable version right away with `./update.sh`, which pins it by digest in
 `.env`. To build from your checkout instead: `docker compose up -d --build`. The
@@ -386,7 +427,7 @@ pairing code for your first device:
 
 ```sh
 docker compose exec omb claude                       # each CLI you listed in ENGINES
-docker compose exec omb openmausbot pair             # prints a code, a link and a QR
+docker compose exec omb node /app/dist-server/limixbot.js pair             # prints a code, a link and a QR
 ```
 
 Paste the link (`https://<DOMAIN>/pair#code=…`) into Limix Bot under **＋ →
@@ -436,30 +477,30 @@ Requirements: Node 24+, pnpm, and at least one agent CLI installed and
 signed in on the server.
 
 ```sh
-git clone https://github.com/milind-soni/OpenMausBot && cd OpenMausBot
+git clone https://github.com/leomieo/limix-bot && cd limix-bot
 pnpm install
 
 # choose where data lives and start the server
-OMB_DATA_DIR="$HOME/.openmausbot" OMB_PORT=8799 \
+OMB_DATA_DIR="$HOME/.limixbot" OMB_PORT=8799 \
   node --experimental-strip-types server/index.ts
 ```
 
 For something durable, let the CLI write the service for you:
 
 ```sh
-npx openmausbot service install --domain maus.example.com   # or --public-url, --tunnel, --tailscale, --lan
+npx limixbot service install --domain limix.example.com   # or --public-url, --tunnel, --tailscale, --lan
 ```
 
 It renders a systemd unit (Linux) or a launchd agent (macOS) that runs the
-same `openmausbot serve …` with your options, restarts it if it stops, and,
+same `limixbot serve …` with your options, restarts it if it stops, and,
 for `--domain`, grants the unit the capability to bind ports 80 and 443
 without root. The file is written next to your data and the two commands
 that install and start it are printed (they need `sudo` on Linux).
-`openmausbot service uninstall` prints the reverse. Run from `npx`, it
+`limixbot service uninstall` prints the reverse. Run from `npx`, it
 first installs a copy of the same version into `<data dir>/app/<version>`,
 because npm may prune its npx cache. The unit points at that copy. Not being
 a terminal, the service writes no pairing code into its log: run
-`npx openmausbot pair` when you need one.
+`npx limixbot pair` when you need one.
 
 Engine CLIs read their logins from the service user's home: sign them in
 from Settings → Engines (below), or as that user in a terminal, before you
@@ -595,9 +636,9 @@ Pair once, then use the server from any browser on any machine that can
 reach it. On the server:
 
 ```sh
-npx openmausbot pair                         # npm install
+npx limixbot pair                         # npm install
 pnpm omb pair                                # from a checkout
-docker compose exec omb openmausbot pair     # Docker
+docker compose exec omb node /app/dist-server/limixbot.js pair     # Docker
 ```
 
 It prints a 12-character pairing code (it works once, for 10 minutes, or up
@@ -606,18 +647,18 @@ address the server is reached at (`--public-url`, `--domain`, `--tunnel`,
 `--tailscale`, `--lan`, or `OMB_PUBLIC_URL`). Open the link, or open `/pair`
 on that address and type the code. The browser gets a session cookie (30
 days, renewed on use up to 180 days from pairing, revocable) and the app
-loads. `npx openmausbot devices` lists the paired devices and
+loads. `npx limixbot devices` lists the paired devices and
 `devices revoke ID` signs one out.
 
 From the **desktop app**, choose **＋ → Connect to a server** and paste the
-link. You can also type the address (`maus.example.com`,
+link. You can also type the address (`limix.example.com`,
 `192.168.1.20:8799`, a `*.ts.net` name) and the pairing code in its own
 field. The sheet looks the address up and names what it found, for example
 "✓ hetzner-1 · Limix Bot 0.1.147 · HTTPS". A bare address tries https first,
 then plain http when the address is private. Plain http works only on a
 private network (LAN addresses, Tailscale's 100.64/10 and `*.ts.net`,
 `*.local`); a public http address is refused with what to do instead.
-Generate a fresh code for each device: `npx openmausbot pair --label "My
+Generate a fresh code for each device: `npx limixbot pair --label "My
 desktop"` gives full access, and `--phone` gives chat and approvals only. A
 code already used by your phone cannot also pair your desktop.
 
@@ -725,7 +766,7 @@ address of its own:
 
 ```sh
 ssh -L 8799:localhost:8799 you@your-server
-# then run `openmausbot pair` on the server and open the "Browser on this machine" link it prints
+# then run `limixbot pair` on the server and open the "Browser on this machine" link it prints
 ```
 
 The browser signs in once through the tunnel, like any browser on the server
@@ -741,7 +782,7 @@ server, even when it runs on the same machine. Programs are unaffected: the
 CLI, scripts, `curl` and the companion send neither header.
 
 So the first time you open the web UI in a browser on the server's own
-machine, it shows the sign-in page. With no way in, `openmausbot pair` prints
+machine, it shows the sign-in page. With no way in, `limixbot pair` prints
 a link for it:
 
 ```
@@ -749,7 +790,7 @@ a link for it:
 ```
 
 Open it and choose **Connect** (or type the code on the sign-in page); the browser
-keeps its session cookie from then on. `openmausbot` (the guided start) prints
+keeps its session cookie from then on. `limixbot` (the guided start) prints
 the same link when it opens the browser. The desktop app is unaffected:
 its window adds the app's own per-launch owner header to every request and
 WebSocket it sends to its server, and no other Electron session may reach the
@@ -798,16 +839,16 @@ it too and is always `service` (docs/cloud-pro.md).
 
 With `service` on a self-hosted server:
 
-- `openmausbot serve` in a terminal still prints the first pairing code. It
+- `limixbot serve` in a terminal still prints the first pairing code. It
   hands the server it starts a one-off secret over the server's stdin (never
   its environment, which every engine inherits), and that secret opens the
   pairing route for that CLI alone. Pass `--no-pair` to skip the code; if
   the server refuses one anyway, `serve` says why and keeps running. Not in
   a terminal (a service), it prints no code and points at email sign-in.
-- `openmausbot pair` and `openmausbot devices`, run later from another
+- `limixbot pair` and `limixbot devices`, run later from another
   terminal, are refused like any other admin change and say so. Pair from
   the server's Settings while signed in as an admin, or let people sign
-  in with their email (`openmausbot access add you@example.com`, which edits
+  in with their email (`limixbot access add you@example.com`, which edits
   the sign-in list on disk).
 - A browser on an SSH tunnel gets the sign-in page instead of the app.
 - The MCP server script works with `OPENMAUSBOT_TOKEN` set to a paired session.
@@ -844,14 +885,14 @@ npm package, the same thing from the command line, with the server running
 or not, no restart needed:
 
 ```sh
-npx openmausbot access add her@yourcompany.com
-npx openmausbot access add freelancer@example.com --chat-only
-npx openmausbot access list
+npx limixbot access add her@yourcompany.com
+npx limixbot access add freelancer@example.com --chat-only
+npx limixbot access list
 ```
 
 An entry is an address or `@domain` (everyone at that domain). Admins get
-the same access as a pairing code from `openmausbot serve`; users get the
-chat-only scope, the same as `openmausbot pair --phone`. The same lists live
+the same access as a pairing code from `limixbot serve`; users get the
+chat-only scope, the same as `limixbot pair --phone`. The same lists live
 in `config.json` under `signIn.admins` and `signIn.members` and can be changed
 through the settings API without a restart. An environment variable that
 names someone wins over its list, which is how a container or a service unit
@@ -865,7 +906,7 @@ it to send the code, checks the answer, and then issues its own session
 cookie: the browser only ever talks to your server, and who is welcome is
 decided only by your allow-list. Wrong codes count against a lockout of
 their own: ten in a minute from one address pause sign-in there for a minute. Sessions from a sign-in show the email in
-`openmausbot devices` and can be revoked the same way.
+`limixbot devices` and can be revoked the same way.
 
 To send the codes through your own mail server instead, so nobody signs in
 through the account service and no Limix Bot account is made, give the server
@@ -873,7 +914,7 @@ an SMTP address:
 
 ```sh
 OMB_SIGNIN_SMTP_URL="smtps://signin%40yourcompany.com:PASSWORD@smtp.yourcompany.com:465"
-OMB_SIGNIN_SMTP_FROM="OpenMausBot <signin@yourcompany.com>"   # else the user name, if it is an address
+OMB_SIGNIN_SMTP_FROM="Limix Bot <signin@yourcompany.com>"   # else the user name, if it is an address
 ```
 
 `smtps://` uses TLS from the start (port 465); `smtp://` upgrades with
@@ -1083,21 +1124,21 @@ creates a one-time code with a QR right in the browser, and lists every
 paired device with a sign-out button. Nobody needs the command line.
 
 The iOS app pairs with a server the same way a laptop does: scan the QR
-code that `openmausbot serve` (or `openmausbot pair`) prints, paste the
+code that `limixbot serve` (or `limixbot pair`) prints, paste the
 whole `https://host/pair#code=…` link into the address field on the pairing
 screen, or type the address and then the code. The phone gets a session of
-its own, listed and revocable with `openmausbot devices`. What it may do is
-the code's scope: a code from `openmausbot pair` carries `admin` and the app
-shows everything; a code from `openmausbot pair --phone` (also what the
+its own, listed and revocable with `limixbot devices`. What it may do is
+the code's scope: a code from `limixbot pair` carries `admin` and the app
+shows everything; a code from `limixbot pair --phone` (also what the
 guided phone setup mints) can chat, approve and read, and the app hides
 creating bots and sections, changing models, generating avatars, connecting
 apps and cloud desktops — those stay with the owner. A server reinstalled at
 the same address has a new identity; the app then asks to pair again rather
 than present the old session to it.
 
-Both native apps pair this way. `openmausbot pair --phone android` prints the
+Both native apps pair this way. `limixbot pair --phone android` prints the
 app-scheme QR that Android's scanner needs, and the iOS app accepts either
-that QR or the web link, for example `docker compose exec omb openmausbot
+that QR or the web link, for example `docker compose exec omb node /app/dist-server/limixbot.js
 pair --phone android --public-url https://your-domain`. `pair` never asks
 questions, so it works the same from a script. Nothing extra to install, and
 the phone becomes a session like any other.
@@ -1105,7 +1146,7 @@ the phone becomes a session like any other.
 Older way, still supported, and only useful on a LAN or a tailnet: run the
 companion sidecar next to the harness and pair by its own QR. It advertises
 on your private networks (Tailscale-aware) and issues its own per-device
-credentials, which are **not** `openmausbot devices` and are revoked from
+credentials, which are **not** `limixbot devices` and are revoked from
 its own page at the `127.0.0.1:8811/#token=…` link it prints. It also serves phones over cleartext HTTP
 on port 8810, so do not expose it from a public server. It ships only in a
 git checkout: neither the npm package nor the Docker image contains it.
@@ -1127,9 +1168,9 @@ Owners can read the same over the API:
 
 ```sh
 curl -H "Authorization: Bearer $TOKEN" \
-  "https://maus.example.com/api/usage?from=2026-09-01&to=2026-09-30&groupBy=user"
+  "https://limix.example.com/api/usage?from=2026-09-01&to=2026-09-30&groupBy=user"
 curl -H "Authorization: Bearer $TOKEN" -o usage.csv \
-  "https://maus.example.com/api/usage.csv?from=2026-09-01&to=2026-09-30"
+  "https://limix.example.com/api/usage.csv?from=2026-09-01&to=2026-09-30"
 ```
 
 Dates are inclusive, UTC, at most a year apart; without them you get the
@@ -1154,7 +1195,10 @@ no AI to carry on, it says the bot waits instead. Nobody is asked.
   around the provider's limit; a pay-per-use API key on the same AI is fine.
 - **What moves.** The person's message that met the limit is sent again on that
   AI, in that conversation alone; the bot's own model and its other
-  conversations stay where they are. While the limit lasts, every new turn and
+  conversations stay where they are. A teammate's job that met it (work handed
+  on with `coordinate_bots`) runs again on that AI in the job's conversation,
+  so the bot that asked gets its result, not a failure; the report says which
+  AI did the work when it was not the teammate's own. While the limit lasts, every new turn and
   conversation of every bot that uses the limited AI (a person's, a routine's,
   a webhook's) goes straight to that AI without asking the limited one first,
   and a routine run the limit stopped starts again on it.
@@ -1201,7 +1245,7 @@ unless its status still says signed out.
 
 ### Which engine a new bot uses
 
-A saved default model (Settings, `openmausbot setup`, or the New Bot
+A saved default model (Settings, `limixbot setup`, or the New Bot
 defaults) always wins. Without one, new bots get the first engine that can
 run, in this order: a Claude account, a ChatGPT plan, Gemini, Grok, then the
 rest in the order of `instances`; OpenCode running only Zen's free no-login
@@ -1242,9 +1286,9 @@ than the window. An older server's `decisions.ndjson` and `.1` are still read
 and age out the same way. Admins can read it back:
 
 ```sh
-curl -H "Authorization: Bearer $TOKEN" "https://maus.example.com/api/decisions?limit=200"
+curl -H "Authorization: Bearer $TOKEN" "https://limix.example.com/api/decisions?limit=200"
 curl -H "Authorization: Bearer $TOKEN" -o decisions.csv \
-  "https://maus.example.com/api/decisions.csv?from=2026-09-01&to=2026-09-30"
+  "https://limix.example.com/api/decisions.csv?from=2026-09-01&to=2026-09-30"
 ```
 
 The CSV has one line per decision (time, decision, source, bot, tool,
@@ -1320,8 +1364,8 @@ shutdown): settings
 sessions, webhooks, MCP servers, engines and keys, bots created, deleted or
 given different permissions, spend limits and prices, and who can see a bot.
 Each row names who acted — the session's email or device label, `This
-computer` for the owner, `Command line` for `openmausbot` commands such as
-`openmausbot access add` — and the values before and after. Values are
+computer` for the owner, `Command line` for `limixbot` commands such as
+`limixbot access add` — and the values before and after. Values are
 redacted: anything under a key that names a credential, every value in a
 headers or environment map, the value after a flag such as `--api-key` or
 `-k`, URL parameters such as `?key=`, a token before a URL's host
@@ -1338,9 +1382,9 @@ them as CSV. The same over the API:
 
 ```sh
 curl -H "Authorization: Bearer $TOKEN" \
-  "https://maus.example.com/api/admin-activity?from=2026-09-01&to=2026-09-30&what=visibility"
+  "https://limix.example.com/api/admin-activity?from=2026-09-01&to=2026-09-30&what=visibility"
 curl -H "Authorization: Bearer $TOKEN" -o activity.csv \
-  "https://maus.example.com/api/admin-activity.csv?who=ada@company.com"
+  "https://limix.example.com/api/admin-activity.csv?who=ada@company.com"
 ```
 
 `what` is `all` (admin changes and answered cards, the default), `approvals`,
@@ -1400,8 +1444,8 @@ umask 077
 BOT_ID=your-bot-id
 THREAD_ID=your-existing-thread-id
 TOKEN=$(openssl rand -hex 32)
-printf '{ "%s": {"token":"%s","threadId":"%s"} }\n' "$BOT_ID" "$TOKEN" "$THREAD_ID" > ~/.openmausbot/external-runtimes.json
-chmod 600 ~/.openmausbot/external-runtimes.json
+printf '{ "%s": {"token":"%s","threadId":"%s"} }\n' "$BOT_ID" "$TOKEN" "$THREAD_ID" > ~/.limixbot/external-runtimes.json
+chmod 600 ~/.limixbot/external-runtimes.json
 ```
 
 Keep the file private (`600` on Unix; restrict its Windows file permissions).
@@ -1507,18 +1551,18 @@ settings do not change it.
 
 Self-hosted servers follow the **stable** channel: a released version that our
 own Clouds have run for 48 hours, named by the image tag `stable` and by
-[`stable.json`](https://raw.githubusercontent.com/milind-soni/OpenMausBot/channels/stable.json).
+[`stable.json`](https://raw.githubusercontent.com/leomieo/limix-bot/channels/stable.json).
 `latest` follows `main` and is not for a server you rely on. The update check
 (`GET /api/updates/check`, **Check for updates** in the app) compares the
 server with the stable version; `OMB_UPDATE_CHANNEL=newest` makes it follow
 every release instead.
 
 A server installed with the [installer](deploy-vps.md#quick-start-one-command-on-your-own-domain)
-updates with `sudo /opt/openmausbot/update.sh`, which the installer puts there.
+updates with `sudo /opt/limixbot/update.sh`, which the installer puts there.
 
 ```sh
 cd deploy && git pull && ./update.sh                                    # Docker: copy the data, update, roll back on failure
-git pull && pnpm install && sudo systemctl restart openmausbot          # from source
+git pull && pnpm install && sudo systemctl restart limixbot          # from source
 ```
 
 `deploy/update.sh` is the whole routine for a Docker Compose install: the
@@ -1534,7 +1578,7 @@ update an earlier run left unfinished.
 For the npm service there is no one-command updater yet:
 [do the same steps by hand](deploy-vps.md#paths-a-and-c-npm-with-the-service-above-the-same-steps-by-hand),
 as the service user while the server is stopped. For a foreground invocation,
-`npx --yes openmausbot@X.Y.Z serve --tunnel` selects a particular published
+`npx --yes limixbot@X.Y.Z serve --tunnel` selects a particular published
 release; replace `X.Y.Z` with that version.
 
 The desktop and phone apps work with any server version that was the stable

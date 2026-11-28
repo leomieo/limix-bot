@@ -2,10 +2,10 @@
 # Limix Bot on a server of your own: checks the server, then installs the Limix Bot server with HTTPS on your domain.
 # Running it again repairs or updates the install and never touches your data.
 #
-#   curl -fsSL https://raw.githubusercontent.com/leomieo/limix-bot/main/deploy/install.sh | sudo sh -s -- --domain maus.example.com
-#   ... | sudo sh -s -- --check --domain maus.example.com    only checks the server; changes nothing
+#   curl -fsSL https://raw.githubusercontent.com/leomieo/limix-bot/main/deploy/install.sh | sudo sh -s -- --domain limix.example.com
+#   ... | sudo sh -s -- --check --domain limix.example.com    only checks the server; changes nothing
 #   ... | sudo sh -s -- --uninstall                          stops the server; keeps your data
-#   ... | sudo sh -s -- --domain maus.example.com <code>     also connects the server to Limix Bot with a one-time code
+#   ... | sudo sh -s -- --domain limix.example.com <code>     also connects the server to Limix Bot with a one-time code
 #
 # Nothing runs until the last line calls main, so a download that is cut off part-way runs nothing. It sends no
 # telemetry. The addresses it contacts are the ones the checks name: the image registries, Let's Encrypt, GitHub's
@@ -73,14 +73,14 @@ command_line() { # what to run again, as the person ran it
 }
 
 usage() {
-  say "Usage: $(command_line '--domain maus.example.com')"
-  say "       $(command_line '--check --domain maus.example.com')   only checks this server; changes nothing"
+  say "Usage: $(command_line '--domain limix.example.com')"
+  say "       $(command_line '--check --domain limix.example.com')   only checks this server; changes nothing"
   say "       $(command_line '--uninstall')                        stops the server; keeps your data"
   say ""
   say "  --domain NAME      the name people will open, already pointing at this server"
   say "  --email ADDRESS    the first admin's email, so they can sign in with an emailed code"
   say "  --install-docker   install Docker with Docker's official script when it is missing, without asking"
-  say "  --dir PATH         where the install lives (default /opt/openmausbot)"
+  say "  --dir PATH         where the install lives (default /opt/limixbot)"
   say "  --tunnel TOKEN     a machine with no public address (home internet): serve it through this Cloudflare tunnel"
   say "  --no-sandbox       do not prepare this server for the bots' sandbox (only for a server you alone sign in to)"
   say "  <code>             the one-time code Limix Bot shows, to also connect this server to Limix Bot"
@@ -119,9 +119,9 @@ parse() {
   DOMAIN=$(printf '%s' "$DOMAIN" | tr '[:upper:]' '[:lower:]')
   case "$DOMAIN" in
     "") ;;
-    *[!a-z0-9.-]* | .* | *. | -* | *..*) fail "$DOMAIN is not a domain name. Give the name alone, like maus.example.com, without https:// or a path." ;;
+    *[!a-z0-9.-]* | .* | *. | -* | *..*) fail "$DOMAIN is not a domain name. Give the name alone, like limix.example.com, without https:// or a path." ;;
     *.*) ;;
-    *) fail "$DOMAIN is not a full domain name. Give a name like maus.example.com." ;;
+    *) fail "$DOMAIN is not a full domain name. Give a name like limix.example.com." ;;
   esac
   case "$EMAIL" in
     "") ;;
@@ -138,7 +138,7 @@ parse() {
   esac
   case "$INSTALL_DIR" in
     /?*) ;;
-    *) fail "--dir needs a full path, like /opt/openmausbot." ;;
+    *) fail "--dir needs a full path, like /opt/limixbot." ;;
   esac
   case "$INSTALL_DIR" in
     *[!A-Za-z0-9/._-]*) fail "--dir may hold only letters, digits, / . _ and -." ;;
@@ -535,12 +535,12 @@ check_version() {
         ;;
     esac
     case "${chosen##*/}" in
-      *:latest) fix "OMB_INSTALL_IMAGE names the latest tag, which follows every commit. Name a release, like ghcr.io/$IMAGE_REPO:v0.1.151." ;;
+      *:latest) fix "OMB_INSTALL_IMAGE names the latest tag, which follows every commit. Name a release, like ghcr.io/$IMAGE_REPO:v0.3.128." ;;
       *:?*)
         IMAGE=$chosen
         ok "version: $IMAGE, as asked"
         ;;
-      *) fix "OMB_INSTALL_IMAGE needs a release tag, like ghcr.io/$IMAGE_REPO:v0.1.151." ;;
+      *) fix "OMB_INSTALL_IMAGE needs a release tag, like ghcr.io/$IMAGE_REPO:v0.3.128." ;;
     esac
     return
   fi
@@ -1041,7 +1041,7 @@ connect_server() {
 # The first admin's one-time sign-in link, as `openmausbot pair` prints it: its code line (until when it works) and the
 # link. Nothing when the server would not make one.
 first_admin_link() {
-  made=$(compose exec -T omb openmausbot pair --label "First admin" 2>/dev/null) || return 1
+  made=$(compose exec -T omb node /app/dist-server/limixbot.js pair --label "First admin" 2>/dev/null) || return 1
   lines=$(printf '%s\n' "$made" | grep -E '^(Pairing code|Link) ' || true)
   case "$lines" in *"Link "*"https://$DOMAIN/pair#code="*) printf '%s\n' "$lines" | sed 's/^/  /' ;; *) return 1 ;; esac
 }
@@ -1050,7 +1050,7 @@ finish() {
   say ""
   say "Limix Bot is running at https://$DOMAIN"
   say ""
-  pair_command="cd $INSTALL_DIR && sudo docker compose exec omb openmausbot pair --label \"First admin\""
+  pair_command="cd $INSTALL_DIR && sudo docker compose exec omb node /app/dist-server/limixbot.js pair --label \"First admin\""
   # Only to a terminal: in a log, the link would let whoever reads it sign in as the admin until it is used or expires.
   if [ -t 1 ] && link=$(first_admin_link); then
     say "To sign in as the first admin, open this one-time link in your browser. Anyone who has it can use it, once:"
@@ -1076,10 +1076,10 @@ finish() {
 }
 
 run_install() {
-  need_root "--domain ${DOMAIN:-maus.example.com}"
+  need_root "--domain ${DOMAIN:-limix.example.com}"
   if [ -z "$DOMAIN" ]; then DOMAIN=$(env_value DOMAIN); fi
   if [ -z "$TUNNEL_TOKEN" ]; then TUNNEL_TOKEN=$(env_value CF_TUNNEL_TOKEN); fi
-  [ -n "$DOMAIN" ] || fail "Say which name people will open, like this: $(command_line '--domain maus.example.com')"
+  [ -n "$DOMAIN" ] || fail "Say which name people will open, like this: $(command_line '--domain limix.example.com')"
   preflight
   if [ "$FAILED" != 0 ]; then
     report_docker_missing

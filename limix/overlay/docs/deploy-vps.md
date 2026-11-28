@@ -2,7 +2,7 @@
 
 To keep Limix Bot and its agents on your current computer and use a VPS only as a
 bot’s remote desktop, see [Bring Your Own VPS](byo-vps.md) and the
-[published setup guide](https://docs.openmausbot.com/docs/computers/byo-vps).
+[published setup guide](./byo-vps.md).
 
 From a blank Linux server to Limix Bot running on it around the clock, reachable from your laptop, the desktop app and your phone, with your bots working while every laptop is closed. It assumes nothing beyond being able to open a terminal and paste commands. About twenty minutes, most of it waiting.
 
@@ -11,10 +11,10 @@ From a blank Linux server to Limix Bot running on it around the clock, reachable
 For a fresh Ubuntu 22.04 or 24.04 server (x86-64, at least 2 CPUs, 4 GB of memory and 20 GB of free disk) and a domain name whose A record already points at it:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/milind-soni/OpenMausBot/main/deploy/install.sh | sudo sh -s -- --domain maus.example.com
+curl -fsSL https://raw.githubusercontent.com/leomieo/limix-bot/main/deploy/install.sh | sudo sh -s -- --domain limix.example.com
 ```
 
-The installer ([`deploy/install.sh`](https://github.com/milind-soni/OpenMausBot/blob/main/deploy/install.sh)) does path B below for you and ends with Limix Bot answering at `https://maus.example.com`.
+The installer ([`deploy/install.sh`](https://github.com/leomieo/limix-bot/blob/main/deploy/install.sh)) does path B below for you and ends with Limix Bot answering at `https://limix.example.com`.
 
 **It checks the server first, and changes nothing while it checks.** Each check that fails prints one sentence saying what to fix, and nothing is installed until all pass:
 
@@ -36,12 +36,12 @@ The installer ([`deploy/install.sh`](https://github.com/milind-soni/OpenMausBot/
 To run only the checks, add `--check`:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/milind-soni/OpenMausBot/main/deploy/install.sh | sudo sh -s -- --check --domain maus.example.com
+curl -fsSL https://raw.githubusercontent.com/leomieo/limix-bot/main/deploy/install.sh | sudo sh -s -- --check --domain limix.example.com
 ```
 
 If Docker is missing, the installer asks before installing it with Docker's official script (`get.docker.com`); `--install-docker` says yes ahead of time. It installs nothing else on the server.
 
-**Then it installs** everything under one folder, `/opt/openmausbot` (`--dir` picks another):
+**Then it installs** everything under one folder, `/opt/limixbot` (`--dir` picks another):
 
 | Path | What |
 |---|---|
@@ -54,22 +54,22 @@ If Docker is missing, the installer asks before installing it with Docker's offi
 
 `update.sh` and the sandbox's files are this repository's own, taken from the tag of the version being installed so they match it, and from `main` only when that tag does not have them. The installer says which it used.
 
-It runs the newest release, pinned by its version; once a `stable` channel is published it follows that instead. If that version has no bots' sandbox, the checks (`--check` too) say so before anything is downloaded. It never runs `latest`, which follows every commit. It then waits until the server reports healthy and `https://maus.example.com` answers with a valid certificate, and prints the address.
+It runs the newest release, pinned by its version; once a `stable` channel is published it follows that instead. If that version has no bots' sandbox, the checks (`--check` too) say so before anything is downloaded. It never runs `latest`, which follows every commit. It then waits until the server reports healthy and `https://limix.example.com` answers with a valid certificate, and prints the address.
 
 **The bots' sandbox.** A Limix Bot version with the hardened profile runs every bot in a sandbox, away from the server's settings, keys and other bots' files, and Docker's defaults do not let a container build one. For such a version the installer prepares the server (a seccomp profile in `/etc/mausbot` and an AppArmor profile in `/etc/apparmor.d`, the two the Limix Bot connector installs), starts the server with the four security settings in `compose.box.yaml` (no `--privileged`, no added capability), and then runs the server's own self-check, which among other things confirms that a bot cannot read `config.json`. If a check fails that means a bot could reach something it must not, or that bots would not work, the installer names it and does not report success; so does a self-check that gives no answer, or a check the installer has never heard of. Five checks that are about neither (the kernel keyring, the sandbox's host name, the CPU list, a hosting provider's address, and reaching the public internet) only print a note. For a version without the hardened profile it says the sandbox is not there yet; run the install command again after updating to one that has it. `--no-sandbox` skips all of this, for a server only you sign in to on a host without AppArmor.
 
 **Sign in as the first admin** with a one-time link made on the server. Run in a terminal, the installer makes one and prints it when it finishes. It does not when its output goes anywhere else, such as a log, because whoever reads the link can sign in as the admin until it is used or expires. To make one yourself:
 
 ```sh
-cd /opt/openmausbot && sudo docker compose exec omb openmausbot pair --label "First admin"
+cd /opt/limixbot && sudo docker compose exec omb node /app/dist-server/limixbot.js pair --label "First admin"
 ```
 
 Open the link it prints, or paste it into the desktop app under **＋ → Connect to a server**. To sign in with an emailed code instead, run the installer with `--email you@example.com`.
 
-- **Update:** `sudo /opt/openmausbot/update.sh`, which backs the data up, checks the new version's health and puts the old one back if it fails. The installer places it once this repository has it and prints the command when it finishes; until then, running the install command again moves to the newest release. `update.sh` pins the version by digest in `.env`, and a later run of the installer keeps that pin.
+- **Update:** `sudo /opt/limixbot/update.sh`, which backs the data up, checks the new version's health and puts the old one back if it fails. The installer places it once this repository has it and prints the command when it finishes; until then, running the install command again moves to the newest release. `update.sh` pins the version by digest in `.env`, and a later run of the installer keeps that pin.
 - **Repair:** run the install command again. It checks the server, rewrites its own files and leaves `.env` and `data/` alone. That also moves an install made before Caddy got its own container: Caddy then shared the server's network, and HTTPS went down whenever the server restarted without it.
-- **Stop:** `--uninstall` stops the server and removes its containers. It deletes nothing: your data stays in `/opt/openmausbot/data`.
-- **Every other command in this guide** that starts `docker compose` for path B works from `/opt/openmausbot`.
+- **Stop:** `--uninstall` stops the server and removes its containers. It deletes nothing: your data stays in `/opt/limixbot/data`.
+- **Every other command in this guide** that starts `docker compose` for path B works from `/opt/limixbot`.
 - **What the installer contacts:** the registries and Let's Encrypt from the table, GitHub's release list, this repository's files on `raw.githubusercontent.com`, and `cloudflare.com/cdn-cgi/trace` to learn the server's public address for the DNS check. It sends no telemetry.
 - **Behind a load balancer or NAT** that forwards ports 80 and 443 to the server, set `OMB_INSTALL_SKIP_DNS=1` to skip the DNS check.
 
@@ -87,7 +87,7 @@ Three ways to make the server reachable are covered. Pick one; the rest of the g
 | **B. Your own domain** (Docker + Caddy) | a domain name, ports 80/443 | anyone with a pairing code, over HTTPS | a permanent address you own |
 | **C. Your Tailscale network** (`serve --tailscale`) | Tailscale on the server and your devices | only your tailnet | the most private; nothing public at all |
 
-Only need the phone app? Add `--relay` to path B or C on a machine signed in with `openmausbot login --relay` (never on a machine with a path A address), or use it on its own: the app pairs by QR through Limix Bot Relay, end-to-end encrypted, with no domain, open port or VPN. See [Phones through Limix Bot Relay](phone-relay-server.md).
+Only need the phone app? Add `--relay` to path B or C on a machine signed in with `limixbot login --relay` (never on a machine with a path A address), or use it on its own: the app pairs by QR through Limix Bot Relay, end-to-end encrypted, with no domain, open port or VPN. See [Phones through Limix Bot Relay](phone-relay-server.md).
 
 Whichever you pick, the login is the same: you **pair** each device once with a short code and it stays signed in. A session lasts 30 days; using it with half that or less left renews it to a full 30, up to 180 days from pairing (`OMB_SESSION_TTL_DAYS` and `OMB_SESSION_MAX_DAYS` change both numbers). There is no password.
 
@@ -134,46 +134,46 @@ ssh root@YOUR_SERVER_IP
 ```
 
 For paths A and C, use the same unprivileged Linux account for setup and the
-running service. The examples below use `maus` with home `/home/maus`. From an
+running service. The examples below use `limix` with home `/home/limix`. From an
 administrator shell, create it if it does not already exist, then switch to it:
 
 ```sh
-sudo useradd --create-home --shell /bin/bash maus
-sudo -iu maus
+sudo useradd --create-home --shell /bin/bash limix
+sudo -iu limix
 ```
 
-The login shell also changes into `/home/maus`; run setup there, not from `/root`.
+The login shell also changes into `/home/limix`; run setup there, not from `/root`.
 Run the `npx` commands and engine sign-ins below in this account. Keep a separate
 administrator shell for system packages and systemd. If you already signed in as
-root, sign in again as `maus`; those accounts have different homes and credentials.
+root, sign in again as `limix`; those accounts have different homes and credentials.
 
 ## Path A: a public address with one command
 
 No domain, no proxy, no open port. The server gets an address like `https://c-7f3a9c.openmausbot.com` through a Cloudflare tunnel; only traffic through the tunnel reaches it, and that traffic still has to pair.
 
 ```sh
-npx openmausbot setup          # once: choose AI access, connect, and choose a model
-npx openmausbot login          # once: an emailed code signs this machine in and reserves its address
-npx openmausbot serve --tunnel # runs the server there and prints the pairing link with a QR code
+npx limixbot setup          # once: choose AI access, connect, and choose a model
+npx limixbot login          # once: an emailed code signs this machine in and reserves its address
+npx limixbot serve --tunnel # runs the server there and prints the pairing link with a QR code
 ```
 
 `setup` connects an AI provider; it is separate from the Limix Bot account.
 Use Codex's device-code option over SSH, or enter a hidden API key for a
 chat-only connection. More engines can be added later. See [CLI setup](cli-onboarding.md).
 
-`login` asks for your email, sends an 8-digit code, and prints the address it reserved for this machine. `serve --tunnel` downloads `cloudflared` on the first run (a pinned version with a verified digest, into `~/.openmausbot`), starts the server, connects the tunnel, and after a few seconds prints `tunnel: live at https://…`. Leave it running; see "Keep it running" for a service.
+`login` asks for your email, sends an 8-digit code, and prints the address it reserved for this machine. `serve --tunnel` downloads `cloudflared` on the first run (a pinned version with a verified digest, into `~/.limixbot`), starts the server, connects the tunnel, and after a few seconds prints `tunnel: live at https://…`. Leave it running; see "Keep it running" for a service.
 
-The account credentials live in `~/.openmausbot/tunnel-account.json`, readable only by your user. `npx openmausbot logout` releases the address.
+The account credentials live in `~/.limixbot/tunnel-account.json`, readable only by your user. `npx limixbot logout` releases the address.
 
 Skip to "Install and sign the engines in".
 
 ## Path B: your own domain, with Docker
 
-One container for the server plus Caddy for HTTPS at `https://maus.example.com`.
+One container for the server plus Caddy for HTTPS at `https://limix.example.com`.
 
 The [installer](#quick-start-one-command-on-your-own-domain) does these steps for you on Ubuntu. Do them by hand on another system, to build your own image with `ENGINES`, or to see what it does.
 
-1. **Point a name at the server.** In your DNS provider add an **A record** (name `maus`, value the server's public IP). After a few minutes `ping maus.example.com` should answer with that IP. Ports 80 and 443 must be open; most providers open them by default.
+1. **Point a name at the server.** In your DNS provider add an **A record** (name `limix`, value the server's public IP). After a few minutes `ping limix.example.com` should answer with that IP. Ports 80 and 443 must be open; most providers open them by default.
 2. **Install Docker:**
 
    ```sh
@@ -184,9 +184,9 @@ The [installer](#quick-start-one-command-on-your-own-domain) does these steps fo
 3. **Get the deploy files and set the name:**
 
    ```sh
-   git clone https://github.com/milind-soni/OpenMausBot && cd OpenMausBot/deploy
+   git clone https://github.com/leomieo/limix-bot && cd limix-bot/deploy
    cp .env.example .env
-   nano .env                # DOMAIN=maus.example.com ; ENGINES=@anthropic-ai/claude-code @openai/codex
+   nano .env                # DOMAIN=limix.example.com ; ENGINES=@anthropic-ai/claude-code @openai/codex
    ```
 
    `ENGINES` lists the engine CLIs baked into your image, separated by spaces. Change it later and rebuild if you add one.
@@ -199,23 +199,23 @@ The [installer](#quick-start-one-command-on-your-own-domain) does these steps fo
    docker compose ps        # omb "healthy", caddy "running"
    ```
 
-   Caddy requests the certificate on its own; give it a minute. Then `https://maus.example.com` shows a page asking for a pairing code. That is correct: nothing works until you pair.
+   Caddy requests the certificate on its own; give it a minute. Then `https://limix.example.com` shows a page asking for a pairing code. That is correct: nothing works until you pair.
 
-In this path, every `npx openmausbot …` command below is run inside the container instead:
+In this path, every `npx limixbot …` command below is run inside the container instead:
 
 ```sh
-docker compose exec omb openmausbot pair --label "My MacBook"
+docker compose exec omb node /app/dist-server/limixbot.js pair --label "My MacBook"
 ```
 
 ## Path C: only your Tailscale network
 
-From the administrator shell, install Tailscale on the server and sign in (`curl -fsSL https://tailscale.com/install.sh | sh && sudo tailscale up`). Enable HTTPS certificates for your tailnet once at https://login.tailscale.com/admin/dns (HTTPS Certificates), then run this from the `maus` shell:
+From the administrator shell, install Tailscale on the server and sign in (`curl -fsSL https://tailscale.com/install.sh | sh && sudo tailscale up`). Enable HTTPS certificates for your tailnet once at https://login.tailscale.com/admin/dns (HTTPS Certificates), then run this from the `limix` shell:
 
 ```sh
-npx openmausbot serve --tailscale
+npx limixbot serve --tailscale
 ```
 
-Tailscale terminates HTTPS with its own certificate and the pairing link uses the server's MagicDNS name (`https://maus.tail1234.ts.net`). `serve` runs `tailscale serve` in the foreground, so the share ends when it stops. Only devices on your tailnet can reach it, which is a very good property for a server that can run tools.
+Tailscale terminates HTTPS with its own certificate and the pairing link uses the server's MagicDNS name (`https://limix.tail1234.ts.net`). `serve` runs `tailscale serve` in the foreground, so the share ends when it stops. Only devices on your tailnet can reach it, which is a very good property for a server that can run tools.
 
 ## Give the bots a browser (optional)
 
@@ -224,13 +224,13 @@ the image. For paths A and C, install Linux system libraries once from the
 administrator shell:
 
 ```sh
-sudo -H npx --yes openmausbot browser install --with-deps
+sudo -H npx --yes limixbot browser install --with-deps
 ```
 
-Then install the browser in the service account's home, from the `maus` shell:
+Then install the browser in the service account's home, from the `limix` shell:
 
 ```sh
-npx --yes openmausbot browser install
+npx --yes limixbot browser install
 ```
 
 The administrator's browser download is in a different home; it does not install
@@ -246,7 +246,7 @@ gets its own isolated session whose logins persist across restarts.
 
 The npm Limix Bot package does not install model engine CLIs. For paths A and C,
 install the engine you use in the service account, then sign it in. For example,
-from the `maus` shell, for Claude:
+from the `limix` shell, for Claude:
 
 ```sh
 npm install --global --prefix "$HOME/.local" @anthropic-ai/claude-code
@@ -260,7 +260,7 @@ engines you use. For path B, run the installed CLI inside the container, for
 example `docker compose exec omb claude`.
 
 Engine logins belong to the service user's home (for example `~/.codex` and
-`~/.claude`), separately from Limix Bot's `~/.openmausbot`. Keep that home when
+`~/.claude`), separately from Limix Bot's `~/.limixbot`. Keep that home when
 restarting or upgrading. The systemd example below includes `~/.local/bin` in PATH.
 
 ## Pair your first device
@@ -268,7 +268,7 @@ restarting or upgrading. The systemd example below includes `~/.local/bin` in PA
 `serve` already printed a pairing block when it started in a terminal (a service prints none into its log). For another device later:
 
 ```sh
-npx openmausbot pair --label "Kitchen iPad"
+npx limixbot pair --label "Kitchen iPad"
 ```
 
 ```
@@ -276,7 +276,7 @@ Pairing code   RR8Y-BLR6-H939   works once, until 10:59 · everything
 Link           https://c-7f3a9c.openmausbot.com/pair#code=RR8Y-BLR6-H939
 
   Desktop app   ＋ → Connect to a server, paste the link
-  Phone         scan with your camera or the MausBot app
+  Phone         scan with your camera or the Limix Bot app
 ```
 
 - **A browser:** open the link. The code is filled in; press **Connect**. That browser is paired for 30 days, renewed on use as above.
@@ -290,36 +290,36 @@ Worth knowing: a code works **once**, for **10 minutes** (`--ttl 24h` keeps it o
 Every paired device is a session:
 
 ```sh
-npx openmausbot devices               # id, device, scope, last seen, expires
-npx openmausbot devices revoke ID     # signs that device out and closes its stream at once
-npx openmausbot status                # the address others use, and whether it answers as this server
+npx limixbot devices               # id, device, scope, last seen, expires
+npx limixbot devices revoke ID     # signs that device out and closes its stream at once
+npx limixbot status                # the address others use, and whether it answers as this server
 ```
 
 ## Keep it running
 
-`npx openmausbot serve` is a plain foreground process. `npx openmausbot service install --tunnel` (or `--tailscale`) writes a unit like the one below for you, with a copy of the release it runs beside your data. To write it by hand for systemd (paths A and C),
-install a chosen release first, from the `maus` shell. Replace `X.Y.Z` with the
+`npx limixbot serve` is a plain foreground process. `npx limixbot service install --tunnel` (or `--tailscale`) writes a unit like the one below for you, with a copy of the release it runs beside your data. To write it by hand for systemd (paths A and C),
+install a chosen release first, from the `limix` shell. Replace `X.Y.Z` with the
 published version you want to run:
 
 ```sh
-npm install --global --prefix "$HOME/.local" openmausbot@X.Y.Z
+npm install --global --prefix "$HOME/.local" limixbot@X.Y.Z
 ```
 
 Stop the foreground server with Ctrl-C before enabling the service. From the
-administrator shell, save this as `/etc/systemd/system/openmausbot.service`:
+administrator shell, save this as `/etc/systemd/system/limixbot.service`:
 
 ```ini
-# /etc/systemd/system/openmausbot.service
+# /etc/systemd/system/limixbot.service
 [Unit]
-Description=OpenMausBot server
+Description=Limix Bot server
 After=network-online.target
 
 [Service]
-User=maus
-WorkingDirectory=/home/maus
-Environment=HOME=/home/maus
-Environment=PATH=/home/maus/.local/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=/home/maus/.local/bin/openmausbot serve --tunnel
+User=limix
+WorkingDirectory=/home/limix
+Environment=HOME=/home/limix
+Environment=PATH=/home/limix/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/limix/.local/bin/limixbot serve --tunnel
 Restart=always
 RestartSec=5
 
@@ -328,11 +328,11 @@ WantedBy=multi-user.target
 ```
 
 ```sh
-sudo systemctl daemon-reload && sudo systemctl enable --now openmausbot
-journalctl -u openmausbot -f            # the server's log, including "tunnel: live at …"
+sudo systemctl daemon-reload && sudo systemctl enable --now limixbot
+journalctl -u limixbot -f            # the server's log, including "tunnel: live at …"
 ```
 
-Use `--tailscale` instead of `--tunnel` for path C. A service is not a terminal, so `serve` writes no pairing code into the journal; mint one with `npx openmausbot pair` when you need it. Docker (path B) restarts on its own (`restart: unless-stopped`).
+Use `--tailscale` instead of `--tunnel` for path C. A service is not a terminal, so `serve` writes no pairing code into the journal; mint one with `npx limixbot pair` when you need it. Docker (path B) restarts on its own (`restart: unless-stopped`).
 
 Adjust the account, home, and PATH if yours differ; Node 24 must be available on
 that PATH. The service runs the installed CLI directly, so a restart uses the
@@ -342,7 +342,7 @@ same release without an npm install prompt or an implicit upgrade.
 
 A self-hosted server follows the **stable** channel: a released version that
 Limix Bot's own Clouds have run for 48 hours first. The image tag `stable` and
-[`stable.json`](https://raw.githubusercontent.com/milind-soni/OpenMausBot/channels/stable.json)
+[`stable.json`](https://raw.githubusercontent.com/leomieo/limix-bot/channels/stable.json)
 name it. The tag `latest` follows every change on `main`; it is for trying
 things out, not for a server you rely on. **Check for updates** in the app
 compares your server with the stable version. To hear of every release as soon
@@ -351,7 +351,7 @@ environment.
 
 ### Path B (Docker): one command, with a way back
 
-From `OpenMausBot/deploy`:
+From `limix-bot/deploy`:
 
 ```sh
 git pull && ./update.sh
@@ -360,15 +360,15 @@ git pull && ./update.sh
 `git pull` brings the current `update.sh` and `docker-compose.yml`; the server
 image comes from the stable channel, not from your checkout. An install that
 has no checkout, with its `compose.yaml`, `.env` and `data/` in one folder such
-as `/opt/openmausbot`, runs the same script on that folder:
+as `/opt/limixbot`, runs the same script on that folder:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/milind-soni/OpenMausBot/main/deploy/update.sh -o update.sh
-sudo bash update.sh --dir /opt/openmausbot
+curl -fsSL https://raw.githubusercontent.com/leomieo/limix-bot/main/deploy/update.sh -o update.sh
+sudo bash update.sh --dir /opt/limixbot
 ```
 
 An install made with the installer (`deploy/install.sh`) already has `update.sh` in
-its folder: `sudo /opt/openmausbot/update.sh`.
+its folder: `sudo /opt/limixbot/update.sh`.
 
 Until a first version has been made stable, `./update.sh` takes the newest
 release instead, as **Check for updates** does then.
@@ -384,13 +384,13 @@ every file's owner and mode either way. The script then:
    volumes, stops the server, checks that it has stopped, and copies
    everything under `/data` into a new Docker volume named for the update
    (`deploy_data-before-update-20261110T120000Z`;
-   `openmausbot_data-before-update-…` for `/opt/openmausbot`). It then
+   `openmausbot_data-before-update-…` for `/opt/limixbot`). It then
    compares the copy with the data, every file by checksum; a copy that does
    not match is thrown away, the server is started again, and nothing has
    changed. The copy from the update before is removed only after this one
    has matched. The server is down from here until step 4; how long depends
    on how much data there is.
-3. Writes the image into `.env` (`OMB_IMAGE=ghcr.io/milind-soni/openmausbot@sha256:…`)
+3. Writes the image into `.env` (`OMB_IMAGE=ghcr.io/leomieo/limix-bot@sha256:…`)
    and starts it. An install the installer made while Caddy still shared the
    server's network gets the installer's current `compose.yaml` and
    `Caddyfile` here, as a run of the installer would write them (the rollback
@@ -399,7 +399,7 @@ every file's owner and mode either way. The script then:
 4. Waits, up to two minutes (`OMB_UPDATE_WAIT_S` for longer), until the new server answers `/api/health`
    steadily, says it is the new version, can still start a bot if it could
    before (the server's own count of ready engines, `GET /api/health/engines`,
-   which a hardened server answers too; `openmausbot doctor` on a version
+   which a hardened server answers too; `limixbot doctor` on a version
    without it), and Caddy runs again.
 5. If any of that fails: puts back the data from the copy, `.env` and the old
    image, starts the old version, and tells you what went wrong. Your server
@@ -428,7 +428,7 @@ once are refused.
 
 ```sh
 ./update.sh --check            # what would change; changes nothing
-./update.sh --version 0.1.151  # one released version instead of the stable one
+./update.sh --version 0.3.128  # one released version instead of the stable one
 ./update.sh --rollback         # the version and the data from before the last update
 ./update.sh --allow-older      # go ahead although that version is not newer than the one running
 ```
@@ -475,30 +475,30 @@ from **Settings → Engines** live on the data volume and survive either way.
 There is no one-command updater for an npm install yet. Do what the script
 does: copy the data first, install one named version, check it, and keep the
 way back. Take the stable version number from
-[`stable.json`](https://raw.githubusercontent.com/milind-soni/OpenMausBot/channels/stable.json)
-(`"version"`), and note the one you run now (`openmausbot --version`). From
+[`stable.json`](https://raw.githubusercontent.com/leomieo/limix-bot/channels/stable.json)
+(`"version"`), and note the one you run now (`limixbot --version`). From
 the administrator shell, replacing `X.Y.Z`:
 
 ```sh
-sudo systemctl stop openmausbot
-sudo -iu maus sh -c 'umask 077; tar czf ~/openmausbot-before-update.tgz -C ~ .openmausbot && chmod 600 ~/openmausbot-before-update.tgz'
-sudo -iu maus npm install --global --prefix /home/maus/.local openmausbot@X.Y.Z
-sudo systemctl start openmausbot
-curl -sf http://127.0.0.1:8799/api/health && sudo -iu maus openmausbot doctor
+sudo systemctl stop limixbot
+sudo -iu limix sh -c 'umask 077; tar czf ~/limixbot-before-update.tgz -C ~ .limixbot && chmod 600 ~/limixbot-before-update.tgz'
+sudo -iu limix npm install --global --prefix /home/limix/.local limixbot@X.Y.Z
+sudo systemctl start limixbot
+curl -sf http://127.0.0.1:8799/api/health && sudo -iu limix limixbot doctor
 ```
 
 If the install fails, or the last line does not end with the server answering
 and an engine ready, go back (replace `OLD` with the version you noted):
 
 ```sh
-sudo systemctl stop openmausbot
-sudo -iu maus npm install --global --prefix /home/maus/.local openmausbot@OLD
-sudo -iu maus sh -c 'mv ~/.openmausbot ~/.openmausbot-failed-update && tar xzf ~/openmausbot-before-update.tgz -C ~'
-sudo systemctl start openmausbot
+sudo systemctl stop limixbot
+sudo -iu limix npm install --global --prefix /home/limix/.local limixbot@OLD
+sudo -iu limix sh -c 'mv ~/.limixbot ~/.limixbot-failed-update && tar xzf ~/limixbot-before-update.tgz -C ~'
+sudo systemctl start limixbot
 ```
 
 A service restart by itself does not update the installed package. For
-foreground `npx` usage, name the release: `npx --yes openmausbot@X.Y.Z serve --tunnel`.
+foreground `npx` usage, name the release: `npx --yes limixbot@X.Y.Z serve --tunnel`.
 
 ### How far behind a server may fall
 
@@ -512,7 +512,7 @@ Routines and queued work survive a restart. A teammate turn running at that mome
 ## Back up
 
 Stop the server before copying its SQLite database: Ctrl-C for a foreground
-process, or `sudo systemctl stop openmausbot` from the administrator shell for
+process, or `sudo systemctl stop limixbot` from the administrator shell for
 the service above. Stop any engine processes and managed desktops still writing
 files you intend to back up.
 
@@ -521,9 +521,9 @@ credentials, and paired sessions). Run it from the service account's shell:
 
 ```sh
 umask 077
-backup_dir=$(mktemp -d "$PWD/openmausbot-backup.XXXXXX")
-tar czf "$backup_dir/openmausbot-data.tgz" -C "$HOME" .openmausbot
-chmod 600 "$backup_dir/openmausbot-data.tgz"
+backup_dir=$(mktemp -d "$PWD/limixbot-backup.XXXXXX")
+tar czf "$backup_dir/limixbot-data.tgz" -C "$HOME" .limixbot
+chmod 600 "$backup_dir/limixbot-data.tgz"
 ```
 
 A full backup also needs your engine credential/configuration paths, such as
@@ -533,34 +533,34 @@ any configured home/data-directory overrides, and workspaces outside the app
 directory. These are not included in the command above.
 
 For path B, the whole `/data` volume includes the container's CLI homes. From
-`OpenMausBot/deploy`, stop the whole project before archiving, and start it
+`limix-bot/deploy`, stop the whole project before archiving, and start it
 again after; `deploy_data` is the default volume name, so use your actual
 volume name if you changed the Compose project:
 
 ```sh
 docker compose stop
-backup_dir=$(mktemp -d "$PWD/openmausbot-backup.XXXXXX")
-docker run --rm -v deploy_data:/data:ro -v "$backup_dir":/b alpine sh -c 'umask 077; tar czf /b/openmausbot-data.tgz -C /data . && chmod 600 /b/openmausbot-data.tgz'
+backup_dir=$(mktemp -d "$PWD/limixbot-backup.XXXXXX")
+docker run --rm -v deploy_data:/data:ro -v "$backup_dir":/b alpine sh -c 'umask 077; tar czf /b/limixbot-data.tgz -C /data . && chmod 600 /b/limixbot-data.tgz'
 docker compose start
 ```
 
 To restore that archive, with the project stopped, replace what is in the
-volume with it (`openmausbot-backup.XXXXXX` is the folder the backup made):
+volume with it (`limixbot-backup.XXXXXX` is the folder the backup made):
 
 ```sh
 docker compose stop
-docker run --rm -v deploy_data:/data -v "$PWD/openmausbot-backup.XXXXXX":/b:ro alpine sh -c 'find /data -mindepth 1 -delete && tar xzpf /b/openmausbot-data.tgz -C /data'
+docker run --rm -v deploy_data:/data -v "$PWD/limixbot-backup.XXXXXX":/b:ro alpine sh -c 'find /data -mindepth 1 -delete && tar xzpf /b/limixbot-data.tgz -C /data'
 docker compose start
 ```
 
-With the installer, the data is the folder `/opt/openmausbot/data`. This backs
-it up, with `.env`, into an archive in `/opt/openmausbot/backups`, the whole
+With the installer, the data is the folder `/opt/limixbot/data`. This backs
+it up, with `.env`, into an archive in `/opt/limixbot/backups`, the whole
 project stopped and started again around it. The folder is `700` and the archive
 `600` whatever the server's umask or the folder's default ACLs, since the archive
 holds every chat, key and session:
 
 ```sh
-cd /opt/openmausbot && sudo docker compose stop && sudo sh -c 'set -e; install -d -m 700 backups; f="backups/backup-$(date -u +%Y%m%dT%H%M%SZ).tgz"; (umask 077; tar --warning=no-file-ignored -czf "$f" data .env); chmod 600 "$f"'; sudo docker compose start
+cd /opt/limixbot && sudo docker compose stop && sudo sh -c 'set -e; install -d -m 700 backups; f="backups/backup-$(date -u +%Y%m%dT%H%M%SZ).tgz"; (umask 077; tar --warning=no-file-ignored -czf "$f" data .env); chmod 600 "$f"'; sudo docker compose start
 ```
 
 Copy the archive to another machine and keep it private.
@@ -573,18 +573,18 @@ data takes its place, with its owner and permissions. An archive without a
 `data/` folder changes nothing:
 
 ```sh
-cd /opt/openmausbot && sudo docker compose stop && sudo sh -c 'set -e; tar -tzf backups/backup-20261110T153000Z.tgz data/ >/dev/null; rm -rf data.before-restore; mv data data.before-restore; tar -xzpf backups/backup-20261110T153000Z.tgz data'; sudo docker compose start
+cd /opt/limixbot && sudo docker compose stop && sudo sh -c 'set -e; tar -tzf backups/backup-20261110T153000Z.tgz data/ >/dev/null; rm -rf data.before-restore; mv data data.before-restore; tar -xzpf backups/backup-20261110T153000Z.tgz data'; sudo docker compose start
 ```
 
 Once Limix Bot runs on the restored data, remove the old copy:
-`sudo rm -rf /opt/openmausbot/data.before-restore`. The restore leaves `.env` as
+`sudo rm -rf /opt/limixbot/data.before-restore`. The restore leaves `.env` as
 it is. On a new server, install first with the same `--domain`, then restore.
 
 Each path B backup creates a fresh private folder in the current directory, so it
 cannot overwrite an older archive with more permissive access. Keep the
 archive inside that folder privately on another machine. Restore paths A and C
 with the server stopped, using the same paths and original ownership. After
-backup or restore, start the service with `sudo systemctl start openmausbot`.
+backup or restore, start the service with `sudo systemctl start limixbot`.
 Stop and start the Docker project as a whole, as above, rather than `omb` on
 its own.
 
@@ -600,11 +600,11 @@ Read this before putting anything else in front of the server.
 
 ## Troubleshooting
 
-**`serve --tunnel` says "no account on this machine yet".** Run `npx openmausbot login` on this machine first; the credentials are per machine.
+**`serve --tunnel` says "no account on this machine yet".** Run `npx limixbot login` on this machine first; the credentials are per machine.
 
 **The server does not start and says its data "was written by a newer Limix Bot".** An older version was started on data a newer one had already changed, which happens when a version is put back without its data. Nothing was changed. Install the version the message names (or a newer one), or put back the copy of the data from before that update.
 
-**The tunnel stays on "retrying".** The server is running and usable locally; the public hop is not verified yet. Wait a minute (Cloudflare needs a moment on a fresh address), then check `journalctl`/the terminal for the reason. If it never comes up, `npx openmausbot logout && npx openmausbot login` issues a fresh address.
+**The tunnel stays on "retrying".** The server is running and usable locally; the public hop is not verified yet. Wait a minute (Cloudflare needs a moment on a fresh address), then check `journalctl`/the terminal for the reason. If it never comes up, `npx limixbot logout && npx limixbot login` issues a fresh address.
 
 **Path B: the page never loads or shows a certificate error.** Caddy could not get a certificate. Check that the name resolves to the server and that ports 80 and 443 are open; `docker compose logs caddy` shows the reason.
 
@@ -616,9 +616,9 @@ Read this before putting anything else in front of the server.
 
 **A bot says the engine is not signed in.** Sign that engine in again on the server.
 
-**What does the server think it is?** `https://<address>/.well-known/openmausbot/environment` is public and shows its id, label, version and capabilities; `npx openmausbot status` prints the same on the server.
+**What does the server think it is?** `https://<address>/.well-known/openmausbot/environment` is public and shows its id, label, version and capabilities; `npx limixbot status` prints the same on the server.
 
-**Something else.** `journalctl -u openmausbot --since -10m` (or `docker compose logs omb --tail 100`) shows the server's startup lines. Paste them with your question in the community channel.
+**Something else.** `journalctl -u limixbot --since -10m` (or `docker compose logs omb --tail 100`) shows the server's startup lines. Paste them with your question in the community channel.
 
 ### Ubuntu 24.04 browser sandbox
 
@@ -631,7 +631,7 @@ For paths A and C, an administrator can allow only a trusted, root-owned Chrome
 copy. Find the service user's downloaded executable:
 
 ```sh
-find /home/maus/.agent-browser/browsers -type f -name chrome -executable
+find /home/limix/.agent-browser/browsers -type f -name chrome -executable
 ```
 
 Use its actual `chrome-VERSION` directory in every path below; `VERSION` is a
@@ -639,10 +639,10 @@ placeholder, not a fixed Chrome release. Copy the whole directory, including its
 libraries, to a new location that the service user cannot modify:
 
 ```sh
-sudo install -d -o root -g root -m 0755 /opt/openmausbot-browser
-sudo cp -R /home/maus/.agent-browser/browsers/chrome-VERSION /opt/openmausbot-browser/
-sudo chown -R root:root /opt/openmausbot-browser/chrome-VERSION
-sudo chmod -R go-w /opt/openmausbot-browser/chrome-VERSION
+sudo install -d -o root -g root -m 0755 /opt/limixbot-browser
+sudo cp -R /home/limix/.agent-browser/browsers/chrome-VERSION /opt/limixbot-browser/
+sudo chown -R root:root /opt/limixbot-browser/chrome-VERSION
+sudo chmod -R go-w /opt/limixbot-browser/chrome-VERSION
 ```
 
 Save this as the root-owned `/etc/apparmor.d/limixbot-chrome`, replacing
@@ -653,7 +653,7 @@ the writable service home would also allow replacement executables.
 abi <abi/4.0>,
 include <tunables/global>
 
-profile limixbot-chrome /opt/openmausbot-browser/chrome-VERSION/chrome flags=(unconfined) {
+profile limixbot-chrome /opt/limixbot-browser/chrome-VERSION/chrome flags=(unconfined) {
   userns,
 }
 ```
@@ -666,14 +666,14 @@ sudo apparmor_parser -r /etc/apparmor.d/limixbot-chrome
 
 Add the following line under `[Service]` in the systemd unit above, again using
 the exact installed version, then run `sudo systemctl daemon-reload` and
-`sudo systemctl restart openmausbot`:
+`sudo systemctl restart limixbot`:
 
 ```ini
-Environment=AGENT_BROWSER_EXECUTABLE_PATH=/opt/openmausbot-browser/chrome-VERSION/chrome
+Environment=AGENT_BROWSER_EXECUTABLE_PATH=/opt/limixbot-browser/chrome-VERSION/chrome
 ```
 
 For a foreground server, export `AGENT_BROWSER_EXECUTABLE_PATH` to that same
-path in the `maus` shell before starting `serve`. After a Chrome update, copy the
+path in the `limix` shell before starting `serve`. After a Chrome update, copy the
 new version and update both the AppArmor profile and service environment; the
 root-owned copy is not updated by the browser installer. Keep
 `kernel.apparmor_restrict_unprivileged_userns=1`.

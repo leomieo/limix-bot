@@ -54,6 +54,7 @@ jobs:
             --build-arg ENGINES="@openai/codex" \
             --label org.opencontainers.image.source=https://github.com/leomieo/limix-bot \
             --label org.opencontainers.image.description="Limix Bot server: run your AI bots 24/7 on your own server" \
+            --label "org.opencontainers.image.version=${{ steps.v.outputs.version }}" \
             --label org.opencontainers.image.licenses=Apache-2.0 \
             -t limix-bot:check .
       - name: check that the server starts without the messaging gateway
@@ -66,6 +67,7 @@ jobs:
             sleep 3
           done
           docker exec limix-check curl -sf http://127.0.0.1:8799/api/health | grep openmausbot >/dev/null
+          test "$(docker exec limix-check limixbot --version)" = "${{ steps.v.outputs.version }}"
           # The messaging gateway is a separate module: nothing of it is in the image, runs, or is routed.
           if docker exec limix-check test -e /app/limix-gateway; then echo "the image ships the messaging gateway"; exit 1; fi
           if docker exec limix-check curl -sf -H "Host: 127.0.0.1:8790" http://127.0.0.1:8790/healthz >/dev/null; then echo "a messaging gateway runs"; exit 1; fi
