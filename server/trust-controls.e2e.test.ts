@@ -694,8 +694,22 @@ it.each([
   expect(sends()).toBe(0);
   gmailDrafts.set(draftId, { ...gmailDrafts.get(draftId), ...change });
   await api("POST", `/api/threads/${b.threadId}/respond`, { requestId: review.card.requestId, behavior: "allow" });
-  await Promise.race([sending, new Promise(resolve => setTimeout(resolve, 2000))]);
+  expect((await sending).body.result).toMatchObject({
+    isError: true,
+    content: [{ type: "text", text: expect.stringContaining("exact recipients, subject, and body") }],
+  });
   expect(sends(), "dispatch using the previous review after a draft change").toBe(0);
+  const snapshot = gmailDrafts.get(draftId)!;
+  const explicit = { recipient_email: snapshot.recipient_email, subject: "Support handoff", body: snapshot.body };
+  const approvedSend = relay(token, "GMAIL_SEND_EMAIL", explicit);
+  const freshReview = await pending(b.threadId);
+  expect(freshReview.card.requestId).not.toBe(review.card.requestId);
+  expect(freshReview.card.subtitle).toContain(String(explicit.recipient_email));
+  expect(freshReview.card.subtitle).toContain(String(explicit.body));
+  await api("POST", `/api/threads/${b.threadId}/respond`, { requestId: freshReview.card.requestId, behavior: "allow" });
+  expect((await approvedSend).body.result.isError).not.toBe(true);
+  expect(relayed.filter((frame: any) => frame.params?.name === "GMAIL_SEND_EMAIL" &&
+    JSON.stringify(frame.params.arguments) === JSON.stringify(explicit))).toHaveLength(1);
 });
 
 it("resumes the pending support handoff in the same thread after restart", async () => {
