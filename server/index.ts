@@ -14604,6 +14604,9 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
           })
           : { ok: true, approved: false };
         if (!held.ok) return refuseOutbound(held.text);
+        if (held.approved && outboundCalls.some(call => call.slug === "GMAIL_SEND_DRAFT")) {
+          return refuseOutbound("This Gmail draft can change after review. Request a new approval with the exact recipients, subject, and body in an explicit send, or review and send the draft in Gmail.");
+        }
         const outboundApproved = held.approved;
         if (outboundApproved) requireActiveInternalCapability();
         let dispatchRefusal: string | undefined;

@@ -350,7 +350,7 @@ it("queues personal Messenger replies for the desktop window and answers everyon
   for (let i = 0; i < 50 && !(await call("GET", "/api/messenger/bots")).body.bots.length; i++) await new Promise((resolve) => setTimeout(resolve, 10));
   await call("POST", "/api/bots/b1/messenger/inbox", { messages: [{ id: "t1:1", chatId: "t1", name: "Lan", text: "/link ABC123" }, { id: "t1:2", chatId: "t1", name: "Lan", text: "còn hàng không" }] });
   const outbox = await call("GET", "/api/bots/b1/messenger/outbox");
-  expect(outbox.body.items).toEqual([{ id: 1, chatId: "t1", text: "ok: còn hàng không" }]);
+  expect(outbox.body.items).toEqual([{ id: 1, deliveryId: expect.stringMatching(/^[a-f0-9]{64}:0$/), chatId: "t1", text: "ok: còn hàng không" }]);
   expect(asks).toEqual([{ text: "còn hàng không", owner: false }]);
   expect((await call("POST", "/api/bots/b1/messenger/sent", { id: 1 })).body).toEqual({ ok: true });
   const messengerUrl = "https://cdn.fbsbx.com/attachment/list.csv";

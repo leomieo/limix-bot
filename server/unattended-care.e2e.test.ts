@@ -4,12 +4,14 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, it } from "vitest";
 import { launchVerificationServer, verificationServerArgs, verificationServerEnvironment } from "../scripts/control-omb.ts";
+import { createMessengerReceiptCache } from "../electron/messenger-personal.mjs";
 import { INDUSTRY_CARE_SKILL } from "../shared/industry-templates.ts";
 
 it.each([true, false])("preserves the case and delivers once across restart (receipt acknowledged: %s)", async (acknowledged) => {
   const recipient = "ci-support-recipient";
   const sku = "CI-24";
   const receiptBook: string[] = [];
+  const deliverOnce = createMessengerReceiptCache();
   const settings = { FAKE_CLAUDE_VERSION: "2.1.284", FAKE_CLAUDE_TOOL_CALLS: "[]", FAKE_CLAUDE_REPLIES: JSON.stringify(["CI-24: 123000 VND"]) };
   const fixture = await launchVerificationServer(settings);
   const { url, dataDir } = fixture.info;
@@ -41,7 +43,8 @@ it.each([true, false])("preserves the case and delivers once across restart (rec
       const { items } = await api(route + "/outbox");
       for (const item of items) {
         expect(item.chatId).toBe(recipient);
-        receiptBook.push(item.text);
+        expect(item.deliveryId).toMatch(/^[a-f0-9]{64}:0$/);
+        await deliverOnce(item.deliveryId, async () => { receiptBook.push(item.text); });
       }
       return items;
     };

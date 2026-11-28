@@ -84,8 +84,20 @@ export function changedRows(before, rows) {
   return rows.filter((row) => before.get(row.thread) !== previewOf(row.preview) && !OWN.test(previewOf(row.preview)));
 }
 
+export function createMessengerReceiptCache(now = Date.now) {
+  const receipts = new Map();
+  return async (deliveryKey, send) => {
+    const time = now();
+    for (const [key, expires] of receipts) if (expires <= time) receipts.delete(key);
+    if (deliveryKey && receipts.has(deliveryKey)) return;
+    await send();
+    if (deliveryKey) receipts.set(deliveryKey, now() + 24 * 60 * 60_000);
+  };
+}
+
 export function installMessengerPersonal({ app, ipcMain, BrowserWindow, session, localRequest, guard, log = () => {}, timers = { setInterval, clearInterval } }) {
   const workers = new Map();
+  const deliverOnce = createMessengerReceiptCache();
 
   const call = async (method, route, body) => {
     const response = await localRequest(route, { method, ...(body === undefined ? {} : { headers: { "content-type": "application/json" }, body: JSON.stringify(body) }) });
@@ -185,7 +197,8 @@ export function installMessengerPersonal({ app, ipcMain, BrowserWindow, session,
         const outbox = await call("GET", `/api/bots/${botId}/messenger/outbox`).catch(() => null);
         if (!outbox) { await nap(5_000); continue; }
         for (const item of outbox.items ?? []) {
-          const error = await exclusive(() => typeInto(item.chatId, item.text, item.file)).then(() => undefined, (failure) => String(failure?.message ?? failure));
+          const deliveryKey = item.deliveryId ? `${botId}:${item.deliveryId}` : undefined;
+          const error = await exclusive(() => deliverOnce(deliveryKey, () => typeInto(item.chatId, item.text, item.file))).then(() => undefined, (failure) => String(failure?.message ?? failure));
           await call("POST", `/api/bots/${botId}/messenger/sent`, { id: item.id, ...(error ? { error } : {}) }).catch(() => {});
         }
       }

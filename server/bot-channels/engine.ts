@@ -50,8 +50,8 @@ export interface ChannelIo {
 }
 
 export interface ChannelSession {
-  send(chatId: string, text: string): Promise<void>;
-  sendMedia?(chatId: string, file: ChannelMedia): Promise<void>;
+  send(chatId: string, text: string, deliveryId?: string): Promise<void>;
+  sendMedia?(chatId: string, file: ChannelMedia, deliveryId?: string): Promise<void>;
   typing?(chatId: string): Promise<void>;
   /** Settles when the connection ends for good; rejects with a ChannelError. */
   done: Promise<void>;
@@ -359,7 +359,8 @@ export function createBotChannels(deps: BotChannelsDeps) {
         const file = media[sent];
         await paced(adapter, botId, () => {
           if (signal.aborted || !authorized() || sessions.get(lane) !== session) throw new ChannelError("drop", "Connection changed");
-          return file ? session.sendMedia!(message.chatId, file) : session.send(message.chatId, parts[sent - media.length]!);
+          const deliveryId = `${id}:${sent}`;
+          return file ? session.sendMedia!(message.chatId, file, deliveryId) : session.send(message.chatId, parts[sent - media.length]!, deliveryId);
         });
       } catch (error) {
         if (signal.aborted || !authorized()) return;
