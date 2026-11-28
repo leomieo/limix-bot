@@ -25,7 +25,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-15
+          - os: macos-26
             platform: macos
           - os: ubuntu-24.04
             platform: linux
@@ -42,6 +42,23 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Verify native sampling and large tool responses
+        run: |
+          cargo test --locked --manifest-path native/process-sampler/Cargo.toml
+          cargo test --locked --manifest-path native/tool-gateway/Cargo.toml
+          node scripts/prepare-limix-native.mjs --current
+          node scripts/bench-process-sampler.mjs
+          node scripts/verify-process-sampler.mjs
+          node scripts/bench-tool-gateway.mjs
+      - name: Verify channel replies and Cloud move menu
+        run: node node_modules/vitest/vitest.mjs run src/components/MoveToMyCloud.dom.test.ts
+      - name: Verify browsing and workspace backups
+        if: matrix.platform == 'linux'
+        run: node node_modules/vitest/vitest.mjs run server/browser/chrome/launcher.test.ts src/components/ChatView.controls.test.ts server/workspace-backup.test.ts
+      - name: Verify template mascot library
+        run: |
+          node --experimental-strip-types scripts/gen-template-mascots.ts --check
+          node node_modules/vitest/vitest.mjs run server/limix-template-mascot.test.ts server/limix-bot-library.test.ts src/lib/ready-bots.test.ts
       - name: Verify the app carries no messaging gateway
         run: |
           node --test electron/limix-docker-mac.node-test.mjs electron/messaging-module.node-test.mjs
@@ -53,7 +70,7 @@ jobs:
       - name: Verify transfer and skill changes
         run: |
           node --test limix/account-sync/account-sync.test.mjs electron/limix-sign-out.node-test.mjs electron/limix-skill-install.node-test.mjs
-          pnpm exec vitest run server/limix-transfer-account.test.ts server/workspace-backup-http.test.ts src/components/LimixSignOutDialog.test.ts src/components/LimixToolsDialog.scan.dom.test.ts server/limix-transfer-version.test.ts server/limix-hub-download.test.ts server/workspace-backup.test.ts src/components/WorkspaceBackupSettings.test.ts src/components/SkillsSection.behavior.test.ts
+          pnpm exec vitest run server/limix-transfer-account.test.ts server/workspace-backup-http.test.ts src/components/LimixSignOutDialog.test.ts src/components/LimixToolsDialog.scan.dom.test.ts server/limix-transfer-version.test.ts server/limix-hub-download.test.ts server/limix-skill-hub.test.ts src/components/LimixSkillHub.sync.dom.test.ts src/components/SkillLibraryTabs.dom.test.ts server/workspace-backup.test.ts src/components/WorkspaceBackupSettings.test.ts src/components/SkillsSection.behavior.test.ts
       - name: Prepare pinned Python and uv
         run: node scripts/prepare-limix-runtime.mjs
       - name: Verify selected upstream improvements
@@ -61,12 +78,22 @@ jobs:
       - name: Build macOS Apple Silicon and Intel
         if: matrix.platform == 'macos'
         run: pnpm package:mac
+      - name: Verify Linux Fleet workspace services
+        if: matrix.platform == 'linux'
+        run: node node_modules/vitest/vitest.mjs run server/fleet.test.ts server/fleet-cli.test.ts server/fleet-agent.test.ts server/fleet-cli-filesystem.test.ts
       - name: Build Linux x64
         if: matrix.platform == 'linux'
         run: pnpm package:linux
       - name: Check packaged macOS server on Apple Silicon
         if: matrix.platform == 'macos'
         run: |
+          for arch in arm64 x64; do
+            dir=release/mac-$arch
+            if [ "$arch" = x64 ] && [ ! -d "$dir" ]; then dir=release/mac; fi
+            res="$PWD/$dir/Limix Bot.app/Contents/Resources"
+            node scripts/verify-process-sampler.mjs --resources "$res"
+            node scripts/bench-tool-gateway.mjs --parity-only --resources "$res"
+          done
           node scripts/smoke-limix-packaged.mjs 'release/mac-arm64/Limix Bot.app/Contents/MacOS/Limix Bot' 'release/mac-arm64/Limix Bot.app/Contents/Resources'
           v=$(node -p "require('./package.json').version")
           cp "release/LimixBot-$v-arm64.dmg" release/LimixBot-Apple-Silicon.dmg
@@ -74,10 +101,13 @@ jobs:
       - name: Check packaged Linux server
         if: matrix.platform == 'linux'
         run: |
+          node scripts/verify-process-sampler.mjs --resources "$PWD/release/linux-unpacked/resources"
+          node scripts/bench-tool-gateway.mjs --parity-only --resources "$PWD/release/linux-unpacked/resources"
           node scripts/smoke-limix-packaged.mjs release/linux-unpacked/limixbot release/linux-unpacked/resources
           v=$(node -p "require('./package.json').version")
           cp "release/LimixBot-$v-x86_64.AppImage" release/LimixBot-Linux-x64.AppImage
           cp "$(find release -maxdepth 1 -name '*.deb' -print -quit)" release/LimixBot-Linux-x64.deb
+          dpkg-deb --fsys-tarfile release/LimixBot-Linux-x64.deb | tar -tf - | grep -Fx "./opt/Limix Bot/limixbot" > /dev/null
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: limix-bot-${{ matrix.platform }}
@@ -135,7 +165,8 @@ jobs:
           v=$(node -p "require('./package.json').version")
           tag="v$v"
           if ! gh release view "$tag" >/dev/null 2>&1; then
-            gh release create "$tag" --draft --title "Limix Bot $v" --notes-file limix/docs/RELEASE_NOTES.md --target "$GITHUB_SHA"
+            node scripts/limix-release-body.mjs "$v" > "$RUNNER_TEMP/limix-release-notes.md"
+            gh release create "$tag" --draft --title "Limix Bot $v" --notes-file "$RUNNER_TEMP/limix-release-notes.md" --target "$GITHUB_SHA"
           fi
           gh release upload "$tag" release/*.exe release/*.dmg release/*.zip release/*.AppImage release/*.deb release/*.blockmap release/latest*.yml --clobber
           gh release edit "$tag" --draft=false --latest

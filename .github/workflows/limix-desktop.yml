@@ -42,6 +42,14 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Verify native sampling and large tool responses
+        run: |
+          cargo test --locked --manifest-path native/process-sampler/Cargo.toml
+          cargo test --locked --manifest-path native/tool-gateway/Cargo.toml
+          node scripts/prepare-limix-native.mjs --current
+          node scripts/bench-process-sampler.mjs
+          node scripts/verify-process-sampler.mjs
+          node scripts/bench-tool-gateway.mjs
       - name: Verify channel replies and Cloud move menu
         run: node node_modules/vitest/vitest.mjs run src/components/MoveToMyCloud.dom.test.ts
       - name: Verify browsing and workspace backups
@@ -79,6 +87,13 @@ jobs:
       - name: Check packaged macOS server on Apple Silicon
         if: matrix.platform == 'macos'
         run: |
+          for arch in arm64 x64; do
+            dir=release/mac-$arch
+            if [ "$arch" = x64 ] && [ ! -d "$dir" ]; then dir=release/mac; fi
+            res="$PWD/$dir/Limix Bot.app/Contents/Resources"
+            node scripts/verify-process-sampler.mjs --resources "$res"
+            node scripts/bench-tool-gateway.mjs --parity-only --resources "$res"
+          done
           node scripts/smoke-limix-packaged.mjs 'release/mac-arm64/Limix Bot.app/Contents/MacOS/Limix Bot' 'release/mac-arm64/Limix Bot.app/Contents/Resources'
           v=$(node -p "require('./package.json').version")
           cp "release/LimixBot-$v-arm64.dmg" release/LimixBot-Apple-Silicon.dmg
@@ -86,6 +101,8 @@ jobs:
       - name: Check packaged Linux server
         if: matrix.platform == 'linux'
         run: |
+          node scripts/verify-process-sampler.mjs --resources "$PWD/release/linux-unpacked/resources"
+          node scripts/bench-tool-gateway.mjs --parity-only --resources "$PWD/release/linux-unpacked/resources"
           node scripts/smoke-limix-packaged.mjs release/linux-unpacked/limixbot release/linux-unpacked/resources
           v=$(node -p "require('./package.json').version")
           cp "release/LimixBot-$v-x86_64.AppImage" release/LimixBot-Linux-x64.AppImage

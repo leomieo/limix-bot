@@ -123,6 +123,20 @@ export default async function afterPack(context) {
     throw error;
   });
   const arch = { 1: "x64", 3: "arm64" }[context.arch];
+  if (context.packager) {
+    const platform = context.electronPlatformName;
+    const dir = path.join(resources, "limix-native");
+    const sampler = path.join(dir, platform === "win32" ? "limix-process-sampler.exe" : "limix-process-sampler");
+    await requireRealDirectory(dir, platform === "win32" ? undefined : 0o755);
+    await requireRegularFile(sampler, platform === "win32" ? undefined : 0o755);
+    if (executableTarget(await readFile(sampler)) !== `${platform}-${arch}`) throw new Error("Wrong process sampler architecture");
+    for (const name of ["limix_tool_gateway.wasm", "THIRD-PARTY-NOTICES.txt", "COPYRIGHT-library.html"]) {
+      await requireRegularFile(path.join(dir, name), platform === "win32" ? undefined : 0o644);
+    }
+    const wasm = new WebAssembly.Module(await readFile(path.join(dir, "limix_tool_gateway.wasm")));
+    const exports = WebAssembly.Module.exports(wasm).map(entry => entry.name);
+    if (!["memory", "reserve_frame", "inspect_reply"].every(name => exports.includes(name))) throw new Error("Wrong Tool Gateway WebAssembly interface");
+  }
   // electron-builder warns and skips missing extraResources. A real package
   // must fail here, before signing, rather than silently ship without Chrome.
   if (hasBrowser || context.packager) {

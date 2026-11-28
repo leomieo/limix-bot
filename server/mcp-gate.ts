@@ -11,7 +11,8 @@ import { APP_ONLY_REFUSAL, AppObserver, GATE_APPS_ENV, modelVisible, parseAppMou
 import { directoryCallTarget, isDirectoryTool } from "./mcp-directory.ts";
 import { QUERY_TOOL, QUERY_TOOL_NAME, ResultStore, answerQuery, describeShape, exampleQuery } from "./mcp-shape.ts";
 import { fitToolList } from "./mcp-tool-schema.ts";
-import { DEFAULT_RESULT_BUDGET, type HeldResult, trimResultText, trimStructured } from "./mcp-trim.ts";
+import { DEFAULT_RESULT_BUDGET, MIN_RESULT_BUDGET, type HeldResult, trimPlainResultPrefix, trimResultText, trimStructured } from "./mcp-trim.ts";
+import { inspectLargeToolReply, readToolResponseFrames } from "./mcp-native-response.ts";
 import { killCliTree } from "./procs.ts";
 import { toolSchemaProfileFromEnv } from "./tool-schema-profile.ts";
 import { capToolListResult, toolLimitFromEnv } from "./tool-count-limit.ts";
@@ -130,7 +131,7 @@ function hold(tool: string, text: string): HeldResult | undefined {
   return { handle, shape: describeShape(value), example: exampleQuery(value) };
 }
 
-function spill(tool: string, text: string): string | undefined {
+function spill(tool: string, text: string | Uint8Array): string | undefined {
   if (!SPILL_DIR) return undefined;
   const safeTool = tool.replace(/[^A-Za-z0-9_.-]/g, "-").slice(0, 60) || "tool";
   const path = join(SPILL_DIR, `${Date.now()}-${process.pid}-${spilled++}-${safeTool}.json`);
@@ -329,7 +330,7 @@ createInterface({ input: process.stdin }).on("line", (line) => {
 });
 process.stdin.on("end", () => child.stdin.end());
 
-createInterface({ input: child.stdout }).on("line", (line) => {
+function handleResponseLine(line: string) {
   if (!line.trim()) return;
   let message: Json | undefined;
   try {
@@ -397,6 +398,39 @@ createInterface({ input: child.stdout }).on("line", (line) => {
     }
   }
   process.stdout.write(`${JSON.stringify(message)}\n`);
-});
+}
+
+function handleResponseFrame(frame: Buffer): void {
+  const reply = !observer && inspectLargeToolReply(frame, BUDGET);
+  if (reply) {
+    const id = requestKey(reply.id)!;
+    const request = pending.get(id);
+    if (request?.kind === "call") {
+      pending.delete(id);
+      if (process.env.LIMIX_TOOL_GATEWAY_TRACE === "1") process.stderr.write("mcp-gate: Rust handled large response\n");
+      if (request.trim && BUDGET > 0 && reply.originalChars > BUDGET) {
+        const path = spill(request.tool, reply.text);
+        if (reply.originalChars > Math.max(MIN_RESULT_BUDGET, BUDGET)) {
+          const prefix = reply.text.toString("utf8", 0, reply.prefixBytes);
+          const trimmed = trimPlainResultPrefix({ text: prefix, budget: BUDGET, spillPath: path, spillHint: SPILL_HINT }, reply.originalChars);
+          const content = [{ type: "text", text: trimmed.text }];
+          process.stderr.write(`mcp-gate(${NAME}): trimmed ${request.tool} to ${BUDGET} chars\n`);
+          process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id: reply.id, result: { content } }) + "\n");
+          return;
+        }
+      }
+      process.stdout.write(frame);
+      process.stdout.write("\n");
+      return;
+    }
+  }
+  handleResponseLine(frame.toString("utf8"));
+}
+
+if (process.env.LIMIX_TOOL_GATEWAY === "typescript") {
+  createInterface({ input: child.stdout }).on("line", handleResponseLine);
+} else {
+  readToolResponseFrames(child.stdout, handleResponseFrame);
+}
 
 child.on("exit", (code, signal) => process.exit(code ?? (signal ? 1 : 0)));

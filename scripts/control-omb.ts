@@ -231,6 +231,7 @@ export function verificationServerEnvironment(parentEnv: NodeJS.ProcessEnv, data
   if (/^\d{1,6}$/.test(parentEnv.OMB_PERSON_FIRST_MS ?? "")) childEnv.OMB_PERSON_FIRST_MS = parentEnv.OMB_PERSON_FIRST_MS;
   // How often @devs reports are asked about, in ms, so a check sees a fix arrive without an hour's wait.
   if (/^\d{1,7}$/.test(parentEnv.OMB_DEVS_STATUS_MS ?? "")) childEnv.OMB_DEVS_STATUS_MS = parentEnv.OMB_DEVS_STATUS_MS;
+  if (parentEnv.LIMIX_ACP_PROCESS_SAMPLER === "rust") childEnv.LIMIX_ACP_PROCESS_SAMPLER = "rust";
   // The quiet-status knobs in ms, so a long tool call shows its sign of life without a minute's wait.
   for (const knob of ["OMB_ACP_QUIET_NOTICE_MS", "OMB_ACP_QUIET_TICK_MS"] as const) {
     if (/^\d{1,7}$/.test(parentEnv[knob] ?? "")) childEnv[knob] = parentEnv[knob];

@@ -8,6 +8,7 @@ import { closeSync, existsSync, fstatSync, openSync, readdirSync, readFileSync, 
 import { join } from "node:path";
 
 import { redactSecretsInText } from "../../redact.ts";
+import { tryRustProcessSample } from "./native-process-sampler.ts";
 
 // Prompt silence guard (0 disables). Healthy agents go quiet for minutes: Qwen Code 0.24 sends
 // nothing while it compresses history, backs off a rate limit (60 s up to 5 min per wait) or runs
@@ -301,9 +302,15 @@ export function sampleLinuxProc(root: number, since?: number, proc: ProcReader =
 
 /** A missing tool or a refused query reads as null (unknown), never as idle. With `since`, only the processes the tree
  * started from then on count, without the root: what one tool call is running, not the engine or its tool servers. */
-export function sampleProcessTree(pid: number, since?: number): Promise<ProcessSample> {
+export async function sampleProcessTree(pid: number, since?: number): Promise<ProcessSample> {
+  const backend = process.env.LIMIX_ACP_PROCESS_SAMPLER;
+  if (backend !== "typescript") {
+    const sample = await tryRustProcessSample(pid, since);
+    if (sample) return sample;
+    if (backend === "rust") return { cpuMs: null, connections: null };
+  }
   if (process.platform === "linux") {
-    try { return Promise.resolve(sampleLinuxProc(pid, since)); } catch { return Promise.resolve({ cpuMs: null, connections: null }); }
+    try { return sampleLinuxProc(pid, since); } catch { return { cpuMs: null, connections: null }; }
   }
   return (process.platform === "win32" ? sampleWindows(pid, since) : samplePosix(pid, since))
     .catch(() => ({ cpuMs: null, connections: null }));

@@ -1,6 +1,6 @@
-# Limix Bot (Leox ৹ Limix AI): builds the Windows installer on a real Windows runner, checks that the packaged
+# Limix Bot (Leox à§¹ Limix AI): builds the Windows installer on a real Windows runner, checks that the packaged
 # server starts, and publishes a GitHub release whose latest.yml the in-app updater reads.
-# Adapted from OpenMausBot's package-win.yml (Apache-2.0). Run it from Actions → "Limix Bot Windows" → Run workflow,
+# Adapted from OpenMausBot's package-win.yml (Apache-2.0). Run it from Actions â†’ "Limix Bot Windows" â†’ Run workflow,
 # or push to main (the release tag v<version> is created by the publish step).
 name: Limix Bot Windows
 
@@ -40,14 +40,40 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Verify native sampling and large tool responses
+        run: |
+          cargo test --locked --manifest-path native/process-sampler/Cargo.toml
+          cargo test --locked --manifest-path native/tool-gateway/Cargo.toml
+          node scripts/prepare-limix-native.mjs --current
+          node scripts/bench-process-sampler.mjs
+          node scripts/verify-process-sampler.mjs
+          node scripts/bench-tool-gateway.mjs
+      - name: Verify Windows CUA Driver before packaging
+        run: pnpm build:cua:win
+      - name: Verify channel replies and Cloud move menu
+        run: node node_modules/vitest/vitest.mjs run src/components/MoveToMyCloud.dom.test.ts
+      - name: Verify skill catalog
+        run: node node_modules/vitest/vitest.mjs run server/limix-skill-hub.test.ts src/components/LimixSkillHub.sync.dom.test.ts src/components/SkillLibraryTabs.dom.test.ts
+      - name: Verify template mascot library
+        run: |
+          node --experimental-strip-types scripts/gen-template-mascots.ts --check
+          node node_modules/vitest/vitest.mjs run server/limix-template-mascot.test.ts server/limix-bot-library.test.ts src/lib/ready-bots.test.ts
       - name: Verify the app carries no messaging gateway
         run: |
           node --test electron/limix-docker-mac.node-test.mjs electron/messaging-module.node-test.mjs
           node node_modules/vitest/vitest.mjs run src/lib/copy-text.test.ts src/lib/copy-text.guard.test.ts
       - name: Verify Bot API threads and navigation
-        run: node node_modules/vitest/vitest.mjs run server/bot-api-host.test.ts src/state/thread-navigation.test.ts
+        run: |
+          node --test electron/limix-profile.node-test.mjs
+          node node_modules/vitest/vitest.mjs run server/bot-api-host.test.ts server/thread-model-follow.e2e.test.ts src/state/thread-navigation.test.ts
       - name: Verify Responses image generation
         run: node node_modules/vitest/vitest.mjs run server/limix-image-routing.test.ts server/limix-image-routing.e2e.test.ts server/image-generation.test.ts server/limix-image-connections.test.ts server/routes/image-settings.test.ts server/routes/image-tools.test.ts src/components/ImageGenerationSettings.test.ts
+      - name: Verify the phone connection guide
+        run: node node_modules/vitest/vitest.mjs run server/skill-library.test.ts
+      - name: Verify private desktop working folder grants
+        run: node node_modules/vitest/vitest.mjs run server/routes/vm-working-folder.test.ts server/container-computer.test.ts
+      - name: Verify Cloud sign-out and restart
+        run: node --test electron/cloud-account-ipc.node-test.mjs electron/cloud-accounts.node-test.mjs electron/cloud-entry.node-test.mjs
       - name: clean build outputs
         shell: bash
         run: rm -rf dist dist-server release
@@ -69,13 +95,20 @@ jobs:
           limix-runtime/python/python.exe --version
           limix-runtime/uv/uv.exe --version
       - run: pnpm package:win
+      - name: Verify bundled process sampler and Tool Gateway
+        shell: pwsh
+        run: |
+          $res = (Resolve-Path release/win-unpacked/resources).Path
+          node scripts/verify-process-sampler.mjs --resources "$res"
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          node scripts/bench-tool-gateway.mjs --parity-only --resources "$res"
 
       - name: verify the packaged tree
         shell: bash
         run: |
           res=release/win-unpacked/resources
           fail=0
-          for f in server/index.js server/desktop-entry.mjs ui/index.html cloudflared/cloudflared.exe app-update.yml limix-runtime/python/python.exe limix-runtime/python/python3.exe limix-runtime/uv/uv.exe skills/ui-ux-pro-max/SKILL.md skills/agent-reach/SKILL.md skills/rea-video/SKILL.md; do
+          for f in server/index.js server/limixbot.js licenses/LimixBot-LICENSE.txt licenses/LimixBot-NOTICE.txt server/desktop-entry.mjs ui/index.html cloudflared/cloudflared.exe app-update.yml limix-runtime/python/python.exe limix-runtime/python/python3.exe limix-runtime/uv/uv.exe skills/limix-bot-factory/{SKILL.md,scripts/mcp_server.py,scripts/factorylib/stdio.py} skills/ui-ux-pro-max/SKILL.md skills/agent-reach/SKILL.md skills/rea-video/SKILL.md skills/reverse-engineer-anything/{SKILL.md,manifest.json,LICENSE,references/evidence-workflows.md}; do
             [ -f "$res/$f" ] || { echo "::error::missing $res/$f"; fail=1; }
           done
           [ -f "release/win-unpacked/Limix Bot.exe" ] || { echo "::error::missing Limix Bot.exe"; fail=1; }
@@ -104,6 +137,9 @@ jobs:
           echo "::error::the packaged server never served /api/health"
           cat "$RUNNER_TEMP/server.log" || true
           exit 1
+
+      - name: Verify a bot can call REA in the packaged app
+        run: node --experimental-strip-types scripts/smoke-limix-rea.mjs
 
       - name: stable-named copy
         shell: bash

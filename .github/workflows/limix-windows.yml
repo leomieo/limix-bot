@@ -40,6 +40,14 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Verify native sampling and large tool responses
+        run: |
+          cargo test --locked --manifest-path native/process-sampler/Cargo.toml
+          cargo test --locked --manifest-path native/tool-gateway/Cargo.toml
+          node scripts/prepare-limix-native.mjs --current
+          node scripts/bench-process-sampler.mjs
+          node scripts/verify-process-sampler.mjs
+          node scripts/bench-tool-gateway.mjs
       - name: Verify Windows CUA Driver before packaging
         run: pnpm build:cua:win
       - name: Verify channel replies and Cloud move menu
@@ -87,6 +95,13 @@ jobs:
           limix-runtime/python/python.exe --version
           limix-runtime/uv/uv.exe --version
       - run: pnpm package:win
+      - name: Verify bundled process sampler and Tool Gateway
+        shell: pwsh
+        run: |
+          $res = (Resolve-Path release/win-unpacked/resources).Path
+          node scripts/verify-process-sampler.mjs --resources "$res"
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          node scripts/bench-tool-gateway.mjs --parity-only --resources "$res"
 
       - name: verify the packaged tree
         shell: bash

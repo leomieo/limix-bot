@@ -2,7 +2,7 @@ export const DEFAULT_RESULT_BUDGET = 8_000;
 /** The gate's own read-only query over a held result (mcp-shape.ts); named here so the banner and the tool never drift apart. */
 export const QUERY_TOOL_NAME = "query_result";
 
-const MIN_BUDGET = 512;
+export const MIN_RESULT_BUDGET = 512;
 
 export interface TrimOutcome {
   text: string;
@@ -132,7 +132,7 @@ function wrap(body: string, banner: string, footer = banner): string {
 }
 
 export function trimStructured(parsed: unknown, budget: number): { value: unknown; dropped: Array<{ key: string; kept: number; total: number }> } | null {
-  const room = Math.max(MIN_BUDGET, budget);
+  const room = Math.max(MIN_RESULT_BUDGET, budget);
   const current = serialize(parsed);
   if (current !== null && current.length <= room) return null;
   const fields = arrayFields(parsed);
@@ -164,7 +164,7 @@ export function trimStructured(parsed: unknown, budget: number): { value: unknow
 
 export function trimResultText(input: TrimInput): TrimOutcome {
   const { text } = input;
-  const budget = Math.max(MIN_BUDGET, input.budget ?? DEFAULT_RESULT_BUDGET);
+  const budget = Math.max(MIN_RESULT_BUDGET, input.budget ?? DEFAULT_RESULT_BUDGET);
   if (text.length <= budget) return { text, trimmed: false, originalChars: text.length };
 
   let parsed: unknown;
@@ -174,17 +174,26 @@ export function trimResultText(input: TrimInput): TrimOutcome {
     parsed = undefined;
   }
 
+  return formatTrimmedText(input, budget, text.length, parsed);
+}
+
+export function trimPlainResultPrefix(input: TrimInput, originalChars: number): TrimOutcome {
+  const budget = Math.max(MIN_RESULT_BUDGET, input.budget ?? DEFAULT_RESULT_BUDGET);
+  return formatTrimmedText(input, budget, originalChars, undefined);
+}
+
+function formatTrimmedText(input: TrimInput, budget: number, originalChars: number, parsed: unknown): TrimOutcome {
   const fields = parsed === undefined ? [] : arrayFields(parsed);
   // Banners sized at their widest, so the whole result lands under the budget; the short form when full ones would eat half.
   const held = input.held;
   const banner = (opts: { dropped: Array<{ key: string; kept: number; total: number }>; structural: boolean; short: boolean; footer?: boolean; keptChars: number }) =>
-    truncationBanner({ originalChars: text.length, spillPath: input.spillPath, spillHint: input.spillHint, held, ...opts });
+    truncationBanner({ originalChars, spillPath: input.spillPath, spillHint: input.spillHint, held, ...opts });
   const widestOf = (short: boolean) => {
     const variants = [
       { dropped: fields.map((f) => ({ key: f.key, kept: Math.max(0, f.items.length - 1), total: f.items.length })), structural: true },
       { dropped: [], structural: false },
     ];
-    return Math.max(...variants.map((v) => banner({ ...v, short, keptChars: text.length }).length + banner({ ...v, short, keptChars: text.length, footer: Boolean(held) }).length));
+    return Math.max(...variants.map((v) => banner({ ...v, short, keptChars: originalChars }).length + banner({ ...v, short, keptChars: originalChars, footer: Boolean(held) }).length));
   };
   const fullRoom = budget - (widestOf(false) + 4);
   const short = fullRoom < budget / 2;
@@ -215,17 +224,17 @@ export function trimResultText(input: TrimInput): TrimOutcome {
         return {
           text: wrap(json, banner({ keptChars: json.length, dropped, structural: true, short }), banner({ keptChars: json.length, dropped, structural: true, short, footer: Boolean(held) })),
           trimmed: true,
-          originalChars: text.length,
+          originalChars,
           value,
         };
       }
     }
   }
 
-  const cut = cutAt(text, room);
+  const cut = cutAt(input.text, room);
   return {
     text: wrap(cut, banner({ keptChars: cut.length, dropped: [], structural: false, short }), banner({ keptChars: cut.length, dropped: [], structural: false, short, footer: Boolean(held) })),
     trimmed: true,
-    originalChars: text.length,
+    originalChars,
   };
 }

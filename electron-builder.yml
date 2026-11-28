@@ -113,6 +113,8 @@ mac:
   entitlementsInherit: build/entitlements.mac.plist
   # the dictation helper is a signed background app — Windows and Linux never see it
   extraResources:
+    - from: dist-native/limix-native/darwin-${arch}
+      to: limix-native
     - from: limix-runtime/${arch}
       to: limix-runtime
     - from: electron/resources/Limix Bot Speech.app
@@ -178,6 +180,8 @@ win:
       to: limix-runtime
     - from: dist-native/cloudflared/win32-x64/cloudflared.exe
       to: cloudflared/cloudflared.exe
+    - from: dist-native/limix-native/win32-x64
+      to: limix-native
     - from: dist-native/browser/win32-x64
       to: browser-engine
     - from: dist-native/duckdb/win32-x64/node_modules
@@ -232,6 +236,8 @@ linux:
       to: limix-runtime
     - from: dist-native/cua-linux-x64
       to: cua-linux-x64
+    - from: dist-native/limix-native/linux-x64
+      to: limix-native
     - from: dist-native/cloudflared/linux-x64/cloudflared
       to: cloudflared/cloudflared
     - from: dist-native/browser/linux-x64
