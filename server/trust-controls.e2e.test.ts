@@ -142,6 +142,10 @@ beforeAll(async () => {
   admin = sessions.issue({ label: "isolated admin", email: "admin@fixture.test", scopes: ["admin", "client"] }).token;
   member = sessions.issue({ label: "isolated member", email: "member@fixture.test", scopes: ["client"] }).token;
   sessions.close();
+  await startTrustServer();
+}, 40_000);
+
+async function startTrustServer() {
   const log = openSync(fixture.info.logPath, "a", 0o600);
   child = spawn(process.execPath, ["--experimental-strip-types", fileURLToPath(new URL("./index.ts", import.meta.url))], {
     cwd: fileURLToPath(new URL("..", import.meta.url)),
@@ -156,7 +160,7 @@ beforeAll(async () => {
     await new Promise(resolve => setTimeout(resolve, 20));
   }
   throw new Error("isolated trust server did not start");
-}, 40_000);
+}
 
 afterAll(async () => {
   blockSession?.();
@@ -693,3 +697,24 @@ it.each([
   await Promise.race([sending, new Promise(resolve => setTimeout(resolve, 2000))]);
   expect(sends(), "dispatch using the previous review after a draft change").toBe(0);
 });
+
+it("resumes the pending support handoff in the same thread after restart", async () => {
+  const b = outboundPolicyBot;
+  await api("PATCH", `/api/bots/${b.id}`, { outbound: { policy: "ask" } });
+  const token = await mint(b.id, b.threadId);
+  const draft = { thread_id: "case-ci-absent", recipient_email: "support@example.test", subject: "Missing SKU CI-ABSENT", body: "Please verify the catalog entry." };
+  expect((await relay(token, "GMAIL_CREATE_EMAIL_DRAFT", draft)).body.result.isError).not.toBe(true);
+  const draftId = [...gmailDrafts].find(([, row]) => row.thread_id === draft.thread_id)![0];
+  const deliveries = () => relayed.filter((frame: any) => frame.params?.name === "GMAIL_SEND_DRAFT" && frame.params.arguments?.draft_id === draftId).length;
+  const attempt = relay(token, "GMAIL_SEND_DRAFT", { draft_id: draftId }).catch(() => undefined);
+  await pending(b.threadId);
+  expect(deliveries()).toBe(0);
+  await waitForExit(child, { signal: "SIGKILL" });
+  await attempt;
+  await startTrustServer();
+  expect(gmailDrafts.get(draftId)).toMatchObject(draft);
+  expect(deliveries()).toBe(0);
+  const review = await pending(b.threadId);
+  await api("POST", `/api/threads/${b.threadId}/respond`, { requestId: review.card.requestId, behavior: "allow" });
+  await expect.poll(deliveries, { timeout: 5000 }).toBe(1);
+}, 60000);
