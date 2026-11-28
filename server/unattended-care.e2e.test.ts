@@ -22,6 +22,9 @@ it("delivers once when the recipient received the message but its acknowledgemen
   let reboot: ReturnType<typeof spawn> | undefined;
   try {
     const { bot } = await api("/api/bots", { industryTemplate: INDUSTRY_CARE_SKILL });
+    const selection = await fetch(url + "/api/bots/" + bot.id, { method: "PATCH", headers: { origin: url, "content-type": "application/json" },
+      body: JSON.stringify({ modelSelection: { instanceId: "claude", model: "claude-sonnet-5" } }) });
+    expect(selection.ok).toBe(true);
     const dir = join(dataDir, INDUSTRY_CARE_SKILL, bot.id);
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, "public-catalog.json"), JSON.stringify({ schemaVersion: 1, scope: bot.id, records: [{
@@ -44,7 +47,7 @@ it("delivers once when the recipient received the message but its acknowledgemen
     };
     const first = await receive();
     expect(first).toHaveLength(1);
-    expect(JSON.parse(readFileSync(fixture.fixtureDumpPath, "utf8")).prompt).toContain("runner-only price list");
+    expect(JSON.stringify(JSON.parse(readFileSync(fixture.fixtureDumpPath, "utf8")).prompt)).toContain("runner-only price list");
     const stopped = once(fixture.child, "exit");
     fixture.child.kill("SIGKILL");
     await stopped;

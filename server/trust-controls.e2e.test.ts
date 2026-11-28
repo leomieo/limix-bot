@@ -674,3 +674,22 @@ it("preserves accounts referenced by a fallback chain before delete or credentia
   await api("PATCH", `/api/bots/${b.id}`, { fallback: [] });
   expect((await api("DELETE", `/api/instances/${instanceId}`)).status).toBe(200);
 });
+
+it.each([
+  { body: "Corrected handoff" },
+  { recipient_email: "second-recipient@example.test" },
+])("requires fresh review if a referenced support draft changes during approval: %j", async (change) => {
+  const b = outboundPolicyBot;
+  await api("PATCH", `/api/bots/${b.id}`, { outbound: { policy: "ask" } });
+  const token = await mint(b.id, b.threadId);
+  const draftId = "review-" + Object.keys(change)[0];
+  gmailDrafts.set(draftId, { body: "Original handoff", recipient_email: "first-recipient@example.test" });
+  const sends = () => relayed.filter((frame: any) => frame.params?.name === "GMAIL_SEND_DRAFT" && frame.params.arguments?.draft_id === draftId).length;
+  const sending = relay(token, "GMAIL_SEND_DRAFT", { draft_id: draftId });
+  const review = await pending(b.threadId);
+  expect(sends()).toBe(0);
+  gmailDrafts.set(draftId, { ...gmailDrafts.get(draftId), ...change });
+  await api("POST", `/api/threads/${b.threadId}/respond`, { requestId: review.card.requestId, behavior: "allow" });
+  await Promise.race([sending, new Promise(resolve => setTimeout(resolve, 2000))]);
+  expect(sends(), "dispatch using the previous review after a draft change").toBe(0);
+});

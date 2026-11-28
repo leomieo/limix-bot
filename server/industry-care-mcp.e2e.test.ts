@@ -1,6 +1,6 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { once } from "node:events";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createInterface } from "node:readline";
@@ -8,7 +8,7 @@ import { expect, it } from "vitest";
 import { launchVerificationServer } from "../scripts/control-omb.ts";
 import { request } from "../scripts/mcp-server.ts";
 import { INDUSTRY_PROFILES } from "../shared/industry-profiles.ts";
-import { industryRoleBot } from "../shared/industry-templates.ts";
+import { INDUSTRY_CARE_SKILL, industryRoleBot } from "../shared/industry-templates.ts";
 import type { StdioMcpSpec } from "./contracts.ts";
 import { removeTempDir } from "./testing/cleanup.ts";
 
@@ -47,6 +47,11 @@ it("calls the shipped department workflow through the owner's scoped MCP gate", 
     expect(offered.result.tools.map((tool: { name: string }) => tool.name).sort()).toEqual(["care_lookup", "care_prepare_case", "care_triage", "query_result"]);
     const denied = await ask(3, "tools/call", { name: "care_delete_case", arguments: {} });
     expect(denied.error.message).toContain("Tool selection excludes this tool");
+    const catalogDir = join(fixture.info.dataDir, INDUSTRY_CARE_SKILL, bot.id);
+    mkdirSync(catalogDir, { recursive: true });
+    writeFileSync(join(catalogDir, "public-catalog.json"), JSON.stringify({ schemaVersion: 1, scope: bot.id, records: [] }));
+    const missing = await ask(10, "tools/call", { name: "care_lookup", arguments: { sku: "CI-ABSENT" } });
+    expect(JSON.parse(missing.result.content[0].text)).toEqual({ status: "no_current_record" });
     const called = await ask(4, "tools/call", { name: "care_prepare_case", arguments: { industry: profile.slug, role: role.slug, caseRef: "DEMO-42" } });
     expect(JSON.parse(called.result.content[0].text)).toEqual({
       status: "draft", industry: profile.slug, role: role.slug, caseRef: "DEMO-42", department: role.name,
