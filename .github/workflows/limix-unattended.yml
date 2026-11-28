@@ -18,7 +18,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Verify catalog, draft tools and approvals
-        run: pnpm exec vitest run server/industry-care.e2e.test.ts server/industry-care-mcp.e2e.test.ts server/live-approval.e2e.test.ts server/webhook-idempotency.test.ts
+        run: pnpm exec vitest run server/industry-care.e2e.test.ts server/industry-care-mcp.e2e.test.ts server/live-approval.e2e.test.ts server/webhook-idempotency.test.ts src/components/PluginLibrary.dom.test.ts
       - name: Check edits to the draft and recipient at dispatch
         if: ${{ !cancelled() }}
         run: pnpm exec vitest run server/trust-controls.e2e.test.ts -t 'requires fresh review if a referenced support draft|resumes the pending support handoff'

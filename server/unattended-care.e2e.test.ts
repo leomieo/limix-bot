@@ -15,15 +15,15 @@ it.each([true, false])("preserves the case and delivers once across restart (rec
   const settings = { FAKE_CLAUDE_VERSION: "2.1.284", FAKE_CLAUDE_TOOL_CALLS: "[]", FAKE_CLAUDE_REPLIES: JSON.stringify(["CI-24: 123000 VND"]) };
   const fixture = await launchVerificationServer(settings);
   const { url, dataDir } = fixture.info;
-  const api = async (path: string, body?: unknown) => {
+  const api = async <T = unknown>(path: string, body?: unknown): Promise<T> => {
     const response = await fetch(url + path, { method: body === undefined ? "GET" : "POST",
       headers: { origin: url, "content-type": "application/json" }, body: JSON.stringify(body) });
     if (!response.ok) throw new Error(path + ": HTTP " + response.status);
-    return response.json();
+    return await response.json() as T;
   };
   let reboot: ReturnType<typeof spawn> | undefined;
   try {
-    const { bot } = await api("/api/bots", { industryTemplate: INDUSTRY_CARE_SKILL });
+    const { bot } = await api<{ bot: { id: string } }>("/api/bots", { industryTemplate: INDUSTRY_CARE_SKILL });
     const selection = await fetch(url + "/api/bots/" + bot.id, { method: "PATCH", headers: { origin: url, "content-type": "application/json" },
       body: JSON.stringify({ modelSelection: { instanceId: "claude", model: "claude-sonnet-5" } }) });
     expect(selection.ok).toBe(true);
@@ -35,12 +35,12 @@ it.each([true, false])("preserves the case and delivers once across restart (rec
     }] }));
     const route = "/api/bots/" + bot.id + "/messenger";
     await api(route, { token: JSON.stringify({ uid: "100045", name: "CI" }), access: "everyone" });
-    const ready = () => expect.poll(async () => { try { return (await api("/api/messenger/bots")).bots; } catch { return []; } }, { timeout: 30000 }).toContain(bot.id);
+    const ready = () => expect.poll(async () => { try { return (await api<{ bots: string[] }>("/api/messenger/bots")).bots; } catch { return []; } }, { timeout: 30000 }).toContain(bot.id);
     await ready();
     const event = { messages: [{ id: "ci-replay-001", chatId: recipient, name: "CI recipient", text: "Giá bán SKU CI-24?" }] };
     await api(route + "/inbox", event);
     const receive = async () => {
-      const { items } = await api(route + "/outbox");
+      const { items } = await api<{ items: { id: number; chatId: string; text: string; deliveryId: string }[] }>(route + "/outbox");
       for (const item of items) {
         expect(item.chatId).toBe(recipient);
         expect(item.deliveryId).toMatch(/^[a-f0-9]{64}:0$/);
@@ -66,8 +66,8 @@ it.each([true, false])("preserves the case and delivers once across restart (rec
     await ready();
     await api(route + "/inbox", event);
     expect(channelState().chats[recipient]).toBe(thread);
-    const history = await api("/api/threads/" + thread + "/messages?limit=100");
-    expect(history.messages.filter((m: { role: string; text: string }) => m.role === "user" && m.text.includes(sku))).toHaveLength(1);
+    const history = await api<{ messages: { role: string; text: string }[] }>("/api/threads/" + thread + "/messages?limit=100");
+    expect(history.messages.filter(m => m.role === "user" && m.text.includes(sku))).toHaveLength(1);
     const replay = await receive();
     for (const item of replay) await api(route + "/sent", { id: item.id });
     expect(receiptBook, "physical deliveries to the same test recipient").toHaveLength(1);
